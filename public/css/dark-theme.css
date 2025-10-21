@@ -1,0 +1,286 @@
+/* 🌓 UNIVERSAL DARK MODE STYLES FOR ALL DASHBOARDS */
+
+/* User Dashboard Dark Mode */
+[data-theme="dark"] .user-container {
+    background: #1a1d23;
+}
+
+[data-theme="dark"] .user-sidebar {
+    background: linear-gradient(180deg, #242831 0%, #1e2128 100%);
+    border-right-color: #3a3f4a;
+}
+
+[data-theme="dark"] .user-main-content {
+    background: #1a1d23;
+}
+
+/* Maintenance Dashboard Dark Mode */
+[data-theme="dark"] .maintenance-container {
+    background: #1a1d23;
+}
+
+[data-theme="dark"] .maintenance-sidebar {
+    background: linear-gradient(180deg, #242831 0%, #1e2128 100%);
+    border-right-color: #3a3f4a;
+}
+
+[data-theme="dark"] .maintenance-main-content {
+    background: #1a1d23;
+}
+
+/* Accountant Dashboard Dark Mode */
+[data-theme="dark"] .accountant-container {
+    background: #1a1d23;
+}
+
+[data-theme="dark"] .accountant-sidebar {
+    background: linear-gradient(180deg, #242831 0%, #1e2128 100%);
+    border-right-color: #3a3f4a;
+}
+
+[data-theme="dark"] .accountant-main-content {
+    background: #1a1d23;
+}
+
+/* Common Dark Mode Styles */
+[data-theme="dark"] .card,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .chart-card,
+[data-theme="dark"] .activity-card,
+[data-theme="dark"] .bill-card,
+[data-theme="dark"] .request-card,
+[data-theme="dark"] .report-card,
+[data-theme="dark"] .meter-card {
+    background: #242831;
+    border-color: #3a3f4a;
+}
+
+[data-theme="dark"] .card:hover,
+[data-theme="dark"] .stat-card:hover,
+[data-theme="dark"] .chart-card:hover,
+[data-theme="dark"] .activity-card:hover,
+[data-theme="dark"] .bill-card:hover,
+[data-theme="dark"] .request-card:hover,
+[data-theme="dark"] .report-card:hover,
+[data-theme="dark"] .meter-card:hover {
+    border-color: #667eea;
+}
+
+[data-theme="dark"] .card-header {
+    background: linear-gradient(135deg, #2d3139 0%, #242831 100%);
+    border-bottom-color: #3a3f4a;
+}
+
+[data-theme="dark"] .card-header h3,
+[data-theme="dark"] .card-header h4,
+[data-theme="dark"] .card-header h5 {
+    color: #e4e6eb;
+}
+
+[data-theme="dark"] .top-bar {
+    background: #242831;
+    border-bottom-color: #3a3f4a;
+}
+
+[data-theme="dark"] .nav-item {
+    color: #b8bcc4;
+}
+
+[data-theme="dark"] .nav-item:hover,
+[data-theme="dark"] .nav-item.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+[data-theme="dark"] .breadcrumb-item {
+    color: #8d9199;
+}
+
+[data-theme="dark"] .breadcrumb-item.active {
+    color: #e4e6eb;
+}
+
+[data-theme="dark"] .stat-value,
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4 {
+    color: #e4e6eb;
+}
+
+[data-theme="dark"] .stat-label,
+[data-theme="dark"] p {
+    color: #8d9199;
+}
+
+[data-theme="dark"] .table {
+    background: #242831;
+}
+
+[data-theme="dark"] .table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+[data-theme="dark"] .table tbody tr {
+    border-bottom-color: #3a3f4a;
+}
+
+[data-theme="dark"] .table tbody tr:hover {
+    background: #2d3139;
+}
+
+[data-theme="dark"] .table tbody td {
+    color: #b8bcc4;
+}
+
+[data-theme="dark"] .search-box input,
+[data-theme="dark"] .filter-input,
+[data-theme="dark"] .filter-select,
+[data-theme="dark"] .report-period,
+[data-theme="dark"] .reading-input {
+    background: #2d3139;
+    color: #e4e6eb;
+    border-color: #3a3f4a;
+}
+
+[data-theme="dark"] .search-box input::placeholder,
+[data-theme="dark"] .filter-input::placeholder {
+    color: #8d9199;
+}
+
+[data-theme="dark"] .search-box input:focus,
+[data-theme="dark"] .filter-input:focus,
+[data-theme="dark"] .filter-select:focus,
+[data-theme="dark"] .report-period:focus {
+    background: #242831;
+    border-color: #667eea;
+}
+
+/* Meter Verification Dark Mode */
+[data-theme="dark"] .meter-header {
+    background: linear-gradient(135deg, #2d3139 0%, #242831 100%);
+}
+
+[data-theme="dark"] .meter-info h4 {
+    color: #e4e6eb;
+}
+
+[data-theme="dark"] .meter-info p {
+    color: #8d9199;
+}
+
+[data-theme="dark"] .reading-item label {
+    color: #b8bcc4;
+}
+
+[data-theme="dark"] .reading-item .value {
+    color: #e4e6eb;
+}
+
+/* Reports Dark Mode */
+[data-theme="dark"] .filters-container {
+    background: transparent;
+}
+
+[data-theme="dark"] .quick-stats {
+    background: linear-gradient(135deg, #2d3139 0%, #242831 100%);
+    border-color: #3a3f4a;
+}
+
+[data-theme="dark"] .export-formats {
+    background: #242831;
+    border-color: #3a3f4a;
+}
+
+[data-theme="dark"] .quick-stat-item {
+    border-bottom-color: #3a3f4a;
+}
+
+[data-theme="dark"] .format-option {
+    color: #b8bcc4;
+}
+
+[data-theme="dark"] .format-option:hover {
+    color: #667eea;
+}
+
+/* Page Title with Gradient */
+[data-theme="dark"] .page-title h1 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Activity Items */
+[data-theme="dark"] .activity-title {
+    color: #e4e6eb;
+}
+
+[data-theme="dark"] .activity-time {
+    color: #8d9199;
+}
+
+/* Bill Status */
+[data-theme="dark"] .bill-status {
+    background: #2d3139;
+    color: #b8bcc4;
+}
+
+/* Request Cards */
+[data-theme="dark"] .request-title {
+    color: #e4e6eb;
+}
+
+[data-theme="dark"] .request-description {
+    color: #8d9199;
+}
+
+/* Chart Cards */
+[data-theme="dark"] .chart-container {
+    background: transparent;
+}
+
+/* Sidebar Logo */
+[data-theme="dark"] .sidebar-logo {
+    color: #e4e6eb;
+    border-bottom-color: #3a3f4a;
+}
+
+/* User Info */
+[data-theme="dark"] .user-info h4 {
+    color: #e4e6eb;
+}
+
+[data-theme="dark"] .user-info p {
+    color: #8d9199;
+}
+
+/* Dropdown Menu */
+[data-theme="dark"] .dropdown-menu {
+    background: #242831;
+    border-color: #3a3f4a;
+}
+
+[data-theme="dark"] .dropdown-item {
+    color: #b8bcc4;
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+    background: #2d3139;
+    color: #667eea;
+}
+
+/* Notifications */
+[data-theme="dark"] .notification-badge {
+    background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+}
+
+/* Footer */
+[data-theme="dark"] .footer {
+    background: #242831;
+    border-top-color: #3a3f4a;
+    color: #8d9199;
+}
+
+

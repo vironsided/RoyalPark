@@ -1,0 +1,298 @@
+/* 🎨 USER DASHBOARD - Яркие сочные цвета 🎨 */
+
+/* Переопределяем цвета sidebar для user */
+.admin-container .sidebar {
+    background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* Bills List */
+.bills-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.bill-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: #f8f9fa;
+    border-radius: 1rem;
+    transition: var(--transition-smooth);
+    border: 2px solid transparent;
+}
+
+.bill-item:hover {
+    background: white;
+    border-color: rgba(79, 172, 254, 0.3);
+    transform: translateX(5px);
+    box-shadow: 0 5px 15px rgba(79, 172, 254, 0.2);
+}
+
+.bill-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.bill-icon.bill-pending {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+}
+
+.bill-icon.bill-paid {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(17, 153, 142, 0.3);
+}
+
+.bill-details {
+    flex: 1;
+}
+
+.bill-title {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.bill-date {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.bill-amount {
+    text-align: right;
+}
+
+.bill-sum {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+/* Quick Actions Buttons */
+.action-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    border: none;
+    border-radius: 1rem;
+    background: white;
+    color: white;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    margin-bottom: 0.75rem;
+    border: 2px solid #e9ecef;
+    position: relative;
+    overflow: hidden;
+}
+
+.action-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+    transition: var(--transition-smooth);
+    z-index: 0;
+}
+
+.action-button.action-primary::before {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.action-button.action-success::before {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.action-button.action-warning::before {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.action-button.action-info::before {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.action-button:hover::before {
+    opacity: 1;
+}
+
+.action-button > * {
+    position: relative;
+    z-index: 1;
+}
+
+.action-button:hover {
+    border-color: transparent;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.action-button > i:first-child {
+    font-size: 1.75rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: var(--transition-smooth);
+}
+
+.action-button.action-success > i:first-child {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.action-button.action-warning > i:first-child {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.action-button.action-info > i:first-child {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.action-button:hover > i:first-child {
+    -webkit-text-fill-color: white;
+    transform: scale(1.2) rotate(10deg);
+}
+
+.action-button > div {
+    flex: 1;
+    text-align: left;
+}
+
+.action-title {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+    transition: var(--transition-smooth);
+}
+
+.action-subtitle {
+    font-size: 0.85rem;
+    color: #6c757d;
+    transition: var(--transition-smooth);
+}
+
+.action-button:hover .action-title,
+.action-button:hover .action-subtitle {
+    color: white;
+}
+
+.action-button > i:last-child {
+    font-size: 1.25rem;
+    color: #6c757d;
+    transition: var(--transition-smooth);
+}
+
+.action-button:hover > i:last-child {
+    color: white;
+    transform: translateX(5px);
+}
+
+/* News Grid */
+.news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 1.5rem;
+}
+
+.news-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 1rem;
+    transition: var(--transition-smooth);
+    border: 2px solid #e9ecef;
+}
+
+.news-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+.news-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.news-item:nth-child(2) .news-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+}
+
+.news-item:nth-child(3) .news-icon {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    box-shadow: 0 4px 12px rgba(250, 112, 154, 0.3);
+}
+
+.news-content {
+    flex: 1;
+}
+
+.news-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.news-content p {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+}
+
+.news-date {
+    font-size: 0.8rem;
+    color: #adb5bd;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .news-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-button {
+        padding: 1rem;
+    }
+    
+    .action-button > i:first-child {
+        font-size: 1.5rem;
+    }
+}

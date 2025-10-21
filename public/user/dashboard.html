@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoyalPark - Личный кабинет</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/user.css">
+    <link rel="stylesheet" href="/css/dark-theme.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon">
+                        <i class="bi bi-house-heart-fill"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h2>RoyalPark</h2>
+                        <p>Личный кабинет</p>
+                    </div>
+                </div>
+                <button class="toggle-sidebar" id="toggleSidebar">
+                    <svg width="20" height="20" fill="currentColor">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <a href="#overview" class="nav-item active">
+                        <span class="nav-icon"><i class="bi bi-house-door"></i></span>
+                        <span class="nav-text">Главная</span>
+                    </a>
+                    <a href="#bills" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-receipt"></i></span>
+                        <span class="nav-text">Мои счета</span>
+                        <span class="nav-badge">3</span>
+                    </a>
+                    <a href="#payments" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-credit-card"></i></span>
+                        <span class="nav-text">Платежи</span>
+                    </a>
+                    <a href="#meters" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-speedometer"></i></span>
+                        <span class="nav-text">Счетчики</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Услуги</div>
+                    <a href="#requests" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-tools"></i></span>
+                        <span class="nav-text">Заявки</span>
+                    </a>
+                    <a href="#documents" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-file-earmark-text"></i></span>
+                        <span class="nav-text">Документы</span>
+                    </a>
+                    <a href="#news" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-newspaper"></i></span>
+                        <span class="nav-text">Новости</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Настройки</div>
+                    <a href="#profile" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-person-circle"></i></span>
+                        <span class="nav-text">Профиль</span>
+                    </a>
+                    <a href="#notifications" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-bell"></i></span>
+                        <span class="nav-text">Уведомления</span>
+                    </a>
+                    <a href="#" class="nav-item logout-btn">
+                        <span class="nav-icon"><i class="bi bi-box-arrow-right"></i></span>
+                        <span class="nav-text">Выход</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>Добро пожаловать!</h1>
+                    <div class="page-breadcrumb">
+                        <span class="breadcrumb-item">
+                            <i class="bi bi-house-door"></i> Главная
+                        </span>
+                    </div>
+                </div>
+
+                <div class="top-bar-actions">
+                    <div class="search-box">
+                        <span class="search-icon">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" placeholder="Поиск...">
+                    </div>
+
+                    <button class="notification-btn">
+                        <i class="bi bi-bell-fill"></i>
+                        <span class="notification-badge">2</span>
+                    </button>
+
+                    <div class="user-profile">
+                        <div class="user-avatar">ПО</div>
+                        <div class="user-info">
+                            <div class="user-name">Пользователь</div>
+                            <div class="user-role">Квартира #205</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card solid-blue">
+                        <div class="stat-icon blue">
+                            <i class="bi bi-wallet2"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">₼5,200</div>
+                            <div class="stat-label">Баланс</div>
+                            <div class="stat-change positive">Оплачено</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-orange">
+                        <div class="stat-icon orange">
+                            <i class="bi bi-receipt-cutoff"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">3</div>
+                            <div class="stat-label">Неоплаченных счета</div>
+                            <div class="stat-change negative">Требует оплаты</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-green">
+                        <div class="stat-icon green">
+                            <i class="bi bi-speedometer2"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">324</div>
+                            <div class="stat-label">кВт⋅ч за месяц</div>
+                            <div class="stat-change positive">-12% за месяц</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-red">
+                        <div class="stat-icon purple">
+                            <i class="bi bi-tools"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">1</div>
+                            <div class="stat-label">Активная заявка</div>
+                            <div class="stat-change positive">В обработке</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Grid -->
+                <div class="content-grid">
+                    <!-- Bills -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Последние счета</h3>
+                        </div>
+                        <div class="bills-list">
+                            <div class="bill-item">
+                                <div class="bill-icon bill-pending">
+                                    <i class="bi bi-lightning-charge"></i>
+                                </div>
+                                <div class="bill-details">
+                                    <div class="bill-title">Электроэнергия</div>
+                                    <div class="bill-date">Октябрь 2024</div>
+                                </div>
+                                <div class="bill-amount">
+                                    <div class="bill-sum">₼180.50</div>
+                                    <span class="badge badge-warning">К оплате</span>
+                                </div>
+                            </div>
+
+                            <div class="bill-item">
+                                <div class="bill-icon bill-pending">
+                                    <i class="bi bi-droplet"></i>
+                                </div>
+                                <div class="bill-details">
+                                    <div class="bill-title">Водоснабжение</div>
+                                    <div class="bill-date">Октябрь 2024</div>
+                                </div>
+                                <div class="bill-amount">
+                                    <div class="bill-sum">₼45.20</div>
+                                    <span class="badge badge-warning">К оплате</span>
+                                </div>
+                            </div>
+
+                            <div class="bill-item">
+                                <div class="bill-icon bill-pending">
+                                    <i class="bi bi-fire"></i>
+                                </div>
+                                <div class="bill-details">
+                                    <div class="bill-title">Отопление</div>
+                                    <div class="bill-date">Октябрь 2024</div>
+                                </div>
+                                <div class="bill-amount">
+                                    <div class="bill-sum">₼120.00</div>
+                                    <span class="badge badge-warning">К оплате</span>
+                                </div>
+                            </div>
+
+                            <div class="bill-item">
+                                <div class="bill-icon bill-paid">
+                                    <i class="bi bi-check-circle"></i>
+                                </div>
+                                <div class="bill-details">
+                                    <div class="bill-title">Коммунальные услуги</div>
+                                    <div class="bill-date">Сентябрь 2024</div>
+                                </div>
+                                <div class="bill-amount">
+                                    <div class="bill-sum">₼320.00</div>
+                                    <span class="badge badge-success">Оплачено</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="activity-card">
+                        <h3 class="chart-title">Быстрые действия</h3>
+                        
+                        <button class="action-button action-primary">
+                            <i class="bi bi-credit-card"></i>
+                            <div>
+                                <div class="action-title">Оплатить счета</div>
+                                <div class="action-subtitle">3 неоплаченных</div>
+                            </div>
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+
+                        <button class="action-button action-success">
+                            <i class="bi bi-speedometer"></i>
+                            <div>
+                                <div class="action-title">Показания счетчиков</div>
+                                <div class="action-subtitle">Отправить данные</div>
+                            </div>
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+
+                        <button class="action-button action-warning">
+                            <i class="bi bi-tools"></i>
+                            <div>
+                                <div class="action-title">Новая заявка</div>
+                                <div class="action-subtitle">Сообщить о проблеме</div>
+                            </div>
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+
+                        <button class="action-button action-info">
+                            <i class="bi bi-file-earmark-text"></i>
+                            <div>
+                                <div class="action-title">Документы</div>
+                                <div class="action-subtitle">Посмотреть все</div>
+                            </div>
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- News Section -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3><i class="bi bi-newspaper"></i> Новости и объявления</h3>
+                    </div>
+                    <div class="news-grid">
+                        <div class="news-item">
+                            <div class="news-icon"><i class="bi bi-megaphone"></i></div>
+                            <div class="news-content">
+                                <h4>Плановое отключение воды</h4>
+                                <p>20 октября с 10:00 до 16:00 будет производиться плановое отключение холодной воды.</p>
+                                <span class="news-date"><i class="bi bi-calendar"></i> 15.10.2024</span>
+                            </div>
+                        </div>
+
+                        <div class="news-item">
+                            <div class="news-icon"><i class="bi bi-info-circle"></i></div>
+                            <div class="news-content">
+                                <h4>Новая система оплаты</h4>
+                                <p>Теперь вы можете оплатить счета через мобильное приложение.</p>
+                                <span class="news-date"><i class="bi bi-calendar"></i> 10.10.2024</span>
+                            </div>
+                        </div>
+
+                        <div class="news-item">
+                            <div class="news-icon"><i class="bi bi-star"></i></div>
+                            <div class="news-content">
+                                <h4>Улучшение сервиса</h4>
+                                <p>Мы обновили наш личный кабинет для вашего удобства!</p>
+                                <span class="news-date"><i class="bi bi-calendar"></i> 05.10.2024</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Theme Management -->
+    <script src="/js/theme.js"></script>
+    
+    <!-- Language Management -->
+    <script src="/js/i18n.js"></script>
+    <script src="/js/i18n-auto.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="/js/user.js"></script>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoyalPark - Задолженности</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    
+    <style>
+        .debt-card {
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+        .debt-card.overdue {
+            border-left-color: #dc3545;
+        }
+        .debt-card.critical {
+            border-left-color: #8b0000;
+            background: rgba(139, 0, 0, 0.05);
+        }
+        .debt-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        .task-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .overdue-days {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            font-size: 0.75rem;
+        }
+        .timeline-item {
+            position: relative;
+            padding-left: 2rem;
+            padding-bottom: 1.5rem;
+        }
+        .timeline-item:before {
+            content: '';
+            position: absolute;
+            left: 0.4rem;
+            top: 0;
+            height: 100%;
+            width: 2px;
+            background: linear-gradient(180deg, #667eea, #764ba2);
+        }
+        .timeline-dot {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background: #667eea;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #667eea;
+        }
+        .timeline-item:last-child:before {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Same Sidebar as users.html -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon">
+                        <img src="/images/royal_park_baku_logo.svg" alt="RoyalPark Logo" class="sidebar-logo-image">
+                    </div>
+                    <div class="logo-text">
+                        <h2>RoyalPark</h2>
+                        <p>Admin Panel</p>
+                    </div>
+                </div>
+                <button class="toggle-sidebar" id="toggleSidebar">
+                    <svg width="20" height="20" fill="currentColor">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <div class="nav-section-title" data-i18n="nav_main">ГЛАВНОЕ</div>
+                    <a href="/admin/dashboard.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-dashboard"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_dashboard">Панель управления</span>
+                    </a>
+                    <a href="/admin/analytics.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-stats"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_analytics">Аналитика</span>
+                    </a>
+                    <a href="/admin/reports.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-reports"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_reports">Отчеты</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title" data-i18n="nav_management">УПРАВЛЕНИЕ</div>
+                    <a href="/admin/users.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-users"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_users">Пользователи</span>
+                        <span class="nav-badge">245</span>
+                    </a>
+                    <a href="/admin/buildings.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-buildings"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_buildings">Здания</span>
+                    </a>
+                    <a href="/admin/apartments.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-apartments"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_apartments">Квартиры</span>
+                    </a>
+                    <a href="/admin/meters.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-meters"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_meters">Счетчики</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title" data-i18n="nav_finance">ФИНАНСЫ</div>
+                    <a href="/admin/payments.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-payments"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_payments">Платежи</span>
+                    </a>
+                    <a href="/admin/invoices.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-bills"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_invoices">Счета</span>
+                        <span class="nav-badge">12</span>
+                    </a>
+                    <a href="/admin/debts.html" class="nav-item active">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-debts"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_debts">Задолженности</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title" data-i18n="nav_maintenance">ОБСЛУЖИВАНИЕ</div>
+                    <a href="/admin/repair-requests.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-maintenance"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_repair_requests">Заявки на ремонт</span>
+                        <span class="nav-badge">8</span>
+                    </a>
+                    <a href="/admin/inspections.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-inspections"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_inspections">Проверки</span>
+                    </a>
+                    <a href="/admin/staff.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-staff"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_staff">Персонал</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title" data-i18n="nav_system">СИСТЕМА</div>
+                    <a href="/admin/settings.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-settings"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_settings">Настройки</span>
+                    </a>
+                    <a href="/admin/logs.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-documents"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_logs">Логи</span>
+                    </a>
+                    <a href="/admin/backup.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-database"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_backup">Резервное копирование</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <a href="/login.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg></span>
+                        <span class="nav-text" data-i18n="logout">Выход</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <button class="menu-btn" id="menuBtn" style="display: none;">
+                    <svg width="20" height="20" fill="currentColor">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </button>
+                <div class="page-title">
+                    <h1 data-i18n="nav_debts">Задолженности</h1>
+                    <div class="page-breadcrumb">
+                        <span class="breadcrumb-item" data-i18n="home">Главная</span>
+                        <span>›</span>
+                        <span class="breadcrumb-item" data-i18n="nav_debts">Задолженности</span>
+                    </div>
+                </div>
+
+                <div class="top-bar-actions">
+                    <div class="search-box">
+                        <span class="search-icon"><svg width="16" height="16" fill="currentColor"><use href="/images/icons.svg#icon-inspections"></use></svg></span>
+                        <input type="text" placeholder="Поиск...">
+                    </div>
+                    <button class="notification-btn">
+                        <svg width="20" height="20" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    <div class="user-profile">
+                        <div class="user-avatar">АД</div>
+                        <div class="user-info">
+                            <div class="user-name" data-i18n="role_admin">Администратор</div>
+                            <div class="user-role" data-i18n="system_admin">Системный админ</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Content -->
+            <div class="dashboard-content">
+                <!-- Stats -->
+                <div class="stats-grid mb-4">
+                    <div class="stat-card solid-red">
+                        <div class="stat-icon red">
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value" id="totalDebts">4</div>
+                            <div class="stat-label">Активных задолженностей</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-orange">
+                        <div class="stat-icon orange">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value" id="overdueDebts">3</div>
+                            <div class="stat-label">Просроченные</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-purple">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="bi bi-currency-exchange"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value" id="totalAmount">1,290.75₼</div>
+                            <div class="stat-label">Общая сумма</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-blue">
+                        <div class="stat-icon blue">
+                            <i class="bi bi-person-workspace"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value" id="activeTasks">3</div>
+                            <div class="stat-label">Активных задач</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Debts List -->
+                <div id="debtsList">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/test-data.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/i18n.js"></script>
+    <script src="/js/i18n-auto.js"></script>
+    <script src="/js/admin.js"></script>
+    <script src="/js/admin-debts.js"></script>
+</body>
+</html>
+
+

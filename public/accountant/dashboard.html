@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoyalPark - Панель бухгалтера</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/accountant.css">
+    <link rel="stylesheet" href="/css/dark-theme.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon">
+                        <i class="bi bi-cash-coin"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h2>RoyalPark</h2>
+                        <p>Бухгалтерия</p>
+                    </div>
+                </div>
+                <button class="toggle-sidebar" id="toggleSidebar">
+                    <svg width="20" height="20" fill="currentColor">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <a href="#dashboard" class="nav-item active">
+                        <span class="nav-icon"><i class="bi bi-grid"></i></span>
+                        <span class="nav-text">Панель</span>
+                    </a>
+                    <a href="#payments" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-currency-exchange"></i></span>
+                        <span class="nav-text">Платежи</span>
+                        <span class="nav-badge">24</span>
+                    </a>
+                    <a href="#invoices" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-receipt"></i></span>
+                        <span class="nav-text">Счета</span>
+                    </a>
+                    <a href="#debts" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-exclamation-circle"></i></span>
+                        <span class="nav-text">Задолженности</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Отчеты</div>
+                    <a href="#financial" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-graph-up-arrow"></i></span>
+                        <span class="nav-text">Финансовые</span>
+                    </a>
+                    <a href="#analytics" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-pie-chart"></i></span>
+                        <span class="nav-text">Аналитика</span>
+                    </a>
+                    <a href="#documents" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-file-earmark-spreadsheet"></i></span>
+                        <span class="nav-text">Документы</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Система</div>
+                    <a href="#settings" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-gear"></i></span>
+                        <span class="nav-text">Настройки</span>
+                    </a>
+                    <a href="#" class="nav-item logout-btn">
+                        <span class="nav-icon"><i class="bi bi-box-arrow-right"></i></span>
+                        <span class="nav-text">Выход</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>Панель бухгалтера</h1>
+                    <div class="page-breadcrumb">
+                        <span class="breadcrumb-item">
+                            <i class="bi bi-house-door"></i> Главная
+                        </span>
+                    </div>
+                </div>
+
+                <div class="top-bar-actions">
+                    <div class="search-box">
+                        <span class="search-icon">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" placeholder="Поиск платежей...">
+                    </div>
+
+                    <button class="notification-btn">
+                        <i class="bi bi-bell-fill"></i>
+                        <span class="notification-badge">24</span>
+                    </button>
+
+                    <div class="user-profile">
+                        <div class="user-avatar">БУ</div>
+                        <div class="user-info">
+                            <div class="user-name">Бухгалтер</div>
+                            <div class="user-role">Финансовый отдел</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card solid-green">
+                        <div class="stat-icon green">
+                            <i class="bi bi-wallet2"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">₼2.4M</div>
+                            <div class="stat-label">Доход за месяц</div>
+                            <div class="stat-change positive">↑ 8% за месяц</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-blue">
+                        <div class="stat-icon blue">
+                            <i class="bi bi-credit-card"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">245</div>
+                            <div class="stat-label">Платежей сегодня</div>
+                            <div class="stat-change positive">Обработано</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-orange">
+                        <div class="stat-icon orange">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">₼180K</div>
+                            <div class="stat-label">Задолженности</div>
+                            <div class="stat-change negative">Требует внимания</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-red">
+                        <div class="stat-icon purple">
+                            <i class="bi bi-graph-up"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">92%</div>
+                            <div class="stat-label">Оплачиваемость</div>
+                            <div class="stat-change positive">Отличный показатель</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Revenue Chart -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3><i class="bi bi-graph-up-arrow"></i> Динамика платежей</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Filters Section -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3><i class="bi bi-funnel"></i> Фильтры платежей</h3>
+                    </div>
+                    <div class="filters-container">
+                        <div class="filter-group">
+                            <label><i class="bi bi-calendar-range"></i> Период</label>
+                            <div class="date-range">
+                                <input type="date" class="filter-input" id="dateFrom" value="2024-10-01">
+                                <span>—</span>
+                                <input type="date" class="filter-input" id="dateTo" value="2024-10-17">
+                            </div>
+                        </div>
+
+                        <div class="filter-group">
+                            <label><i class="bi bi-check-circle"></i> Статус</label>
+                            <select class="filter-select" id="statusFilter">
+                                <option value="all">Все статусы</option>
+                                <option value="paid">Оплачено</option>
+                                <option value="pending">В обработке</option>
+                                <option value="failed">Отклонено</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label><i class="bi bi-credit-card"></i> Метод оплаты</label>
+                            <select class="filter-select" id="methodFilter">
+                                <option value="all">Все методы</option>
+                                <option value="card">Карта</option>
+                                <option value="cash">Наличные</option>
+                                <option value="bank">Банк</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label><i class="bi bi-building"></i> Здание</label>
+                            <select class="filter-select" id="buildingFilter">
+                                <option value="all">Все здания</option>
+                                <option value="A">Здание A</option>
+                                <option value="B">Здание B</option>
+                                <option value="C">Здание C</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-actions">
+                            <button class="btn-filter apply" id="applyFilters">
+                                <i class="bi bi-funnel-fill"></i> Применить
+                            </button>
+                            <button class="btn-filter reset" id="resetFilters">
+                                <i class="bi bi-arrow-counterclockwise"></i> Сбросить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Payments Table -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <div class="header-with-actions">
+                            <h3><i class="bi bi-currency-exchange"></i> Последние платежи</h3>
+                            <div class="table-actions">
+                                <button class="btn-export excel">
+                                    <i class="bi bi-file-earmark-excel"></i> Excel
+                                </button>
+                                <button class="btn-export pdf">
+                                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="table" id="paymentsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Плательщик</th>
+                                <th>Квартира</th>
+                                <th>Сумма</th>
+                                <th>Дата</th>
+                                <th>Метод</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#5678</td>
+                                <td>Иванов И.И.</td>
+                                <td>A-205</td>
+                                <td class="amount-positive">₼5,200</td>
+                                <td>17.10.2024</td>
+                                <td><span class="payment-method card">Карта</span></td>
+                                <td><span class="badge badge-success">Оплачено</span></td>
+                            </tr>
+                            <tr>
+                                <td>#5679</td>
+                                <td>Петров П.П.</td>
+                                <td>B-301</td>
+                                <td class="amount-positive">₼4,800</td>
+                                <td>17.10.2024</td>
+                                <td><span class="payment-method cash">Наличные</span></td>
+                                <td><span class="badge badge-success">Оплачено</span></td>
+                            </tr>
+                            <tr>
+                                <td>#5680</td>
+                                <td>Сидоров С.С.</td>
+                                <td>A-102</td>
+                                <td class="amount-positive">₼6,100</td>
+                                <td>17.10.2024</td>
+                                <td><span class="payment-method bank">Банк</span></td>
+                                <td><span class="badge badge-warning">В обработке</span></td>
+                            </tr>
+                            <tr>
+                                <td>#5681</td>
+                                <td>Козлов К.К.</td>
+                                <td>C-405</td>
+                                <td class="amount-positive">₼5,500</td>
+                                <td>16.10.2024</td>
+                                <td><span class="payment-method card">Карта</span></td>
+                                <td><span class="badge badge-success">Оплачено</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Reports Generation -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3><i class="bi bi-file-earmark-bar-graph"></i> Генерация отчетов</h3>
+                    </div>
+                    <div class="reports-container">
+                        <div class="reports-grid">
+                            <div class="report-card">
+                                <div class="report-icon financial">
+                                    <i class="bi bi-graph-up-arrow"></i>
+                                </div>
+                                <div class="report-content">
+                                    <h4>Финансовый отчет</h4>
+                                    <p>Полный финансовый отчет с доходами, расходами и балансом</p>
+                                    <div class="report-options">
+                                        <select class="report-period">
+                                            <option>Текущий месяц</option>
+                                            <option>Прошлый месяц</option>
+                                            <option>Квартал</option>
+                                            <option>Год</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="report-actions">
+                                    <button class="btn-generate" data-report="financial">
+                                        <i class="bi bi-file-earmark-arrow-down"></i> Сформировать
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="report-card">
+                                <div class="report-icon payments">
+                                    <i class="bi bi-cash-stack"></i>
+                                </div>
+                                <div class="report-content">
+                                    <h4>Отчет по платежам</h4>
+                                    <p>Детализация всех платежей с разбивкой по методам оплаты</p>
+                                    <div class="report-options">
+                                        <select class="report-period">
+                                            <option>За неделю</option>
+                                            <option>За месяц</option>
+                                            <option>За квартал</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="report-actions">
+                                    <button class="btn-generate" data-report="payments">
+                                        <i class="bi bi-file-earmark-arrow-down"></i> Сформировать
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="report-card">
+                                <div class="report-icon debts">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                </div>
+                                <div class="report-content">
+                                    <h4>Отчет по задолженностям</h4>
+                                    <p>Список должников с суммами и сроками задолженности</p>
+                                    <div class="report-options">
+                                        <select class="report-period">
+                                            <option>На текущую дату</option>
+                                            <option>Просроченные</option>
+                                            <option>Все долги</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="report-actions">
+                                    <button class="btn-generate" data-report="debts">
+                                        <i class="bi bi-file-earmark-arrow-down"></i> Сформировать
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="report-card">
+                                <div class="report-icon analytics">
+                                    <i class="bi bi-pie-chart"></i>
+                                </div>
+                                <div class="report-content">
+                                    <h4>Аналитический отчет</h4>
+                                    <p>Статистика оплачиваемости, тренды, прогнозы</p>
+                                    <div class="report-options">
+                                        <select class="report-period">
+                                            <option>Месячный</option>
+                                            <option>Квартальный</option>
+                                            <option>Годовой</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="report-actions">
+                                    <button class="btn-generate" data-report="analytics">
+                                        <i class="bi bi-file-earmark-arrow-down"></i> Сформировать
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="report-card">
+                                <div class="report-icon buildings">
+                                    <i class="bi bi-building"></i>
+                                </div>
+                                <div class="report-content">
+                                    <h4>Отчет по зданиям</h4>
+                                    <p>Сводка платежей и задолженностей по каждому зданию</p>
+                                    <div class="report-options">
+                                        <select class="report-period">
+                                            <option>Все здания</option>
+                                            <option>Здание A</option>
+                                            <option>Здание B</option>
+                                            <option>Здание C</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="report-actions">
+                                    <button class="btn-generate" data-report="buildings">
+                                        <i class="bi bi-file-earmark-arrow-down"></i> Сформировать
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="report-card">
+                                <div class="report-icon tax">
+                                    <i class="bi bi-calculator"></i>
+                                </div>
+                                <div class="report-content">
+                                    <h4>Налоговый отчет</h4>
+                                    <p>Отчет для налоговой с полной детализацией доходов</p>
+                                    <div class="report-options">
+                                        <select class="report-period">
+                                            <option>Квартал</option>
+                                            <option>Полугодие</option>
+                                            <option>Год</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="report-actions">
+                                    <button class="btn-generate" data-report="tax">
+                                        <i class="bi bi-file-earmark-arrow-down"></i> Сформировать
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="reports-sidebar">
+                            <div class="quick-stats">
+                                <h5><i class="bi bi-speedometer"></i> Быстрая статистика</h5>
+                                <div class="quick-stat-item">
+                                    <span class="stat-label">Отчетов сегодня:</span>
+                                    <span class="stat-value">12</span>
+                                </div>
+                                <div class="quick-stat-item">
+                                    <span class="stat-label">За неделю:</span>
+                                    <span class="stat-value">45</span>
+                                </div>
+                                <div class="quick-stat-item">
+                                    <span class="stat-label">За месяц:</span>
+                                    <span class="stat-value">180</span>
+                                </div>
+                            </div>
+
+                            <div class="export-formats">
+                                <h5><i class="bi bi-file-earmark"></i> Форматы экспорта</h5>
+                                <div class="format-options">
+                                    <label class="format-option">
+                                        <input type="checkbox" checked> PDF
+                                    </label>
+                                    <label class="format-option">
+                                        <input type="checkbox" checked> Excel
+                                    </label>
+                                    <label class="format-option">
+                                        <input type="checkbox"> CSV
+                                    </label>
+                                    <label class="format-option">
+                                        <input type="checkbox"> JSON
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button class="btn-batch-generate">
+                                <i class="bi bi-collection"></i> Сформировать все отчеты
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Theme Management -->
+    <script src="/js/theme.js"></script>
+    
+    <!-- Language Management -->
+    <script src="/js/i18n.js"></script>
+    <script src="/js/i18n-auto.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="/js/accountant.js"></script>
+</body>
+</html>

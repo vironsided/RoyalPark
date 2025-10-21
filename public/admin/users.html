@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoyalPark - Пользователи</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Material Design Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.3.67/css/materialdesignicons.min.css">
+    
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon">
+                        <img src="/images/royal_park_baku_logo.svg" alt="RoyalPark Logo" class="sidebar-logo-image">
+                    </div>
+                    <div class="logo-text">
+                        <h2>RoyalPark</h2>
+                        <p>Admin Panel</p>
+                    </div>
+                </div>
+                <button class="toggle-sidebar" id="toggleSidebar">
+                    <svg width="20" height="20" fill="currentColor">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <div class="nav-section-title" data-i18n="nav_main">ГЛАВНОЕ</div>
+                    <a href="/admin/dashboard.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-dashboard"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_dashboard">Панель управления</span>
+                    </a>
+                    <a href="/admin/analytics.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-stats"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_analytics">Аналитика</span>
+                    </a>
+                    <a href="/admin/reports.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-reports"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_reports">Отчеты</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title" data-i18n="nav_management">УПРАВЛЕНИЕ</div>
+                    <a href="/admin/users.html" class="nav-item active">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-users"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_users">Пользователи</span>
+                        <span class="nav-badge">245</span>
+                    </a>
+                    <a href="/admin/buildings.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-buildings"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_buildings">Здания</span>
+                    </a>
+                    <a href="/admin/apartments.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-apartments"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_apartments">Квартиры</span>
+                    </a>
+                    <a href="/admin/meters.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-meters"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_meters">Счетчики</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title" data-i18n="nav_finance">ФИНАНСЫ</div>
+                    <a href="/admin/payments.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-payments"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_payments">Платежи</span>
+                    </a>
+                    <a href="/admin/invoices.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-bills"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_invoices">Счета</span>
+                        <span class="nav-badge">12</span>
+                    </a>
+                    <a href="/admin/debts.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-debts"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_debts">Задолженности</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title" data-i18n="nav_maintenance">ОБСЛУЖИВАНИЕ</div>
+                    <a href="/admin/repair-requests.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-maintenance"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_repair_requests">Заявки на ремонт</span>
+                        <span class="nav-badge">8</span>
+                    </a>
+                    <a href="/admin/inspections.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-inspections"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_inspections">Проверки</span>
+                    </a>
+                    <a href="/admin/staff.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-staff"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_staff">Персонал</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title" data-i18n="nav_system">СИСТЕМА</div>
+                    <a href="/admin/settings.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-settings"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_settings">Настройки</span>
+                    </a>
+                    <a href="/admin/logs.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-documents"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_logs">Логи</span>
+                    </a>
+                    <a href="/admin/backup.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-database"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_backup">Резервное копирование</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <a href="/login.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="logout">Выход</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <button class="menu-btn" id="menuBtn" style="display: none;">
+                    <svg width="20" height="20" fill="currentColor">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </button>
+                <div class="page-title">
+                    <h1 data-i18n="nav_users">Пользователи</h1>
+                    <div class="page-breadcrumb">
+                        <span class="breadcrumb-item" data-i18n="home">Главная</span>
+                        <span>›</span>
+                        <span class="breadcrumb-item" data-i18n="nav_users">Пользователи</span>
+                    </div>
+                </div>
+
+                <div class="top-bar-actions">
+                    <div class="search-box">
+                        <span class="search-icon">
+                            <svg width="16" height="16" fill="currentColor">
+                                <use href="/images/icons.svg#icon-inspections"></use>
+                            </svg>
+                        </span>
+                        <input type="text" id="searchInput" placeholder="Поиск пользователей..." data-i18n-placeholder="search_users">
+                    </div>
+
+                    <button class="notification-btn">
+                        <svg width="20" height="20" fill="currentColor">
+                            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                        </svg>
+                        <span class="notification-badge">3</span>
+                    </button>
+
+                    <div class="user-profile">
+                        <div class="user-avatar">АД</div>
+                        <div class="user-info">
+                            <div class="user-name" data-i18n="role_admin">Администратор</div>
+                            <div class="user-role" data-i18n="system_admin">Системный админ</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Content -->
+            <div class="dashboard-content">
+                <!-- Stats Cards -->
+                <div class="stats-grid mb-4">
+                    <div class="stat-card solid-blue">
+                        <div class="stat-icon blue">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value" id="totalUsers">245</div>
+                            <div class="stat-label" data-i18n="total_users">Всего пользователей</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-green">
+                        <div class="stat-icon green">
+                            <i class="bi bi-person-check-fill"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value" id="activeUsers">238</div>
+                            <div class="stat-label" data-i18n="active_users">Активные</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-orange">
+                        <div class="stat-icon orange">
+                            <i class="bi bi-person-x-fill"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value" id="inactiveUsers">7</div>
+                            <div class="stat-label" data-i18n="inactive_users">Неактивные</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-red">
+                        <div class="stat-icon red">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value" id="usersWithDebt">4</div>
+                            <div class="stat-label" data-i18n="users_with_debt">С задолженностью</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters and Actions -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex gap-2">
+                                <select class="form-select" id="statusFilter" style="width: auto;">
+                                    <option value="all" data-i18n="all_statuses">Все статусы</option>
+                                    <option value="active" data-i18n="status_active">Активные</option>
+                                    <option value="inactive" data-i18n="status_inactive">Неактивные</option>
+                                </select>
+                                <select class="form-select" id="debtFilter" style="width: auto;">
+                                    <option value="all" data-i18n="all_debts">Все</option>
+                                    <option value="with_debt" data-i18n="with_debt">С задолженностью</option>
+                                    <option value="no_debt" data-i18n="without_debt">Без задолженности</option>
+                                </select>
+                                <select class="form-select" id="buildingFilter" style="width: auto;">
+                                    <option value="all" data-i18n="all_buildings">Все здания</option>
+                                    <option value="Блок A">Блок A</option>
+                                    <option value="Блок B">Блок B</option>
+                                    <option value="Блок C">Блок C</option>
+                                </select>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary" onclick="addNewUser()">
+                                    <i class="bi bi-person-plus"></i> <span data-i18n="add_user">Добавить пользователя</span>
+                                </button>
+                                <button class="btn btn-outline-primary" onclick="exportUsers()">
+                                    <i class="bi bi-download"></i> <span data-i18n="export">Экспорт</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="usersTable">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="table_id">ID</th>
+                                        <th data-i18n="table_name">Имя</th>
+                                        <th data-i18n="table_phone">Телефон</th>
+                                        <th data-i18n="table_apartment">Квартира</th>
+                                        <th data-i18n="table_building">Здание</th>
+                                        <th data-i18n="table_status">Статус</th>
+                                        <th data-i18n="table_debt">Задолженность</th>
+                                        <th data-i18n="table_actions">Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- User Details Modal -->
+    <div class="modal fade" id="userModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userModalTitle" data-i18n="user_details">Детали пользователя</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="userModalBody">
+                    <!-- Populated by JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="close">Закрыть</button>
+                    <button type="button" class="btn btn-primary" onclick="saveUserChanges()" data-i18n="save">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Test Data -->
+    <script src="/js/test-data.js"></script>
+    
+    <!-- Theme Management -->
+    <script src="/js/theme.js"></script>
+    
+    <!-- Language Management -->
+    <script src="/js/i18n.js"></script>
+    <script src="/js/i18n-auto.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="/js/admin.js"></script>
+    <script src="/js/admin-users.js"></script>
+</body>
+</html>
+
+

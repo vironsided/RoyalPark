@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoyalPark - Панель администратора</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Material Design Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.3.67/css/materialdesignicons.min.css">
+    
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon">
+                        <img src="/images/royal_park_baku_logo.svg" alt="RoyalPark Logo" class="sidebar-logo-image">
+                    </div>
+                    <div class="logo-text">
+                        <h2>RoyalPark</h2>
+                        <p>Admin Panel</p>
+                    </div>
+                </div>
+                <button class="toggle-sidebar" id="toggleSidebar">
+                    <svg width="20" height="20" fill="currentColor">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <div class="nav-section-title">Главное</div>
+                    <a href="/admin/dashboard.html" class="nav-item active">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-dashboard"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Панель управления</span>
+                    </a>
+                    <a href="/admin/analytics.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-analytics"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Аналитика</span>
+                    </a>
+                    <a href="/admin/reports.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-reports"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Отчеты</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Управление</div>
+                    <a href="/admin/users.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-users"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Пользователи</span>
+                        <span class="nav-badge">245</span>
+                    </a>
+                    <a href="/admin/buildings.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-buildings"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Здания</span>
+                    </a>
+                    <a href="/admin/apartments.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-apartments"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Квартиры</span>
+                    </a>
+                    <a href="/admin/meters.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-meters"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Счетчики</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Финансы</div>
+                    <a href="/admin/payments.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-payments"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Платежи</span>
+                    </a>
+                    <a href="/admin/invoices.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-bills"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Счета</span>
+                        <span class="nav-badge">12</span>
+                    </a>
+                    <a href="/admin/debts.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-debts"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Задолженности</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Обслуживание</div>
+                    <a href="/admin/repair-requests.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-maintenance"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Заявки на ремонт</span>
+                        <span class="nav-badge">8</span>
+                    </a>
+                    <a href="/admin/inspections.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-inspections"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Проверки</span>
+                    </a>
+                    <a href="/admin/staff.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-personnel"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Персонал</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Система</div>
+                    <a href="/admin/settings.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-settings"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Настройки</span>
+                    </a>
+                    <a href="/admin/logs.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-reports"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Логи</span>
+                    </a>
+                    <a href="/admin/backup.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-reports"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Резервное копирование</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>Панель управления</h1>
+                    <div class="page-breadcrumb">
+                        <span class="breadcrumb-item">
+                            <svg width="14" height="14" fill="currentColor" style="margin-right: 0.25rem; vertical-align: middle;">
+                                <use href="/images/icons.svg#icon-apartments"></use>
+                            </svg>
+                            Главная
+                        </span>
+                        <span>›</span>
+                        <span class="breadcrumb-item">Панель управления</span>
+                    </div>
+                </div>
+
+                <div class="top-bar-actions">
+                    <div class="search-box">
+                        <span class="search-icon">
+                            <svg width="16" height="16" fill="currentColor">
+                                <use href="/images/icons.svg#icon-inspections"></use>
+                            </svg>
+                        </span>
+                        <input type="text" placeholder="Поиск...">
+                    </div>
+
+                    <button class="notification-btn">
+                        <svg width="20" height="20" fill="currentColor">
+                            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                        </svg>
+                        <span class="notification-badge">3</span>
+                    </button>
+
+                    <div class="user-profile">
+                        <div class="user-avatar">АД</div>
+                        <div class="user-info">
+                            <div class="user-name">Администратор</div>
+                            <div class="user-role">Системный администратор</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card solid-blue">
+                        <div class="stat-icon blue">
+                            <svg width="40" height="40" fill="white">
+                                <use href="/images/icons.svg#icon-users"></use>
+                            </svg>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">1,245</div>
+                            <div class="stat-label">Всего пользователей</div>
+                            <div class="stat-change positive">↑ 12% за месяц</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-green">
+                        <div class="stat-icon green">
+                            <svg width="40" height="40" fill="white">
+                                <use href="/images/icons.svg#icon-buildings"></use>
+                            </svg>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">48</div>
+                            <div class="stat-label">Зданий</div>
+                            <div class="stat-change positive">↑ 2 новых</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-orange">
+                        <div class="stat-icon orange">
+                            <svg width="40" height="40" fill="white">
+                                <use href="/images/icons.svg#icon-payments"></use>
+                            </svg>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">₼2.4M</div>
+                            <div class="stat-label">Платежи за месяц</div>
+                            <div class="stat-change positive">↑ 8% за месяц</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-red">
+                        <div class="stat-icon purple">
+                            <svg width="40" height="40" fill="white">
+                                <use href="/images/icons.svg#icon-maintenance"></use>
+                            </svg>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">23</div>
+                            <div class="stat-label">Активные заявки</div>
+                            <div class="stat-change negative">↓ 15% за неделю</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Grid -->
+                <div class="content-grid">
+                    <!-- Chart -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Статистика платежей</h3>
+                            <div class="chart-controls">
+                                <button class="chart-btn active">Неделя</button>
+                                <button class="chart-btn">Месяц</button>
+                                <button class="chart-btn">Год</button>
+                            </div>
+                        </div>
+                        <div class="chart-placeholder">
+                            <svg width="48" height="48" fill="currentColor" style="margin-bottom: 1rem;">
+                                <use href="/images/icons.svg#icon-analytics"></use>
+                            </svg>
+                            График будет здесь (Chart.js / D3.js)
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="activity-card">
+                        <h3 class="chart-title">Последняя активность</h3>
+                        
+                        <div class="activity-item">
+                            <div class="activity-icon success">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                </svg>
+                            </div>
+                            <div class="activity-details">
+                                <div class="activity-title">Новый платеж получен</div>
+                                <div class="activity-time">Квартира #205 - 5 минут назад</div>
+                            </div>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon warning">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                                </svg>
+                            </div>
+                            <div class="activity-details">
+                                <div class="activity-title">Новая заявка на ремонт</div>
+                                <div class="activity-time">Здание A - 15 минут назад</div>
+                            </div>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon info">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                                </svg>
+                            </div>
+                            <div class="activity-details">
+                                <div class="activity-title">Показания счетчика</div>
+                                <div class="activity-time">Квартира #301 - 1 час назад</div>
+                            </div>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon success">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                </svg>
+                            </div>
+                            <div class="activity-details">
+                                <div class="activity-title">Проверка завершена</div>
+                                <div class="activity-time">Здание B - 2 часа назад</div>
+                            </div>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon info">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <use href="/images/icons.svg#icon-users"></use>
+                                </svg>
+                            </div>
+                            <div class="activity-details">
+                                <div class="activity-title">Новый пользователь</div>
+                                <div class="activity-time">Квартира #410 - 3 часа назад</div>
+                            </div>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon warning">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <use href="/images/icons.svg#icon-debts"></use>
+                                </svg>
+                            </div>
+                            <div class="activity-details">
+                                <div class="activity-title">Напоминание о задолженности</div>
+                                <div class="activity-time">5 квартир - 4 часа назад</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tables Section -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3>Последние платежи</h3>
+                    </div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Пользователь</th>
+                                <th>Квартира</th>
+                                <th>Сумма</th>
+                                <th>Дата</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#1234</td>
+                                <td>Иванов И.И.</td>
+                                <td>A-205</td>
+                                <td>₼5,200</td>
+                                <td>15.10.2024</td>
+                                <td><span class="badge badge-success">Оплачено</span></td>
+                            </tr>
+                            <tr>
+                                <td>#1233</td>
+                                <td>Петров П.П.</td>
+                                <td>B-301</td>
+                                <td>₼4,800</td>
+                                <td>15.10.2024</td>
+                                <td><span class="badge badge-success">Оплачено</span></td>
+                            </tr>
+                            <tr>
+                                <td>#1232</td>
+                                <td>Сидоров С.С.</td>
+                                <td>A-102</td>
+                                <td>₼6,100</td>
+                                <td>14.10.2024</td>
+                                <td><span class="badge badge-warning">В обработке</span></td>
+                            </tr>
+                            <tr>
+                                <td>#1231</td>
+                                <td>Козлов К.К.</td>
+                                <td>C-405</td>
+                                <td>₼5,500</td>
+                                <td>14.10.2024</td>
+                                <td><span class="badge badge-success">Оплачено</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Theme Management -->
+    <script src="/js/theme.js"></script>
+    
+    <!-- Language Management -->
+    <script src="/js/i18n.js"></script>
+    <script src="/js/i18n-auto.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="/js/admin.js"></script>
+</body>
+</html>
+
