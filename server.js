@@ -23,8 +23,21 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
+// Admin Panel - SPA Routing
+// Все маршруты /admin/* перенаправляются на index.html для клиентской маршрутизации
 app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin', 'dashboard.html'));
+    res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
+});
+
+app.get('/admin/*', (req, res) => {
+    // Проверяем, не запрашивается ли файл контента напрямую
+    if (req.path.includes('/admin/content/')) {
+        // Позволяем запросы к файлам контента для AJAX загрузки
+        res.sendFile(path.join(__dirname, 'public', req.path));
+    } else {
+        // Все остальные маршруты перенаправляем на index.html для SPA
+        res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
+    }
 });
 
 app.get('/user', (req, res) => {

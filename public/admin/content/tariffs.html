@@ -1,0 +1,660 @@
+<style>
+        .content-wrapper {
+            padding: 0 32px 32px 32px;
+        }
+        
+        .filters-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .filters-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.9rem;
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+        
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .filters-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .tariff-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        .tariff-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .tariff-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .tariff-type {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+        .entity-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .entity-legal {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .entity-individual {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        .tariff-table {
+            width: 100%;
+            margin-top: 15px;
+        }
+        .tariff-table td {
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .tariff-table td:first-child {
+            font-weight: 600;
+            color: #666;
+        }
+        .tariff-table td:last-child {
+            text-align: right;
+            font-weight: 700;
+            color: #667eea;
+        }
+        .block-tariffs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 750px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.75rem;
+            color: #333;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s;
+        }
+        
+        .modal-close:hover {
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .tariff-steps {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        
+        .tariff-steps h4 {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .step-row {
+            display: grid;
+            grid-template-columns: 0.8fr 0.8fr 0.8fr 1fr auto;
+            gap: 8px;
+            margin-bottom: 15px;
+            align-items: end;
+        }
+        
+        .step-input-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        
+        .step-input-group label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #666;
+            white-space: nowrap;
+        }
+        
+        .step-input-group input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+        
+        .step-row .btn-danger {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+        
+        @media (max-width: 768px) {
+            .step-row {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            
+            .step-row .btn-danger {
+                grid-column: 1 / -1;
+                width: 100%;
+            }
+        }
+    </style>
+
+<div class="content-wrapper">
+                <h2 class="mb-4">Тарифы по блокам</h2>
+                
+                <!-- Filters -->
+                <div class="filters-container">
+                    <div class="filters-row">
+                        <div class="filter-group">
+                            <label>Назначение</label>
+                            <select id="filterPurpose">
+                                <option value="all">Все</option>
+                                <option value="electricity">Электричество</option>
+                                <option value="gas">Газ</option>
+                                <option value="water">Вода</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Тип клиента</label>
+                            <select id="filterClientType">
+                                <option value="all">Все</option>
+                                <option value="individual">Индивидуальное</option>
+                                <option value="legal">Юр лицо</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Поиск</label>
+                            <input type="text" id="filterSearch" placeholder="Название тарифа">
+                        </div>
+                    </div>
+                    
+                    <div class="filters-actions">
+                        <button class="btn btn-outline-secondary" onclick="applyFilters()">
+                            <i class="bi bi-funnel"></i> Фильтр
+                        </button>
+                        <button class="btn btn-outline-warning" onclick="clearFilters()">
+                            <i class="bi bi-x-circle"></i> Очистить
+                        </button>
+                        <button class="btn btn-primary" onclick="openCreateModal()">
+                            <i class="bi bi-plus-lg"></i> Создать
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Tariffs List -->
+                <div id="tariffsContainer">
+                    <!-- Блок A -->
+                <h3 class="mt-4">Блок A</h3>
+                <div class="block-tariffs">
+                    <div class="tariff-card">
+                        <div class="tariff-header">
+                            <div class="tariff-type">Юридические лица</div>
+                            <span class="entity-badge entity-legal">Юр. лицо</span>
+                        </div>
+                        <table class="tariff-table">
+                            <tr><td>Электричество</td><td>₼0.12 / кВт·ч</td></tr>
+                            <tr><td>Холодная вода</td><td>₼2.50 / м³</td></tr>
+                            <tr><td>Горячая вода</td><td>₼4.80 / м³</td></tr>
+                            <tr><td>Газ</td><td>₼0.25 / м³</td></tr>
+                            <tr><td>Интернет</td><td>₼45 / мес</td></tr>
+                        </table>
+                    </div>
+                    
+                    <div class="tariff-card">
+                        <div class="tariff-header">
+                            <div class="tariff-type">Физические лица</div>
+                            <span class="entity-badge entity-individual">Физ. лицо</span>
+                        </div>
+                        <table class="tariff-table">
+                            <tr><td>Электричество</td><td>₼0.08 / кВт·ч</td></tr>
+                            <tr><td>Холодная вода</td><td>₼1.80 / м³</td></tr>
+                            <tr><td>Горячая вода</td><td>₼3.50 / м³</td></tr>
+                            <tr><td>Газ</td><td>₼0.18 / м³</td></tr>
+                            <tr><td>Интернет</td><td>₼35 / мес</td></tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Блок B -->
+                <h3 class="mt-4">Блок B</h3>
+                <div class="block-tariffs">
+                    <div class="tariff-card">
+                        <div class="tariff-header">
+                            <div class="tariff-type">Юридические лица</div>
+                            <span class="entity-badge entity-legal">Юр. лицо</span>
+                        </div>
+                        <table class="tariff-table">
+                            <tr><td>Электричество</td><td>₼0.12 / кВт·ч</td></tr>
+                            <tr><td>Холодная вода</td><td>₼2.50 / м³</td></tr>
+                            <tr><td>Горячая вода</td><td>₼4.80 / м³</td></tr>
+                            <tr><td>Газ</td><td>₼0.25 / м³</td></tr>
+                        </table>
+                    </div>
+                    
+                    <div class="tariff-card">
+                        <div class="tariff-header">
+                            <div class="tariff-type">Физические лица</div>
+                            <span class="entity-badge entity-individual">Физ. лицо</span>
+                        </div>
+                        <table class="tariff-table">
+                            <tr><td>Электричество</td><td>₼0.08 / кВт·ч</td></tr>
+                            <tr><td>Холодная вода</td><td>₼1.80 / м³</td></tr>
+                            <tr><td>Горячая вода</td><td>₼3.50 / м³</td></tr>
+                            <tr><td>Газ</td><td>₼0.18 / м³</td></tr>
+                        </table>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Tariff Modal -->
+    <div class="modal-overlay" id="createTariffModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Создать тариф</h2>
+                <button class="modal-close" onclick="closeCreateModal()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            
+            <form id="createTariffForm" onsubmit="createTariff(event)">
+                <div class="form-group">
+                    <label>Название тарифа</label>
+                    <input type="text" id="tariffName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Для чего</label>
+                    <select id="tariffPurpose" required>
+                        <option value="electricity">Электричество</option>
+                        <option value="gas">Газ</option>
+                        <option value="water">Вода</option>
+                        <option value="internet">Интернет</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Тип тарифа</label>
+                    <select id="tariffType" required>
+                        <option value="individual">Индивидуальный</option>
+                        <option value="legal">Юридическое лицо</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>НДС, %</label>
+                    <input type="number" id="tariffVAT" value="0" min="0" max="100">
+                </div>
+                
+                <div class="tariff-steps">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>Ступени</h4>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="addTariffStep()">
+                            <i class="bi bi-plus-lg"></i> Добавить ступень
+                        </button>
+                    </div>
+                    
+                    <div id="tariffStepsContainer">
+                        <div class="step-row">
+                            <div class="step-input-group">
+                                <label>ОТ (вкл.)</label>
+                                <input type="number" value="0" min="0" step="0.01">
+                            </div>
+                            <div class="step-input-group">
+                                <label>ДО (искл.)</label>
+                                <input type="text" value="∞">
+                            </div>
+                            <div class="step-input-group">
+                                <label>Ед. изм.</label>
+                                <input type="text" value="кВт-ч">
+                            </div>
+                            <div class="step-input-group">
+                                <label>Цена</label>
+                                <input type="number" step="0.01" min="0" required>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
+                                <i class="bi bi-trash"></i> Удалить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">
+                        Отмена
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Создать
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<script>
+// Filter Functions
+        function applyFilters() {
+            const purpose = document.getElementById('filterPurpose').value;
+            const clientType = document.getElementById('filterClientType').value;
+            const searchTerm = document.getElementById('filterSearch').value.toLowerCase();
+            
+            console.log('Applying filters:', { purpose, clientType, searchTerm });
+            
+            // Get all tariff cards
+            const tariffCards = document.querySelectorAll('.tariff-card');
+            
+            tariffCards.forEach(card => {
+                let shouldShow = true;
+                
+                // Filter by client type
+                if (clientType !== 'all') {
+                    const isLegal = card.querySelector('.entity-legal') !== null;
+                    const isIndividual = card.querySelector('.entity-individual') !== null;
+                    
+                    if (clientType === 'legal' && !isLegal) shouldShow = false;
+                    if (clientType === 'individual' && !isIndividual) shouldShow = false;
+                }
+                
+                // Filter by purpose (service type)
+                if (purpose !== 'all' && shouldShow) {
+                    const tableRows = card.querySelectorAll('.tariff-table tr');
+                    let hasService = false;
+                    
+                    tableRows.forEach(row => {
+                        const serviceName = row.querySelector('td:first-child')?.textContent.toLowerCase();
+                        if (serviceName) {
+                            if (purpose === 'electricity' && serviceName.includes('электричество')) hasService = true;
+                            if (purpose === 'gas' && serviceName.includes('газ')) hasService = true;
+                            if (purpose === 'water' && (serviceName.includes('вода'))) hasService = true;
+                        }
+                    });
+                    
+                    if (!hasService) shouldShow = false;
+                }
+                
+                // Filter by search term
+                if (searchTerm && shouldShow) {
+                    const cardText = card.textContent.toLowerCase();
+                    if (!cardText.includes(searchTerm)) shouldShow = false;
+                }
+                
+                // Show/hide card
+                card.style.display = shouldShow ? 'block' : 'none';
+            });
+            
+            // Show notification
+            showSuccess('Фильтры применены!');
+        }
+        
+        function clearFilters() {
+            document.getElementById('filterPurpose').value = 'all';
+            document.getElementById('filterClientType').value = 'all';
+            document.getElementById('filterSearch').value = '';
+            
+            // Show all cards
+            const tariffCards = document.querySelectorAll('.tariff-card');
+            tariffCards.forEach(card => {
+                card.style.display = 'block';
+            });
+            
+            showSuccess('Фильтры очищены!');
+        }
+        
+        // Modal Functions
+        function openCreateModal() {
+            document.getElementById('createTariffModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeCreateModal() {
+            document.getElementById('createTariffModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            document.getElementById('createTariffForm').reset();
+        }
+        
+        // Close modal on overlay click
+        document.getElementById('createTariffModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCreateModal();
+            }
+        });
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeCreateModal();
+            }
+        });
+        
+        // Tariff Step Functions
+        function addTariffStep() {
+            const container = document.getElementById('tariffStepsContainer');
+            const newStep = document.createElement('div');
+            newStep.className = 'step-row';
+            newStep.innerHTML = `
+                <div class="step-input-group">
+                    <label>ОТ (вкл.)</label>
+                    <input type="number" value="0" min="0" step="0.01">
+                </div>
+                <div class="step-input-group">
+                    <label>ДО (искл.)</label>
+                    <input type="text" value="∞">
+                </div>
+                <div class="step-input-group">
+                    <label>Ед. изм.</label>
+                    <input type="text" value="кВт-ч">
+                </div>
+                <div class="step-input-group">
+                    <label>Цена</label>
+                    <input type="number" step="0.01" min="0" required>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
+                    <i class="bi bi-trash"></i> Удалить
+                </button>
+            `;
+            container.appendChild(newStep);
+        }
+        
+        function removeStep(button) {
+            const stepsContainer = document.getElementById('tariffStepsContainer');
+            const steps = stepsContainer.querySelectorAll('.step-row');
+            
+            if (steps.length > 1) {
+                button.closest('.step-row').remove();
+            } else {
+                showWarning('Должна быть хотя бы одна ступень!');
+            }
+        }
+        
+        // Create Tariff Function
+        function createTariff(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('tariffName').value;
+            const purpose = document.getElementById('tariffPurpose').value;
+            const type = document.getElementById('tariffType').value;
+            const vat = document.getElementById('tariffVAT').value;
+            
+            // Collect steps data
+            const steps = [];
+            const stepRows = document.querySelectorAll('#tariffStepsContainer .step-row');
+            stepRows.forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                steps.push({
+                    from: inputs[0].value,
+                    to: inputs[1].value,
+                    unit: inputs[2].value,
+                    price: inputs[3].value
+                });
+            });
+            
+            const tariffData = {
+                name,
+                purpose,
+                type,
+                vat,
+                steps
+            };
+            
+            console.log('Creating tariff:', tariffData);
+            
+            // TODO: Send to backend API
+            // fetch('/api/tariffs', {
+            //     method: 'POST',
+            //     headers: {'Content-Type': 'application/json'},
+            //     body: JSON.stringify(tariffData)
+            // }).then(response => {
+            //     if (response.ok) {
+            //         closeCreateModal();
+            //         // Reload tariffs list
+            //     }
+            // });
+            
+            showSuccess(`Тариф "${name}" успешно создан!`);
+            closeCreateModal();
+        }
+</script>

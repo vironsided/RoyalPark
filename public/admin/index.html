@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoyalPark - Панель администратора</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Material Design Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.3.67/css/materialdesignicons.min.css">
+    
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon">
+                        <img src="/images/royal_park_baku_logo.svg" alt="RoyalPark Logo" class="sidebar-logo-image">
+                    </div>
+                    <div class="logo-text">
+                        <h2>RoyalPark</h2>
+                        <p>Admin Panel</p>
+                    </div>
+                </div>
+                <button class="toggle-sidebar" id="toggleSidebar">
+                    <svg width="20" height="20" fill="currentColor">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <div class="nav-section-title">Главное</div>
+                    <a href="/dashboard" class="nav-item" data-route="/dashboard">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-dashboard"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Панель управления</span>
+                    </a>
+                    <a href="/analytics" class="nav-item" data-route="/analytics">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-analytics"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Аналитика</span>
+                    </a>
+                    <a href="/reports" class="nav-item" data-route="/reports">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-reports"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Отчеты</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Управление</div>
+                    <a href="/blocks" class="nav-item" data-route="/blocks">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-buildings"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_blocks">Блоки</span>
+                    </a>
+                    <a href="/tariffs" class="nav-item" data-route="/tariffs">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-payments"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_tariffs">Тарифы</span>
+                    </a>
+                    <a href="/residents" class="nav-item" data-route="/residents">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-users"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_residents">Резиденты</span>
+                        <span class="nav-badge">245</span>
+                    </a>
+                    <a href="/tenants" class="nav-item" data-route="/tenants">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-apartments"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_tenants">Жители</span>
+                    </a>
+                    <a href="/readings" class="nav-item" data-route="/readings">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-meters"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_readings">Показатели</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Финансы</div>
+                    <a href="/payments" class="nav-item" data-route="/payments">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-payments"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Платежи</span>
+                    </a>
+                    <a href="/invoices" class="nav-item" data-route="/invoices">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-bills"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Счета</span>
+                        <span class="nav-badge">12</span>
+                    </a>
+                    <a href="/debts" class="nav-item" data-route="/debts">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-debts"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Задолженности</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Обслуживание</div>
+                    <a href="/repair-requests" class="nav-item" data-route="/repair-requests">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-maintenance"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Заявки на ремонт</span>
+                        <span class="nav-badge">8</span>
+                    </a>
+                    <a href="/inspections" class="nav-item" data-route="/inspections">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-inspections"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Проверки</span>
+                    </a>
+                    <a href="/staff" class="nav-item" data-route="/staff">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-personnel"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Персонал</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Система</div>
+                    <a href="/settings" class="nav-item" data-route="/settings">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-settings"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Настройки</span>
+                    </a>
+                    <a href="/logs" class="nav-item" data-route="/logs">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-reports"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Логи</span>
+                    </a>
+                    <a href="/backup" class="nav-item" data-route="/backup">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-reports"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Резервное копирование</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="page-title" id="page-title-container">
+                    <h1>Панель управления</h1>
+                    <div class="page-breadcrumb">
+                        <span class="breadcrumb-item">
+                            <svg width="14" height="14" fill="currentColor" style="margin-right: 0.25rem; vertical-align: middle;">
+                                <use href="/images/icons.svg#icon-apartments"></use>
+                            </svg>
+                            Главная
+                        </span>
+                        <span>›</span>
+                        <span class="breadcrumb-item">Панель управления</span>
+                    </div>
+                </div>
+
+                <div class="top-bar-actions">
+                    <div class="search-box">
+                        <span class="search-icon">
+                            <svg width="16" height="16" fill="currentColor">
+                                <use href="/images/icons.svg#icon-inspections"></use>
+                            </svg>
+                        </span>
+                        <input type="text" placeholder="Поиск...">
+                    </div>
+
+                    <button class="notification-btn">
+                        <svg width="20" height="20" fill="currentColor">
+                            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                        </svg>
+                        <span class="notification-badge">3</span>
+                    </button>
+
+                    <!-- Theme Toggle -->
+                    <button class="theme-toggle" id="themeToggle" title="Переключить тему">
+                        <svg width="20" height="20" fill="currentColor" class="theme-icon-light">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                        <svg width="20" height="20" fill="currentColor" class="theme-icon-dark" style="display: none;">
+                            <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </button>
+
+                    <!-- Language Selector -->
+                    <div class="language-selector">
+                        <button class="lang-btn active" data-lang="ru" title="Русский">RU</button>
+                        <button class="lang-btn" data-lang="az" title="Azərbaycan">AZ</button>
+                        <button class="lang-btn" data-lang="en" title="English">EN</button>
+                    </div>
+
+                    <div class="user-profile">
+                        <div class="user-avatar">АД</div>
+                        <div class="user-info">
+                            <div class="user-name">Администратор</div>
+                            <div class="user-role">Системный администратор</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPA Content Container -->
+            <div id="spa-content">
+                <!-- Контент будет загружаться сюда динамически -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Notifications System -->
+    <script src="/js/notifications.js"></script>
+    
+    <!-- Theme Management -->
+    <script src="/js/theme.js"></script>
+    
+    <!-- Language Management -->
+    <script src="/js/i18n.js"></script>
+    <script src="/js/i18n-auto.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="/js/admin.js"></script>
+    
+    <!-- SPA Router -->
+    <script src="/js/spa-router.js"></script>
+    
+    <!-- Initialize Theme Toggle and Language Selector -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme Toggle Button
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function() {
+                    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    
+                    // Change theme
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+                    
+                    // Update icons
+                    const lightIcon = this.querySelector('.theme-icon-light');
+                    const darkIcon = this.querySelector('.theme-icon-dark');
+                    
+                    if (newTheme === 'dark') {
+                        lightIcon.style.display = 'none';
+                        darkIcon.style.display = 'block';
+                    } else {
+                        lightIcon.style.display = 'block';
+                        darkIcon.style.display = 'none';
+                    }
+                    
+                    // Show notification
+                    if (window.showSuccess) {
+                        showSuccess(newTheme === 'dark' ? '🌙 Тёмная тема активирована' : '☀️ Светлая тема активирована');
+                    }
+                });
+                
+                // Initialize theme on load
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                
+                const lightIcon = themeToggle.querySelector('.theme-icon-light');
+                const darkIcon = themeToggle.querySelector('.theme-icon-dark');
+                
+                if (savedTheme === 'dark') {
+                    lightIcon.style.display = 'none';
+                    darkIcon.style.display = 'block';
+                } else {
+                    lightIcon.style.display = 'block';
+                    darkIcon.style.display = 'none';
+                }
+            }
+            
+            // Language Selector Buttons
+            const langButtons = document.querySelectorAll('.lang-btn');
+            langButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const lang = this.getAttribute('data-lang');
+                    
+                    // Remove active from all buttons
+                    langButtons.forEach(b => b.classList.remove('active'));
+                    
+                    // Add active to clicked button
+                    this.classList.add('active');
+                    
+                    // Apply language if i18n is available
+                    if (window.i18n) {
+                        window.i18n.applyLanguage(lang);
+                        localStorage.setItem('language', lang);
+                        
+                        // Show notification
+                        if (window.showSuccess) {
+                            const langNames = { ru: '🇷🇺 Русский', az: '🇦🇿 Azərbaycan', en: '🇬🇧 English' };
+                            showSuccess(`${langNames[lang] || lang} язык активирован`);
+                        }
+                    }
+                });
+            });
+            
+            // Initialize language on load
+            const savedLang = localStorage.getItem('language') || 'ru';
+            const activeLangBtn = document.querySelector(`.lang-btn[data-lang="${savedLang}"]`);
+            if (activeLangBtn) {
+                langButtons.forEach(b => b.classList.remove('active'));
+                activeLangBtn.classList.add('active');
+            }
+            
+            // Apply saved language
+            if (window.i18n) {
+                window.i18n.applyLanguage(savedLang);
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+
+

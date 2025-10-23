@@ -1,0 +1,369 @@
+<!-- Dashboard Content -->
+<div class="dashboard-content">
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card solid-blue">
+            <div class="stat-icon blue">
+                <svg width="40" height="40" fill="white">
+                    <use href="/images/icons.svg#icon-users"></use>
+                </svg>
+            </div>
+            <div class="stat-details">
+                <div class="stat-value">1,245</div>
+                <div class="stat-label">Всего пользователей</div>
+                <div class="stat-change positive">↑ 12% за месяц</div>
+            </div>
+        </div>
+
+        <div class="stat-card solid-green">
+            <div class="stat-icon green">
+                <svg width="40" height="40" fill="white">
+                    <use href="/images/icons.svg#icon-buildings"></use>
+                </svg>
+            </div>
+            <div class="stat-details">
+                <div class="stat-value">48</div>
+                <div class="stat-label">Зданий</div>
+                <div class="stat-change positive">↑ 2 новых</div>
+            </div>
+        </div>
+
+        <div class="stat-card solid-orange">
+            <div class="stat-icon orange">
+                <svg width="40" height="40" fill="white">
+                    <use href="/images/icons.svg#icon-payments"></use>
+                </svg>
+            </div>
+            <div class="stat-details">
+                <div class="stat-value">₼2.4M</div>
+                <div class="stat-label">Платежи за месяц</div>
+                <div class="stat-change positive">↑ 8% за месяц</div>
+            </div>
+        </div>
+
+        <div class="stat-card solid-red">
+            <div class="stat-icon purple">
+                <svg width="40" height="40" fill="white">
+                    <use href="/images/icons.svg#icon-maintenance"></use>
+                </svg>
+            </div>
+            <div class="stat-details">
+                <div class="stat-value">23</div>
+                <div class="stat-label">Активные заявки</div>
+                <div class="stat-change negative">↓ 15% за неделю</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="content-grid">
+        <!-- Chart -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3 class="chart-title">Статистика платежей</h3>
+                <div class="chart-controls">
+                    <button class="chart-btn active">Неделя</button>
+                    <button class="chart-btn">Месяц</button>
+                    <button class="chart-btn">Год</button>
+                </div>
+            </div>
+            <div class="chart-container" style="position: relative; height: 350px; padding: 20px;">
+                <canvas id="paymentChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="activity-card">
+            <h3 class="chart-title">Последняя активность</h3>
+            
+            <div class="activity-item">
+                <div class="activity-icon success">
+                    <svg width="20" height="20" fill="currentColor">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                </div>
+                <div class="activity-details">
+                    <div class="activity-title">Новый платеж получен</div>
+                    <div class="activity-time">Квартира #205 - 5 минут назад</div>
+                </div>
+            </div>
+
+            <div class="activity-item">
+                <div class="activity-icon warning">
+                    <svg width="20" height="20" fill="currentColor">
+                        <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                    </svg>
+                </div>
+                <div class="activity-details">
+                    <div class="activity-title">Новая заявка на ремонт</div>
+                    <div class="activity-time">Здание A - 15 минут назад</div>
+                </div>
+            </div>
+
+            <div class="activity-item">
+                <div class="activity-icon info">
+                    <svg width="20" height="20" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                    </svg>
+                </div>
+                <div class="activity-details">
+                    <div class="activity-title">Показания счетчика</div>
+                    <div class="activity-time">Квартира #301 - 1 час назад</div>
+                </div>
+            </div>
+
+            <div class="activity-item">
+                <div class="activity-icon success">
+                    <svg width="20" height="20" fill="currentColor">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                </div>
+                <div class="activity-details">
+                    <div class="activity-title">Проверка завершена</div>
+                    <div class="activity-time">Здание B - 2 часа назад</div>
+                </div>
+            </div>
+
+            <div class="activity-item">
+                <div class="activity-icon info">
+                    <svg width="20" height="20" fill="currentColor">
+                        <use href="/images/icons.svg#icon-users"></use>
+                    </svg>
+                </div>
+                <div class="activity-details">
+                    <div class="activity-title">Новый пользователь</div>
+                    <div class="activity-time">Квартира #410 - 3 часа назад</div>
+                </div>
+            </div>
+
+            <div class="activity-item">
+                <div class="activity-icon warning">
+                    <svg width="20" height="20" fill="currentColor">
+                        <use href="/images/icons.svg#icon-debts"></use>
+                    </svg>
+                </div>
+                <div class="activity-details">
+                    <div class="activity-title">Напоминание о задолженности</div>
+                    <div class="activity-time">5 квартир - 4 часа назад</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables Section -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h3>Последние платежи</h3>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Пользователь</th>
+                    <th>Квартира</th>
+                    <th>Сумма</th>
+                    <th>Дата</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>#1234</td>
+                    <td>Иванов И.И.</td>
+                    <td>A-205</td>
+                    <td>₼5,200</td>
+                    <td>15.10.2024</td>
+                    <td><span class="badge badge-success">Оплачено</span></td>
+                </tr>
+                <tr>
+                    <td>#1233</td>
+                    <td>Петров П.П.</td>
+                    <td>B-301</td>
+                    <td>₼4,800</td>
+                    <td>15.10.2024</td>
+                    <td><span class="badge badge-success">Оплачено</span></td>
+                </tr>
+                <tr>
+                    <td>#1232</td>
+                    <td>Сидоров С.С.</td>
+                    <td>A-102</td>
+                    <td>₼6,100</td>
+                    <td>14.10.2024</td>
+                    <td><span class="badge badge-warning">В обработке</span></td>
+                </tr>
+                <tr>
+                    <td>#1231</td>
+                    <td>Козлов К.К.</td>
+                    <td>C-405</td>
+                    <td>₼5,500</td>
+                    <td>14.10.2024</td>
+                    <td><span class="badge badge-success">Оплачено</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Initialize Payment Statistics Chart
+    document.addEventListener('DOMContentLoaded', initializeChart);
+    
+    // Also initialize when SPA loads content
+    window.addEventListener('spa:contentLoaded', initializeChart);
+    
+    function initializeChart() {
+        const canvas = document.getElementById('paymentChart');
+        if (!canvas) return;
+        
+        // Destroy existing chart if any
+        if (window.paymentChartInstance) {
+            window.paymentChartInstance.destroy();
+        }
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Sample data for the week
+        const weekData = {
+            labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+            datasets: [{
+                label: 'Платежи (₼)',
+                data: [12500, 15300, 18200, 14800, 22100, 19500, 16800],
+                borderColor: 'rgba(102, 126, 234, 1)',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        };
+        
+        const monthData = {
+            labels: ['Нед 1', 'Нед 2', 'Нед 3', 'Нед 4'],
+            datasets: [{
+                label: 'Платежи (₼)',
+                data: [85000, 92000, 78000, 105000],
+                borderColor: 'rgba(102, 126, 234, 1)',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        };
+        
+        const yearData = {
+            labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+            datasets: [{
+                label: 'Платежи (₼)',
+                data: [280000, 320000, 310000, 350000, 380000, 420000, 390000, 410000, 450000, 480000, 470000, 520000],
+                borderColor: 'rgba(102, 126, 234, 1)',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        };
+        
+        let currentData = weekData;
+        
+        // Create chart
+        window.paymentChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: currentData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        cornerRadius: 8,
+                        titleFont: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                return 'Сумма: ₼' + context.parsed.y.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₼' + (value / 1000) + 'K';
+                            },
+                            font: {
+                                size: 12
+                            },
+                            color: '#6c757d'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)',
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: 12
+                            },
+                            color: '#6c757d'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        });
+        
+        // Chart period buttons
+        const chartButtons = document.querySelectorAll('.chart-btn');
+        chartButtons.forEach((btn, index) => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                chartButtons.forEach(b => b.classList.remove('active'));
+                
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // Update chart data based on period
+                if (index === 0) {
+                    currentData = weekData;
+                } else if (index === 1) {
+                    currentData = monthData;
+                } else if (index === 2) {
+                    currentData = yearData;
+                }
+                
+                // Update chart
+                window.paymentChartInstance.data = currentData;
+                window.paymentChartInstance.update('active');
+            });
+        });
+    }
+</script>

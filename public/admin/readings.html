@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Показатели - RoyalPark Admin</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    
+    <style>
+        .content-wrapper {
+            padding: 0 32px 32px 32px;
+        }
+        
+        .filters-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.9rem;
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+        
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .filters-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.75rem;
+            color: #333;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s;
+        }
+        
+        .modal-close:hover {
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.9rem;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+        
+        .readings-table {
+            margin-top: 20px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon">
+                        <img src="/images/royal_park_baku_logo.svg" alt="RoyalPark Logo" class="sidebar-logo-image">
+                    </div>
+                    <div class="logo-text">
+                        <h2>RoyalPark</h2>
+                        <p>Admin Panel</p>
+                    </div>
+                </div>
+                <button class="toggle-sidebar" id="toggleSidebar">
+                    <svg width="20" height="20" fill="currentColor">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <div class="nav-section-title">Управление</div>
+                    <a href="/admin/blocks.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-buildings"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_blocks">Блоки</span>
+                    </a>
+                    <a href="/admin/tariffs.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-payments"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_tariffs">Тарифы</span>
+                    </a>
+                    <a href="/admin/residents.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-users"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_residents">Резиденты</span>
+                    </a>
+                    <a href="/admin/tenants.html" class="nav-item">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-apartments"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_tenants">Жители</span>
+                    </a>
+                    <a href="/admin/readings.html" class="nav-item active">
+                        <span class="nav-icon"><svg width="20" height="20" fill="currentColor"><use href="/images/icons.svg#icon-meters"></use></svg></span>
+                        <span class="nav-text" data-i18n="nav_readings">Показатели</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>Показатели</h1>
+                    <div class="page-breadcrumb">
+                        <span class="breadcrumb-item">Управление</span>
+                        <span>›</span>
+                        <span class="breadcrumb-item">Показатели</span>
+                    </div>
+                </div>
+                <div class="top-bar-actions">
+                    <div class="search-box">
+                        <span class="search-icon">
+                            <svg width="16" height="16" fill="currentColor">
+                                <use href="/images/icons.svg#icon-inspections"></use>
+                            </svg>
+                        </span>
+                        <input type="text" placeholder="Поиск...">
+                    </div>
+
+                    <button class="notification-btn">
+                        <svg width="20" height="20" fill="currentColor">
+                            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                        </svg>
+                        <span class="notification-badge">3</span>
+                    </button>
+
+                    <div class="user-profile">
+                        <div class="user-avatar">АД</div>
+                        <div class="user-info">
+                            <div class="user-name">Администратор</div>
+                            <div class="user-role">Системный администратор</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+                <h2 class="mb-4">Показатели по квартирам</h2>
+                
+                <!-- Filters -->
+                <div class="filters-container">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label>Блок</label>
+                            <select id="filterBlock">
+                                <option value="all">Все</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="K">K</option>
+                                <option value="X">X</option>
+                                <option value="Z">Z</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Резидент</label>
+                            <select id="filterResident">
+                                <option value="all">Все</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Тип счётчика</label>
+                            <select id="filterMeterType">
+                                <option value="all">Все</option>
+                                <option value="electricity">Электричество</option>
+                                <option value="gas">Газ</option>
+                                <option value="water">Вода</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Год</label>
+                            <select id="filterYear">
+                                <option value="2025">2025</option>
+                                <option value="2024">2024</option>
+                                <option value="2023">2023</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Месяц</label>
+                            <select id="filterMonth">
+                                <option value="1">Январь</option>
+                                <option value="2">Февраль</option>
+                                <option value="3">Март</option>
+                                <option value="4">Апрель</option>
+                                <option value="5">Май</option>
+                                <option value="6">Июнь</option>
+                                <option value="7">Июль</option>
+                                <option value="8">Август</option>
+                                <option value="9">Сентябрь</option>
+                                <option value="10" selected>Октябрь</option>
+                                <option value="11">Ноябрь</option>
+                                <option value="12">Декабрь</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Поиск</label>
+                            <input type="text" id="filterSearch" placeholder="№ дома, ФИО, телефон, email">
+                        </div>
+                    </div>
+                    
+                    <div class="filters-actions">
+                        <button class="btn btn-outline-secondary" onclick="applyFilters()">
+                            <i class="bi bi-funnel"></i> Фильтр
+                        </button>
+                        <button class="btn btn-primary" onclick="openRecordModal()">
+                            <i class="bi bi-plus-lg"></i> Запись показателя
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Readings Table -->
+                <div class="card">
+                    <table class="table table-hover readings-table">
+                        <thead>
+                            <tr>
+                                <th>Резидент</th>
+                                <th>Расход по счётчикам</th>
+                                <th>Сумма по счётчикам</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="readingsTableBody">
+                            <tr>
+                                <td colspan="4">
+                                    <div class="empty-state">
+                                        <i class="bi bi-speedometer"></i>
+                                        <p>Нет показаний за период</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Record Reading Modal -->
+    <div class="modal-overlay" id="recordReadingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Запись показателя</h2>
+                <button class="modal-close" onclick="closeRecordModal()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            
+            <form id="recordReadingForm" onsubmit="recordReading(event)">
+                <div class="form-group">
+                    <label>Блок</label>
+                    <select id="modalBlock" required onchange="loadResidents()">
+                        <option value="">— выберите —</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="K">K</option>
+                        <option value="X">X</option>
+                        <option value="Z">Z</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Резидент</label>
+                    <select id="modalResident" required disabled>
+                        <option value="">— выберите блок —</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Дата показаний</label>
+                    <input type="date" id="modalDate" required>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeRecordModal()">
+                        Отмена
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Записать
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/notifications.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/i18n.js"></script>
+    <script src="/js/i18n-auto.js"></script>
+    <script src="/js/admin.js"></script>
+    
+    <script>
+        // Set today's date as default
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('modalDate').value = today;
+        });
+        
+        // Filter Functions
+        function applyFilters() {
+            const block = document.getElementById('filterBlock').value;
+            const resident = document.getElementById('filterResident').value;
+            const meterType = document.getElementById('filterMeterType').value;
+            const year = document.getElementById('filterYear').value;
+            const month = document.getElementById('filterMonth').value;
+            const searchTerm = document.getElementById('filterSearch').value.toLowerCase();
+            
+            console.log('Applying filters:', { block, resident, meterType, year, month, searchTerm });
+            
+            // TODO: Fetch filtered data from backend API
+            // fetch('/api/readings?block=' + block + '&resident=' + resident + '&meterType=' + meterType + '&year=' + year + '&month=' + month + '&search=' + searchTerm)
+            
+            showSuccess('Фильтры применены!');
+        }
+        
+        // Modal Functions
+        function openRecordModal() {
+            document.getElementById('recordReadingModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeRecordModal() {
+            document.getElementById('recordReadingModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            document.getElementById('recordReadingForm').reset();
+            document.getElementById('modalResident').disabled = true;
+            document.getElementById('modalResident').innerHTML = '<option value="">— выберите блок —</option>';
+        }
+        
+        // Close modal on overlay click
+        document.getElementById('recordReadingModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeRecordModal();
+            }
+        });
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeRecordModal();
+            }
+        });
+        
+        // Load residents based on selected block
+        function loadResidents() {
+            const block = document.getElementById('modalBlock').value;
+            const residentSelect = document.getElementById('modalResident');
+            
+            if (block) {
+                // Enable resident select
+                residentSelect.disabled = false;
+                
+                // Sample data - replace with actual API call
+                const residents = {
+                    'A': [
+                        {id: 1, name: 'Блок A, № 205'},
+                        {id: 2, name: 'Блок A, № 305'},
+                    ],
+                    'B': [
+                        {id: 3, name: 'Блок B, № 101'},
+                        {id: 4, name: 'Блок B, № 201'},
+                    ],
+                    'K': [
+                        {id: 5, name: 'Блок K, № 305'},
+                        {id: 6, name: 'Блок K, № 405'},
+                    ],
+                    'X': [
+                        {id: 7, name: 'Блок X, № 102'},
+                        {id: 8, name: 'Блок X, № 202'},
+                    ],
+                    'Z': [
+                        {id: 9, name: 'Блок Z, № 50'},
+                        {id: 10, name: 'Блок Z, № 60'},
+                    ]
+                };
+                
+                // Populate residents
+                residentSelect.innerHTML = '<option value="">— выберите —</option>';
+                if (residents[block]) {
+                    residents[block].forEach(resident => {
+                        const option = document.createElement('option');
+                        option.value = resident.id;
+                        option.textContent = resident.name;
+                        residentSelect.appendChild(option);
+                    });
+                }
+                
+                // TODO: Fetch residents from backend API
+                // fetch('/api/residents?block=' + block)
+            } else {
+                residentSelect.disabled = true;
+                residentSelect.innerHTML = '<option value="">— выберите блок —</option>';
+            }
+        }
+        
+        // Record Reading Function
+        function recordReading(event) {
+            event.preventDefault();
+            
+            const formData = {
+                block: document.getElementById('modalBlock').value,
+                resident: document.getElementById('modalResident').value,
+                date: document.getElementById('modalDate').value
+            };
+            
+            console.log('Recording reading:', formData);
+            
+            // TODO: Send to backend API
+            // fetch('/api/readings', {
+            //     method: 'POST',
+            //     headers: {'Content-Type': 'application/json'},
+            //     body: JSON.stringify(formData)
+            // }).then(response => {
+            //     if (response.ok) {
+            //         closeRecordModal();
+            //         // Reload readings list
+            //     }
+            // });
+            
+            showSuccess('Показатель успешно записан! Дата: ' + formData.date);
+            closeRecordModal();
+        }
+    </script>
+</body>
+</html>

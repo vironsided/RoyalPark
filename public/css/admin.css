@@ -1341,3 +1341,90 @@
     background-clip: text;
 }
 
+/* Theme Toggle Button */
+.theme-toggle {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.theme-toggle:hover {
+    background: #f1f5f9;
+    color: #667eea;
+}
+
+.theme-toggle svg {
+    transition: transform 0.3s ease;
+}
+
+.theme-toggle:hover svg {
+    transform: rotate(20deg);
+}
+
+[data-theme="dark"] .theme-toggle {
+    color: #b8bcc4;
+}
+
+[data-theme="dark"] .theme-toggle:hover {
+    background: #2d3139;
+    color: #667eea;
+}
+
+/* Language Selector */
+.language-selector {
+    display: flex;
+    gap: 4px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.lang-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+}
+
+.lang-btn:hover {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+}
+
+.lang-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+[data-theme="dark"] .language-selector {
+    background: #2d3139;
+}
+
+[data-theme="dark"] .lang-btn {
+    color: #b8bcc4;
+}
+
+[data-theme="dark"] .lang-btn:hover {
+    background: rgba(102, 126, 234, 0.2);
+    color: #667eea;
+}
+
+[data-theme="dark"] .lang-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
