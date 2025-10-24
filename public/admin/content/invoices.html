@@ -1,14 +1,31 @@
 <div class="dashboard-content">
     <div class="card">
-        <div class="card-header">
-            <h3>Счета</h3>
-        </div>
         <div class="card-body">
-            <p>Страница счетов в разработке...</p>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Плательщик</th>
+                            <th>Квартира</th>
+                            <th>Сумма</th>
+                            <th>Период</th>
+                            <th>Выставлен</th>
+                            <th>Срок</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoicesTable"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
-
-
-
+<script>
+(function(){
+    const statuses = {paid: {text: 'Оплачен', cls: 'success'}, unpaid: {text: 'Не оплачен', cls: 'warning'}, overdue: {text: 'Просрочен', cls: 'danger'}};
+    const tbody = document.getElementById('invoicesTable');
+    if(tbody) tbody.innerHTML = TestData.invoices.map(i => `<tr><td>#${i.id}</td><td><strong>${i.userName}</strong></td><td><span class="badge bg-info">${i.apartment}</span></td><td><strong>${i.amount.toFixed(2)} ₼</strong></td><td>${i.period}</td><td>${i.issueDate}</td><td>${i.dueDate}</td><td><span class="badge bg-${statuses[i.status].cls}">${statuses[i.status].text}</span></td></tr>`).join('');
+})();
+</script>

@@ -1,0 +1,125 @@
+<div class="dashboard-content">
+    <!-- Stats Cards -->
+    <div class="stats-grid mb-4">
+        <div class="stat-card solid-blue">
+            <div class="stat-icon blue">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-value" id="totalUsers">245</div>
+                <div class="stat-label" data-i18n="total_users">Всего пользователей</div>
+            </div>
+        </div>
+
+        <div class="stat-card solid-green">
+            <div class="stat-icon green">
+                <i class="bi bi-person-check-fill"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-value" id="activeUsers">238</div>
+                <div class="stat-label" data-i18n="active_users">Активные</div>
+            </div>
+        </div>
+
+        <div class="stat-card solid-orange">
+            <div class="stat-icon orange">
+                <i class="bi bi-person-x-fill"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-value" id="inactiveUsers">7</div>
+                <div class="stat-label" data-i18n="inactive_users">Неактивные</div>
+            </div>
+        </div>
+
+        <div class="stat-card solid-red">
+            <div class="stat-icon red">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-value" id="usersWithDebt">4</div>
+                <div class="stat-label" data-i18n="users_with_debt">С задолженностью</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Actions -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex gap-2">
+                    <select class="form-select" id="statusFilter" style="width: auto;">
+                        <option value="all" data-i18n="all_statuses">Все статусы</option>
+                        <option value="active" data-i18n="status_active">Активные</option>
+                        <option value="inactive" data-i18n="status_inactive">Неактивные</option>
+                    </select>
+                    <select class="form-select" id="debtFilter" style="width: auto;">
+                        <option value="all" data-i18n="all_debts">Все</option>
+                        <option value="with_debt" data-i18n="with_debt">С задолженностью</option>
+                        <option value="no_debt" data-i18n="without_debt">Без задолженности</option>
+                    </select>
+                    <select class="form-select" id="buildingFilter" style="width: auto;">
+                        <option value="all" data-i18n="all_buildings">Все здания</option>
+                        <option value="Блок A">Блок A</option>
+                        <option value="Блок B">Блок B</option>
+                        <option value="Блок C">Блок C</option>
+                    </select>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary" onclick="addNewUser()">
+                        <i class="bi bi-person-plus"></i> <span data-i18n="add_user">Добавить пользователя</span>
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="exportUsers()">
+                        <i class="bi bi-download"></i> <span data-i18n="export">Экспорт</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="usersTable">
+                    <thead>
+                        <tr>
+                            <th data-i18n="table_id">ID</th>
+                            <th data-i18n="table_name">Имя</th>
+                            <th data-i18n="table_phone">Телефон</th>
+                            <th data-i18n="table_apartment">Квартира</th>
+                            <th data-i18n="table_building">Здание</th>
+                            <th data-i18n="table_status">Статус</th>
+                            <th data-i18n="table_debt">Задолженность</th>
+                            <th data-i18n="table_actions">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userModalTitle" data-i18n="user_details">Детали пользователя</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="userModalBody">
+                <!-- Populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="close">Закрыть</button>
+                <button type="button" class="btn btn-primary" onclick="saveUserChanges()" data-i18n="save">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/admin-users.js"></script>
+
