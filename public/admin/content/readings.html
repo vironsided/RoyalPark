@@ -4,7 +4,8 @@
         }
         
         .filters-container {
-            background: white;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 15px;
             padding: 25px;
             margin-bottom: 25px;
@@ -26,14 +27,16 @@
         .filter-group label {
             font-weight: 600;
             margin-bottom: 8px;
-            color: #333;
+            color: #495057;
             font-size: 0.9rem;
         }
         
         .filter-group select,
         .filter-group input {
             padding: 10px 15px;
-            border: 1px solid #ddd;
+            background: #ffffff;
+            color: #212529;
+            border: 1px solid #dee2e6;
             border-radius: 8px;
             font-size: 0.95rem;
             transition: all 0.3s;
@@ -71,7 +74,8 @@
         }
         
         .modal-content {
-            background: white;
+            background: #ffffff;
+            color: #212529;
             border-radius: 20px;
             padding: 30px;
             max-width: 600px;
@@ -105,7 +109,7 @@
         .modal-header h2 {
             margin: 0;
             font-size: 1.75rem;
-            color: #333;
+            color: #1a1d2e;
         }
         
         .modal-close {
@@ -129,7 +133,7 @@
             display: block;
             font-weight: 600;
             margin-bottom: 8px;
-            color: #333;
+            color: #495057;
             font-size: 0.9rem;
         }
         
@@ -137,7 +141,9 @@
         .form-group select {
             width: 100%;
             padding: 12px 15px;
-            border: 1px solid #ddd;
+            background: #ffffff;
+            color: #212529;
+            border: 1px solid #dee2e6;
             border-radius: 8px;
             font-size: 1rem;
             transition: all 0.3s;
@@ -166,13 +172,141 @@
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #999;
+            color: #6c757d;
         }
         
         .empty-state i {
             font-size: 4rem;
             margin-bottom: 15px;
             opacity: 0.3;
+        }
+        
+        /* Light theme (default) - ensure text is visible */
+        .content-wrapper h2 {
+            color: #1a1d2e;
+        }
+        
+        .filters-container {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .filter-group label {
+            color: #495057;
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            background: #ffffff;
+            color: #212529;
+            border: 1px solid #dee2e6;
+        }
+        
+        .readings-table table {
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .readings-table thead th {
+            color: #495057;
+            background: rgba(102, 126, 234, 0.05);
+            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .readings-table tbody td {
+            color: #212529;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .modal-content {
+            background: #ffffff;
+            color: #212529;
+        }
+        
+        .modal-content h3 {
+            color: #1a1d2e;
+        }
+        
+        .form-group label {
+            color: #495057;
+        }
+        
+        .form-group input,
+        .form-group select {
+            background: #ffffff;
+            color: #212529;
+            border: 1px solid #dee2e6;
+        }
+        
+        /* Dark theme support */
+        [data-theme="dark"] .content-wrapper h2 {
+            color: #ffffff;
+        }
+        
+        [data-theme="dark"] .filters-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        [data-theme="dark"] .filter-group label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        [data-theme="dark"] .filter-group select,
+        [data-theme="dark"] .filter-group input {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        [data-theme="dark"] .readings-table table {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        [data-theme="dark"] .readings-table thead th {
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(102, 126, 234, 0.1);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        [data-theme="dark"] .readings-table tbody td {
+            color: #ffffff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        [data-theme="dark"] .empty-state {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        [data-theme="dark"] .modal-content {
+            background: #1e2128;
+            color: #ffffff;
+        }
+        
+        [data-theme="dark"] .modal-content h3 {
+            color: #ffffff;
+        }
+        
+        [data-theme="dark"] .modal-header h2 {
+            color: #ffffff;
+        }
+        
+        [data-theme="dark"] .form-group label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        [data-theme="dark"] .form-group input,
+        [data-theme="dark"] .form-group select {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        [data-theme="dark"] .modal-header {
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        [data-theme="dark"] .modal-actions {
+            border-top: 2px solid rgba(255, 255, 255, 0.1);
         }
     </style>
 
@@ -460,3 +594,4 @@
             closeRecordModal();
         }
 </script>
+

@@ -1,125 +1,585 @@
-<div class="dashboard-content">
-    <!-- Stats Cards -->
-    <div class="stats-grid mb-4">
-        <div class="stat-card solid-blue">
-            <div class="stat-icon blue">
-                <i class="bi bi-people-fill"></i>
-            </div>
-            <div class="stat-details">
-                <div class="stat-value" id="totalUsers">245</div>
-                <div class="stat-label" data-i18n="total_users">Всего пользователей</div>
-            </div>
-        </div>
+<style>
+    .content-wrapper {
+        padding: 2rem 32px 32px 32px;
+    }
+    
+    .users-header {
+        margin-bottom: 2rem;
+    }
+    
+    .users-header h2 {
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+        color: #1a1d2e;
+    }
+    
+    .user-create-form {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .user-create-form input[type="text"] {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        color: #1a1d2e;
+        font-size: 1rem;
+    }
+    
+    .user-create-form input[type="text"]::placeholder {
+        color: #6c757d;
+    }
+    
+    .user-create-form select {
+        padding: 0.75rem 1rem;
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        color: #1a1d2e;
+        font-size: 1rem;
+        min-width: 150px;
+        cursor: pointer;
+    }
+    
+    .user-create-form select option {
+        background: #ffffff;
+        color: #1a1d2e;
+    }
+    
+    .btn-create-user {
+        padding: 0.75rem 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-create-user:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .users-table-container {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 15px;
+        padding: 1.5rem;
+        backdrop-filter: blur(20px);
+        overflow-x: auto;
+    }
+    
+    .users-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .users-table thead th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: #495057;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .users-table tbody td {
+        padding: 1rem;
+        color: #212529;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        vertical-align: middle;
+    }
+    
+    .users-table tbody tr:hover {
+        background: rgba(102, 126, 234, 0.05);
+    }
+    
+    /* Role Badges */
+    .role-badge {
+        display: inline-block;
+        padding: 0.375rem 0.875rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .role-badge.role-root {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+    
+    .role-badge.role-admin {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .role-badge.role-operator {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+    
+    .role-badge.role-resident {
+        background: linear-gradient(135deg, #868f96 0%, #596164 100%);
+        color: white;
+    }
+    
+    /* Password Status Badge */
+    .password-badge {
+        display: inline-block;
+        padding: 0.375rem 0.875rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .password-badge.password-set {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+    }
+    
+    .password-badge.password-temp {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        color: #1a1d2e;
+        font-family: monospace;
+    }
+    
+    /* Action Buttons */
+    .user-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .btn-user-action {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        white-space: nowrap;
+    }
+    
+    .btn-reset-password {
+        background: transparent;
+        border: 1px solid #ffa726;
+        color: #ffa726;
+    }
+    
+    .btn-reset-password:hover {
+        background: #ffa726;
+        color: white;
+    }
+    
+    .btn-rename-user {
+        background: transparent;
+        border: 1px solid #667eea;
+        color: #667eea;
+    }
+    
+    .btn-rename-user:hover {
+        background: #667eea;
+        color: white;
+    }
+    
+    .btn-delete-user {
+        background: transparent;
+        border: 1px solid #f5576c;
+        color: #f5576c;
+    }
+    
+    .btn-delete-user:hover {
+        background: #f5576c;
+        color: white;
+    }
+    
+    .input-new-name {
+        padding: 0.5rem 0.75rem;
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        color: #1a1d2e;
+        font-size: 0.875rem;
+        width: 120px;
+    }
+    
+    .input-new-name::placeholder {
+        color: #6c757d;
+    }
+    
+    /* Dark theme support */
+    [data-theme="dark"] .users-header h2 {
+        color: #ffffff;
+    }
+    
+    [data-theme="dark"] .user-create-form {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    [data-theme="dark"] .user-create-form input[type="text"],
+    [data-theme="dark"] .user-create-form select {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+    }
+    
+    [data-theme="dark"] .user-create-form input[type="text"]::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+    
+    [data-theme="dark"] .user-create-form select option {
+        background: #1e2128;
+        color: #ffffff;
+    }
+    
+    [data-theme="dark"] .users-table-container {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    [data-theme="dark"] .users-table thead th {
+        color: rgba(255, 255, 255, 0.8);
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    [data-theme="dark"] .users-table tbody td {
+        color: #ffffff;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    [data-theme="dark"] .users-table tbody tr:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
+    
+    [data-theme="dark"] .input-new-name {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+    }
+    
+    [data-theme="dark"] .input-new-name::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+</style>
 
-        <div class="stat-card solid-green">
-            <div class="stat-icon green">
-                <i class="bi bi-person-check-fill"></i>
-            </div>
-            <div class="stat-details">
-                <div class="stat-value" id="activeUsers">238</div>
-                <div class="stat-label" data-i18n="active_users">Активные</div>
-            </div>
-        </div>
-
-        <div class="stat-card solid-orange">
-            <div class="stat-icon orange">
-                <i class="bi bi-person-x-fill"></i>
-            </div>
-            <div class="stat-details">
-                <div class="stat-value" id="inactiveUsers">7</div>
-                <div class="stat-label" data-i18n="inactive_users">Неактивные</div>
-            </div>
-        </div>
-
-        <div class="stat-card solid-red">
-            <div class="stat-icon red">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-            </div>
-            <div class="stat-details">
-                <div class="stat-value" id="usersWithDebt">4</div>
-                <div class="stat-label" data-i18n="users_with_debt">С задолженностью</div>
-            </div>
-        </div>
+<div class="content-wrapper">
+    <div class="users-header">
+        <h2>Пользователи</h2>
     </div>
-
-    <!-- Filters and Actions -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="d-flex gap-2">
-                    <select class="form-select" id="statusFilter" style="width: auto;">
-                        <option value="all" data-i18n="all_statuses">Все статусы</option>
-                        <option value="active" data-i18n="status_active">Активные</option>
-                        <option value="inactive" data-i18n="status_inactive">Неактивные</option>
-                    </select>
-                    <select class="form-select" id="debtFilter" style="width: auto;">
-                        <option value="all" data-i18n="all_debts">Все</option>
-                        <option value="with_debt" data-i18n="with_debt">С задолженностью</option>
-                        <option value="no_debt" data-i18n="without_debt">Без задолженности</option>
-                    </select>
-                    <select class="form-select" id="buildingFilter" style="width: auto;">
-                        <option value="all" data-i18n="all_buildings">Все здания</option>
-                        <option value="Блок A">Блок A</option>
-                        <option value="Блок B">Блок B</option>
-                        <option value="Блок C">Блок C</option>
-                    </select>
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-primary" onclick="addNewUser()">
-                        <i class="bi bi-person-plus"></i> <span data-i18n="add_user">Добавить пользователя</span>
-                    </button>
-                    <button class="btn btn-outline-primary" onclick="exportUsers()">
-                        <i class="bi bi-download"></i> <span data-i18n="export">Экспорт</span>
-                    </button>
-                </div>
-            </div>
-        </div>
+    
+    <!-- Create User Form -->
+    <div class="user-create-form">
+        <input 
+            type="text" 
+            id="newUserLogin" 
+            placeholder="Логин нового пользователя"
+            autocomplete="off"
+        />
+        <select id="newUserRole">
+            <option value="ADMIN">ADMIN</option>
+            <option value="OPERATOR">OPERATOR</option>
+            <option value="RESIDENT">RESIDENT</option>
+            <option value="ROOT">ROOT</option>
+        </select>
+        <button class="btn-create-user" onclick="createUser()">
+            Создать
+        </button>
     </div>
-
+    
     <!-- Users Table -->
-    <div class="card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover" id="usersTable">
-                    <thead>
-                        <tr>
-                            <th data-i18n="table_id">ID</th>
-                            <th data-i18n="table_name">Имя</th>
-                            <th data-i18n="table_phone">Телефон</th>
-                            <th data-i18n="table_apartment">Квартира</th>
-                            <th data-i18n="table_building">Здание</th>
-                            <th data-i18n="table_status">Статус</th>
-                            <th data-i18n="table_debt">Задолженность</th>
-                            <th data-i18n="table_actions">Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersTableBody">
-                        <!-- Populated by JavaScript -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div class="users-table-container">
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Логин</th>
+                    <th>Роль</th>
+                    <th>Последний вход</th>
+                    <th>Пароль</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody id="usersTableBody">
+                <!-- Users will be loaded here -->
+            </tbody>
+        </table>
     </div>
 </div>
 
-<!-- User Details Modal -->
-<div class="modal fade" id="userModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="userModalTitle" data-i18n="user_details">Детали пользователя</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="userModalBody">
-                <!-- Populated by JavaScript -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="close">Закрыть</button>
-                <button type="button" class="btn btn-primary" onclick="saveUserChanges()" data-i18n="save">Сохранить</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="/js/admin-users.js"></script>
-
+<script>
+(function() {
+    // Sample users data
+    let users = [
+        {
+            id: 1,
+            login: 'root',
+            role: 'ROOT',
+            lastLogin: '2025-10-28 08:25:04.235780',
+            passwordStatus: 'set',
+            tempPassword: null
+        },
+        {
+            id: 2,
+            login: 'resident',
+            role: 'RESIDENT',
+            lastLogin: '2025-10-24 09:54:55.342651',
+            passwordStatus: 'set',
+            tempPassword: null
+        },
+        {
+            id: 3,
+            login: 'admin',
+            role: 'ADMIN',
+            lastLogin: '2025-10-27 14:32:10.123456',
+            passwordStatus: 'temp',
+            tempPassword: 'Abc123XyZ'
+        }
+    ];
+    
+    let nextUserId = 4;
+    
+    // Load users on page load
+    function loadUsers() {
+        const tbody = document.getElementById('usersTableBody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        users.forEach(user => {
+            const row = document.createElement('tr');
+            
+            // Get role badge class
+            const roleClass = `role-${user.role.toLowerCase()}`;
+            
+            // Password badge
+            let passwordBadge = '';
+            if (user.passwordStatus === 'set') {
+                passwordBadge = '<span class="password-badge password-set">установлен</span>';
+            } else if (user.passwordStatus === 'temp' && user.tempPassword) {
+                passwordBadge = `<span class="password-badge password-temp">временный: ${user.tempPassword}</span>`;
+            }
+            
+            // Actions (only for non-root users)
+            let actions = '';
+            if (user.login !== 'root') {
+                actions = `
+                    <div class="user-actions">
+                        <button class="btn-user-action btn-reset-password" onclick="resetPassword(${user.id})">
+                            Сброс пароля
+                        </button>
+                        <input 
+                            type="text" 
+                            class="input-new-name" 
+                            id="newName${user.id}" 
+                            placeholder="Новое имя"
+                            autocomplete="off"
+                        />
+                        <button class="btn-user-action btn-rename-user" onclick="renameUser(${user.id})">
+                            Переимен.
+                        </button>
+                        <button class="btn-user-action btn-delete-user" onclick="deleteUser(${user.id})">
+                            Удалить
+                        </button>
+                    </div>
+                `;
+            }
+            
+            row.innerHTML = `
+                <td>${user.id}</td>
+                <td>${user.login}</td>
+                <td><span class="role-badge ${roleClass}">RoleEnum.${user.role}</span></td>
+                <td>${user.lastLogin}</td>
+                <td>${passwordBadge}</td>
+                <td>${actions}</td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+    }
+    
+    // Create user
+    window.createUser = function() {
+        const loginInput = document.getElementById('newUserLogin');
+        const roleSelect = document.getElementById('newUserRole');
+        
+        if (!loginInput || !roleSelect) return;
+        
+        const login = loginInput.value.trim();
+        const role = roleSelect.value;
+        
+        if (!login) {
+            if (window.showWarning) {
+                showWarning('⚠️ Введите логин пользователя');
+            } else {
+                alert('Введите логин пользователя');
+            }
+            return;
+        }
+        
+        // Check if user already exists
+        if (users.find(u => u.login === login)) {
+            if (window.showWarning) {
+                showWarning('⚠️ Пользователь с таким логином уже существует');
+            } else {
+                alert('Пользователь с таким логином уже существует');
+            }
+            return;
+        }
+        
+        // Generate temporary password
+        const tempPassword = generateTempPassword();
+        
+        const newUser = {
+            id: nextUserId++,
+            login: login,
+            role: role,
+            lastLogin: new Date().toISOString().replace('T', ' ').substring(0, 26),
+            passwordStatus: 'temp',
+            tempPassword: tempPassword
+        };
+        
+        users.push(newUser);
+        loadUsers();
+        
+        // Clear form
+        loginInput.value = '';
+        roleSelect.value = 'ADMIN';
+        
+        if (window.showSuccess) {
+            showSuccess(`✅ Пользователь "${login}" создан! Временный пароль: ${tempPassword}`);
+        } else {
+            alert(`Пользователь создан!\nЛогин: ${login}\nВременный пароль: ${tempPassword}`);
+        }
+    };
+    
+    // Reset password
+    window.resetPassword = function(userId) {
+        const user = users.find(u => u.id === userId);
+        if (!user) return;
+        
+        if (user.login === 'root') {
+            if (window.showWarning) {
+                showWarning('⚠️ Невозможно сбросить пароль для root');
+            }
+            return;
+        }
+        
+        const tempPassword = generateTempPassword();
+        user.passwordStatus = 'temp';
+        user.tempPassword = tempPassword;
+        
+        loadUsers();
+        
+        if (window.showSuccess) {
+            showSuccess(`✅ Пароль сброшен! Новый временный пароль: ${tempPassword}`);
+        } else {
+            alert(`Пароль сброшен!\nНовый временный пароль: ${tempPassword}`);
+        }
+    };
+    
+    // Rename user
+    window.renameUser = function(userId) {
+        const user = users.find(u => u.id === userId);
+        if (!user) return;
+        
+        const newNameInput = document.getElementById(`newName${userId}`);
+        if (!newNameInput) return;
+        
+        const newName = newNameInput.value.trim();
+        
+        if (!newName) {
+            if (window.showWarning) {
+                showWarning('⚠️ Введите новое имя');
+            } else {
+                alert('Введите новое имя');
+            }
+            return;
+        }
+        
+        // Check if name already exists
+        if (users.find(u => u.login === newName && u.id !== userId)) {
+            if (window.showWarning) {
+                showWarning('⚠️ Пользователь с таким именем уже существует');
+            } else {
+                alert('Пользователь с таким именем уже существует');
+            }
+            return;
+        }
+        
+        const oldName = user.login;
+        user.login = newName;
+        
+        loadUsers();
+        
+        if (window.showSuccess) {
+            showSuccess(`✅ Пользователь "${oldName}" переименован в "${newName}"`);
+        } else {
+            alert(`Пользователь переименован: ${oldName} → ${newName}`);
+        }
+    };
+    
+    // Delete user
+    window.deleteUser = function(userId) {
+        const user = users.find(u => u.id === userId);
+        if (!user) return;
+        
+        if (user.login === 'root') {
+            if (window.showWarning) {
+                showWarning('⚠️ Невозможно удалить root пользователя');
+            }
+            return;
+        }
+        
+        const confirmDelete = confirm(`Вы уверены, что хотите удалить пользователя "${user.login}"?`);
+        
+        if (confirmDelete) {
+            users = users.filter(u => u.id !== userId);
+            loadUsers();
+            
+            if (window.showSuccess) {
+                showSuccess(`✅ Пользователь "${user.login}" удалён`);
+            } else {
+                alert(`Пользователь "${user.login}" удалён`);
+            }
+        }
+    };
+    
+    // Generate temporary password
+    function generateTempPassword() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let password = '';
+        for (let i = 0; i < 10; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return password;
+    }
+    
+    // Initialize on page load
+    loadUsers();
+    
+    // Re-initialize when SPA content loads
+    document.addEventListener('spa:contentLoaded', function(e) {
+        if (e.detail && e.detail.route === '/users') {
+            loadUsers();
+        }
+    });
+})();
+</script>

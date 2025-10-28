@@ -20,6 +20,61 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/global.css">
     <link rel="stylesheet" href="/css/admin.css">
+    
+    <!-- КРИТИЧЕСКИ ВАЖНЫЕ СТИЛИ ДЛЯ SIDEBAR - МАКСИМАЛЬНЫЙ ПРИОРИТЕТ -->
+    <style>
+        /* Убираем белую полосу сверху */
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow-x: hidden !important;
+            background-color: #1a1d2e !important;
+        }
+        
+        body {
+            min-height: 100vh !important;
+        }
+        
+        .admin-container {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        .sidebar {
+            width: 280px !important;
+            transition: width 0.3s ease !important;
+        }
+        
+        .sidebar.collapsed {
+            width: 80px !important;
+            min-width: 80px !important;
+            max-width: 80px !important;
+        }
+        
+        .sidebar.collapsed .logo-text,
+        .sidebar.collapsed .nav-text,
+        .sidebar.collapsed .nav-badge,
+        .sidebar.collapsed .nav-section-title {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+        
+        .sidebar.collapsed .nav-item {
+            justify-content: center !important;
+        }
+        
+        .main-content {
+            margin-left: 280px !important;
+            width: calc(100vw - 280px) !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .sidebar.collapsed ~ .main-content {
+            margin-left: 80px !important;
+            width: calc(100vw - 80px) !important;
+        }
+    </style>
 </head>
 <body>
     <div class="admin-container">
@@ -110,6 +165,14 @@
                             </svg>
                         </span>
                         <span class="nav-text" data-i18n="nav_readings">Показатели</span>
+                    </a>
+                    <a href="/users" class="nav-item" data-route="/users">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-users"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text" data-i18n="nav_users">Пользователи</span>
                     </a>
                 </div>
 
@@ -279,6 +342,9 @@
     <!-- Notifications System -->
     <script src="/js/notifications.js"></script>
     
+    <!-- Sidebar Toggle (для совместимости со старыми страницами) -->
+    <script src="/js/sidebar-toggle.js"></script>
+    
     <!-- Theme Management -->
     <script src="/js/theme.js"></script>
     
@@ -377,6 +443,99 @@
             // Apply saved language
             if (window.i18n) {
                 window.i18n.applyLanguage(savedLang);
+            }
+            
+            // Sidebar Toggle Button - FIXED VERSION
+            const toggleSidebarBtn = document.getElementById('toggleSidebar');
+            const sidebar = document.querySelector('.sidebar');
+            
+            console.log('=== SIDEBAR DEBUG ===');
+            console.log('Toggle button found:', !!toggleSidebarBtn);
+            console.log('Sidebar found:', !!sidebar);
+            
+            if (toggleSidebarBtn && sidebar) {
+                // Add tooltips to nav items
+                const navItems = sidebar.querySelectorAll('.nav-item');
+                navItems.forEach(item => {
+                    const textEl = item.querySelector('.nav-text');
+                    if (textEl && textEl.textContent.trim()) {
+                        item.setAttribute('data-tooltip', textEl.textContent.trim());
+                    }
+                });
+                
+                // Load saved state
+                const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+                console.log('Saved collapsed state:', sidebarCollapsed);
+                
+                if (sidebarCollapsed) {
+                    sidebar.classList.add('collapsed');
+                    console.log('Applied collapsed class from saved state');
+                }
+                
+                // Toggle on click - MULTIPLE EVENT LISTENERS
+                toggleSidebarBtn.onclick = function(e) {
+                    console.log('=== CLICK EVENT FIRED ===');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const currentClasses = Array.from(sidebar.classList);
+                    console.log('Current sidebar classes:', currentClasses);
+                    
+                    const isCurrentlyCollapsed = sidebar.classList.contains('collapsed');
+                    console.log('Is currently collapsed:', isCurrentlyCollapsed);
+                    
+                    if (isCurrentlyCollapsed) {
+                        console.log('Attempting to EXPAND sidebar...');
+                        sidebar.classList.remove('collapsed');
+                        localStorage.setItem('sidebarCollapsed', 'false');
+                        console.log('✅ Sidebar EXPANDED. New classes:', Array.from(sidebar.classList));
+                        if (window.showSuccess) {
+                            showSuccess('📌 Панель развёрнута');
+                        }
+                    } else {
+                        console.log('Attempting to COLLAPSE sidebar...');
+                        sidebar.classList.add('collapsed');
+                        localStorage.setItem('sidebarCollapsed', 'true');
+                        console.log('✅ Sidebar COLLAPSED. New classes:', Array.from(sidebar.classList));
+                        if (window.showInfo) {
+                            showInfo('📌 Панель свёрнута');
+                        }
+                    }
+                    
+                    // Double check
+                    setTimeout(() => {
+                        console.log('After 100ms - Sidebar width:', sidebar.offsetWidth);
+                        console.log('After 100ms - Has collapsed class:', sidebar.classList.contains('collapsed'));
+                    }, 100);
+                };
+                
+                // Debug: log current state
+                console.log('Sidebar initialized successfully');
+                console.log('Initial collapsed state:', sidebar.classList.contains('collapsed'));
+                console.log('Initial width:', sidebar.offsetWidth);
+                
+                // Add global function for debugging
+                window.debugSidebar = function() {
+                    console.log('=== SIDEBAR DEBUG INFO ===');
+                    console.log('Has collapsed class:', sidebar.classList.contains('collapsed'));
+                    console.log('Current width:', sidebar.offsetWidth);
+                    console.log('Computed width:', window.getComputedStyle(sidebar).width);
+                    console.log('localStorage value:', localStorage.getItem('sidebarCollapsed'));
+                    console.log('All classes:', Array.from(sidebar.classList));
+                };
+                
+                window.resetSidebar = function() {
+                    localStorage.removeItem('sidebarCollapsed');
+                    sidebar.classList.remove('collapsed');
+                    console.log('✅ Sidebar reset! Reload the page.');
+                };
+                
+                console.log('💡 Type debugSidebar() to see current state');
+                console.log('💡 Type resetSidebar() to reset and reload');
+            } else {
+                console.error('❌ ERROR: Sidebar or toggle button not found!');
+                if (!toggleSidebarBtn) console.error('Toggle button element is missing!');
+                if (!sidebar) console.error('Sidebar element is missing!');
             }
         });
     </script>

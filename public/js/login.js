@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 switch(role.value) {
                     case 'admin':
-                        window.location.href = '/admin/dashboard.html';
+                        window.location.href = '/admin/#/dashboard';
                         break;
                     case 'user':
                         window.location.href = '/user/dashboard.html';

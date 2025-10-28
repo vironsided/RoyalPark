@@ -84,6 +84,11 @@ class SPARouter {
                 breadcrumb: ['Управление', 'Показатели'],
                 section: 'Управление'
             },
+            '/users': {
+                title: 'Пользователи',
+                breadcrumb: ['Управление', 'Пользователи'],
+                section: 'Управление'
+            },
             
             // Финансы
             '/payments': {

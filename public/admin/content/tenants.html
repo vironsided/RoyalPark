@@ -4,7 +4,8 @@
         }
         
         .filters-container {
-            background: white;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 15px;
             padding: 25px;
             margin-bottom: 25px;
@@ -26,13 +27,15 @@
         .filter-group label {
             font-weight: 600;
             margin-bottom: 8px;
-            color: #333;
+            color: #495057;
             font-size: 0.9rem;
         }
         
         .filter-group input {
             padding: 10px 15px;
-            border: 1px solid #ddd;
+            background: #ffffff;
+            color: #212529;
+            border: 1px solid #dee2e6;
             border-radius: 8px;
             font-size: 0.95rem;
             transition: all 0.3s;
@@ -63,7 +66,8 @@
         }
         
         .modal-content {
-            background: white;
+            background: #ffffff;
+            color: #212529;
             border-radius: 20px;
             padding: 30px;
             max-width: 900px;
@@ -98,7 +102,7 @@
         .modal-header h2 {
             margin: 0;
             font-size: 1.75rem;
-            color: #333;
+            color: #1a1d2e;
         }
         
         .modal-close {
@@ -141,7 +145,7 @@
             display: block;
             font-weight: 600;
             margin-bottom: 8px;
-            color: #333;
+            color: #495057;
             font-size: 0.9rem;
         }
         
@@ -150,7 +154,9 @@
         .form-group textarea {
             width: 100%;
             padding: 10px 15px;
-            border: 1px solid #ddd;
+            background: #ffffff;
+            color: #212529;
+            border: 1px solid #dee2e6;
             border-radius: 8px;
             font-size: 0.95rem;
             transition: all 0.3s;
@@ -287,40 +293,197 @@
             padding-top: 20px;
             border-top: 2px solid #f0f0f0;
         }
+        
+        /* Light theme (default) - ensure text is visible */
+        .content-wrapper h2 {
+            color: #1a1d2e;
+        }
+        
+        .filters-container {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .filter-group label {
+            color: #495057;
+        }
+        
+        .filter-group input {
+            background: #ffffff;
+            color: #212529;
+            border: 1px solid #dee2e6;
+        }
+        
+        .tenants-table table {
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .tenants-table thead th {
+            color: #495057;
+            background: rgba(102, 126, 234, 0.05);
+            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .tenants-table tbody td {
+            color: #212529;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .tenants-table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .modal-content {
+            background: #ffffff;
+            color: #212529;
+        }
+        
+        .modal-header h2 {
+            color: #1a1d2e;
+        }
+        
+        .form-row label {
+            color: #495057;
+        }
+        
+        .form-row input,
+        .form-row select {
+            background: #ffffff;
+            color: #212529;
+            border: 1px solid #dee2e6;
+        }
+        
+        /* Dark theme support */
+        [data-theme="dark"] .content-wrapper h2 {
+            color: #ffffff;
+        }
+        
+        [data-theme="dark"] .filters-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        [data-theme="dark"] .filter-group label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        [data-theme="dark"] .filter-group input {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        [data-theme="dark"] .tenants-table table {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        [data-theme="dark"] .tenants-table thead th {
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(102, 126, 234, 0.1);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        [data-theme="dark"] .tenants-table tbody td {
+            color: #ffffff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        [data-theme="dark"] .tenants-table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        [data-theme="dark"] .modal-content {
+            background: #1e2128;
+            color: #ffffff;
+        }
+        
+        [data-theme="dark"] .modal-header h2 {
+            color: #ffffff;
+        }
+        
+        [data-theme="dark"] .modal-header {
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        [data-theme="dark"] .form-row label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        [data-theme="dark"] .form-row input,
+        [data-theme="dark"] .form-row select {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        [data-theme="dark"] .modal-actions {
+            border-top: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        [data-theme="dark"] .form-group label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        [data-theme="dark"] .form-group input,
+        [data-theme="dark"] .form-group select,
+        [data-theme="dark"] .form-group textarea {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
     </style>
 
 <div class="content-wrapper">
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h2 class="text-primary">1,850</h2>
-                                <p class="mb-0">Всего жителей</p>
-                            </div>
+                <div class="stats-grid">
+                    <div class="stat-card solid-blue">
+                        <div class="stat-icon blue">
+                            <svg width="40" height="40" fill="white">
+                                <use href="/images/icons.svg#icon-users"></use>
+                            </svg>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">1,850</div>
+                            <div class="stat-label">Всего жителей</div>
+                            <div class="stat-change positive">↑ 12% за месяц</div>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h2 class="text-success">420</h2>
-                                <p class="mb-0">Квартир заселено</p>
-                            </div>
+
+                    <div class="stat-card solid-green">
+                        <div class="stat-icon green">
+                            <svg width="40" height="40" fill="white">
+                                <use href="/images/icons.svg#icon-apartments"></use>
+                            </svg>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">420</div>
+                            <div class="stat-label">Квартир заселено</div>
+                            <div class="stat-change positive">↑ 15 новых</div>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h2 class="text-info">780</h2>
-                                <p class="mb-0">Взрослых</p>
-                            </div>
+
+                    <div class="stat-card solid-orange">
+                        <div class="stat-icon orange">
+                            <svg width="40" height="40" fill="white">
+                                <use href="/images/icons.svg#icon-personnel"></use>
+                            </svg>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">780</div>
+                            <div class="stat-label">Взрослых</div>
+                            <div class="stat-change positive">↑ 5% за месяц</div>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h2 class="text-warning">520</h2>
-                                <p class="mb-0">Детей</p>
-                            </div>
+
+                    <div class="stat-card solid-red">
+                        <div class="stat-icon purple">
+                            <svg width="40" height="40" fill="white">
+                                <use href="/images/icons.svg#icon-users"></use>
+                            </svg>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">520</div>
+                            <div class="stat-label">Детей</div>
+                            <div class="stat-change negative">↓ 2% за месяц</div>
                         </div>
                     </div>
                 </div>
@@ -367,8 +530,6 @@
                     </table>
                 </div>
             </div>
-        </main>
-    </div>
 
     <!-- Create Tenant Modal -->
     <div class="modal-overlay" id="createTenantModal">
@@ -515,142 +676,198 @@
     </div>
 
 <script>
-let selectedResidentId = null;
+// Глобальные функции для страницы Жители
+(function() {
+    'use strict';
+    
+    let selectedResidentId = null;
+    
+    // Filter Functions
+    window.applyFilters = function() {
+        const searchTerm = document.getElementById('filterSearch').value.toLowerCase();
         
-        // Filter Functions
-        function applyFilters() {
-            const searchTerm = document.getElementById('filterSearch').value.toLowerCase();
+        console.log('Applying filters:', { searchTerm });
+        
+        // Get all table rows
+        const rows = document.querySelectorAll('#tenantsTableBody tr');
+        
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
             
-            console.log('Applying filters:', { searchTerm });
+            if (cells.length <= 1) return; // Skip empty rows
             
-            // Get all table rows
-            const rows = document.querySelectorAll('#tenantsTableBody tr');
+            let shouldShow = true;
             
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td');
-                
-                if (cells.length <= 1) return; // Skip empty rows
-                
-                let shouldShow = true;
-                
-                // Filter by search term
-                if (searchTerm) {
-                    const rowText = row.textContent.toLowerCase();
-                    if (!rowText.includes(searchTerm)) {
-                        shouldShow = false;
-                    }
+            // Filter by search term
+            if (searchTerm) {
+                const rowText = row.textContent.toLowerCase();
+                if (!rowText.includes(searchTerm)) {
+                    shouldShow = false;
                 }
-                
-                // Show/hide row
-                row.style.display = shouldShow ? '' : 'none';
-            });
+            }
             
+            // Show/hide row
+            row.style.display = shouldShow ? '' : 'none';
+        });
+        
+        if (typeof showSuccess === 'function') {
             showSuccess('Фильтры применены!');
         }
-        
-        // Modal Functions
-        function openCreateModal() {
-            document.getElementById('createTenantModal').classList.add('active');
+    };
+    
+    // Modal Functions
+    window.openCreateModal = function() {
+        const modal = document.getElementById('createTenantModal');
+        if (modal) {
+            modal.classList.add('active');
             document.body.style.overflow = 'hidden';
         }
-        
-        function closeCreateModal() {
-            document.getElementById('createTenantModal').classList.remove('active');
+    };
+    
+    window.closeCreateModal = function() {
+        const modal = document.getElementById('createTenantModal');
+        if (modal) {
+            modal.classList.remove('active');
             document.body.style.overflow = 'auto';
-            document.getElementById('createTenantForm').reset();
-            selectedResidentId = null;
-            document.getElementById('selectedResidentInfo').style.display = 'none';
-            
-            // Remove selected class from all rows
-            document.querySelectorAll('#residentsListBody tr').forEach(row => {
-                row.classList.remove('selected');
-            });
-            
-            // Reset block filter
-            document.getElementById('blockFilter').value = 'all';
-            filterResidents();
         }
         
-        // Close modal on overlay click
-        document.getElementById('createTenantModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeCreateModal();
+        const form = document.getElementById('createTenantForm');
+        if (form) form.reset();
+        
+        selectedResidentId = null;
+        
+        const selectedInfo = document.getElementById('selectedResidentInfo');
+        if (selectedInfo) selectedInfo.style.display = 'none';
+        
+        // Remove selected class from all rows
+        document.querySelectorAll('#residentsListBody tr').forEach(row => {
+            row.classList.remove('selected');
+        });
+        
+        // Reset block filter
+        const blockFilter = document.getElementById('blockFilter');
+        if (blockFilter) blockFilter.value = 'all';
+        
+        if (typeof window.filterResidents === 'function') {
+            window.filterResidents();
+        }
+    };
+    
+    // Residents Filter
+    window.filterResidents = function() {
+        const blockFilter = document.getElementById('blockFilter');
+        if (!blockFilter) return;
+        
+        const blockValue = blockFilter.value;
+        const rows = document.querySelectorAll('#residentsListBody tr');
+        
+        rows.forEach(row => {
+            const blockCell = row.cells[1]?.textContent;
+            
+            if (blockValue === 'all' || blockCell === blockValue) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
             }
         });
+    };
+    
+    // Select Resident
+    window.selectResident = function(id, block, number) {
+        selectedResidentId = id;
+        
+        // Remove selected class from all rows
+        document.querySelectorAll('#residentsListBody tr').forEach(row => {
+            row.classList.remove('selected');
+        });
+        
+        // Add selected class to current row
+        event.target.closest('tr').classList.add('selected');
+        
+        // Update selected info
+        const selectedText = document.getElementById('selectedResidentText');
+        const selectedInfo = document.getElementById('selectedResidentInfo');
+        
+        if (selectedText) {
+            selectedText.textContent = `Блок ${block}, № ${number}`;
+        }
+        if (selectedInfo) {
+            selectedInfo.style.display = 'block';
+        }
+    };
+    
+    // Create Tenant Function
+    window.createTenant = function(event) {
+        event.preventDefault();
+        
+        if (!selectedResidentId) {
+            if (typeof showWarning === 'function') {
+                showWarning('Пожалуйста, выберите резидента!');
+            }
+            return;
+        }
+        
+        const formData = {
+            login: document.getElementById('tenantLogin').value,
+            name: document.getElementById('tenantName').value,
+            phone: document.getElementById('tenantPhone').value,
+            email: document.getElementById('tenantEmail').value,
+            comment: document.getElementById('tenantComment').value,
+            residentId: selectedResidentId
+        };
+        
+        console.log('Creating tenant:', formData);
+        
+        // TODO: Send to backend API
+        // fetch('/api/tenants', {
+        //     method: 'POST',
+        //     headers: {'Content-Type': 'application/json'},
+        //     body: JSON.stringify(formData)
+        // }).then(response => {
+        //     if (response.ok) {
+        //         closeCreateModal();
+        //         // Reload tenants list
+        //     }
+        // });
+        
+        if (typeof showSuccess === 'function') {
+            showSuccess(`Житель "${formData.name}" успешно создан! Логин: ${formData.login}`);
+        }
+        window.closeCreateModal();
+    };
+    
+    // Setup event listeners
+    function setupEventListeners() {
+        // Close modal on overlay click
+        const modal = document.getElementById('createTenantModal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    window.closeCreateModal();
+                }
+            });
+        }
         
         // Close modal on Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                closeCreateModal();
+                const modal = document.getElementById('createTenantModal');
+                if (modal && modal.classList.contains('active')) {
+                    window.closeCreateModal();
+                }
             }
         });
-        
-        // Residents Filter
-        function filterResidents() {
-            const blockFilter = document.getElementById('blockFilter').value;
-            const rows = document.querySelectorAll('#residentsListBody tr');
-            
-            rows.forEach(row => {
-                const blockCell = row.cells[1]?.textContent;
-                
-                if (blockFilter === 'all' || blockCell === blockFilter) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+    }
+    
+    // Initialize
+    setupEventListeners();
+    
+    // Re-initialize when SPA content loads
+    window.addEventListener('spa:contentLoaded', function(e) {
+        if (e.detail.route === '/tenants') {
+            setupEventListeners();
         }
-        
-        // Select Resident
-        function selectResident(id, block, number) {
-            selectedResidentId = id;
-            
-            // Remove selected class from all rows
-            document.querySelectorAll('#residentsListBody tr').forEach(row => {
-                row.classList.remove('selected');
-            });
-            
-            // Add selected class to current row
-            event.target.closest('tr').classList.add('selected');
-            
-            // Update selected info
-            document.getElementById('selectedResidentText').textContent = `Блок ${block}, № ${number}`;
-            document.getElementById('selectedResidentInfo').style.display = 'block';
-        }
-        
-        // Create Tenant Function
-        function createTenant(event) {
-            event.preventDefault();
-            
-            if (!selectedResidentId) {
-                showWarning('Пожалуйста, выберите резидента!');
-                return;
-            }
-            
-            const formData = {
-                login: document.getElementById('tenantLogin').value,
-                name: document.getElementById('tenantName').value,
-                phone: document.getElementById('tenantPhone').value,
-                email: document.getElementById('tenantEmail').value,
-                comment: document.getElementById('tenantComment').value,
-                residentId: selectedResidentId
-            };
-            
-            console.log('Creating tenant:', formData);
-            
-            // TODO: Send to backend API
-            // fetch('/api/tenants', {
-            //     method: 'POST',
-            //     headers: {'Content-Type': 'application/json'},
-            //     body: JSON.stringify(formData)
-            // }).then(response => {
-            //     if (response.ok) {
-            //         closeCreateModal();
-            //         // Reload tenants list
-            //     }
-            // });
-            
-            showSuccess(`Житель "${formData.name}" успешно создан! Логин: ${formData.login}`);
-            closeCreateModal();
-        }
+    });
+    
+})();
 </script>
