@@ -1,7 +1,123 @@
-<div class="dashboard-content">
-    <div class="card">
+<style>
+    /* Payments page visuals */
+    .payments-page .stats-grid { gap: 1rem; }
+    /* Boost specificity to override global #spa-content .content-wrapper .card */
+    #spa-content .payments-page .stats-grid .card,
+    .payments-page .stats-grid .card {
+        background: var(--primary-gradient-enhanced) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.35) !important;
+        transition: var(--transition-smooth);
+    }
+    #spa-content .payments-page .stats-grid .card:hover,
+    .payments-page .stats-grid .card:hover {
+        box-shadow: var(--card-shadow-hover);
+    }
+    .payments-page .stat-value { font-size: 1.75rem; font-weight: 800; }
+    .payments-page .stat-label { opacity: 0.85; }
+
+    /* Controls */
+    .payments-page .filters-container .form-control,
+    .payments-page .filters-container .form-select {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0,0,0,0.1);
+        color: #1a1d2e;
+    }
+    .payments-page .filters-container .form-control::placeholder { color: #6c757d; }
+    .payments-page .filters-container .form-select option { background: #ffffff; color: #1a1d2e; }
+
+    /* Table */
+    .payments-page table thead th { color: #495057; border-bottom: 2px solid rgba(0,0,0,0.1); }
+    .payments-page table tbody td { color: #212529; }
+
+    /* Custom select (consistent dropdown) */
+    .payments-page .custom-select { position: relative; min-width: 180px; display:inline-block; }
+    .payments-page .custom-select .cs-selected {
+        display: flex; align-items:center; justify-content: space-between;
+        padding: 8px 12px; border-radius: 8px; cursor: pointer;
+        background: rgba(255,255,255,0.9); border: 1px solid rgba(0,0,0,0.1); color:#1a1d2e;
+    }
+    .payments-page .custom-select .cs-arrow { margin-left: 8px; opacity: .7; }
+    .payments-page .custom-select .cs-options {
+        position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+        background: #ffffff; color:#1a1d2e; border-radius: 10px;
+        border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 12px 32px rgba(0,0,0,.2);
+        overflow: hidden; display: none; z-index: 1000;
+    }
+    .payments-page .custom-select.open .cs-options { display: block; }
+    .payments-page .custom-select .cs-option { padding: 10px 12px; cursor: pointer; }
+    .payments-page .custom-select .cs-option:hover { background: rgba(102,126,234,.12); }
+
+    /* Dark theme for custom select */
+    [data-theme="dark"] .payments-page .custom-select .cs-selected {
+        background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2); color:#fff;
+    }
+    [data-theme="dark"] .payments-page .custom-select .cs-options {
+        background: #1e2128; color:#fff; border-color: rgba(255,255,255,.12);
+    }
+    [data-theme="dark"] .payments-page .custom-select .cs-option:hover { background: rgba(102,126,234,.18); }
+
+    /* Dark theme */
+    [data-theme="dark"] #spa-content .payments-page .stats-grid .card,
+    [data-theme="dark"] .payments-page .stats-grid .card {
+        background: var(--primary-gradient-enhanced) !important;
+        border-color: rgba(255,255,255,0.12);
+    }
+    [data-theme="dark"] .payments-page .stat-value,
+    [data-theme="dark"] .payments-page .stat-label {
+        color: #ffffff !important;
+    }
+    [data-theme="dark"] .payments-page .filters-container .form-control,
+    [data-theme="dark"] .payments-page .filters-container .form-select {
+        background: rgba(255,255,255,0.08) !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        color: #ffffff !important;
+    }
+    [data-theme="dark"] .payments-page .filters-container .form-control::placeholder { color: rgba(255,255,255,0.6); }
+    [data-theme="dark"] .payments-page .filters-container .form-select option { background: #1e2128; color: #fff; }
+    [data-theme="dark"] .payments-page table thead th { color: rgba(255,255,255,0.85); border-bottom-color: rgba(255,255,255,0.12); }
+    [data-theme="dark"] .payments-page table tbody td { color: #ffffff; }
+    [data-theme="dark"] .payments-page .empty-state { color: rgba(255,255,255,0.6); }
+</style>
+
+<div class="content-wrapper payments-page">
+    <div class="stats-grid">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="stat-value" id="statTotal">0 ₼</div>
+                <div class="stat-label">Итого за период</div>
+            </div>
+        </div>
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="stat-value" id="statCount">0</div>
+                <div class="stat-label">Количество платежей</div>
+            </div>
+        </div>
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="stat-value" id="statAvg">0 ₼</div>
+                <div class="stat-label">Средний чек</div>
+            </div>
+        </div>
+        </div>
+
+    <div class="card" style="margin-top: 1rem;">
         <div class="card-body">
-            <div class="table-responsive">
+            <div class="filters-container" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                <input type="text" id="searchInput" class="form-control" placeholder="Поиск по плательщику или квартире" style="max-width:280px;">
+                <select id="periodSelect" class="form-select" style="max-width:220px;"></select>
+                <select id="methodSelect" class="form-select" style="max-width:180px;">
+                    <option value="">Метод: все</option>
+                    <option value="cash">Наличные</option>
+                    <option value="bank_transfer">Банк</option>
+                    <option value="online">Онлайн</option>
+                </select>
+                <button id="exportCsvBtn" class="btn btn-primary">Экспорт CSV</button>
+                <button id="addPaymentBtn" class="btn btn-success">Добавить платёж</button>
+            </div>
+            <div class="table-responsive" style="margin-top: 1rem;">
                 <table class="table table-hover">
                     <thead>
                         <tr>
@@ -13,19 +129,229 @@
                             <th>Дата</th>
                             <th>Период</th>
                             <th>Статус</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody id="paymentsTable"></tbody>
                 </table>
+                <div id="emptyState" class="empty-state" style="display:none; padding: 1rem;">Нет платежей по текущим фильтрам</div>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="paymentModal" style="display:none;">
+    <div class="modal-content" style="max-width:560px; margin:10% auto; padding:20px; border-radius:12px;">
+        <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h2>Новый платёж</h2>
+            <button id="closeModalBtn" class="btn btn-outline-secondary">×</button>
+        </div>
+        <div class="modal-body" style="margin-top:12px;">
+            <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div>
+                    <label class="form-label">Плательщик</label>
+                    <input id="fUser" class="form-control" placeholder="ФИО">
+                </div>
+                <div>
+                    <label class="form-label">Квартира</label>
+                    <input id="fApt" class="form-control" placeholder="A-101">
+                </div>
+                <div>
+                    <label class="form-label">Сумма (₼)</label>
+                    <input id="fAmount" type="number" min="0" step="0.01" class="form-control" placeholder="0.00">
+                </div>
+                <div>
+                    <label class="form-label">Метод</label>
+                    <select id="fMethod" class="form-select">
+                        <option value="cash">Наличные</option>
+                        <option value="bank_transfer">Банк</option>
+                        <option value="online">Онлайн</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Дата</label>
+                    <input id="fDate" type="date" class="form-control">
+                </div>
+                <div>
+                    <label class="form-label">Период</label>
+                    <input id="fPeriod" class="form-control" placeholder="Октябрь 2024">
+                </div>
+            </div>
+            <div style="margin-top:12px;">
+                <label class="form-label">Описание</label>
+                <textarea id="fDesc" class="form-control" rows="2" placeholder="Комментарий"></textarea>
+            </div>
+        </div>
+        <div class="modal-actions" style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px; padding-top:12px;">
+            <button class="btn btn-secondary" id="cancelModalBtn">Отмена</button>
+            <button class="btn btn-success" id="savePaymentBtn">Сохранить</button>
         </div>
     </div>
 </div>
 
 <script>
 (function(){
+    if (!window.TestData) return;
     const methods = {bank_transfer: 'Банк', cash: 'Наличные', online: 'Онлайн'};
+    const state = { all: [...TestData.payments], filtered: [], search:'', period:'', method:'' };
+
     const tbody = document.getElementById('paymentsTable');
-    if(tbody) tbody.innerHTML = TestData.payments.map(p => `<tr><td>#${p.id}</td><td><strong>${p.userName}</strong></td><td><span class="badge bg-info">${p.apartment}</span></td><td><strong class="text-success">${p.amount.toFixed(2)} ₼</strong></td><td><span class="badge bg-secondary">${methods[p.method]}</span></td><td>${p.date}</td><td>${p.period}</td><td><span class="badge bg-success">Завершено</span></td></tr>`).join('');
+    const emptyState = document.getElementById('emptyState');
+    const searchInput = document.getElementById('searchInput');
+    const periodSelect = document.getElementById('periodSelect');
+    const methodSelect = document.getElementById('methodSelect');
+    const statTotal = document.getElementById('statTotal');
+    const statCount = document.getElementById('statCount');
+    const statAvg = document.getElementById('statAvg');
+
+    // Period options
+    const uniquePeriods = Array.from(new Set(state.all.map(p => p.period)));
+    periodSelect.innerHTML = ['<option value="">Период: все</option>', ...uniquePeriods.map(p=>`<option value="${p}">${p}</option>`)].join('');
+
+    function render(){
+        const rows = state.filtered.map(p => `
+            <tr>
+                <td>#${p.id}</td>
+                <td><strong>${p.userName}</strong></td>
+                <td><span class="badge bg-info">${p.apartment}</span></td>
+                <td><strong class="text-success">${p.amount.toFixed(2)} ₼</strong></td>
+                <td><span class="badge bg-secondary">${methods[p.method]||p.method}</span></td>
+                <td>${p.date}</td>
+                <td>${p.period}</td>
+                <td><span class="badge ${p.status==='completed'?'bg-success':'bg-warning'}">${p.status==='completed'?'Завершено':'В обработке'}</span></td>
+                <td><button class="btn btn-sm btn-outline-danger" data-id="${p.id}">Удалить</button></td>
+            </tr>`).join('');
+        tbody.innerHTML = rows;
+        const total = state.filtered.reduce((s,p)=>s+p.amount,0);
+        statTotal.textContent = total.toFixed(2)+ ' ₼';
+        statCount.textContent = state.filtered.length;
+        statAvg.textContent = state.filtered.length? (total/state.filtered.length).toFixed(2)+' ₼' : '0 ₼';
+        emptyState.style.display = state.filtered.length? 'none':'block';
+    }
+
+    function applyFilters(){
+        state.filtered = state.all.filter(p=>{
+            const q = state.search.toLowerCase();
+            const matchText = !q || p.userName.toLowerCase().includes(q) || p.apartment.toLowerCase().includes(q);
+            const matchPeriod = !state.period || p.period === state.period;
+            const matchMethod = !state.method || p.method === state.method;
+            return matchText && matchPeriod && matchMethod;
+        });
+        render();
+    }
+
+    searchInput.addEventListener('input', e=>{ state.search = e.target.value; applyFilters(); });
+    periodSelect.addEventListener('change', e=>{ state.period = e.target.value; applyFilters(); });
+    methodSelect.addEventListener('change', e=>{ state.method = e.target.value; applyFilters(); });
+
+    // Build pretty custom selects (period + method) for consistent dark dropdowns
+    function buildCustomSelect(native){
+        const wrap = document.createElement('div');
+        wrap.className = 'custom-select';
+        const btn = document.createElement('div'); btn.className = 'cs-selected';
+        const label = document.createElement('span'); label.textContent = native.options[native.selectedIndex]?.text || native.getAttribute('placeholder') || '';
+        const arrow = document.createElement('span'); arrow.className = 'cs-arrow'; arrow.textContent = '▾';
+        btn.appendChild(label); btn.appendChild(arrow);
+        const list = document.createElement('div'); list.className = 'cs-options';
+        Array.from(native.options).forEach(opt=>{
+            const item = document.createElement('div'); item.className='cs-option'; item.textContent = opt.text; item.dataset.value = opt.value;
+            if (opt.selected) item.setAttribute('data-selected','1');
+            item.addEventListener('click',()=>{
+                native.value = opt.value; native.dispatchEvent(new Event('change'));
+                label.textContent = opt.text; wrap.classList.remove('open');
+            });
+            list.appendChild(item);
+        });
+        btn.addEventListener('click',()=>{ wrap.classList.toggle('open'); });
+        document.addEventListener('click',(e)=>{ if(!wrap.contains(e.target)) wrap.classList.remove('open'); });
+        document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') wrap.classList.remove('open'); });
+        // Hide native select to prevent default white dropdown
+        native.style.display='none';
+        native.parentNode.insertBefore(wrap, native); wrap.appendChild(btn); wrap.appendChild(list);
+    }
+    buildCustomSelect(periodSelect);
+    buildCustomSelect(methodSelect);
+
+    // Export CSV
+    document.getElementById('exportCsvBtn').addEventListener('click', ()=>{
+        const header = ['ID','Плательщик','Квартира','Сумма','Метод','Дата','Период','Статус'];
+        const lines = state.filtered.map(p=>[p.id,p.userName,p.apartment,p.amount,methods[p.method]||p.method,p.date,p.period,p.status].join(','));
+        const csv = [header.join(','), ...lines].join('\n');
+        const blob = new Blob(["\uFEFF"+csv], {type:'text/csv;charset=utf-8;'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'payments.csv'; a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    // Add payment modal
+    const modal = document.getElementById('paymentModal');
+    const openBtn = document.getElementById('addPaymentBtn');
+    const closeBtn = document.getElementById('closeModalBtn');
+    const cancelBtn = document.getElementById('cancelModalBtn');
+    const saveBtn = document.getElementById('savePaymentBtn');
+    function openModal(){ modal.style.display='block'; }
+    function closeModal(){ modal.style.display='none'; }
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+
+    function monthNameRu(date){
+        const f = new Intl.DateTimeFormat('ru', {month:'long', year:'numeric'});
+        const s = f.format(date);
+        return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
+    saveBtn.addEventListener('click', ()=>{
+        const userName = document.getElementById('fUser').value.trim();
+        const apartment = document.getElementById('fApt').value.trim();
+        const amount = parseFloat(document.getElementById('fAmount').value||'0');
+        const method = document.getElementById('fMethod').value;
+        const dateVal = document.getElementById('fDate').value;
+        const periodVal = document.getElementById('fPeriod').value.trim();
+
+        // Basic validation
+        if (!userName){ if(window.showError) showError('Введите плательщика'); return; }
+        if (!apartment){ if(window.showError) showError('Укажите квартиру'); return; }
+        if (!(amount>0)){ if(window.showError) showError('Сумма должна быть больше 0'); return; }
+
+        const dateStr = dateVal || new Date().toISOString().slice(0,10);
+        const periodStr = periodVal || monthNameRu(dateVal? new Date(dateVal): new Date());
+
+        const p = {
+            id: state.all.length? Math.max(...state.all.map(x=>x.id))+1 : 1,
+            userName,
+            apartment,
+            amount,
+            method,
+            date: dateStr,
+            period: periodStr,
+            status: 'completed'
+        };
+        state.all.unshift(p);
+        applyFilters();
+        closeModal();
+        if (window.showSuccess) showSuccess('✅ Платёж добавлен');
+        // reset inputs for next add
+        document.getElementById('fUser').value='';
+        document.getElementById('fApt').value='';
+        document.getElementById('fAmount').value='';
+        document.getElementById('fMethod').value='cash';
+        document.getElementById('fDate').value='';
+        document.getElementById('fPeriod').value='';
+    });
+
+    // Delete row
+    tbody.addEventListener('click', (e)=>{
+        const btn = e.target.closest('button[data-id]');
+        if(!btn) return;
+        const id = parseInt(btn.getAttribute('data-id'),10);
+        state.all = state.all.filter(p=>p.id!==id);
+        applyFilters();
+        if (window.showInfo) showInfo('🗑️ Платёж удалён');
+    });
+
+    // init
+    applyFilters();
 })();
 </script>

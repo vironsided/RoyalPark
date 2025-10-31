@@ -1,4 +1,17 @@
-<div class="dashboard-content">
+<style>
+    /* Invoices page readability */
+    /* High specificity to override globals */
+    #spa-content .invoices-page .table thead th,
+    .invoices-page .table thead th { color: #1a1d2e !important; background: rgba(102,126,234,0.04); border-bottom: 2px solid rgba(0,0,0,0.1) !important; }
+    #spa-content .invoices-page .table tbody td,
+    .invoices-page .table tbody td { color: #212529 !important; }
+    [data-theme="dark"] #spa-content .invoices-page .table thead th,
+    [data-theme="dark"] .invoices-page .table thead th { color: rgba(255,255,255,0.9) !important; background: rgba(102,126,234,0.1); border-bottom-color: rgba(255,255,255,0.12) !important; }
+    [data-theme="dark"] #spa-content .invoices-page .table tbody td,
+    [data-theme="dark"] .invoices-page .table tbody td { color: #ffffff !important; }
+</style>
+
+<div class="content-wrapper invoices-page">
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
@@ -19,6 +32,7 @@
                 </table>
             </div>
         </div>
+    </div>
     </div>
 </div>
 

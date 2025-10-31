@@ -260,9 +260,18 @@
                         </span>
                         <span class="nav-text">Резервное копирование</span>
                     </a>
+                    <a href="/login.html" class="nav-item logout-btn" id="logoutBtn">
+                        <span class="nav-icon">
+                            <svg width="20" height="20" fill="currentColor">
+                                <use href="/images/icons.svg#icon-logout"></use>
+                            </svg>
+                        </span>
+                        <span class="nav-text">Выход</span>
+                    </a>
                 </div>
             </nav>
         </aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <!-- Main Content -->
         <main class="main-content">
@@ -341,6 +350,9 @@
     
     <!-- Notifications System -->
     <script src="/js/notifications.js"></script>
+    
+    <!-- Test Data (mock data for SPA pages) -->
+    <script src="/js/test-data.js"></script>
     
     <!-- Sidebar Toggle (для совместимости со старыми страницами) -->
     <script src="/js/sidebar-toggle.js"></script>
@@ -472,42 +484,58 @@
                     console.log('Applied collapsed class from saved state');
                 }
                 
-                // Toggle on click - MULTIPLE EVENT LISTENERS
+                // Elements for mobile overlay
+                const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+                // Toggle on click - desktop and mobile
                 toggleSidebarBtn.onclick = function(e) {
                     console.log('=== CLICK EVENT FIRED ===');
                     e.preventDefault();
                     e.stopPropagation();
-                    
-                    const currentClasses = Array.from(sidebar.classList);
-                    console.log('Current sidebar classes:', currentClasses);
-                    
+
+                    const isMobile = window.innerWidth <= 768;
+                    if (isMobile) {
+                        const willOpen = !sidebar.classList.contains('open');
+                        sidebar.classList.toggle('open', willOpen);
+                        if (sidebarOverlay) sidebarOverlay.classList.toggle('show', willOpen);
+                        return;
+                    }
+
                     const isCurrentlyCollapsed = sidebar.classList.contains('collapsed');
-                    console.log('Is currently collapsed:', isCurrentlyCollapsed);
-                    
                     if (isCurrentlyCollapsed) {
-                        console.log('Attempting to EXPAND sidebar...');
                         sidebar.classList.remove('collapsed');
                         localStorage.setItem('sidebarCollapsed', 'false');
-                        console.log('✅ Sidebar EXPANDED. New classes:', Array.from(sidebar.classList));
-                        if (window.showSuccess) {
-                            showSuccess('📌 Панель развёрнута');
-                        }
                     } else {
-                        console.log('Attempting to COLLAPSE sidebar...');
                         sidebar.classList.add('collapsed');
                         localStorage.setItem('sidebarCollapsed', 'true');
-                        console.log('✅ Sidebar COLLAPSED. New classes:', Array.from(sidebar.classList));
-                        if (window.showInfo) {
-                            showInfo('📌 Панель свёрнута');
+                    }
+                };
+
+                // Close on overlay click (mobile)
+                if (sidebarOverlay) {
+                    sidebarOverlay.addEventListener('click', function() {
+                        sidebar.classList.remove('open');
+                        sidebarOverlay.classList.remove('show');
+                    });
+                }
+
+                // ESC to close (mobile)
+                document.addEventListener('keydown', function(ev) {
+                    if ((ev.key === 'Escape' || ev.keyCode === 27) && window.innerWidth <= 768) {
+                        if (sidebar.classList.contains('open')) {
+                            sidebar.classList.remove('open');
+                            if (sidebarOverlay) sidebarOverlay.classList.remove('show');
                         }
                     }
-                    
-                    // Double check
-                    setTimeout(() => {
-                        console.log('After 100ms - Sidebar width:', sidebar.offsetWidth);
-                        console.log('After 100ms - Has collapsed class:', sidebar.classList.contains('collapsed'));
-                    }, 100);
-                };
+                });
+
+                // Handle resize - cleanup mobile classes when returning to desktop
+                window.addEventListener('resize', function() {
+                    if (window.innerWidth > 768) {
+                        sidebar.classList.remove('open');
+                        if (sidebarOverlay) sidebarOverlay.classList.remove('show');
+                    }
+                });
                 
                 // Debug: log current state
                 console.log('Sidebar initialized successfully');
@@ -536,6 +564,28 @@
                 console.error('❌ ERROR: Sidebar or toggle button not found!');
                 if (!toggleSidebarBtn) console.error('Toggle button element is missing!');
                 if (!sidebar) console.error('Sidebar element is missing!');
+            }
+            
+            // Logout Button Handler
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Clear all session data
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    
+                    // Show notification
+                    if (window.showInfo) {
+                        showInfo('👋 До свидания!');
+                    }
+                    
+                    // Redirect to login page after a short delay
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 500);
+                });
             }
         });
     </script>
