@@ -2449,3 +2449,284 @@ html, body {
     color: white;
 }
 
+/* Account Settings Modal */
+.account-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.account-modal-overlay.show {
+    display: flex;
+    opacity: 1;
+}
+
+.account-modal {
+    background: #ffffff;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    position: relative;
+}
+
+.account-modal-overlay.show .account-modal {
+    transform: scale(1);
+}
+
+.account-modal-header {
+    padding: 2rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px 20px 0 0;
+}
+
+.account-modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.account-modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-size: 1.25rem;
+}
+
+.account-modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.account-modal-body {
+    padding: 2rem;
+}
+
+.account-info-section {
+    margin-bottom: 2rem;
+}
+
+.account-info-section h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #1a1d2e;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.account-info-section h3 svg,
+.account-info-section h3 i {
+    width: 20px;
+    height: 20px;
+}
+
+.account-info-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.account-info-item:last-child {
+    border-bottom: none;
+}
+
+.account-info-label {
+    font-weight: 600;
+    color: #666;
+    min-width: 140px;
+    font-size: 0.9rem;
+}
+
+.account-info-value {
+    color: #1a1d2e;
+    font-weight: 500;
+}
+
+.account-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.account-form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #1a1d2e;
+    font-size: 0.9rem;
+}
+
+.account-form-group input,
+.account-form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background: #ffffff;
+    color: #1a1d2e;
+}
+
+.account-form-group input:focus,
+.account-form-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.account-modal-footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    border-radius: 0 0 20px 20px;
+}
+
+.account-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+}
+
+.account-btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.account-btn-primary:hover {
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+    transform: translateY(-2px);
+}
+
+.account-btn-secondary {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.account-btn-secondary:hover {
+    background: #e5e5e5;
+}
+
+.account-avatar-large {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    margin: 0 auto 1.5rem;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
+
+/* Dark theme for account modal */
+[data-theme="dark"] .account-modal {
+    background: rgba(36, 40, 49, 0.98);
+    backdrop-filter: blur(20px);
+}
+
+[data-theme="dark"] .account-modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+[data-theme="dark"] .account-info-section h3 {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .account-info-label {
+    color: #b8bcc4;
+}
+
+[data-theme="dark"] .account-info-value {
+    color: #e4e6eb;
+}
+
+[data-theme="dark"] .account-info-item {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .account-form-group label {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .account-form-group input,
+[data-theme="dark"] .account-form-group select {
+    background: rgba(45, 49, 57, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #e4e6eb;
+}
+
+[data-theme="dark"] .account-form-group input:focus,
+[data-theme="dark"] .account-form-group select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+[data-theme="dark"] .account-modal-footer {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .account-btn-secondary {
+    background: rgba(45, 49, 57, 0.8);
+    color: #b8bcc4;
+}
+
+[data-theme="dark"] .account-btn-secondary:hover {
+    background: rgba(55, 59, 67, 0.9);
+}
+
+/* User profile clickable */
+.user-profile {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    padding: 0.5rem;
+}
+
+.user-profile:hover {
+    background: rgba(102, 126, 234, 0.1);
+    transform: translateY(-2px);
+}
+
+[data-theme="dark"] .user-profile:hover {
+    background: rgba(102, 126, 234, 0.15);
+}
+
