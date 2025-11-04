@@ -188,19 +188,119 @@
         document.getElementById('activeTasks').textContent = activeTasks;
     }
 
+    // Utility: create or get a reusable modal container
+    function getModalRoot() {
+        let root = document.getElementById('debtsModalRoot');
+        if (!root) {
+            root = document.createElement('div');
+            root.id = 'debtsModalRoot';
+            document.body.appendChild(root);
+        }
+        return root;
+    }
+
+    // In-app confirm modal (returns Promise<boolean>)
+    function showConfirmModal(options) {
+        const {
+            title = 'Подтвердите действие',
+            message = '',
+            confirmText = 'Подтвердить',
+            cancelText = 'Отмена'
+        } = options || {};
+
+        return new Promise((resolve) => {
+            const root = getModalRoot();
+            const overlay = document.createElement('div');
+            overlay.className = 'account-modal-overlay show';
+            overlay.innerHTML = `
+                <div class="account-modal" style="max-width:520px">
+                    <div class="account-modal-header">
+                        <h2>${title}</h2>
+                        <button class="account-modal-close">&times;</button>
+                    </div>
+                    <div class="account-modal-body">
+                        <div style="display:flex; gap:12px; align-items:flex-start;">
+                            <div style="width:38px; height:38px; border-radius:10px; background:#f59e0b; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(0,0,0,.2)">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                            </div>
+                            <div style="white-space:pre-wrap;">${message}</div>
+                        </div>
+                    </div>
+                    <div class="account-modal-footer">
+                        <button class="account-btn account-btn-secondary btn-cancel">${cancelText}</button>
+                        <button class="account-btn account-btn-primary btn-ok">${confirmText}</button>
+                    </div>
+                </div>`;
+
+            function close(result) {
+                overlay.classList.remove('show');
+                setTimeout(() => overlay.remove(), 150);
+                document.body.style.overflow = '';
+                resolve(result);
+            }
+
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+            overlay.querySelector('.account-modal-close').addEventListener('click', () => close(false));
+            overlay.querySelector('.btn-cancel').addEventListener('click', () => close(false));
+            overlay.querySelector('.btn-ok').addEventListener('click', () => close(true));
+            document.addEventListener('keydown', function esc(e){ if(e.key==='Escape'){ close(false); document.removeEventListener('keydown', esc);} });
+
+            root.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+        });
+    }
+
+    // In-app info modal
+    function showInfoModal(options) {
+        const { title = 'Информация', message = '', okText = 'OK' } = options || {};
+        return new Promise((resolve) => {
+            const root = getModalRoot();
+            const overlay = document.createElement('div');
+            overlay.className = 'account-modal-overlay show';
+            overlay.innerHTML = `
+                <div class="account-modal" style="max-width:520px">
+                    <div class="account-modal-header">
+                        <h2>${title}</h2>
+                        <button class="account-modal-close">&times;</button>
+                    </div>
+                    <div class="account-modal-body">${message}</div>
+                    <div class="account-modal-footer">
+                        <button class="account-btn account-btn-primary btn-ok">${okText}</button>
+                    </div>
+                </div>`;
+            function close() {
+                overlay.classList.remove('show');
+                setTimeout(() => overlay.remove(), 150);
+                document.body.style.overflow = '';
+                resolve();
+            }
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+            overlay.querySelector('.account-modal-close').addEventListener('click', close);
+            overlay.querySelector('.btn-ok').addEventListener('click', close);
+            document.addEventListener('keydown', function esc(e){ if(e.key==='Escape'){ close(); document.removeEventListener('keydown', esc);} });
+            root.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+        });
+    }
+
     // Mark as paid
     window.markAsPaid = function(debtId) {
         const debt = debts.find(d => d.id === debtId);
         if (!debt) return;
 
-        if (confirm(`Подтвердить оплату ${debt.amount.toFixed(2)} ₼ от ${debt.userName}?`)) {
+        showConfirmModal({
+            title: 'Подтверждение оплаты',
+            message: `Подтвердить оплату ${debt.amount.toFixed(2)} ₼ от ${debt.userName}?`,
+            confirmText: 'Подтвердить',
+            cancelText: 'Отмена'
+        }).then((ok) => {
+            if (!ok) return;
             const index = debts.findIndex(d => d.id === debtId);
             debts.splice(index, 1);
-            
             renderDebts();
             updateStats();
             showNotification(`Задолженность ${debt.userName} отмечена как оплаченная!`, 'success');
-        }
+        });
     };
 
     // Contact user
@@ -208,9 +308,12 @@
         const user = TestData.users.find(u => u.id === userId);
         if (!user) return;
 
-        const message = `Звонок: ${user.phone}\nEmail: ${user.email}`;
-        alert(message);
-        showNotification(`Инициирован контакт с ${user.name}`, 'info');
+        const message = `<div style="line-height:1.7">
+            <div><strong>Звонок:</strong> ${user.phone}</div>
+            <div><strong>Email:</strong> ${user.email}</div>
+        </div>`;
+        showInfoModal({ title: 'Контактные данные', message, okText: 'Понятно' })
+            .then(() => showNotification(`Инициирован контакт с ${user.name}`, 'info'));
     };
 
     // Send reminder
@@ -226,12 +329,18 @@
         const debt = debts.find(d => d.id === debtId);
         if (!debt) return;
 
-        if (confirm(`Начать юридическую процедуру для ${debt.userName}?\nСумма: ${debt.amount.toFixed(2)} ₼`)) {
+        showConfirmModal({
+            title: 'Юридические меры',
+            message: `Начать юридическую процедуру для ${debt.userName}?\nСумма: ${debt.amount.toFixed(2)} ₼`,
+            confirmText: 'Начать',
+            cancelText: 'Отмена'
+        }).then((ok) => {
+            if (!ok) return;
             debt.status = 'critical';
             debt.task = 'Юридическое уведомление отправлено';
             renderDebts();
             showNotification('Юридическая процедура инициирована', 'warning');
-        }
+        });
     };
 
     // Format date

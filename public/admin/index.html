@@ -298,23 +298,33 @@
                                 <use href="/images/icons.svg#icon-inspections"></use>
                             </svg>
                         </span>
-                        <input type="text" placeholder="Поиск...">
+                        <input type="text" placeholder="Поиск..." id="topSearch" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" name="topSearch" />
                     </div>
 
-                    <button class="notification-btn">
-                        <svg width="20" height="20" fill="currentColor">
-                            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                    <button class="notification-btn" id="openNotifications" title="Уведомления">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V11a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z"/>
                         </svg>
-                        <span class="notification-badge">3</span>
+                        <span class="notification-badge" id="notificationsCount">3</span>
                     </button>
 
                     <!-- Theme Toggle -->
                     <button class="theme-toggle" id="themeToggle" title="Переключить тему">
-                        <svg width="20" height="20" fill="currentColor" class="theme-icon-light">
+                        <!-- Moon (dark mode icon) -->
+                        <svg class="theme-icon-dark" style="display: none;" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                         </svg>
-                        <svg width="20" height="20" fill="currentColor" class="theme-icon-dark" style="display: none;">
-                            <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        <!-- Sun (light mode icon) -->
+                        <svg class="theme-icon-light" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="4"></circle>
+                            <line x1="12" y1="2" x2="12" y2="4"></line>
+                            <line x1="12" y1="20" x2="12" y2="22"></line>
+                            <line x1="2" y1="12" x2="4" y2="12"></line>
+                            <line x1="20" y1="12" x2="22" y2="12"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                         </svg>
                     </button>
 
@@ -438,6 +448,29 @@
         </div>
     </div>
 
+    <!-- Notifications Modal -->
+    <div class="account-modal-overlay" id="notificationsModal">
+        <div class="account-modal" style="max-width:680px;">
+            <div class="account-modal-header">
+                <h2>Уведомления</h2>
+                <button class="account-modal-close" id="notificationsClose">&times;</button>
+            </div>
+            <div class="account-modal-body">
+                <div class="account-info-section" style="margin-bottom:1rem;">
+                    <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+                        <button class="account-btn account-btn-secondary" id="notifFilterAll">Все</button>
+                        <button class="account-btn account-btn-secondary" id="notifFilterImportant">Важные</button>
+                        <button class="account-btn account-btn-secondary" id="notifFilterSystem">Системные</button>
+                    </div>
+                </div>
+                <div id="notificationsList"></div>
+            </div>
+            <div class="account-modal-footer">
+                <button class="account-btn account-btn-secondary" id="notificationsMarkRead">Отметить все прочитанными</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -514,6 +547,32 @@
                 }
             }
             
+            // Clear top search on load to avoid browser autofill
+            const topSearch = document.getElementById('topSearch');
+            if (topSearch) {
+                // Hard reset value and attributes to defeat browser autofill
+                topSearch.value = '';
+                topSearch.setAttribute('value', '');
+                topSearch.setAttribute('autocomplete', 'off');
+                topSearch.setAttribute('autocapitalize', 'off');
+                topSearch.setAttribute('autocorrect', 'off');
+                // Randomize name each load so the browser has no stored value
+                topSearch.setAttribute('name', 'topSearch_' + Math.random().toString(36).slice(2));
+                // Clear again shortly after load (some browsers fill asynchronously)
+                setTimeout(() => { if (topSearch) { topSearch.value = ''; topSearch.setAttribute('value',''); } }, 250);
+                // Clear on pageshow (bfcache restore)
+                window.addEventListener('pageshow', () => { if (topSearch) { topSearch.value=''; topSearch.setAttribute('value',''); } });
+                // Clear on route changes in SPA
+                window.addEventListener('hashchange', () => { if (topSearch) { topSearch.value=''; topSearch.setAttribute('value',''); } });
+                // If browser still injects text, wipe on focus
+                topSearch.addEventListener('focus', () => {
+                    if (topSearch.value && topSearch.value.toLowerCase() === 'admin') {
+                        topSearch.value = '';
+                        topSearch.setAttribute('value','');
+                    }
+                });
+            }
+
             // Language Selector Buttons
             const langButtons = document.querySelectorAll('.lang-btn');
             langButtons.forEach(btn => {
@@ -684,6 +743,92 @@
                 });
             }
             
+            // Notifications Modal logic
+            const openNotificationsBtn = document.getElementById('openNotifications');
+            const notificationsModal = document.getElementById('notificationsModal');
+            const notificationsClose = document.getElementById('notificationsClose');
+            const notificationsList = document.getElementById('notificationsList');
+            const notificationsCount = document.getElementById('notificationsCount');
+            const notifFilterAll = document.getElementById('notifFilterAll');
+            const notifFilterImportant = document.getElementById('notifFilterImportant');
+            const notifFilterSystem = document.getElementById('notifFilterSystem');
+            const notificationsMarkRead = document.getElementById('notificationsMarkRead');
+
+            const NotificationType = {
+                IMPORTANT: 'important',
+                SYSTEM: 'system',
+                INFO: 'info'
+            };
+
+            let notifications = [
+                { id: 1, type: NotificationType.IMPORTANT, title: 'Создан новый пользователь', text: 'Пользователь ivan.petrov добавлен администратором.', time: '2 мин назад', unread: true },
+                { id: 2, type: NotificationType.SYSTEM, title: 'Системный лог', text: 'Подозрительная операция в разделе Платежи.', time: '15 мин назад', unread: true },
+                { id: 3, type: NotificationType.INFO, title: 'Отчет готов', text: 'Годовой отчет успешно сформирован.', time: 'Вчера, 18:45', unread: false }
+            ];
+            let activeFilter = 'all';
+
+            function renderNotifications() {
+                if (!notificationsList) return;
+                const items = notifications
+                    .filter(n => activeFilter === 'all' || n.type === activeFilter)
+                    .map(n => {
+                        const color = n.type === NotificationType.IMPORTANT ? '#ef4444' : (n.type === NotificationType.SYSTEM ? '#22d3ee' : '#8b5cf6');
+                        return `
+                        <div style="display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border:1px solid rgba(0,0,0,.08); border-radius:12px; margin-bottom:10px; background:${n.unread ? 'rgba(102,126,234,0.08)' : 'transparent'};">
+                            <div style="width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; background:${color}; box-shadow:0 6px 16px rgba(0,0,0,.15)">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V11a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z"/>
+                                </svg>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                                    <strong style="color:var(--text-primary)">${n.title}</strong>
+                                    <span style="font-size:.8rem; color:var(--text-secondary)">${n.time}</span>
+                                </div>
+                                <div style="margin-top:4px; color:var(--text-secondary)">${n.text}</div>
+                            </div>
+                            ${n.unread ? '<span class="badge" style="background:#10b981; height:22px; display:flex; align-items:center;">Новая</span>' : ''}
+                        </div>`;
+                    })
+                    .join('');
+                notificationsList.innerHTML = items || '<div class="empty-state">Нет уведомлений</div>';
+
+                // Update counter
+                const unread = notifications.filter(n => n.unread).length;
+                if (notificationsCount) notificationsCount.textContent = String(unread);
+                notificationsCount.style.display = unread ? 'flex' : 'none';
+            }
+
+            function openNotifications() {
+                if (!notificationsModal) return;
+                notificationsModal.classList.add('show');
+                document.body.style.overflow = 'hidden';
+                renderNotifications();
+            }
+
+            function closeNotifications() {
+                if (!notificationsModal) return;
+                notificationsModal.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+
+            if (openNotificationsBtn) openNotificationsBtn.addEventListener('click', openNotifications);
+            if (notificationsClose) notificationsClose.addEventListener('click', closeNotifications);
+            if (notificationsModal) notificationsModal.addEventListener('click', (e) => { if (e.target === notificationsModal) closeNotifications(); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && notificationsModal && notificationsModal.classList.contains('show')) closeNotifications(); });
+
+            if (notifFilterAll) notifFilterAll.addEventListener('click', () => { activeFilter = 'all'; renderNotifications(); });
+            if (notifFilterImportant) notifFilterImportant.addEventListener('click', () => { activeFilter = NotificationType.IMPORTANT; renderNotifications(); });
+            if (notifFilterSystem) notifFilterSystem.addEventListener('click', () => { activeFilter = NotificationType.SYSTEM; renderNotifications(); });
+            if (notificationsMarkRead) notificationsMarkRead.addEventListener('click', () => { notifications = notifications.map(n => ({...n, unread:false})); renderNotifications(); });
+
+            // Expose simple API for future backend hooks
+            window.AdminNotifications = {
+                push: function(n) { notifications.unshift({ id: Date.now(), unread: true, ...n }); renderNotifications(); },
+                markAllRead: function() { notifications = notifications.map(n => ({...n, unread:false})); renderNotifications(); },
+                set: function(list) { notifications = list || []; renderNotifications(); }
+            };
+
             // Account Settings Modal
             const accountProfileBtn = document.getElementById('accountProfileBtn');
             const accountModal = document.getElementById('accountModal');
