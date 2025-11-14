@@ -52,60 +52,28 @@ function checkAuth() {
     }
 }
 
-// Sidebar toggle functionality
+// Sidebar toggle functionality - DISABLED to avoid conflicts with inline script
+// The sidebar toggle is now handled in index.html inline script
 function initSidebarToggle() {
-    const toggleBtn = document.getElementById('toggleSidebar');
-    const sidebar = document.getElementById('sidebar');
-
-    if (toggleBtn && sidebar) {
-        toggleBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Toggle collapsed class
-            sidebar.classList.toggle('collapsed');
-            
-            // Save state
-            const isCollapsed = sidebar.classList.contains('collapsed');
-            localStorage.setItem('sidebarCollapsed', isCollapsed);
-            
-            // Update button icon rotation
-            if (isCollapsed) {
-                toggleBtn.style.transform = 'rotate(180deg)';
-            } else {
-                toggleBtn.style.transform = 'rotate(0deg)';
-            }
-        });
-
-        // Restore sidebar state on page load
-        const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-        if (sidebarCollapsed) {
-            sidebar.classList.add('collapsed');
-            toggleBtn.style.transform = 'rotate(180deg)';
-        }
-    }
-
-    // ESC key to toggle sidebar
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && sidebar) {
-            sidebar.classList.toggle('collapsed');
-            const isCollapsed = sidebar.classList.contains('collapsed');
-            localStorage.setItem('sidebarCollapsed', isCollapsed);
-            
-            if (toggleBtn) {
-                toggleBtn.style.transform = isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
-            }
-        }
-    });
+    // This function is disabled to prevent conflicts
+    // Sidebar toggle is handled in admin/index.html inline script
+    console.log('initSidebarToggle called but disabled - using inline script handler instead');
     
-    // Close sidebar on outside click (mobile)
-    document.addEventListener('click', function(e) {
-        if (window.innerWidth < 768 && sidebar) {
-            if (!sidebar.contains(e.target) && !e.target.closest('.toggle-sidebar')) {
-                sidebar.classList.add('collapsed');
+    // Only handle ESC key for sidebar toggle (if not already handled)
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        // ESC key to toggle sidebar - only if not already handled
+        const escHandler = function(e) {
+            if (e.key === 'Escape' && window.innerWidth > 768) {
+                const isCollapsed = sidebar.classList.contains('collapsed');
+                sidebar.classList.toggle('collapsed');
+                localStorage.setItem('sidebarCollapsed', !isCollapsed);
             }
-        }
-    });
+        };
+        
+        // Check if ESC handler already exists
+        document.addEventListener('keydown', escHandler);
+    }
 }
 
 // Navigation functionality

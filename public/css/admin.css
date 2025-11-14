@@ -191,12 +191,27 @@ html, body {
     background: rgba(255, 255, 255, 0.3);
 }
 
+/* Улучшенный скроллбар для свернутого сайдбара */
+.sidebar.collapsed::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar.collapsed::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+
+.sidebar.collapsed::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
 .sidebar.collapsed {
     width: 80px !important;
     min-width: 80px !important;
     max-width: 80px !important;
     transition: width 0.3s ease !important;
-    overflow: hidden !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
 }
 
 .sidebar.collapsed .sidebar-header {
@@ -314,6 +329,12 @@ html, body {
 /* Navigation Menu */
 .nav-menu {
     padding: var(--spacing-md) 0;
+    padding-bottom: 2rem; /* Дополнительный отступ снизу для доступа к последним элементам */
+}
+
+/* Убеждаемся, что в свернутом состоянии тоже есть отступ */
+.sidebar.collapsed .nav-menu {
+    padding-bottom: 2rem;
 }
 
 .nav-section {
@@ -386,6 +407,13 @@ html, body {
     margin-top: 1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 1rem;
+}
+
+/* Убеждаемся, что кнопка выхода видна в свернутом состоянии */
+.sidebar.collapsed .nav-item.logout-btn {
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+    justify-content: center;
 }
 
 .nav-item.logout-btn:hover {

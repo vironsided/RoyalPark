@@ -614,13 +614,18 @@
             
             // Sidebar Toggle Button - FIXED VERSION
             const toggleSidebarBtn = document.getElementById('toggleSidebar');
-            const sidebar = document.querySelector('.sidebar');
+            const sidebar = document.getElementById('sidebar') || document.querySelector('.sidebar');
             
             console.log('=== SIDEBAR DEBUG ===');
             console.log('Toggle button found:', !!toggleSidebarBtn);
             console.log('Sidebar found:', !!sidebar);
             
             if (toggleSidebarBtn && sidebar) {
+                // Remove any existing event listeners by cloning the button
+                const newToggleBtn = toggleSidebarBtn.cloneNode(true);
+                toggleSidebarBtn.parentNode.replaceChild(newToggleBtn, toggleSidebarBtn);
+                const toggleBtn = newToggleBtn;
+                
                 // Add tooltips to nav items
                 const navItems = sidebar.querySelectorAll('.nav-item');
                 navItems.forEach(item => {
@@ -642,11 +647,12 @@
                 // Elements for mobile overlay
                 const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-                // Toggle on click - desktop and mobile
-                toggleSidebarBtn.onclick = function(e) {
+                // Toggle on click - desktop and mobile - USING addEventListener
+                toggleBtn.addEventListener('click', function(e) {
                     console.log('=== CLICK EVENT FIRED ===');
                     e.preventDefault();
                     e.stopPropagation();
+                    e.stopImmediatePropagation();
 
                     const isMobile = window.innerWidth <= 768;
                     if (isMobile) {
@@ -657,14 +663,20 @@
                     }
 
                     const isCurrentlyCollapsed = sidebar.classList.contains('collapsed');
+                    console.log('Current collapsed state:', isCurrentlyCollapsed);
+                    
                     if (isCurrentlyCollapsed) {
+                        console.log('Expanding sidebar...');
                         sidebar.classList.remove('collapsed');
                         localStorage.setItem('sidebarCollapsed', 'false');
                     } else {
+                        console.log('Collapsing sidebar...');
                         sidebar.classList.add('collapsed');
                         localStorage.setItem('sidebarCollapsed', 'true');
                     }
-                };
+                    
+                    console.log('New collapsed state:', sidebar.classList.contains('collapsed'));
+                }, true); // Use capture phase to ensure it fires first
 
                 // Close on overlay click (mobile)
                 if (sidebarOverlay) {
@@ -674,12 +686,26 @@
                     });
                 }
 
-                // ESC to close (mobile)
+                // ESC to toggle sidebar (works on both mobile and desktop)
                 document.addEventListener('keydown', function(ev) {
-                    if ((ev.key === 'Escape' || ev.keyCode === 27) && window.innerWidth <= 768) {
-                        if (sidebar.classList.contains('open')) {
-                            sidebar.classList.remove('open');
-                            if (sidebarOverlay) sidebarOverlay.classList.remove('show');
+                    if (ev.key === 'Escape' || ev.keyCode === 27) {
+                        const isMobile = window.innerWidth <= 768;
+                        if (isMobile) {
+                            // On mobile, close sidebar if open
+                            if (sidebar.classList.contains('open')) {
+                                sidebar.classList.remove('open');
+                                if (sidebarOverlay) sidebarOverlay.classList.remove('show');
+                            }
+                        } else {
+                            // On desktop, toggle collapsed state
+                            const isCurrentlyCollapsed = sidebar.classList.contains('collapsed');
+                            if (isCurrentlyCollapsed) {
+                                sidebar.classList.remove('collapsed');
+                                localStorage.setItem('sidebarCollapsed', 'false');
+                            } else {
+                                sidebar.classList.add('collapsed');
+                                localStorage.setItem('sidebarCollapsed', 'true');
+                            }
                         }
                     }
                 });

@@ -4,8 +4,14 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Skip this script if we're on admin page (it has its own handler)
+    if (window.location.pathname.includes('/admin/')) {
+        console.log('Sidebar Toggle Script: Skipping admin page (has own handler)');
+        return;
+    }
+    
     const toggleSidebarBtn = document.getElementById('toggleSidebar');
-    const sidebar = document.querySelector('.sidebar');
+    const sidebar = document.querySelector('.sidebar') || document.getElementById('sidebar');
     
     console.log('Sidebar Toggle Script loaded');
     
