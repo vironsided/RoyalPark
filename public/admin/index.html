@@ -79,7 +79,7 @@
 <body>
     <div class="admin-container">
         <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
+        <aside class="sidebar collapsed" id="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
                     <div class="logo-text">
@@ -613,7 +613,7 @@
             }
             
             // Sidebar Toggle Button - FIXED VERSION
-            const toggleSidebarBtn = document.getElementById('toggleSidebar');
+            let toggleSidebarBtn = document.getElementById('toggleSidebar');
             const sidebar = document.getElementById('sidebar') || document.querySelector('.sidebar');
             
             console.log('=== SIDEBAR DEBUG ===');
@@ -624,7 +624,7 @@
                 // Remove any existing event listeners by cloning the button
                 const newToggleBtn = toggleSidebarBtn.cloneNode(true);
                 toggleSidebarBtn.parentNode.replaceChild(newToggleBtn, toggleSidebarBtn);
-                const toggleBtn = newToggleBtn;
+                toggleSidebarBtn = newToggleBtn;
                 
                 // Add tooltips to nav items
                 const navItems = sidebar.querySelectorAll('.nav-item');
@@ -636,7 +636,13 @@
                 });
                 
                 // Load saved state
-                const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+                let storedSidebarState = localStorage.getItem('sidebarCollapsed');
+                if (storedSidebarState === null) {
+                    // по умолчанию держим меню в компактном виде
+                    storedSidebarState = 'true';
+                    localStorage.setItem('sidebarCollapsed', 'true');
+                }
+                const sidebarCollapsed = storedSidebarState === 'true';
                 console.log('Saved collapsed state:', sidebarCollapsed);
                 
                 if (sidebarCollapsed) {
@@ -647,8 +653,7 @@
                 // Elements for mobile overlay
                 const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-                // Toggle on click - desktop and mobile - USING addEventListener
-                toggleBtn.addEventListener('click', function(e) {
+                const handleToggleClick = function(e) {
                     console.log('=== CLICK EVENT FIRED ===');
                     e.preventDefault();
                     e.stopPropagation();
@@ -658,6 +663,8 @@
                     if (isMobile) {
                         const willOpen = !sidebar.classList.contains('open');
                         sidebar.classList.toggle('open', willOpen);
+                        sidebar.classList.toggle('collapsed', !willOpen);
+                        localStorage.setItem('sidebarCollapsed', willOpen ? 'false' : 'true');
                         if (sidebarOverlay) sidebarOverlay.classList.toggle('show', willOpen);
                         return;
                     }
@@ -676,7 +683,11 @@
                     }
                     
                     console.log('New collapsed state:', sidebar.classList.contains('collapsed'));
-                }, true); // Use capture phase to ensure it fires first
+                };
+                
+                toggleSidebarBtn.addEventListener('click', function(e) {
+                    handleToggleClick(e);
+                }, true);
 
                 // Close on overlay click (mobile)
                 if (sidebarOverlay) {
@@ -743,7 +754,9 @@
                 console.log('💡 Type resetSidebar() to reset and reload');
             } else {
                 console.error('❌ ERROR: Sidebar or toggle button not found!');
-                if (!toggleSidebarBtn) console.error('Toggle button element is missing!');
+                if (!toggleSidebarBtn) {
+                    console.error('Toggle button element is missing!');
+                }
                 if (!sidebar) console.error('Sidebar element is missing!');
             }
             
