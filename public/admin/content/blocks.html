@@ -15,6 +15,29 @@
         box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }
     
+    .block-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+    
+    .block-actions h2 {
+        flex: 1 1 200px;
+        margin-bottom: 0;
+    }
+    
+    .block-actions input {
+        flex: 1 1 260px;
+        min-width: 0;
+    }
+    
+    .block-actions button {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+    
     .block-details {
         margin-top: 32px;
     }
@@ -33,10 +56,12 @@
         padding: 40px;
         min-height: 500px;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 20px;
-        align-items: center;
+        align-items: flex-start;
         justify-items: center;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .block-card {
@@ -47,9 +72,12 @@
         cursor: pointer;
         transition: all 0.3s ease;
         text-align: center;
-        width: 100%;
-        max-width: 250px;
+        width: min(100%, 260px);
         box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        box-sizing: border-box;
+        margin: 0 auto;
+        word-wrap: break-word;
+        overflow-wrap: anywhere;
     }
     
     .block-card:hover {
@@ -65,6 +93,7 @@
         font-size: 2rem;
         font-weight: 700;
         margin-bottom: 10px;
+        word-break: break-word;
     }
     
     .block-info {
@@ -82,6 +111,29 @@
         font-size: 4rem;
         margin-bottom: 20px;
         opacity: 0.3;
+    }
+
+    @media (max-width: 640px) {
+        .block-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .block-actions h2,
+        .block-actions input,
+        .block-actions button {
+            width: 100%;
+        }
+        
+        .complex-map {
+            grid-template-columns: 1fr;
+            padding: 24px;
+            justify-items: stretch;
+        }
+
+        .block-card {
+            width: 100%;
+        }
     }
 </style>
 
@@ -143,14 +195,12 @@
 
     <!-- Complex Map -->
     <div class="block-map-container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0">План комплекса Royal Park</h2>
-            <div class="d-flex gap-2">
-                <input type="text" id="newBlockName" class="form-control" placeholder="Название нового блока" style="width: 250px;">
-                <button class="btn btn-success" onclick="createBlock()">
-                    <i class="bi bi-plus-lg"></i> Создать блок
-                </button>
-            </div>
+        <div class="block-actions">
+            <h2 class="mb-0 flex-grow-1">План комплекса Royal Park</h2>
+            <input type="text" id="newBlockName" class="form-control" placeholder="Название нового блока">
+            <button class="btn btn-success w-auto" onclick="createBlock()">
+                <i class="bi bi-plus-lg"></i> Создать блок
+            </button>
         </div>
         
         <div class="complex-map" id="complexMap">

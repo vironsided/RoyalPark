@@ -131,16 +131,18 @@
         }
         
         .modal-content {
-            background: white;
-            border-radius: 20px;
+            background: linear-gradient(135deg, #1f2432 0%, #181c27 100%);
+            border-radius: 24px;
             padding: 30px;
             max-width: 750px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
             overflow-x: hidden;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             animation: modalSlideIn 0.3s ease-out;
+            color: #f6f7ff;
         }
         
         @keyframes modalSlideIn {
@@ -160,13 +162,13 @@
             align-items: center;
             margin-bottom: 25px;
             padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.08);
         }
         
         .modal-header h2 {
             margin: 0;
             font-size: 1.75rem;
-            color: #333;
+            color: #f5f7ff;
         }
         
         .modal-close {
@@ -174,12 +176,12 @@
             border: none;
             font-size: 1.5rem;
             cursor: pointer;
-            color: #999;
+            color: #9ea4c0;
             transition: color 0.3s;
         }
         
         .modal-close:hover {
-            color: #333;
+            color: #ffffff;
         }
         
         .form-group {
@@ -190,36 +192,61 @@
             display: block;
             font-weight: 600;
             margin-bottom: 8px;
-            color: #333;
+            color: #cfd5ff;
         }
         
         .form-group input,
         .form-group select {
             width: 100%;
             padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
             font-size: 1rem;
             transition: all 0.3s;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fefefe;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+        
+        .form-group select option {
+            background: #2b2f3d;
+            color: #fefefe;
+        }
+        
+        .form-group select option:checked,
+        .form-group select option:hover {
+            background: #3b4261;
+            color: #ffffff;
         }
         
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .form-group input::placeholder,
+        .form-group select::placeholder {
+            color: rgba(255, 255, 255, 0.35);
         }
         
         .tariff-steps {
             margin-top: 25px;
             padding: 20px;
-            background: #f8f9fa;
-            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.15);
         }
         
         .tariff-steps h4 {
             margin-bottom: 15px;
             font-size: 1.2rem;
+            color: #f5f6ff;
         }
         
         .step-row {
@@ -240,16 +267,29 @@
             font-size: 0.75rem;
             font-weight: 600;
             margin-bottom: 5px;
-            color: #666;
+            color: #b4bbd8;
             white-space: nowrap;
         }
         
         .step-input-group input {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
             font-size: 0.9rem;
             width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fefefe;
+        }
+        
+        .step-input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .step-input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+            background: rgba(255, 255, 255, 0.08);
         }
         
         .step-row .btn-danger {
