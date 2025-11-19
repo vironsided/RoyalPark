@@ -169,6 +169,7 @@
         object-fit: contain;
         object-position: center;
         filter: drop-shadow(0 20px 40px rgba(0,0,0,0.4));
+        z-index: 1;
     }
     
     .plan-overlay {
@@ -176,11 +177,11 @@
         inset: 0;
         width: 100%;
         height: 100%;
-        pointer-events: none;
+        z-index: 2;
     }
     
     .plan-area {
-        fill: transparent;
+        fill: rgba(255, 255, 255, 0.01);
         stroke: transparent;
         transition: fill 0.2s ease, stroke 0.2s ease;
         cursor: pointer;
@@ -194,18 +195,65 @@
     }
     
     .plan-tooltip {
-        position: absolute;
-        padding: 6px 12px;
-        border-radius: 8px;
-        background: rgba(15, 23, 42, 0.92);
+        position: fixed;
+        z-index: 9999;
+        min-width: 180px;
+        padding: 12px 16px;
+        border-radius: 14px;
+        background: rgba(8, 11, 19, 0.95);
         color: #fff;
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         pointer-events: none;
-        transform: translate(-50%, -120%);
+        transform: translate(-50%, calc(-100% - 14px)) scale(0.95);
         opacity: 0;
-        transition: opacity 0.15s ease;
-        white-space: nowrap;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        transition: opacity 0.12s ease, transform 0.12s ease;
+        box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(16px);
+    }
+    
+    .plan-tooltip::after {
+        content: '';
+        position: absolute;
+        bottom: -7px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 7px 7px 0 7px;
+        border-style: solid;
+        border-color: rgba(8, 11, 19, 0.95) transparent transparent transparent;
+    }
+    
+    .plan-tooltip .tooltip-title-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+    }
+    
+    .plan-tooltip .tooltip-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 4px;
+        background: linear-gradient(135deg, #69a1ff, #8b5cf6);
+        box-shadow: 0 0 10px rgba(105, 161, 255, 0.6);
+        flex-shrink: 0;
+    }
+    
+    .plan-tooltip .tooltip-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+    
+    .plan-tooltip .tooltip-desc {
+        font-size: 0.78rem;
+        color: rgba(255, 255, 255, 0.75);
+        line-height: 1.35;
+    }
+    
+    .plan-tooltip.hidden {
+        opacity: 0;
+        transform: translate(-50%, calc(-80% - 10px)) scale(0.9);
     }
 
     .plan-note {
@@ -403,18 +451,17 @@
             <div class="plan-image-frame">
                 <img src="/images/edited-photo.png" alt="План комплекса Royal Park">
                 <svg class="plan-overlay" viewBox="0 0 4959 3505" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                    <polygon class="plan-area" data-block-label="Зона 1" points="2278.31 2292.98 2586.33 2288.09 3133.9 2610.77 3021.46 2747.67"></polygon>
-                    <polygon class="plan-area" data-block-label="Зона 2" points="2844.78 2255.62 3490.04 2592.28 3310.49 2693.28 2614.73 2294.9"></polygon>
-                    <polygon class="plan-area" data-block-label="Зона 3" points="2912.11 2238.79 3579.82 2631.56 3725.7 2564.23 3708.87 2379.06 3456.37 2165.85"></polygon>
-                    <polygon class="plan-area" data-block-label="Зона 4" points="1356.31 1615.32 1266.83 1634.16 1342.18 2185.16 1667.13 2161.62 1676.55 1982.66 1445.79 1940.27"></polygon>
-                    <polygon class="plan-area" data-block-label="Зона 5" points="1902.13 1700.13 1453.25 1750.63 1503.75 2109.74 1958.24 2059.24"></polygon>
-                    <polygon class="plan-area" data-block-label="Зона 6" points="1784.3 2143.4 1890.91 2132.18 1896.52 2233.18 1806.74 2255.62"></polygon>
-                    <polygon class="plan-area" data-block-label="Зона 7" points="3164.6 1621.58 3344.15 2132.18 3170.21 2143.4 3007.49 1750.63 2603.5 1677.69"></polygon>
-                    <polygon class="plan-area" data-block-label="Зона 8" points="2799.89 1739.41 2985.05 2177.07 2704.5 2199.51 2620.34 1756.24"></polygon>
-                    <polygon class="plan-area" data-block-label="Зона 9" points="3013.11 2149.01 2839.17 1761.85 2957 1756.24 3125.33 2098.51"></polygon>
-                    <polygon class="plan-area" data-block-label="Зона 10" points="1857.24 2165.85 1870 2180 1844 2185"></polygon>
+                    <polygon class="plan-area" data-block-label="Зона 1" data-block-info="Жилой сектор 1. Подтверждение границ ожидается." points="1356.31 1615.32 1266.83 1634.16 1342.18 2185.16 1667.13 2161.62 1676.55 1982.66 1445.79 1940.27"></polygon>
+                    <polygon class="plan-area" data-block-label="Зона 2" data-block-info="Жилые дома повышенной комфортности." points="1373.83 1603.62 1838.3 1544.95 1887.19 1730.74 1388.5 1794.29"></polygon>
+                    <polygon class="plan-area" data-block-label="Зона 3" data-block-info="Внутренние таунхаусы. Данные уточняются." points="1417.83 1784.52 1896.97 1735.63 1911.63 1818.74 1838.3 1828.52 1857.85 1911.63 1452.06 1960.52"></polygon>
+                    <polygon class="plan-area" data-block-label="Зона 4" data-block-info="Блоки вдоль центрального бульвара." points="2274.64 2175.74 2576.04 2152.2 3178.85 2500.69 3079.95 2637.26"></polygon>
+                    <polygon class="plan-area" data-block-label="Зона 5" data-block-info="Планируется смешанная застройка." points="2656.1 2166.32 2948.09 2133.36 3597.98 2514.82 3353.09 2585.46"></polygon>
+                    <polygon class="plan-area" data-block-label="Зона 6" data-block-info="Высотная часть проекта." points="3588.59 2068.08 3818.38 2239.2 3896.6 2468.99 3666.81 2512.99 2972.56 2116.97"></polygon>
+                    <polygon class="plan-area" data-block-label="Зона 7" data-block-info="Северные виллы с видом на парк." points="2679.22 1593.84 2889.45 1593.84 3050.79 2019.19 2742.78 2048.53"></polygon>
+                    <polygon class="plan-area" data-block-label="Зона 8" data-block-info="Коттеджная линия вдоль коридора." points="2933.45 1584.06 3080.12 1569.4 3241.46 1984.97 3089.9 2014.3"></polygon>
+                    <polygon class="plan-area" data-block-label="Зона 9" data-block-info="Территория вокруг площади TISA." points="2718.33 1476.5 3275.69 1461.84 3471.25 1965.41 3378.36 1975.19 3339.25 1916.52 3265.91 1931.19 3124.13 1579.17 2811.22 1584.06 2733 1584.06"></polygon>
+                    <polygon class="plan-area" data-block-label="Зона 10" data-block-info="Площадь у въезда. Коммерция/сервис." points="1755.18 2043.64 1794.29 1984.97 1882.3 2038.75 1833.41 2097.42"></polygon>
                 </svg>
-                <div class="plan-tooltip" id="planTooltip">Зона 1</div>
             </div>
             <div class="plan-note">Для подробностей используйте оригинал в разделе документации.</div>
         </div>
@@ -638,33 +685,77 @@
         // window.location.href = `/admin/meters.html?block=${selectedBlock}`;
     }
     
-    document.addEventListener('DOMContentLoaded', () => {
-        const tooltip = document.getElementById('planTooltip');
-        const frame = document.querySelector('.plan-image-frame');
-        const areas = document.querySelectorAll('.plan-area');
+</script>
+
+<script>
+(function setupPlanHoverTooltip() {
+    const TOOLTIP_ID = 'planTooltip';
+    
+    const createTooltip = () => {
+        let tooltip = document.getElementById(TOOLTIP_ID);
+        if (tooltip) return tooltip;
         
-        if (!tooltip || !frame || !areas.length) return;
+        tooltip = document.createElement('div');
+        tooltip.id = TOOLTIP_ID;
+        tooltip.className = 'plan-tooltip hidden';
+        tooltip.innerHTML = `
+            <div class="tooltip-title-row">
+                <span class="tooltip-dot"></span>
+                <span class="tooltip-title">Зона</span>
+            </div>
+            <div class="tooltip-desc">Информация уточняется.</div>
+        `;
+        document.body.appendChild(tooltip);
+        return tooltip;
+    };
+    
+    const bindTooltip = () => {
+        const areas = document.querySelectorAll('.plan-area');
+        if (!areas.length) return false;
+        
+        const tooltip = createTooltip();
+        const titleEl = tooltip.querySelector('.tooltip-title');
+        const descEl = tooltip.querySelector('.tooltip-desc');
+        
+        const move = (event) => {
+            tooltip.style.left = `${event.clientX}px`;
+            tooltip.style.top = `${event.clientY - 18}px`;
+        };
         
         areas.forEach(area => {
-            const label = area.dataset.blockLabel || 'Зона';
+            if (area.dataset.tooltipBound === 'true') return;
+            area.dataset.tooltipBound = 'true';
             
             area.addEventListener('pointerenter', () => {
-                tooltip.textContent = label;
-                tooltip.style.opacity = '1';
-            });
+                const label = area.dataset.blockLabel || 'Зона';
+                const info = area.dataset.blockInfo || 'Информация уточняется.';
+                titleEl.textContent = label;
+                descEl.textContent = info;
+                tooltip.classList.remove('hidden');
+            }, { passive: true });
             
-            area.addEventListener('pointermove', (event) => {
-                const rect = frame.getBoundingClientRect();
-                const x = event.clientX - rect.left;
-                const y = event.clientY - rect.top;
-                
-                tooltip.style.left = `${x}px`;
-                tooltip.style.top = `${y}px`;
-            });
+            area.addEventListener('pointermove', move, { passive: true });
             
             area.addEventListener('pointerleave', () => {
-                tooltip.style.opacity = '0';
-            });
+                tooltip.classList.add('hidden');
+            }, { passive: true });
         });
+        
+        return true;
+    };
+    
+    const init = () => {
+        if (!bindTooltip()) {
+            setTimeout(init, 100);
+        }
+    };
+    
+    init();
+    
+    window.addEventListener('spa:contentLoaded', (event) => {
+        if (!event.detail || event.detail.route === '/blocks') {
+            init();
+        }
     });
+})();
 </script>

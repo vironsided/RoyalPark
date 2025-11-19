@@ -20,11 +20,16 @@ document.addEventListener('DOMContentLoaded', function() {
     addCardAnimations();
     initSmoothScroll();
     addRippleEffect();
+    initPlanTooltip();
     
     // Add loading complete class for animations
     setTimeout(() => {
         document.body.classList.add('loaded');
     }, 100);
+});
+
+window.addEventListener('spa:contentLoaded', function() {
+    initPlanTooltip();
 });
 
 // Check if user is authenticated and has admin role
@@ -403,6 +408,65 @@ function addRippleEffect() {
             setTimeout(() => ripple.remove(), 600);
         });
     });
+}
+
+// Interactive plan tooltip for Blocks page
+function initPlanTooltip() {
+    const planFrame = document.querySelector('.plan-image-frame');
+    const areas = document.querySelectorAll('.plan-area');
+    
+    if (!planFrame || !areas.length) {
+        return;
+    }
+    
+    const tooltip = ensurePlanTooltipElement();
+    const titleEl = tooltip.querySelector('.tooltip-title');
+    const descEl = tooltip.querySelector('.tooltip-desc');
+    
+    const moveTooltip = (event) => {
+        tooltip.style.left = `${event.clientX}px`;
+        tooltip.style.top = `${event.clientY - 16}px`;
+    };
+    
+    areas.forEach(area => {
+        if (area.dataset.planTooltipBound === 'true') return;
+        area.dataset.planTooltipBound = 'true';
+        
+        area.addEventListener('pointerenter', () => {
+            const label = area.dataset.blockLabel || 'Зона';
+            const info = area.dataset.blockInfo || 'Информация уточняется.';
+            titleEl.textContent = label;
+            descEl.textContent = info;
+            tooltip.classList.remove('hidden');
+        }, { passive: true });
+        
+        area.addEventListener('pointermove', moveTooltip, { passive: true });
+        
+        area.addEventListener('pointerleave', () => {
+            tooltip.classList.add('hidden');
+        }, { passive: true });
+    });
+}
+
+function ensurePlanTooltipElement() {
+    if (window.planTooltipElement && document.body.contains(window.planTooltipElement)) {
+        return window.planTooltipElement;
+    }
+    
+    const tooltip = document.createElement('div');
+    tooltip.id = 'planTooltip';
+    tooltip.className = 'plan-tooltip hidden';
+    tooltip.innerHTML = `
+        <div class="tooltip-title-row">
+            <span class="tooltip-dot"></span>
+            <span class="tooltip-title">Зона</span>
+        </div>
+        <div class="tooltip-desc">Информация уточняется.</div>
+    `;
+    
+    document.body.appendChild(tooltip);
+    window.planTooltipElement = tooltip;
+    return tooltip;
 }
 
 // Add CSS for ripple effect dynamically
