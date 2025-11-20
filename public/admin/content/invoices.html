@@ -9,28 +9,601 @@
     [data-theme="dark"] .invoices-page .table thead th { color: rgba(255,255,255,0.9) !important; background: rgba(102,126,234,0.1); border-bottom-color: rgba(255,255,255,0.12) !important; }
     [data-theme="dark"] #spa-content .invoices-page .table tbody td,
     [data-theme="dark"] .invoices-page .table tbody td { color: #ffffff !important; }
+
+    /* Invoices Actions Section */
+    .invoices-actions {
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .invoices-actions-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        align-items: end;
+        margin-bottom: 20px;
+    }
+
+    .invoices-actions-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .invoices-actions-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .invoices-actions-group label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: rgba(255, 255, 255, 0.8) !important;
+        font-size: 0.9rem;
+    }
+
+    .invoices-actions-group input,
+    .invoices-actions-group select {
+        padding: 10px 15px;
+        background: rgba(255, 255, 255, 0.05) !important;
+        color: #fefefe !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+
+    .invoices-actions-group input:focus,
+    .invoices-actions-group select:focus {
+        outline: none;
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        background: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    .invoices-actions-group input::placeholder {
+        color: rgba(255, 255, 255, 0.35);
+    }
+
+    .invoices-actions-group select option {
+        background: #1f2432;
+        color: #f6f7ff;
+    }
+
+    .date-input-wrapper {
+        position: relative;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .date-input-wrapper input[type="date"] {
+        flex: 1;
+        padding-right: 40px;
+    }
+
+    .date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+        opacity: 0;
+        position: absolute;
+        right: 45px;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        z-index: 1;
+    }
+
+    .date-input-wrapper .btn-calendar {
+        position: absolute;
+        right: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        color: rgba(255, 255, 255, 0.8);
+        cursor: pointer;
+        transition: all 0.3s;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .date-input-wrapper .btn-calendar:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: #667eea;
+        color: #ffffff;
+    }
+
+    .date-input-wrapper .btn-calendar i {
+        font-size: 1rem;
+    }
+
+    /* Light theme for date input */
+    body:not([data-theme="dark"]) .invoices-page .date-input-wrapper .btn-calendar {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        color: #495057;
+    }
+
+    body:not([data-theme="dark"]) .invoices-page .date-input-wrapper .btn-calendar:hover {
+        background: rgba(102, 126, 234, 0.1);
+        border-color: #667eea;
+        color: #667eea;
+    }
+
+    .invoices-actions-buttons {
+        display: flex;
+        gap: 15px;
+        align-items: end;
+    }
+
+    .invoices-actions-buttons .btn {
+        padding: 10px 20px;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+
+    /* Filters Section */
+    .invoices-filters {
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .invoices-filters-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 20px;
+        align-items: end;
+        margin-bottom: 20px;
+    }
+
+    .invoices-filters-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .invoices-filters-group label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: rgba(255, 255, 255, 0.8) !important;
+        font-size: 0.9rem;
+    }
+
+    .invoices-filters-group input,
+    .invoices-filters-group select {
+        padding: 10px 15px;
+        background: rgba(255, 255, 255, 0.05) !important;
+        color: #fefefe !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+
+    .invoices-filters-group input:focus,
+    .invoices-filters-group select:focus {
+        outline: none;
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        background: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    .invoices-filters-group input::placeholder {
+        color: rgba(255, 255, 255, 0.35);
+    }
+
+    /* Number input styling with spinners */
+    .invoices-filters-group input[type="number"] {
+        -webkit-appearance: none;
+        -moz-appearance: textfield;
+        appearance: textfield;
+        padding-right: 35px;
+    }
+
+    .invoices-filters-group input[type="number"]::-webkit-inner-spin-button,
+    .invoices-filters-group input[type="number"]::-webkit-outer-spin-button {
+        opacity: 1;
+        height: 30px;
+        cursor: pointer;
+        margin-right: 5px;
+    }
+
+    /* Style for number input spinners in dark theme */
+    .invoices-filters-group input[type="number"]::-webkit-inner-spin-button {
+        background: rgba(255, 255, 255, 0.1);
+        border-left: 1px solid rgba(255, 255, 255, 0.12);
+        width: 25px;
+        border-radius: 0 8px 8px 0;
+    }
+
+    /* Show spinners on hover */
+    .invoices-filters-group input[type="number"]:hover::-webkit-inner-spin-button {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    .invoices-filters-group select option {
+        background: #1f2432;
+        color: #f6f7ff;
+    }
+
+    .invoices-filters-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+
+
+    /* Light theme styles - override dark styles when NOT dark theme */
+    body:not([data-theme="dark"]) .invoices-actions,
+    body:not([data-theme="dark"]) #spa-content .invoices-actions,
+    body:not([data-theme="dark"]) .content-wrapper .invoices-actions {
+        background: rgba(255, 255, 255, 0.9) !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        color: #212529 !important;
+    }
+
+    body:not([data-theme="dark"]) .invoices-filters,
+    body:not([data-theme="dark"]) #spa-content .invoices-filters,
+    body:not([data-theme="dark"]) .content-wrapper .invoices-filters {
+        background: rgba(255, 255, 255, 0.9) !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        color: #212529 !important;
+    }
+
+    body:not([data-theme="dark"]) .invoices-actions-group label,
+    body:not([data-theme="dark"]) .invoices-filters-group label {
+        color: #495057 !important;
+    }
+
+    body:not([data-theme="dark"]) .invoices-actions-group input,
+    body:not([data-theme="dark"]) .invoices-actions-group select,
+    body:not([data-theme="dark"]) .invoices-filters-group input,
+    body:not([data-theme="dark"]) .invoices-filters-group select {
+        background: #ffffff !important;
+        color: #212529 !important;
+        border: 1px solid #dee2e6 !important;
+    }
+
+    body:not([data-theme="dark"]) .invoices-actions-group input:focus,
+    body:not([data-theme="dark"]) .invoices-actions-group select:focus,
+    body:not([data-theme="dark"]) .invoices-filters-group input:focus,
+    body:not([data-theme="dark"]) .invoices-filters-group select:focus {
+        border-color: #667eea !important;
+        background: #ffffff !important;
+    }
+
+    body:not([data-theme="dark"]) .invoices-actions-group select option,
+    body:not([data-theme="dark"]) .invoices-filters-group select option {
+        background: #ffffff !important;
+        color: #212529 !important;
+    }
+
+    /* Pagination Styles */
+    .table-pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        background: rgba(255, 255, 255, 0.05);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 0 0 15px 15px;
+    }
+
+    .pagination-controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .btn-pagination {
+        min-width: 36px;
+        height: 36px;
+        padding: 0 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        color: rgba(255, 255, 255, 0.7);
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+
+    .btn-pagination:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+    }
+
+    .btn-pagination:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .btn-pagination.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
+        color: #ffffff;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+
+    .pagination-info {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+    }
+
+    .pagination-per-page {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+    }
+
+    /* Custom dropdown for pagination per page selector */
+    .custom-pag-select {
+        position: relative;
+        display: inline-block;
+        min-width: 60px;
+    }
+
+    .custom-pag-select .select-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 6px;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        min-width: 60px;
+        user-select: none;
+    }
+
+    .custom-pag-select .select-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .custom-pag-select .select-btn .arrow {
+        margin-left: 8px;
+        font-size: 0.7rem;
+        transition: transform 0.3s;
+        opacity: 0.7;
+    }
+
+    .custom-pag-select.open .select-btn .arrow {
+        transform: rotate(180deg);
+    }
+
+    .custom-pag-select .select-options {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        background: #1f2432 !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+        overflow: hidden;
+        display: none;
+        z-index: 10000;
+        min-width: 100%;
+        width: auto;
+    }
+
+    .custom-pag-select.open .select-options {
+        display: block;
+    }
+
+    .custom-pag-select .select-option {
+        padding: 8px 12px;
+        cursor: pointer;
+        color: #f6f7ff !important;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        background: #1f2432 !important;
+        display: block;
+        white-space: nowrap;
+    }
+
+    .custom-pag-select .select-option:hover {
+        background: #3b4261 !important;
+        color: #ffffff !important;
+    }
+
+    .custom-pag-select .select-option.selected {
+        background: #667eea !important;
+        color: #ffffff !important;
+        font-weight: 600;
+    }
+
+    .custom-pag-select .select-option:not(:last-child) {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* ФИНАЛЬНЫЙ ПРИОРИТЕТ - ГАРАНТИРОВАННО СЕРЫЙ ФОН В DARK THEME */
+    /* Этот блок должен быть в самом конце, чтобы перекрыть ВСЕ остальные стили */
+    [data-theme="dark"] .invoices-actions,
+    [data-theme="dark"] .invoices-filters {
+        background: #242831 !important;
+        background-color: #242831 !important;
+        background-image: none !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        color: #e4e6eb !important;
+    }
+
+    body[data-theme="dark"] .invoices-actions,
+    body[data-theme="dark"] .invoices-filters {
+        background: #242831 !important;
+        background-color: #242831 !important;
+        background-image: none !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        color: #e4e6eb !important;
+    }
+
+    html[data-theme="dark"] .invoices-actions,
+    html[data-theme="dark"] .invoices-filters {
+        background: #242831 !important;
+        background-color: #242831 !important;
+        background-image: none !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        color: #e4e6eb !important;
+    }
 </style>
 
 <div class="content-wrapper invoices-page">
+    <!-- Actions Section -->
+    <div class="invoices-actions">
+        <div class="invoices-actions-row">
+            <div class="invoices-actions-group">
+                <label>Блок (для «по блоку»)</label>
+                <select id="invoiceBlock">
+                    <option value="">— выберите блок —</option>
+                    <option value="A">Блок A</option>
+                    <option value="B">Блок B</option>
+                    <option value="K">Блок K</option>
+                    <option value="X">Блок X</option>
+                    <option value="Z">Блок Z</option>
+                </select>
+            </div>
+            
+            <div class="invoices-actions-group">
+                <label>Срок оплаты (due date)</label>
+                <div class="date-input-wrapper">
+                    <input type="date" id="invoiceDueDate" class="date-picker-input">
+                    <button type="button" class="btn-calendar" onclick="openDatePicker('invoiceDueDate')" title="Открыть календарь">
+                        <i class="bi bi-calendar"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="invoices-actions-row">
+            <div class="invoices-actions-buttons">
+                <button class="btn btn-outline-primary" onclick="issueInvoiceByBlock()">
+                    Выставить счёт по блоку
+                </button>
+                <button class="btn btn-primary" onclick="issueAllInvoices()">
+                    Выставить все счета
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="invoices-filters">
+        <div class="invoices-filters-row">
+            <div class="invoices-filters-group">
+                <label>Год</label>
+                <input type="number" id="filterYear" min="2000" max="2100" step="1" value="2024">
+            </div>
+            
+            <div class="invoices-filters-group">
+                <label>Месяц</label>
+                <input type="number" id="filterMonth" min="1" max="12" step="1" placeholder="1-12">
+            </div>
+            
+            <div class="invoices-filters-group">
+                <label>Резидент</label>
+                <select id="filterResident">
+                    <option value="all">Все</option>
+                    <option value="1">Резидент 1</option>
+                    <option value="2">Резидент 2</option>
+                </select>
+            </div>
+            
+            <div class="invoices-filters-group">
+                <label>Статус</label>
+                <select id="filterStatus">
+                    <option value="all">Все</option>
+                    <option value="paid">Оплачен</option>
+                    <option value="unpaid">Не оплачен</option>
+                    <option value="overdue">Просрочен</option>
+                </select>
+            </div>
+            
+            <div class="invoices-filters-group">
+                <label>Поиск</label>
+                <input type="text" id="filterSearch" placeholder="№ или примечание">
+            </div>
+        </div>
+        
+        <div class="invoices-filters-actions">
+            <button class="btn btn-outline-secondary" onclick="applyInvoiceFilters()">
+                <i class="bi bi-funnel"></i> Фильтр
+            </button>
+            <button class="btn btn-outline-warning" onclick="clearInvoiceFilters()">
+                <i class="bi bi-x-circle"></i> Очистить
+            </button>
+        </div>
+    </div>
+
+    <!-- Invoices Table -->
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Плательщик</th>
-                            <th>Квартира</th>
-                            <th>Сумма</th>
                             <th>Период</th>
-                            <th>Выставлен</th>
-                            <th>Срок</th>
+                            <th>Резидент</th>
+                            <th>№ счета</th>
                             <th>Статус</th>
+                            <th>Начислено</th>
+                            <th>Срок оплаты</th>
+                            <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody id="invoicesTable"></tbody>
                 </table>
             </div>
+            
+            <!-- Pagination -->
+            <div class="table-pagination">
+                <div class="pagination-controls">
+                    <button class="btn-pagination" onclick="goToInvoicePage('prev')" disabled id="invoicePrevBtn">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </button>
+                    <button class="btn-pagination active" onclick="goToInvoicePage(1)" id="invoiceCurrentPageBtn">1</button>
+                    <button class="btn-pagination" onclick="goToInvoicePage('next')" disabled id="invoiceNextBtn">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </button>
+                </div>
+                <div class="pagination-info">
+                    <span>Стр. <span id="invoiceCurrentPage">1</span> из <span id="invoiceTotalPages">1</span> · всего <span id="invoiceTotalItems">0</span></span>
+                </div>
+                <div class="pagination-per-page">
+                    <span>На</span>
+                    <span>странице:</span>
+                    <div class="custom-pag-select" id="customInvoiceItemsPerPage">
+                        <select id="invoiceItemsPerPage" onchange="changeInvoiceItemsPerPage()" style="display: none;">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <div class="select-btn">
+                            <span class="select-text">25</span>
+                            <span class="arrow">▾</span>
+                        </div>
+                        <div class="select-options">
+                            <div class="select-option" data-value="10">10</div>
+                            <div class="select-option selected" data-value="25">25</div>
+                            <div class="select-option" data-value="50">50</div>
+                            <div class="select-option" data-value="100">100</div>
+                        </div>
+                    </div>
         </div>
     </div>
     </div>
@@ -38,8 +611,415 @@
 
 <script>
 (function(){
+    // ПРИНУДИТЕЛЬНО ПРИМЕНИТЬ СЕРЫЙ ФОН В DARK THEME
+    function applyDarkThemeStyles() {
+        if (document.documentElement.getAttribute('data-theme') === 'dark' || 
+            document.body.getAttribute('data-theme') === 'dark') {
+            const actionsSection = document.querySelector('.invoices-actions');
+            const filtersSection = document.querySelector('.invoices-filters');
+            
+            if (actionsSection) {
+                actionsSection.style.setProperty('background', '#242831', 'important');
+                actionsSection.style.setProperty('background-color', '#242831', 'important');
+                actionsSection.style.setProperty('border', '1px solid rgba(255, 255, 255, 0.08)', 'important');
+                actionsSection.style.setProperty('color', '#e4e6eb', 'important');
+            }
+            
+            if (filtersSection) {
+                filtersSection.style.setProperty('background', '#242831', 'important');
+                filtersSection.style.setProperty('background-color', '#242831', 'important');
+                filtersSection.style.setProperty('border', '1px solid rgba(255, 255, 255, 0.08)', 'important');
+                filtersSection.style.setProperty('color', '#e4e6eb', 'important');
+            }
+        }
+    }
+    
+    // Применить сразу
+    applyDarkThemeStyles();
+    
+    // Применить после загрузки DOM
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyDarkThemeStyles);
+    }
+    
+    // Применить с задержкой на случай, если стили загружаются асинхронно
+    setTimeout(applyDarkThemeStyles, 100);
+    setTimeout(applyDarkThemeStyles, 500);
+    setTimeout(applyDarkThemeStyles, 1000);
+    
     const statuses = {paid: {text: 'Оплачен', cls: 'success'}, unpaid: {text: 'Не оплачен', cls: 'warning'}, overdue: {text: 'Просрочен', cls: 'danger'}};
+    
+    // Store original data
+    let allInvoices = [];
+    let filteredInvoices = [];
+    
+    // Initialize data
+    if (typeof TestData !== 'undefined' && TestData.invoices) {
+        allInvoices = [...TestData.invoices];
+        filteredInvoices = [...TestData.invoices];
+    }
+    
+    // Pagination state
+    let paginationState = {
+        currentPage: 1,
+        itemsPerPage: 25,
+        totalItems: 0,
+        totalPages: 1
+    };
+    
+    // Render table function
+    function renderTable(invoices) {
     const tbody = document.getElementById('invoicesTable');
-    if(tbody) tbody.innerHTML = TestData.invoices.map(i => `<tr><td>#${i.id}</td><td><strong>${i.userName}</strong></td><td><span class="badge bg-info">${i.apartment}</span></td><td><strong>${i.amount.toFixed(2)} ₼</strong></td><td>${i.period}</td><td>${i.issueDate}</td><td>${i.dueDate}</td><td><span class="badge bg-${statuses[i.status].cls}">${statuses[i.status].text}</span></td></tr>`).join('');
+        if (!tbody) return;
+        
+        // Update pagination state
+        paginationState.totalItems = invoices.length;
+        paginationState.totalPages = Math.max(1, Math.ceil(paginationState.totalItems / paginationState.itemsPerPage));
+        
+        if (paginationState.currentPage > paginationState.totalPages) {
+            paginationState.currentPage = paginationState.totalPages || 1;
+        }
+        
+        // Get paginated data
+        const startIndex = (paginationState.currentPage - 1) * paginationState.itemsPerPage;
+        const endIndex = startIndex + paginationState.itemsPerPage;
+        const pageInvoices = invoices.slice(startIndex, endIndex);
+        
+        if (pageInvoices.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Нет данных по текущим фильтрам</td></tr>';
+        } else {
+            tbody.innerHTML = pageInvoices.map(i => {
+                const invoiceNumber = i.invoiceNumber || i.number || `INV-${String(i.id).padStart(4, '0')}`;
+                const resident = i.userName || i.residentName || '—';
+                const period = i.period || '—';
+                const amount = typeof i.amount === 'number' ? i.amount.toFixed(2) + ' ₼' : (i.amount || '—');
+                const dueDate = i.dueDate || '—';
+                const statusConfig = statuses[i.status] || { text: i.status || 'Неизвестно', cls: 'secondary' };
+                
+                return `<tr>
+                    <td>${period}</td>
+                    <td><strong>${resident}</strong></td>
+                    <td>${invoiceNumber}</td>
+                    <td><span class="badge bg-${statusConfig.cls}">${statusConfig.text}</span></td>
+                    <td><strong>${amount}</strong></td>
+                    <td>${dueDate}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewInvoice(${i.id})">Просмотр</button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="downloadInvoice(${i.id})">
+                            <i class="bi bi-download"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+        
+        updatePaginationUI();
+    }
+    
+    // Update pagination UI
+    function updatePaginationUI() {
+        const currentPageEl = document.getElementById('invoiceCurrentPage');
+        const totalPagesEl = document.getElementById('invoiceTotalPages');
+        const totalItemsEl = document.getElementById('invoiceTotalItems');
+        const currentPageBtn = document.getElementById('invoiceCurrentPageBtn');
+        const prevBtn = document.getElementById('invoicePrevBtn');
+        const nextBtn = document.getElementById('invoiceNextBtn');
+        
+        if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
+        if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
+        if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
+        if (currentPageBtn) currentPageBtn.textContent = paginationState.currentPage;
+        if (prevBtn) prevBtn.disabled = paginationState.currentPage === 1;
+        if (nextBtn) nextBtn.disabled = paginationState.currentPage === paginationState.totalPages;
+    }
+    
+    // Pagination functions
+    window.goToInvoicePage = function(page) {
+        if (page === 'prev') {
+            if (paginationState.currentPage > 1) {
+                paginationState.currentPage--;
+                renderTable(filteredInvoices);
+            }
+        } else if (page === 'next') {
+            if (paginationState.currentPage < paginationState.totalPages) {
+                paginationState.currentPage++;
+                renderTable(filteredInvoices);
+            }
+        } else if (typeof page === 'number') {
+            paginationState.currentPage = page;
+            renderTable(filteredInvoices);
+        }
+    };
+    
+    window.changeInvoiceItemsPerPage = function() {
+        const select = document.getElementById('invoiceItemsPerPage');
+        if (select) {
+            paginationState.itemsPerPage = parseInt(select.value);
+            paginationState.currentPage = 1;
+            renderTable(filteredInvoices);
+        }
+    };
+    
+    // View and download functions
+    window.viewInvoice = function(id) {
+        console.log('View invoice', id);
+        if (typeof showSuccess === 'function') {
+            showSuccess(`Открытие счета #${id}`);
+        }
+    };
+    
+    window.downloadInvoice = function(id) {
+        console.log('Download invoice', id);
+        if (typeof showSuccess === 'function') {
+            showSuccess(`Загрузка счета #${id}`);
+        }
+    };
+    
+    // Initialize custom pagination dropdown
+    let invoiceDropdownInitialized = false;
+    function initCustomInvoicePaginationDropdown() {
+        const customSelect = document.getElementById('customInvoiceItemsPerPage');
+        if (!customSelect || customSelect.dataset.initialized === 'true') return;
+        customSelect.dataset.initialized = 'true';
+        
+        const nativeSelect = document.getElementById('invoiceItemsPerPage');
+        const selectBtn = customSelect.querySelector('.select-btn');
+        const selectText = customSelect.querySelector('.select-text');
+        const options = customSelect.querySelectorAll('.select-option');
+        
+        if (nativeSelect) {
+            const selectedValue = nativeSelect.value;
+            selectText.textContent = selectedValue;
+            options.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.value === selectedValue) {
+                    opt.classList.add('selected');
+                }
+            });
+        }
+        
+        selectBtn.onclick = function(e) {
+            e.stopPropagation();
+            customSelect.classList.toggle('open');
+        };
+        
+        options.forEach(option => {
+            option.onclick = function(e) {
+                e.stopPropagation();
+                const value = option.dataset.value;
+                if (nativeSelect) {
+                    nativeSelect.value = value;
+                    nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                selectText.textContent = value;
+                options.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                customSelect.classList.remove('open');
+            };
+        });
+        
+        if (!invoiceDropdownInitialized) {
+            document.addEventListener('click', function(e) {
+                if (!customSelect.contains(e.target)) {
+                    customSelect.classList.remove('open');
+                }
+            });
+            invoiceDropdownInitialized = true;
+        }
+    }
+    
+    // Initial render
+    renderTable(filteredInvoices);
+    setTimeout(() => {
+        initCustomInvoicePaginationDropdown();
+    }, 500);
+
+    // Invoice Actions Functions
+    window.issueInvoiceByBlock = function() {
+        const block = document.getElementById('invoiceBlock').value;
+        const dueDate = document.getElementById('invoiceDueDate').value;
+        
+        if (!block) {
+            if (typeof showWarning === 'function') {
+                showWarning('Пожалуйста, выберите блок!');
+            }
+            return;
+        }
+        
+        console.log('Issue invoice by block:', { block, dueDate });
+        // TODO: Implement API call
+        if (typeof showSuccess === 'function') {
+            showSuccess(`Счета по блоку ${block} успешно выставлены!`);
+        }
+    };
+
+    window.issueAllInvoices = function() {
+        const dueDate = document.getElementById('invoiceDueDate').value;
+        console.log('Issue all invoices:', { dueDate });
+        // TODO: Implement API call
+        if (typeof showSuccess === 'function') {
+            showSuccess('Все счета успешно выставлены!');
+        }
+    };
+
+    window.applyInvoiceFilters = function() {
+        const year = document.getElementById('filterYear').value;
+        const month = document.getElementById('filterMonth').value;
+        const resident = document.getElementById('filterResident').value;
+        const status = document.getElementById('filterStatus').value;
+        const search = document.getElementById('filterSearch').value.toLowerCase();
+        
+        // Filter invoices
+        filteredInvoices = allInvoices.filter(invoice => {
+            // Filter by year
+            if (year) {
+                const invoiceYear = extractYear(invoice.period || invoice.issueDate || '');
+                if (invoiceYear && invoiceYear.toString() !== year.toString()) {
+                    return false;
+                }
+            }
+            
+            // Filter by month
+            if (month) {
+                const invoiceMonth = extractMonth(invoice.period || invoice.issueDate || '');
+                if (invoiceMonth && invoiceMonth.toString() !== month.toString()) {
+                    return false;
+                }
+            }
+            
+            // Filter by resident (if you have resident field in invoice data)
+            if (resident && resident !== 'all') {
+                // Adjust this based on your invoice data structure
+                // For now, skip if no resident field
+                if (invoice.residentId && invoice.residentId.toString() !== resident) {
+                    return false;
+                }
+            }
+            
+            // Filter by status
+            if (status && status !== 'all') {
+                if (invoice.status !== status) {
+                    return false;
+                }
+            }
+            
+            // Filter by search (ID or note)
+            if (search) {
+                const searchText = `${invoice.id} ${invoice.userName || ''} ${invoice.apartment || ''} ${invoice.note || ''}`.toLowerCase();
+                if (!searchText.includes(search)) {
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+        
+        // Reset to first page on filter
+        paginationState.currentPage = 1;
+        
+        // Re-render table with filtered data
+        renderTable(filteredInvoices);
+        
+        if (typeof showSuccess === 'function') {
+            showSuccess(`Найдено записей: ${filteredInvoices.length}`);
+        }
+    };
+    
+    // Helper functions to extract year and month
+    function extractYear(dateString) {
+        if (!dateString) return null;
+        const yearMatch = dateString.match(/(\d{4})/);
+        return yearMatch ? parseInt(yearMatch[1]) : null;
+    }
+    
+    function extractMonth(dateString) {
+        if (!dateString) return null;
+        
+        // Try to extract month from date string (format: YYYY-MM-DD)
+        const dateMatch = dateString.match(/\d{4}-(\d{2})-\d{2}/);
+        if (dateMatch) {
+            return parseInt(dateMatch[1]);
+        }
+        
+        // Try to extract from period (e.g., "Октябрь 2024")
+        const monthNames = {
+            'январь': 1, 'февраль': 2, 'март': 3, 'апрель': 4,
+            'май': 5, 'июнь': 6, 'июль': 7, 'август': 8,
+            'сентябрь': 9, 'октябрь': 10, 'ноябрь': 11, 'декабрь': 12
+        };
+        
+        const lowerDate = dateString.toLowerCase();
+        for (const [monthName, monthNum] of Object.entries(monthNames)) {
+            if (lowerDate.includes(monthName)) {
+                return monthNum;
+            }
+        }
+        
+        return null;
+    }
+    
+    // Clear filters function
+    window.clearInvoiceFilters = function() {
+        document.getElementById('filterYear').value = '';
+        document.getElementById('filterMonth').value = '';
+        document.getElementById('filterResident').value = 'all';
+        document.getElementById('filterStatus').value = 'all';
+        document.getElementById('filterSearch').value = '';
+        
+        // Reset to all invoices
+        filteredInvoices = [...allInvoices];
+        paginationState.currentPage = 1;
+        renderTable(filteredInvoices);
+        
+        if (typeof showSuccess === 'function') {
+            showSuccess('Фильтры очищены!');
+        }
+    };
+    
+    window.openDatePicker = function(inputId) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            // Use native showPicker if available (modern browsers)
+            if (input.showPicker && typeof input.showPicker === 'function') {
+                input.showPicker().catch(err => {
+                    input.focus();
+                    input.click();
+                });
+            } else {
+                input.focus();
+                input.click();
+            }
+        }
+    };
+
+    // Auto-apply filters on input change and initialize date picker
+    document.addEventListener('DOMContentLoaded', function() {
+        // Setup filter inputs
+        const filterInputs = ['filterYear', 'filterMonth', 'filterResident', 'filterStatus', 'filterSearch'];
+        filterInputs.forEach(inputId => {
+            const input = document.getElementById(inputId);
+            if (input) {
+                if (inputId === 'filterSearch') {
+                    let searchTimeout;
+                    input.addEventListener('input', function() {
+                        clearTimeout(searchTimeout);
+                        searchTimeout = setTimeout(applyInvoiceFilters, 300);
+                    });
+                } else {
+                    input.addEventListener('change', applyInvoiceFilters);
+                }
+            }
+        });
+
+        // Setup date picker click handler
+        const dateInput = document.getElementById('invoiceDueDate');
+        if (dateInput) {
+            dateInput.addEventListener('click', function() {
+                if (this.showPicker && typeof this.showPicker === 'function') {
+                    this.showPicker().catch(() => {});
+                }
+            });
+        }
+    });
 })();
 </script>

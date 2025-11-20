@@ -2855,3 +2855,127 @@ html, body {
     background: rgba(102, 126, 234, 0.15);
 }
 
+/* Invoices page - Dark theme for actions and filters sections */
+[data-theme="dark"] #spa-content .invoices-actions,
+[data-theme="dark"] #spa-content .invoices-filters,
+[data-theme="dark"] .dashboard-content .invoices-actions,
+[data-theme="dark"] .dashboard-content .invoices-filters,
+[data-theme="dark"] .content-wrapper .invoices-actions,
+[data-theme="dark"] .content-wrapper .invoices-filters,
+[data-theme="dark"] .invoices-page .invoices-actions,
+[data-theme="dark"] .invoices-page .invoices-filters,
+[data-theme="dark"] .invoices-actions,
+[data-theme="dark"] .invoices-filters {
+    background: rgba(36, 40, 49, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #e4e6eb !important;
+}
+
+[data-theme="dark"] #spa-content .invoices-actions-group label,
+[data-theme="dark"] #spa-content .invoices-filters-group label,
+[data-theme="dark"] .dashboard-content .invoices-actions-group label,
+[data-theme="dark"] .dashboard-content .invoices-filters-group label,
+[data-theme="dark"] .content-wrapper .invoices-actions-group label,
+[data-theme="dark"] .content-wrapper .invoices-filters-group label,
+[data-theme="dark"] .invoices-page .invoices-actions-group label,
+[data-theme="dark"] .invoices-page .invoices-filters-group label,
+[data-theme="dark"] .invoices-actions-group label,
+[data-theme="dark"] .invoices-filters-group label {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+[data-theme="dark"] #spa-content .invoices-actions-group input,
+[data-theme="dark"] #spa-content .invoices-actions-group select,
+[data-theme="dark"] #spa-content .invoices-filters-group input,
+[data-theme="dark"] #spa-content .invoices-filters-group select,
+[data-theme="dark"] .dashboard-content .invoices-actions-group input,
+[data-theme="dark"] .dashboard-content .invoices-actions-group select,
+[data-theme="dark"] .dashboard-content .invoices-filters-group input,
+[data-theme="dark"] .dashboard-content .invoices-filters-group select,
+[data-theme="dark"] .content-wrapper .invoices-actions-group input,
+[data-theme="dark"] .content-wrapper .invoices-actions-group select,
+[data-theme="dark"] .content-wrapper .invoices-filters-group input,
+[data-theme="dark"] .content-wrapper .invoices-filters-group select,
+[data-theme="dark"] .invoices-page .invoices-actions-group input,
+[data-theme="dark"] .invoices-page .invoices-actions-group select,
+[data-theme="dark"] .invoices-page .invoices-filters-group input,
+[data-theme="dark"] .invoices-page .invoices-filters-group select,
+[data-theme="dark"] .invoices-actions-group input,
+[data-theme="dark"] .invoices-actions-group select,
+[data-theme="dark"] .invoices-filters-group input,
+[data-theme="dark"] .invoices-filters-group select {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #fefefe !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] #spa-content .invoices-actions-group input:focus,
+[data-theme="dark"] #spa-content .invoices-actions-group select:focus,
+[data-theme="dark"] #spa-content .invoices-filters-group input:focus,
+[data-theme="dark"] #spa-content .invoices-filters-group select:focus,
+[data-theme="dark"] .dashboard-content .invoices-actions-group input:focus,
+[data-theme="dark"] .dashboard-content .invoices-actions-group select:focus,
+[data-theme="dark"] .dashboard-content .invoices-filters-group input:focus,
+[data-theme="dark"] .dashboard-content .invoices-filters-group select:focus,
+[data-theme="dark"] .content-wrapper .invoices-actions-group input:focus,
+[data-theme="dark"] .content-wrapper .invoices-actions-group select:focus,
+[data-theme="dark"] .content-wrapper .invoices-filters-group input:focus,
+[data-theme="dark"] .content-wrapper .invoices-filters-group select:focus,
+[data-theme="dark"] .invoices-page .invoices-actions-group input:focus,
+[data-theme="dark"] .invoices-page .invoices-actions-group select:focus,
+[data-theme="dark"] .invoices-page .invoices-filters-group input:focus,
+[data-theme="dark"] .invoices-page .invoices-filters-group select:focus,
+[data-theme="dark"] .invoices-actions-group input:focus,
+[data-theme="dark"] .invoices-actions-group select:focus,
+[data-theme="dark"] .invoices-filters-group input:focus,
+[data-theme="dark"] .invoices-filters-group select:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: #667eea !important;
+}
+
+[data-theme="dark"] .invoices-actions-group input::placeholder,
+[data-theme="dark"] .invoices-filters-group input::placeholder {
+    color: rgba(255, 255, 255, 0.35) !important;
+}
+
+[data-theme="dark"] .invoices-actions-group select option,
+[data-theme="dark"] .invoices-filters-group select option {
+    background: #1f2432 !important;
+    color: #f6f7ff !important;
+}
+
+/* МАКСИМАЛЬНЫЙ ПРИОРИТЕТ - СЕРЫЙ ФОН ДЛЯ INVOICES SECTIONS */
+[data-theme="dark"] .invoices-actions,
+[data-theme="dark"] .invoices-filters,
+[data-theme="dark"] .card.invoices-actions,
+[data-theme="dark"] .card.invoices-filters,
+[data-theme="dark"] #spa-content .invoices-actions,
+[data-theme="dark"] #spa-content .invoices-filters,
+[data-theme="dark"] #spa-content .card.invoices-actions,
+[data-theme="dark"] #spa-content .card.invoices-filters,
+[data-theme="dark"] .dashboard-content .invoices-actions,
+[data-theme="dark"] .dashboard-content .invoices-filters,
+[data-theme="dark"] .dashboard-content .card.invoices-actions,
+[data-theme="dark"] .dashboard-content .card.invoices-filters,
+[data-theme="dark"] .content-wrapper .invoices-actions,
+[data-theme="dark"] .content-wrapper .invoices-filters,
+[data-theme="dark"] .content-wrapper .card.invoices-actions,
+[data-theme="dark"] .content-wrapper .card.invoices-filters,
+[data-theme="dark"] .invoices-page .invoices-actions,
+[data-theme="dark"] .invoices-page .invoices-filters,
+[data-theme="dark"] .invoices-page .card.invoices-actions,
+[data-theme="dark"] .invoices-page .card.invoices-filters,
+body[data-theme="dark"] .invoices-actions,
+body[data-theme="dark"] .invoices-filters,
+body[data-theme="dark"] .card.invoices-actions,
+body[data-theme="dark"] .card.invoices-filters,
+html[data-theme="dark"] .invoices-actions,
+html[data-theme="dark"] .invoices-filters,
+html[data-theme="dark"] .card.invoices-actions,
+html[data-theme="dark"] .card.invoices-filters {
+    background-color: #242831 !important;
+    background: #242831 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: #e4e6eb !important;
+}
+
