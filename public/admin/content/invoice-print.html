@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Счёт на оплату</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .print-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .print-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #000;
+        }
+
+        .print-header h1 {
+            font-size: 28px;
+            font-weight: bold;
+            color: #000;
+            margin: 0;
+        }
+
+        .print-actions {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .btn-print {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+        }
+
+        .btn-print:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+        }
+
+        .invoice-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .invoice-info-left,
+        .invoice-info-right {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .info-item label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .info-item .value {
+            font-size: 14px;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .invoice-table thead th {
+            padding: 12px 16px;
+            text-align: left;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #000;
+            font-size: 14px;
+        }
+
+        .invoice-table tbody td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+            color: #000;
+            font-size: 14px;
+        }
+
+        .invoice-table tbody tr:last-child td {
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .invoice-table .total-row {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .invoice-table .total-row .total-value {
+            color: #000;
+            font-size: 16px;
+        }
+
+        .invoice-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        @media print {
+            body {
+                background: #fff;
+                padding: 0;
+            }
+
+            .print-actions {
+                display: none;
+            }
+
+            .print-container {
+                box-shadow: none;
+                padding: 20px;
+            }
+
+            @page {
+                margin: 1cm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-actions">
+        <button class="btn-print" onclick="window.print()">
+            <i class="bi bi-printer"></i> Печать
+        </button>
+    </div>
+
+    <div class="print-container">
+        <div class="print-header">
+            <h1>Счёт на оплату</h1>
+        </div>
+
+        <div class="invoice-info">
+            <div class="invoice-info-left">
+                <div class="info-item">
+                    <label>№</label>
+                    <div class="value" id="invoiceNumber">2025-11/000001</div>
+                </div>
+                <div class="info-item">
+                    <label>Резидент</label>
+                    <div class="value" id="invoiceResident">Х / 2</div>
+                </div>
+                <div class="info-item">
+                    <label>Период</label>
+                    <div class="value" id="invoicePeriod">2025-11</div>
+                </div>
+                <div class="info-item">
+                    <label>Статус</label>
+                    <div class="value" id="invoiceStatus">DRAFT</div>
+                </div>
+            </div>
+            <div class="invoice-info-right">
+                <div class="info-item">
+                    <label>Срок оплаты</label>
+                    <div class="value" id="invoiceDueDate">—</div>
+                </div>
+                <div class="info-item">
+                    <label>Сумма к оплате</label>
+                    <div class="value" id="invoiceTotal" style="font-size: 18px; color: #000;">10.00</div>
+                </div>
+            </div>
+        </div>
+
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th>Описание</th>
+                    <th>Начислено</th>
+                    <th>НДС</th>
+                    <th>Итого</th>
+                </tr>
+            </thead>
+            <tbody id="lineItemsTable">
+                <tr>
+                    <td>Газ 20.0 м³</td>
+                    <td>10.00</td>
+                    <td>0.00</td>
+                    <td>10.00</td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="3">Итого к оплате</td>
+                    <td class="total-value">10.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="invoice-footer">
+            <p>Квитанция сгенерирована: <span id="generatedDate"></span></p>
+            <p>Для печати нажмите кнопку сверху или используйте «Печать в PDF».</p>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // Get invoice ID from URL
+            const pathParts = window.location.pathname.split('/');
+            const invoiceId = pathParts[pathParts.length - 2] || pathParts[pathParts.length - 1];
+            
+            // Load invoice data
+            function loadInvoice(id) {
+                // TODO: Load from API
+                // For now, use mock data
+                const invoice = {
+                    id: id || 1,
+                    invoiceNumber: '2025-11/000001',
+                    resident: 'Х / 2',
+                    period: '2025-11',
+                    status: 'DRAFT',
+                    dueDate: null,
+                    total: 10.00,
+                    lineItems: [
+                        { description: 'Газ 20.0 м³', amount: 10.00, vat: 0.00, total: 10.00 }
+                    ]
+                };
+                
+                renderInvoice(invoice);
+            }
+            
+            function renderInvoice(invoice) {
+                document.getElementById('invoiceNumber').textContent = invoice.invoiceNumber;
+                document.getElementById('invoiceResident').textContent = invoice.resident;
+                document.getElementById('invoicePeriod').textContent = invoice.period;
+                document.getElementById('invoiceStatus').textContent = invoice.status;
+                document.getElementById('invoiceDueDate').textContent = invoice.dueDate || '—';
+                document.getElementById('invoiceTotal').textContent = invoice.total.toFixed(2);
+                
+                // Render line items
+                const tbody = document.getElementById('lineItemsTable');
+                if (invoice.lineItems && invoice.lineItems.length > 0) {
+                    let html = invoice.lineItems.map(item => `
+                        <tr>
+                            <td>${item.description}</td>
+                            <td>${item.amount.toFixed(2)}</td>
+                            <td>${item.vat.toFixed(2)}</td>
+                            <td>${item.total.toFixed(2)}</td>
+                        </tr>
+                    `).join('');
+                    
+                    const total = invoice.lineItems.reduce((sum, item) => sum + item.total, 0);
+                    html += `
+                        <tr class="total-row">
+                            <td colspan="3">Итого к оплате</td>
+                            <td class="total-value">${total.toFixed(2)}</td>
+                        </tr>
+                    `;
+                    
+                    tbody.innerHTML = html;
+                }
+                
+                // Set generated date
+                const now = new Date();
+                document.getElementById('generatedDate').textContent = now.toLocaleString('ru-RU');
+            }
+            
+            // Load invoice on page load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => loadInvoice(invoiceId));
+            } else {
+                loadInvoice(invoiceId);
+            }
+        })();
+    </script>
+</body>
+</html>
+

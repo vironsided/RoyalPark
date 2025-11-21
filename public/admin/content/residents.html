@@ -351,22 +351,32 @@
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>ФИО</th>
+                                <th>Блок</th>
+                                <th>Дом/№</th>
                                 <th>Тип</th>
-                                <th>Блок/Квартира</th>
-                                <th>Телефон</th>
-                                <th>Email</th>
+                                <th>Клиент</th>
+                                <th>Статус</th>
+                                <th>Контакты</th>
+                                <th>Счётчики</th>
                                 <th>Действия</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>1</td>
-                                <td>Əliyev Rəşad Əli oğlu</td>
+                                <td>A</td>
+                                <td>205</td>
                                 <td><span class="badge bg-success">Физ. лицо</span></td>
-                                <td>A-205</td>
-                                <td>+994 50 123 45 67</td>
-                                <td>rashad@mail.az</td>
+                                <td>Əliyev Rəşad Əli oğlu</td>
+                                <td><span class="badge bg-success">Активен</span></td>
+                                <td>
+                                    <div>+994 50 123 45 67</div>
+                                    <div class="text-muted small">rashad@mail.az</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">Эл: 12345</span>
+                                    <span class="badge bg-info">Вод: 67890</span>
+                                </td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary">Просмотр</button>
                                     <button class="btn btn-sm btn-outline-secondary">Изменить</button>
@@ -374,11 +384,19 @@
                             </tr>
                             <tr>
                                 <td>2</td>
-                                <td>Royal Park MMC</td>
+                                <td>B</td>
+                                <td>101-105</td>
                                 <td><span class="badge bg-primary">Юр. лицо</span></td>
-                                <td>B-101-105</td>
-                                <td>+994 12 567 89 00</td>
-                                <td>info@royalpark.az</td>
+                                <td>Royal Park MMC</td>
+                                <td><span class="badge bg-success">Активен</span></td>
+                                <td>
+                                    <div>+994 12 567 89 00</div>
+                                    <div class="text-muted small">info@royalpark.az</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">Эл: 23456</span>
+                                    <span class="badge bg-info">Газ: 78901</span>
+                                </td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary">Просмотр</button>
                                     <button class="btn btn-sm btn-outline-secondary">Изменить</button>
@@ -386,11 +404,19 @@
                             </tr>
                             <tr>
                                 <td>3</td>
-                                <td>Məmmədova Günel Tofiq qızı</td>
+                                <td>K</td>
+                                <td>305</td>
                                 <td><span class="badge bg-success">Физ. лицо</span></td>
-                                <td>K-305</td>
-                                <td>+994 55 234 56 78</td>
-                                <td>gunel@mail.az</td>
+                                <td>Məmmədova Günel Tofiq qızı</td>
+                                <td><span class="badge bg-success">Активен</span></td>
+                                <td>
+                                    <div>+994 55 234 56 78</div>
+                                    <div class="text-muted small">gunel@mail.az</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">Эл: 34567</span>
+                                    <span class="badge bg-info">Вод: 89012</span>
+                                </td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary">Просмотр</button>
                                     <button class="btn btn-sm btn-outline-secondary">Изменить</button>
@@ -587,22 +613,27 @@
                 
                 if (cells.length === 0) return; // Skip empty rows
                 
-                const blockCell = cells[3]?.textContent || '';
-                const typeCell = cells[2]?.textContent.toLowerCase() || '';
-                const nameCell = cells[1]?.textContent.toLowerCase() || '';
-                const phoneCell = cells[4]?.textContent.toLowerCase() || '';
-                const emailCell = cells[5]?.textContent.toLowerCase() || '';
+                const blockCell = cells[1]?.textContent || '';
+                const numberCell = cells[2]?.textContent || '';
+                const typeCell = cells[3]?.textContent.toLowerCase() || '';
+                const nameCell = cells[4]?.textContent.toLowerCase() || '';
+                const statusCell = cells[5]?.textContent.toLowerCase() || '';
+                const contactsCell = cells[6]?.textContent.toLowerCase() || '';
                 
                 // Filter by block
                 if (block !== 'all') {
-                    if (!blockCell.startsWith(block)) {
+                    if (blockCell !== block) {
                         shouldShow = false;
                     }
                 }
                 
                 // Filter by status
                 if (status !== 'all' && shouldShow) {
-                    // Add your status filtering logic here based on your data
+                    if (status === 'active' && !statusCell.includes('активен')) {
+                        shouldShow = false;
+                    } else if (status === 'inactive' && !statusCell.includes('не активен')) {
+                        shouldShow = false;
+                    }
                 }
                 
                 // Filter by type
@@ -620,7 +651,7 @@
                 
                 // Filter by search term
                 if (searchTerm && shouldShow) {
-                    const searchableText = nameCell + ' ' + phoneCell + ' ' + emailCell + ' ' + blockCell.toLowerCase();
+                    const searchableText = nameCell + ' ' + contactsCell + ' ' + blockCell.toLowerCase() + numberCell;
                     if (!searchableText.includes(searchTerm)) {
                         shouldShow = false;
                     }

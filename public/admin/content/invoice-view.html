@@ -1,0 +1,795 @@
+<style>
+    .invoice-view-page {
+        padding: 20px;
+    }
+
+    .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .invoice-header h1 {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .btn-back {
+        padding: 8px 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        color: rgba(255, 255, 255, 0.8);
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+    }
+
+    .btn-back:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+    }
+
+    .invoice-summary {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .invoice-summary-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .invoice-summary-item label {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.6);
+        font-weight: 500;
+    }
+
+    .invoice-summary-item .value {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
+    }
+
+    .invoice-summary-item .value.total {
+        color: #ff6b6b;
+    }
+
+    .invoice-actions-section {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .invoice-actions-section h3 {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+
+    .invoice-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 15px;
+    }
+
+    .invoice-form-group label {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 500;
+    }
+
+    .invoice-form-group input,
+    .invoice-form-group textarea {
+        padding: 10px 15px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        color: #fefefe;
+        font-size: 0.95rem;
+    }
+
+    .invoice-form-group input:focus,
+    .invoice-form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .invoice-form-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .btn-primary {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 8px;
+        color: #ffffff;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary:hover {
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        transform: translateY(-1px);
+    }
+
+    .btn-danger {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+        border: none;
+        border-radius: 8px;
+        color: #ffffff;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+    }
+
+    .btn-danger:hover {
+        background: linear-gradient(135deg, #ff5252 0%, #ff6b6b 100%);
+        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+        transform: translateY(-1px);
+    }
+
+    .btn-danger:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+    }
+
+    .btn-outline-secondary {
+        padding: 8px 16px;
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-outline-secondary:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.3);
+        color: #ffffff;
+    }
+
+    .payments-section {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .payments-section h3 {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+
+    .payments-summary {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+        margin-top: 10px;
+    }
+
+    .line-items-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .line-items-table thead th {
+        padding: 12px 16px;
+        text-align: left;
+        background: rgba(102, 126, 234, 0.1);
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .line-items-table tbody td {
+        padding: 12px 16px;
+        text-align: left;
+        color: rgba(255, 255, 255, 0.9);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .line-items-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .line-items-table .total-row {
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .line-items-table .total-row .total-value {
+        color: #ff6b6b;
+    }
+
+    .date-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .date-input-wrapper input[type="date"] {
+        flex: 1;
+        padding: 10px 50px 10px 15px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px 0 0 8px;
+        color: #fefefe;
+    }
+
+    .date-input-wrapper .btn-calendar {
+        position: absolute;
+        right: 0;
+        width: 48px;
+        height: 100%;
+        padding: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 0 8px 8px 0;
+        color: #ffffff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Modal styles for cancel invoice */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.show {
+        display: flex;
+    }
+
+    .cancel-modal {
+        background: #242831;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 0;
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        animation: modalFadeIn 0.3s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.9) translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    .cancel-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .cancel-modal-header h3 {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .cancel-modal-close {
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.3s;
+    }
+
+    .cancel-modal-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .cancel-modal-body {
+        padding: 24px;
+    }
+
+    .cancel-modal-description {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.95rem;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+
+    .cancel-modal-description .status-badge {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.9);
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-left: 4px;
+    }
+
+    .cancel-modal-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+    }
+
+    .cancel-modal-form-group label {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 500;
+    }
+
+    .cancel-modal-form-group textarea {
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        color: #fefefe;
+        font-size: 0.95rem;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 100px;
+        transition: all 0.3s;
+    }
+
+    .cancel-modal-form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .cancel-modal-form-group textarea::placeholder {
+        color: rgba(255, 255, 255, 0.4);
+    }
+
+    .cancel-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 20px 24px;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .btn-modal-cancel {
+        padding: 10px 20px;
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-modal-cancel:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.3);
+        color: #ffffff;
+    }
+
+    .btn-modal-confirm {
+        padding: 10px 20px;
+        background: #ff6b6b;
+        border: none;
+        border-radius: 8px;
+        color: #ffffff;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-modal-confirm:hover {
+        background: #ff5252;
+        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+        transform: translateY(-1px);
+    }
+
+    .btn-modal-confirm:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+</style>
+
+<div class="content-wrapper invoice-view-page">
+    <div class="invoice-header">
+        <h1 id="invoiceTitle">Счёт: <span id="invoiceNumber">2025-11/000001</span></h1>
+        <a href="#" onclick="history.back(); return false;" class="btn-back">
+            <i class="bi bi-arrow-left"></i> Назад
+        </a>
+    </div>
+
+    <!-- Invoice Summary -->
+    <div class="invoice-summary">
+        <div class="invoice-summary-item">
+            <label>Резидент</label>
+            <div class="value" id="invoiceResident">X/2</div>
+        </div>
+        <div class="invoice-summary-item">
+            <label>Период</label>
+            <div class="value" id="invoicePeriod">2025-11</div>
+        </div>
+        <div class="invoice-summary-item">
+            <label>Статус</label>
+            <div class="value" id="invoiceStatus">DRAFT</div>
+        </div>
+        <div class="invoice-summary-item">
+            <label>Срок оплаты</label>
+            <div class="value" id="invoiceDueDate">—</div>
+        </div>
+        <div class="invoice-summary-item">
+            <label>Итого</label>
+            <div class="value total" id="invoiceTotal">10.00 ₼</div>
+        </div>
+        <div class="invoice-summary-item">
+            <label>Примечание</label>
+            <div class="value" id="invoiceNote">—</div>
+        </div>
+    </div>
+
+    <!-- Invoice Actions -->
+    <div class="invoice-actions-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0;">Управление счётом</h3>
+            <button class="btn-outline-secondary" onclick="printInvoice()">
+                <i class="bi bi-printer"></i> Печать
+            </button>
+        </div>
+        
+        <div class="invoice-form-group">
+            <label>№ счета</label>
+            <input type="text" id="editInvoiceNumber" value="2025-11/000001" readonly>
+        </div>
+
+        <div class="invoice-form-group">
+            <label>Срок оплаты</label>
+            <div class="date-input-wrapper">
+                <input type="date" id="editDueDate">
+                <button type="button" class="btn-calendar" onclick="openDatePicker('editDueDate')" title="Открыть календарь">
+                    <i class="bi bi-calendar"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="invoice-form-group">
+            <label>Примечание</label>
+            <textarea id="editNote" rows="3" placeholder="Введите примечание..."></textarea>
+        </div>
+
+        <div class="invoice-form-buttons">
+            <button class="btn-primary" onclick="saveInvoice()">Выставить / Обновить</button>
+            <button class="btn-danger" onclick="cancelInvoice()">Отменить</button>
+        </div>
+    </div>
+
+    <!-- Payments Section -->
+    <div class="payments-section">
+        <h3>Оплаты по счёту</h3>
+        <div id="paymentsList">
+            <p style="color: rgba(255, 255, 255, 0.6); margin: 0;">Оплаты по этому счёту отсутствуют.</p>
+        </div>
+        <div class="payments-summary" id="paymentsSummary">
+            Оплачено: <strong>0.00</strong> Остаток: <strong>10.00</strong> из <strong>10.00</strong>
+        </div>
+    </div>
+
+    <!-- Line Items Table -->
+    <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 12px; padding: 20px; overflow-x: auto;">
+        <table class="line-items-table">
+            <thead>
+                <tr>
+                    <th>Описание</th>
+                    <th>Начислено</th>
+                    <th>НДС</th>
+                    <th>Итого</th>
+                </tr>
+            </thead>
+            <tbody id="lineItemsTable">
+                <tr>
+                    <td>Газ 20.0 м³</td>
+                    <td>10.00</td>
+                    <td>0.00</td>
+                    <td class="total-value">10.00</td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="3">Итого к оплате</td>
+                    <td class="total-value">10.00</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Cancel Invoice Modal -->
+<div class="modal-overlay" id="cancelInvoiceModal">
+    <div class="cancel-modal">
+        <div class="cancel-modal-header">
+            <h3>Отменить счёт</h3>
+            <button class="cancel-modal-close" onclick="closeCancelModal()" type="button">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="cancel-modal-body">
+            <div class="cancel-modal-description">
+                Укажите причину отмены. Счёт перейдёт в статус <span class="status-badge">CANCELED</span>
+            </div>
+            <div class="cancel-modal-form-group">
+                <label for="cancelReason">Причина</label>
+                <textarea 
+                    id="cancelReason" 
+                    placeholder="Например: неверное показание по воде за октябрь"
+                    rows="4"
+                ></textarea>
+            </div>
+        </div>
+        <div class="cancel-modal-footer">
+            <button class="btn-modal-cancel" onclick="closeCancelModal()" type="button">Отмена</button>
+            <button class="btn-modal-confirm" onclick="confirmCancelInvoice()" type="button" id="confirmCancelBtn">Отменить счёт</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // Get invoice ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const invoiceId = urlParams.get('id') || window.location.hash.split('/').pop();
+    
+    // Load invoice data
+    function loadInvoice(id) {
+        // TODO: Load from API
+        // For now, use mock data
+        const invoice = {
+            id: id || 1,
+            invoiceNumber: '2025-11/000001',
+            resident: 'X/2',
+            period: '2025-11',
+            status: 'DRAFT',
+            dueDate: null,
+            total: 10.00,
+            paid: 0.00,
+            remaining: 10.00,
+            note: null,
+            lineItems: [
+                { description: 'Газ 20.0 м³', amount: 10.00, vat: 0.00, total: 10.00 }
+            ]
+        };
+        
+        renderInvoice(invoice);
+    }
+    
+    function renderInvoice(invoice) {
+        document.getElementById('invoiceNumber').textContent = invoice.invoiceNumber;
+        document.getElementById('invoiceResident').textContent = invoice.resident;
+        document.getElementById('invoicePeriod').textContent = invoice.period;
+        document.getElementById('invoiceStatus').textContent = invoice.status;
+        document.getElementById('invoiceDueDate').textContent = invoice.dueDate || '—';
+        document.getElementById('invoiceTotal').textContent = invoice.total.toFixed(2) + ' ₼';
+        document.getElementById('invoiceNote').textContent = invoice.note || '—';
+        
+        document.getElementById('editInvoiceNumber').value = invoice.invoiceNumber;
+        if (invoice.dueDate) {
+            document.getElementById('editDueDate').value = invoice.dueDate;
+        }
+        if (invoice.note) {
+            document.getElementById('editNote').value = invoice.note;
+        }
+        
+        // Render line items
+        const tbody = document.getElementById('lineItemsTable');
+        if (invoice.lineItems && invoice.lineItems.length > 0) {
+            let html = invoice.lineItems.map(item => `
+                <tr>
+                    <td>${item.description}</td>
+                    <td>${item.amount.toFixed(2)}</td>
+                    <td>${item.vat.toFixed(2)}</td>
+                    <td class="total-value">${item.total.toFixed(2)}</td>
+                </tr>
+            `).join('');
+            
+            const total = invoice.lineItems.reduce((sum, item) => sum + item.total, 0);
+            html += `
+                <tr class="total-row">
+                    <td colspan="3">Итого к оплате</td>
+                    <td class="total-value">${total.toFixed(2)}</td>
+                </tr>
+            `;
+            
+            tbody.innerHTML = html;
+        }
+        
+        // Update payments summary
+        document.getElementById('paymentsSummary').innerHTML = `
+            Оплачено: <strong>${invoice.paid.toFixed(2)}</strong> Остаток: <strong>${invoice.remaining.toFixed(2)}</strong> из <strong>${invoice.total.toFixed(2)}</strong>
+        `;
+    }
+    
+    window.saveInvoice = function() {
+        const invoiceId = urlParams.get('id') || window.location.hash.split('/').pop();
+        const dueDate = document.getElementById('editDueDate').value;
+        const note = document.getElementById('editNote').value;
+        
+        console.log('Saving invoice:', { invoiceId, dueDate, note });
+        // TODO: Save via API
+        if (typeof showSuccess === 'function') {
+            showSuccess('Счёт успешно обновлён!');
+        }
+    };
+    
+    window.cancelInvoice = function() {
+        // Открыть модальное окно отмены счета
+        const modal = document.getElementById('cancelInvoiceModal');
+        if (modal) {
+            modal.classList.add('show');
+            // Очистить поле причины при открытии
+            const reasonTextarea = document.getElementById('cancelReason');
+            if (reasonTextarea) {
+                reasonTextarea.value = '';
+                reasonTextarea.focus();
+            }
+        }
+    };
+    
+    window.closeCancelModal = function() {
+        const modal = document.getElementById('cancelInvoiceModal');
+        if (modal) {
+            modal.classList.remove('show');
+        }
+    };
+    
+    window.confirmCancelInvoice = function() {
+        const reasonTextarea = document.getElementById('cancelReason');
+        const reason = reasonTextarea ? reasonTextarea.value.trim() : '';
+        
+        if (!reason) {
+            // Можно показать предупреждение, что нужно указать причину
+            if (reasonTextarea) {
+                reasonTextarea.focus();
+                reasonTextarea.style.borderColor = '#ff6b6b';
+                setTimeout(() => {
+                    reasonTextarea.style.borderColor = '';
+                }, 2000);
+            }
+            return;
+        }
+        
+        // Отключить кнопку во время отправки
+        const confirmBtn = document.getElementById('confirmCancelBtn');
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Отмена...';
+        }
+        
+        // TODO: Отправить запрос на отмену счета через API
+        const invoiceId = urlParams.get('id') || window.location.hash.split('/').pop() || 1;
+        
+        console.log('Canceling invoice:', { invoiceId, reason });
+        
+        // Симуляция API запроса
+        setTimeout(() => {
+            if (typeof showSuccess === 'function') {
+                showSuccess('Счёт отменён!');
+            }
+            
+            // Закрыть модальное окно
+            closeCancelModal();
+            
+            // Вернуться назад или перезагрузить страницу
+            setTimeout(() => {
+                history.back();
+            }, 1000);
+        }, 500);
+    };
+    
+    // Закрытие модального окна при клике на overlay
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('cancelInvoiceModal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeCancelModal();
+                }
+            });
+            
+            // Закрытие по клавише ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal.classList.contains('show')) {
+                    closeCancelModal();
+                }
+            });
+        }
+    });
+    
+    window.printInvoice = function() {
+        const invoiceId = urlParams.get('id') || window.location.hash.split('/').pop() || 1;
+        const printUrl = `/admin/content/invoice-print.html?id=${invoiceId}`;
+        window.open(printUrl, '_blank');
+    };
+    
+    window.openDatePicker = function(inputId) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            if (input.showPicker && typeof input.showPicker === 'function') {
+                input.showPicker().catch(err => {
+                    input.focus();
+                    input.click();
+                });
+            } else {
+                input.focus();
+                input.click();
+            }
+        }
+    };
+    
+    // Load invoice on page load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => loadInvoice(invoiceId));
+    } else {
+        loadInvoice(invoiceId);
+    }
+})();
+</script>
+

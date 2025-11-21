@@ -2,13 +2,69 @@
     /* Invoices page readability */
     /* High specificity to override globals */
     #spa-content .invoices-page .table thead th,
-    .invoices-page .table thead th { color: #1a1d2e !important; background: rgba(102,126,234,0.04); border-bottom: 2px solid rgba(0,0,0,0.1) !important; }
+    .invoices-page .table thead th { 
+        color: #1a1d2e !important; 
+        background: rgba(102,126,234,0.04); 
+        border-bottom: 2px solid rgba(0,0,0,0.1) !important;
+        padding: 12px 16px !important;
+        text-align: left !important;
+        vertical-align: middle !important;
+        font-weight: 600 !important;
+    }
     #spa-content .invoices-page .table tbody td,
-    .invoices-page .table tbody td { color: #212529 !important; }
+    .invoices-page .table tbody td { 
+        color: #212529 !important;
+        padding: 12px 16px !important;
+        text-align: left !important;
+        vertical-align: middle !important;
+    }
     [data-theme="dark"] #spa-content .invoices-page .table thead th,
-    [data-theme="dark"] .invoices-page .table thead th { color: rgba(255,255,255,0.9) !important; background: rgba(102,126,234,0.1); border-bottom-color: rgba(255,255,255,0.12) !important; }
+    [data-theme="dark"] .invoices-page .table thead th { 
+        color: rgba(255,255,255,0.9) !important; 
+        background: rgba(102,126,234,0.1); 
+        border-bottom-color: rgba(255,255,255,0.12) !important;
+        padding: 12px 16px !important;
+        text-align: left !important;
+        vertical-align: middle !important;
+        font-weight: 600 !important;
+    }
     [data-theme="dark"] #spa-content .invoices-page .table tbody td,
-    [data-theme="dark"] .invoices-page .table tbody td { color: #ffffff !important; }
+    [data-theme="dark"] .invoices-page .table tbody td { 
+        color: #ffffff !important;
+        padding: 12px 16px !important;
+        text-align: left !important;
+        vertical-align: middle !important;
+    }
+
+    /* Симметричное выравнивание заголовков и ячеек таблицы */
+    .invoices-page .table thead th,
+    .invoices-page .table tbody td {
+        padding: 12px 16px !important;
+        text-align: left !important;
+        vertical-align: middle !important;
+    }
+
+    /* Выравнивание для последней колонки "Действия" */
+    .invoices-page .table thead th:last-child,
+    .invoices-page .table tbody td:last-child {
+        text-align: left !important;
+    }
+
+    /* Стили для блока информации об оплате под статусом */
+    .invoices-page .table tbody td .payment-info {
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.05);
+        padding: 4px 8px;
+        border-radius: 4px;
+        margin-top: 4px;
+        display: inline-block;
+    }
+
+    [data-theme="dark"] .invoices-page .table tbody td .payment-info {
+        color: rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.05);
+    }
 
     /* Invoices Actions Section */
     .invoices-actions {
@@ -70,67 +126,184 @@
         color: #f6f7ff;
     }
 
+    /* Dark theme for select options - максимальная специфичность */
+    [data-theme="dark"] .invoices-actions-group select option,
+    [data-theme="dark"] .invoices-filters-group select option,
+    body[data-theme="dark"] .invoices-actions-group select option,
+    body[data-theme="dark"] .invoices-filters-group select option,
+    html[data-theme="dark"] .invoices-actions-group select option,
+    html[data-theme="dark"] .invoices-filters-group select option {
+        background: #242831 !important;
+        background-color: #242831 !important;
+        color: #f6f7ff !important;
+    }
+
     .date-input-wrapper {
         position: relative;
         display: flex;
-        gap: 8px;
+        gap: 0;
         align-items: center;
+        border-radius: 12px;
+        overflow: hidden;
+        background: transparent;
     }
 
     .date-input-wrapper input[type="date"] {
         flex: 1;
-        padding-right: 40px;
+        padding: 12px 50px 12px 16px;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 2px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 12px 0 0 12px !important;
+        color: #fefefe !important;
+        font-size: 0.95rem;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: text;
+    }
+
+    .date-input-wrapper input[type="date"]:focus {
+        outline: none !important;
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15), 0 4px 12px rgba(102, 126, 234, 0.2) !important;
+        background: rgba(255, 255, 255, 0.08) !important;
     }
 
     .date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
         opacity: 0;
         position: absolute;
-        right: 45px;
-        width: 20px;
-        height: 20px;
+        right: 50px;
+        width: 0;
+        height: 0;
         cursor: pointer;
         z-index: 1;
     }
 
+    .date-input-wrapper input[type="date"]::-webkit-datetime-edit-text {
+        color: rgba(255, 255, 255, 0.7);
+        padding: 0 4px;
+    }
+
+    .date-input-wrapper input[type="date"]::-webkit-datetime-edit-month-field,
+    .date-input-wrapper input[type="date"]::-webkit-datetime-edit-day-field,
+    .date-input-wrapper input[type="date"]::-webkit-datetime-edit-year-field {
+        color: rgba(255, 255, 255, 0.9);
+        padding: 0 2px;
+    }
+
+    /* Белый цвет для плейсхолдера "ДД.ММ.ГГГГ" в темной теме */
+    [data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-text,
+    body[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-text,
+    html[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-text {
+        color: rgba(255, 255, 255, 0.8) !important;
+    }
+
+    [data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-month-field,
+    [data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-day-field,
+    [data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-year-field,
+    body[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-month-field,
+    body[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-day-field,
+    body[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-year-field,
+    html[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-month-field,
+    html[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-day-field,
+    html[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-year-field {
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    /* Белый цвет для пустого поля (плейсхолдер) */
+    [data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-text,
+    [data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-month-field,
+    [data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-day-field,
+    [data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-year-field,
+    body[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-text,
+    body[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-month-field,
+    body[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-day-field,
+    body[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-year-field,
+    html[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-text,
+    html[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-month-field,
+    html[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-day-field,
+    html[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-year-field {
+        color: #ffffff !important;
+    }
+
+    .date-input-wrapper input[type="date"]::-webkit-datetime-edit-month-field:focus,
+    .date-input-wrapper input[type="date"]::-webkit-datetime-edit-day-field:focus,
+    .date-input-wrapper input[type="date"]::-webkit-datetime-edit-year-field:focus {
+        background: rgba(102, 126, 234, 0.2);
+        color: #ffffff;
+        border-radius: 4px;
+    }
+
     .date-input-wrapper .btn-calendar {
         position: absolute;
-        right: 5px;
-        top: 50%;
-        transform: translateY(-50%);
-        padding: 8px 12px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 8px;
-        color: rgba(255, 255, 255, 0.8);
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 48px;
+        padding: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: 2px solid transparent;
+        border-left: none;
+        border-radius: 0 12px 12px 0;
+        color: #ffffff;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 2;
         display: flex;
         align-items: center;
         justify-content: center;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
     }
 
     .date-input-wrapper .btn-calendar:hover {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: #667eea;
-        color: #ffffff;
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4), 0 0 0 4px rgba(102, 126, 234, 0.1);
+        transform: scale(1.02);
+    }
+
+    .date-input-wrapper .btn-calendar:active {
+        transform: scale(0.98);
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
     }
 
     .date-input-wrapper .btn-calendar i {
-        font-size: 1rem;
+        font-size: 1.2rem;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .date-input-wrapper .btn-calendar:hover i {
+        transform: scale(1.1) rotate(-5deg);
     }
 
     /* Light theme for date input */
+    body:not([data-theme="dark"]) .invoices-page .date-input-wrapper input[type="date"] {
+        background: #ffffff !important;
+        border: 2px solid #dee2e6 !important;
+        color: #212529 !important;
+    }
+
+    body:not([data-theme="dark"]) .invoices-page .date-input-wrapper input[type="date"]:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 4px 12px rgba(102, 126, 234, 0.15) !important;
+    }
+
+    body:not([data-theme="dark"]) .invoices-page .date-input-wrapper input[type="date"]::-webkit-datetime-edit-text {
+        color: #6c757d;
+    }
+
+    body:not([data-theme="dark"]) .invoices-page .date-input-wrapper input[type="date"]::-webkit-datetime-edit-month-field,
+    body:not([data-theme="dark"]) .invoices-page .date-input-wrapper input[type="date"]::-webkit-datetime-edit-day-field,
+    body:not([data-theme="dark"]) .invoices-page .date-input-wrapper input[type="date"]::-webkit-datetime-edit-year-field {
+        color: #212529;
+    }
+
     body:not([data-theme="dark"]) .invoices-page .date-input-wrapper .btn-calendar {
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        color: #495057;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
     }
 
     body:not([data-theme="dark"]) .invoices-page .date-input-wrapper .btn-calendar:hover {
-        background: rgba(102, 126, 234, 0.1);
-        border-color: #667eea;
-        color: #667eea;
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.35), 0 0 0 4px rgba(102, 126, 234, 0.08);
     }
 
     .invoices-actions-buttons {
@@ -221,9 +394,44 @@
         border-radius: 0 8px 8px 0;
     }
 
+    /* Gray spinner icons in dark theme */
+    [data-theme="dark"] .invoices-filters-group input[type="number"]::-webkit-inner-spin-button,
+    [data-theme="dark"] .invoices-actions-group input[type="number"]::-webkit-inner-spin-button,
+    body[data-theme="dark"] .invoices-filters-group input[type="number"]::-webkit-inner-spin-button,
+    body[data-theme="dark"] .invoices-actions-group input[type="number"]::-webkit-inner-spin-button,
+    html[data-theme="dark"] .invoices-filters-group input[type="number"]::-webkit-inner-spin-button,
+    html[data-theme="dark"] .invoices-actions-group input[type="number"]::-webkit-inner-spin-button {
+        filter: brightness(0.4) opacity(0.6) !important;
+        -webkit-filter: brightness(0.4) opacity(0.6) !important;
+        opacity: 0.6 !important;
+    }
+
+    [data-theme="dark"] .invoices-filters-group input[type="number"]::-webkit-outer-spin-button,
+    [data-theme="dark"] .invoices-actions-group input[type="number"]::-webkit-outer-spin-button,
+    body[data-theme="dark"] .invoices-filters-group input[type="number"]::-webkit-outer-spin-button,
+    body[data-theme="dark"] .invoices-actions-group input[type="number"]::-webkit-outer-spin-button,
+    html[data-theme="dark"] .invoices-filters-group input[type="number"]::-webkit-outer-spin-button,
+    html[data-theme="dark"] .invoices-actions-group input[type="number"]::-webkit-outer-spin-button {
+        filter: brightness(0.4) opacity(0.6) !important;
+        -webkit-filter: brightness(0.4) opacity(0.6) !important;
+        opacity: 0.6 !important;
+    }
+
     /* Show spinners on hover */
     .invoices-filters-group input[type="number"]:hover::-webkit-inner-spin-button {
         background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Gray spinner icons on hover in dark theme */
+    [data-theme="dark"] .invoices-filters-group input[type="number"]:hover::-webkit-inner-spin-button,
+    [data-theme="dark"] .invoices-actions-group input[type="number"]:hover::-webkit-inner-spin-button,
+    body[data-theme="dark"] .invoices-filters-group input[type="number"]:hover::-webkit-inner-spin-button,
+    body[data-theme="dark"] .invoices-actions-group input[type="number"]:hover::-webkit-inner-spin-button,
+    html[data-theme="dark"] .invoices-filters-group input[type="number"]:hover::-webkit-inner-spin-button,
+    html[data-theme="dark"] .invoices-actions-group input[type="number"]:hover::-webkit-inner-spin-button {
+        filter: brightness(0.5) opacity(0.7) !important;
+        -webkit-filter: brightness(0.5) opacity(0.7) !important;
+        opacity: 0.7 !important;
     }
 
     .invoices-filters-group select option {
@@ -460,6 +668,147 @@
         border: 1px solid rgba(255, 255, 255, 0.08) !important;
         color: #e4e6eb !important;
     }
+
+    /* ФИНАЛЬНЫЙ ПРИОРИТЕТ - СЕРЫЕ СПИННЕРЫ В DARK THEME */
+    /* Этот блок должен быть в самом конце, чтобы перекрыть ВСЕ остальные стили */
+    [data-theme="dark"] .invoices-filters-group input[type="number"]::-webkit-inner-spin-button,
+    [data-theme="dark"] .invoices-actions-group input[type="number"]::-webkit-inner-spin-button,
+    body[data-theme="dark"] .invoices-filters-group input[type="number"]::-webkit-inner-spin-button,
+    body[data-theme="dark"] .invoices-actions-group input[type="number"]::-webkit-inner-spin-button,
+    html[data-theme="dark"] .invoices-filters-group input[type="number"]::-webkit-inner-spin-button,
+    html[data-theme="dark"] .invoices-actions-group input[type="number"]::-webkit-inner-spin-button,
+    [data-theme="dark"] .invoices-filters-group input[type="number"]::-webkit-outer-spin-button,
+    [data-theme="dark"] .invoices-actions-group input[type="number"]::-webkit-outer-spin-button,
+    body[data-theme="dark"] .invoices-filters-group input[type="number"]::-webkit-outer-spin-button,
+    body[data-theme="dark"] .invoices-actions-group input[type="number"]::-webkit-outer-spin-button,
+    html[data-theme="dark"] .invoices-filters-group input[type="number"]::-webkit-outer-spin-button,
+    html[data-theme="dark"] .invoices-actions-group input[type="number"]::-webkit-outer-spin-button {
+        filter: brightness(0.4) opacity(0.6) !important;
+        -webkit-filter: brightness(0.4) opacity(0.6) !important;
+        opacity: 0.6 !important;
+    }
+
+    [data-theme="dark"] .invoices-filters-group input[type="number"]:hover::-webkit-inner-spin-button,
+    [data-theme="dark"] .invoices-actions-group input[type="number"]:hover::-webkit-inner-spin-button,
+    body[data-theme="dark"] .invoices-filters-group input[type="number"]:hover::-webkit-inner-spin-button,
+    body[data-theme="dark"] .invoices-actions-group input[type="number"]:hover::-webkit-inner-spin-button,
+    html[data-theme="dark"] .invoices-filters-group input[type="number"]:hover::-webkit-inner-spin-button,
+    html[data-theme="dark"] .invoices-actions-group input[type="number"]:hover::-webkit-inner-spin-button {
+        filter: brightness(0.5) opacity(0.7) !important;
+        -webkit-filter: brightness(0.5) opacity(0.7) !important;
+        opacity: 0.7 !important;
+    }
+
+    /* ФИНАЛЬНЫЙ ПРИОРИТЕТ - СЕРЫЙ ФОН ДЛЯ SELECT OPTION В DARK THEME */
+    /* Этот блок должен быть в самом конце, чтобы перекрыть ВСЕ остальные стили */
+    [data-theme="dark"] .invoices-actions-group select,
+    [data-theme="dark"] .invoices-filters-group select,
+    body[data-theme="dark"] .invoices-actions-group select,
+    body[data-theme="dark"] .invoices-filters-group select,
+    html[data-theme="dark"] .invoices-actions-group select,
+    html[data-theme="dark"] .invoices-filters-group select {
+        background: rgba(255, 255, 255, 0.05) !important;
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        color: #fefefe !important;
+    }
+
+    [data-theme="dark"] .invoices-actions-group select option,
+    [data-theme="dark"] .invoices-filters-group select option,
+    body[data-theme="dark"] .invoices-actions-group select option,
+    body[data-theme="dark"] .invoices-filters-group select option,
+    html[data-theme="dark"] .invoices-actions-group select option,
+    html[data-theme="dark"] .invoices-filters-group select option,
+    [data-theme="dark"] #spa-content .invoices-actions-group select option,
+    [data-theme="dark"] #spa-content .invoices-filters-group select option,
+    body[data-theme="dark"] #spa-content .invoices-actions-group select option,
+    body[data-theme="dark"] #spa-content .invoices-filters-group select option,
+    html[data-theme="dark"] #spa-content .invoices-actions-group select option,
+    html[data-theme="dark"] #spa-content .invoices-filters-group select option {
+        background: #242831 !important;
+        background-color: #242831 !important;
+        color: #f6f7ff !important;
+    }
+
+    [data-theme="dark"] .invoices-actions-group select option:hover,
+    [data-theme="dark"] .invoices-filters-group select option:hover,
+    body[data-theme="dark"] .invoices-actions-group select option:hover,
+    body[data-theme="dark"] .invoices-filters-group select option:hover,
+    html[data-theme="dark"] .invoices-actions-group select option:hover,
+    html[data-theme="dark"] .invoices-filters-group select option:hover {
+        background: #3b4261 !important;
+        background-color: #3b4261 !important;
+        color: #ffffff !important;
+    }
+
+    [data-theme="dark"] .invoices-actions-group select option:checked,
+    [data-theme="dark"] .invoices-filters-group select option:checked,
+    body[data-theme="dark"] .invoices-actions-group select option:checked,
+    body[data-theme="dark"] .invoices-filters-group select option:checked,
+    html[data-theme="dark"] .invoices-actions-group select option:checked,
+    html[data-theme="dark"] .invoices-filters-group select option:checked {
+        background: #667eea !important;
+        background-color: #667eea !important;
+        color: #ffffff !important;
+    }
+
+    /* ФИНАЛЬНЫЙ ПРИОРИТЕТ - БЕЛЫЙ ЦВЕТ ДЛЯ ПЛЕЙСХОЛДЕРА DATE INPUT "ДД.ММ.ГГГГ" В DARK THEME */
+    /* Этот блок должен быть в самом конце, чтобы перекрыть ВСЕ остальные стили */
+    [data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-text,
+    [data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-month-field,
+    [data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-day-field,
+    [data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-year-field,
+    body[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-text,
+    body[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-month-field,
+    body[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-day-field,
+    body[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-year-field,
+    html[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-text,
+    html[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-month-field,
+    html[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-day-field,
+    html[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-year-field {
+        color: #ffffff !important;
+    }
+
+    [data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-text,
+    [data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-month-field,
+    [data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-day-field,
+    [data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-year-field,
+    body[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-text,
+    body[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-month-field,
+    body[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-day-field,
+    body[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-year-field,
+    html[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-text,
+    html[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-month-field,
+    html[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-day-field,
+    html[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-year-field {
+        color: #ffffff !important;
+    }
+
+    /* ФИНАЛЬНЫЙ ПРИОРИТЕТ - СИММЕТРИЧНОЕ ВЫРАВНИВАНИЕ ЗАГОЛОВКОВ И ЯЧЕЕК ТАБЛИЦЫ */
+    /* Этот блок должен быть в самом конце, чтобы перекрыть ВСЕ остальные стили */
+    .invoices-page .table thead th,
+    .invoices-page .table tbody td,
+    #spa-content .invoices-page .table thead th,
+    #spa-content .invoices-page .table tbody td,
+    [data-theme="dark"] .invoices-page .table thead th,
+    [data-theme="dark"] .invoices-page .table tbody td,
+    body[data-theme="dark"] .invoices-page .table thead th,
+    body[data-theme="dark"] .invoices-page .table tbody td,
+    html[data-theme="dark"] .invoices-page .table thead th,
+    html[data-theme="dark"] .invoices-page .table tbody td {
+        padding: 12px 16px !important;
+        text-align: left !important;
+        vertical-align: middle !important;
+    }
+
+    /* Убедиться, что первая и последняя колонки также симметричны */
+    .invoices-page .table thead th:first-child,
+    .invoices-page .table tbody td:first-child,
+    .invoices-page .table thead th:last-child,
+    .invoices-page .table tbody td:last-child {
+        padding: 12px 16px !important;
+        text-align: left !important;
+        vertical-align: middle !important;
+    }
 </style>
 
 <div class="content-wrapper invoices-page">
@@ -603,7 +952,7 @@
                             <div class="select-option" data-value="50">50</div>
                             <div class="select-option" data-value="100">100</div>
                         </div>
-                    </div>
+            </div>
         </div>
     </div>
     </div>
@@ -631,6 +980,60 @@
                 filtersSection.style.setProperty('border', '1px solid rgba(255, 255, 255, 0.08)', 'important');
                 filtersSection.style.setProperty('color', '#e4e6eb', 'important');
             }
+
+            // Применить серый фон к select и option элементам
+            const selectElements = document.querySelectorAll('.invoices-actions-group select, .invoices-filters-group select');
+            selectElements.forEach(select => {
+                select.style.setProperty('background', 'rgba(255, 255, 255, 0.05)', 'important');
+                select.style.setProperty('background-color', 'rgba(255, 255, 255, 0.05)', 'important');
+                select.style.setProperty('color', '#fefefe', 'important');
+                
+                // Применить стили к option элементам
+                const options = select.querySelectorAll('option');
+                options.forEach(option => {
+                    option.style.setProperty('background', '#242831', 'important');
+                    option.style.setProperty('background-color', '#242831', 'important');
+                    option.style.setProperty('color', '#f6f7ff', 'important');
+                });
+            });
+
+            // Инъекция CSS для белого плейсхолдера date input
+            const dateInputStyleId = 'date-input-placeholder-white';
+            if (!document.getElementById(dateInputStyleId)) {
+                const style = document.createElement('style');
+                style.id = dateInputStyleId;
+                style.textContent = `
+                    [data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-text,
+                    [data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-month-field,
+                    [data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-day-field,
+                    [data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-year-field,
+                    body[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-text,
+                    body[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-month-field,
+                    body[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-day-field,
+                    body[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-year-field,
+                    html[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-text,
+                    html[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-month-field,
+                    html[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-day-field,
+                    html[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-year-field {
+                        color: #ffffff !important;
+                    }
+                    [data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-text,
+                    [data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-month-field,
+                    [data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-day-field,
+                    [data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-year-field,
+                    body[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-text,
+                    body[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-month-field,
+                    body[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-day-field,
+                    body[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-year-field,
+                    html[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-text,
+                    html[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-month-field,
+                    html[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-day-field,
+                    html[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-year-field {
+                        color: #ffffff !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
         }
     }
     
@@ -646,8 +1049,33 @@
     setTimeout(applyDarkThemeStyles, 100);
     setTimeout(applyDarkThemeStyles, 500);
     setTimeout(applyDarkThemeStyles, 1000);
+
+    // Повторно применять стили при открытии select (для выпадающих списков)
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectElements = document.querySelectorAll('.invoices-actions-group select, .invoices-filters-group select');
+        selectElements.forEach(select => {
+            // Применить стили при клике (открытие dropdown)
+            select.addEventListener('mousedown', function() {
+                setTimeout(applyDarkThemeStyles, 10);
+            });
+            // Применить стили при фокусе
+            select.addEventListener('focus', function() {
+                setTimeout(applyDarkThemeStyles, 10);
+            });
+            // Применить стили при изменении
+            select.addEventListener('change', function() {
+                setTimeout(applyDarkThemeStyles, 10);
+            });
+        });
+    });
     
-    const statuses = {paid: {text: 'Оплачен', cls: 'success'}, unpaid: {text: 'Не оплачен', cls: 'warning'}, overdue: {text: 'Просрочен', cls: 'danger'}};
+    const statuses = {
+        paid: {text: 'Оплачен', cls: 'success'}, 
+        unpaid: {text: 'Не оплачен', cls: 'warning'}, 
+        overdue: {text: 'Просрочен', cls: 'danger'},
+        draft: {text: 'DRAFT', cls: 'secondary'},
+        issued: {text: 'Выставлен', cls: 'info'}
+    };
     
     // Store original data
     let allInvoices = [];
@@ -692,21 +1120,33 @@
                 const invoiceNumber = i.invoiceNumber || i.number || `INV-${String(i.id).padStart(4, '0')}`;
                 const resident = i.userName || i.residentName || '—';
                 const period = i.period || '—';
-                const amount = typeof i.amount === 'number' ? i.amount.toFixed(2) + ' ₼' : (i.amount || '—');
+                const amount = typeof i.amount === 'number' ? i.amount.toFixed(2) : (i.amount || '0.00');
                 const dueDate = i.dueDate || '—';
                 const statusConfig = statuses[i.status] || { text: i.status || 'Неизвестно', cls: 'secondary' };
+                
+                // Данные об оплате
+                const paid = typeof i.paid === 'number' ? i.paid.toFixed(2) : '0.00';
+                const remaining = typeof i.remaining === 'number' ? i.remaining.toFixed(2) : amount;
+                const totalAmount = typeof i.amount === 'number' ? i.amount.toFixed(2) : amount;
                 
                 return `<tr>
                     <td>${period}</td>
                     <td><strong>${resident}</strong></td>
                     <td>${invoiceNumber}</td>
-                    <td><span class="badge bg-${statusConfig.cls}">${statusConfig.text}</span></td>
-                    <td><strong>${amount}</strong></td>
+                    <td>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <span class="badge bg-${statusConfig.cls}">${statusConfig.text}</span>
+                            <div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.6); background: rgba(255, 255, 255, 0.05); padding: 4px 8px; border-radius: 4px; margin-top: 4px;">
+                                Оплачено ${paid} / Остаток ${remaining}
+                            </div>
+                        </div>
+                    </td>
+                    <td><strong style="color: #ff6b6b;">${totalAmount} ₼</strong></td>
                     <td>${dueDate}</td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewInvoice(${i.id})">Просмотр</button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="downloadInvoice(${i.id})">
-                            <i class="bi bi-download"></i>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewInvoice(${i.id})">Открыть</button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="printInvoice(${i.id})" title="Печать">
+                            <i class="bi bi-printer"></i>
                         </button>
                     </td>
                 </tr>`;
@@ -762,18 +1202,104 @@
     
     // View and download functions
     window.viewInvoice = function(id) {
-        console.log('View invoice', id);
-        if (typeof showSuccess === 'function') {
-            showSuccess(`Открытие счета #${id}`);
+        console.log('Opening invoice view for ID:', id);
+        
+        // Загрузить страницу просмотра через fetch и вставить в SPA контейнер
+        const viewUrl = `/admin/content/invoice-view.html?id=${id}`;
+        const contentContainer = document.getElementById('spa-content');
+        
+        if (!contentContainer) {
+            console.error('SPA content container not found');
+            window.location.href = viewUrl;
+            return;
         }
+        
+        // Показать состояние загрузки
+        contentContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: rgba(255,255,255,0.8);"><i class="bi bi-hourglass-split" style="font-size: 2rem; margin-bottom: 10px;"></i><p>Загрузка...</p></div>';
+        
+        // Загрузить контент
+        fetch(viewUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(html => {
+                // Вставить контент
+                contentContainer.innerHTML = html;
+                
+                // Выполнить скрипты из загруженного контента
+                const scripts = contentContainer.querySelectorAll('script');
+                scripts.forEach(oldScript => {
+                    const newScript = document.createElement('script');
+                    Array.from(oldScript.attributes).forEach(attr => {
+                        newScript.setAttribute(attr.name, attr.value);
+                    });
+                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                });
+                
+                // Обновить заголовок страницы и breadcrumb
+                updatePageHeaderForInvoiceView(id);
+                
+                // Обновить URL в браузере
+                if (window.history && window.history.pushState) {
+                    window.history.pushState({ route: 'invoice-view', id: id }, '', `#/invoice-view?id=${id}`);
+                }
+                
+                // Скроллить наверх
+                contentContainer.scrollTop = 0;
+                
+                console.log('Invoice view loaded successfully');
+            })
+            .catch(error => {
+                console.error('Error loading invoice view:', error);
+                contentContainer.innerHTML = `<div style="padding: 40px; text-align: center; color: #ff6b6b;"><p>Ошибка загрузки страницы: ${error.message}</p><button onclick="window.location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px;">Перезагрузить</button></div>`;
+            });
+    };
+    
+    window.printInvoice = function(id) {
+        // Открыть страницу печати счета в новой вкладке
+        const printUrl = `/admin/content/invoice-print.html?id=${id}`;
+        window.open(printUrl, '_blank');
     };
     
     window.downloadInvoice = function(id) {
-        console.log('Download invoice', id);
-        if (typeof showSuccess === 'function') {
-            showSuccess(`Загрузка счета #${id}`);
-        }
+        // Открыть страницу печати для скачивания PDF
+        const printUrl = `/admin/content/invoice-print.html?id=${id}`;
+        window.open(printUrl, '_blank');
     };
+    
+    // Функция для обновления заголовка и breadcrumb при открытии просмотра счета
+    function updatePageHeaderForInvoiceView(invoiceId) {
+        // Обновить заголовок страницы
+        const titleContainer = document.getElementById('page-title-container');
+        if (titleContainer) {
+            const h1 = titleContainer.querySelector('h1');
+            if (h1) {
+                h1.textContent = 'Счета';
+            }
+            
+            // Обновить breadcrumb
+            const breadcrumbContainer = titleContainer.querySelector('.page-breadcrumb');
+            if (breadcrumbContainer) {
+                breadcrumbContainer.innerHTML = `
+                    <span class="breadcrumb-item">
+                        <svg width="14" height="14" fill="currentColor" style="margin-right: 0.25rem; vertical-align: middle;">
+                            <use href="/images/icons.svg#icon-apartments"></use>
+                        </svg>
+                        Финансы
+                    </span>
+                    <span>›</span>
+                    <span class="breadcrumb-item">Счета</span>
+                `;
+            }
+        }
+        
+        // Обновить title страницы
+        document.title = 'Счета - RoyalPark Admin';
+    }
     
     // Initialize custom pagination dropdown
     let invoiceDropdownInitialized = false;

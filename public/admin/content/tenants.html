@@ -66,16 +66,17 @@
         }
         
         .modal-content {
-            background: #ffffff;
-            color: #212529;
-            border-radius: 20px;
+            background: linear-gradient(135deg, #1f2432 0%, #181c27 100%);
+            color: #f6f7ff;
+            border-radius: 24px;
             padding: 30px;
             max-width: 900px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
             overflow-x: hidden;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             animation: modalSlideIn 0.3s ease-out;
         }
         
@@ -96,13 +97,13 @@
             align-items: center;
             margin-bottom: 25px;
             padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.08);
         }
         
         .modal-header h2 {
             margin: 0;
             font-size: 1.75rem;
-            color: #1a1d2e;
+            color: #f5f6ff;
         }
         
         .modal-close {
@@ -110,12 +111,12 @@
             border: none;
             font-size: 1.5rem;
             cursor: pointer;
-            color: #999;
+            color: #9ea4c0;
             transition: color 0.3s;
         }
         
         .modal-close:hover {
-            color: #333;
+            color: #ffffff;
         }
         
         .form-section {
@@ -125,7 +126,7 @@
         .form-section h4 {
             font-size: 1.1rem;
             margin-bottom: 15px;
-            color: #667eea;
+            color: #9bb0ff;
             font-weight: 600;
         }
         
@@ -145,7 +146,7 @@
             display: block;
             font-weight: 600;
             margin-bottom: 8px;
-            color: #495057;
+            color: #d2d7ff;
             font-size: 0.9rem;
         }
         
@@ -154,12 +155,15 @@
         .form-group textarea {
             width: 100%;
             padding: 10px 15px;
-            background: #ffffff;
-            color: #212529;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fefefe;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
             font-size: 0.95rem;
             transition: all 0.3s;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
         }
         
         .form-group input:focus,
@@ -167,14 +171,85 @@
         .form-group textarea:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .form-group select option {
+            background: #2b2f3d;
+            color: #fefefe;
+        }
+
+        .form-group select option:checked,
+        .form-group select option:hover {
+            background: #3b4261;
+            color: #ffffff;
+        }
+
+        /* Select dropdown styling for all selects in modal */
+        .modal-content select,
+        .residents-section select {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            color: #fefefe !important;
+        }
+
+        .modal-content select option,
+        .residents-section select option,
+        select option {
+            background: #1f2432 !important;
+            background-color: #1f2432 !important;
+            color: #f6f7ff !important;
+            padding: 8px 12px;
+        }
+
+        .modal-content select option:checked,
+        .residents-section select option:checked,
+        select option:checked {
+            background: #667eea !important;
+            background-color: #667eea !important;
+            color: #ffffff !important;
+        }
+
+        .modal-content select option:hover,
+        .residents-section select option:hover,
+        select option:hover {
+            background: #3b4261 !important;
+            background-color: #3b4261 !important;
+            color: #ffffff !important;
+        }
+
+        /* For dropdown list background - attempt to style native dropdown */
+        .modal-content select:focus,
+        .residents-section select:focus {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+        }
+
+        /* Style for select in residents section specifically */
+        #blockFilter,
+        #blockFilter option {
+            background: #1f2432 !important;
+            background-color: #1f2432 !important;
+            color: #f6f7ff !important;
+        }
+
+        #blockFilter option:checked {
+            background: #667eea !important;
+            background-color: #667eea !important;
+            color: #ffffff !important;
         }
         
         .residents-section {
-            background: #f8f9fa;
-            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
             padding: 20px;
             margin-top: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.15);
         }
         
         .residents-header {
@@ -194,14 +269,16 @@
             font-weight: 600;
             margin: 0;
             white-space: nowrap;
+            color: #d2d7ff;
         }
         
         .residents-table {
             width: 100%;
-            background: white;
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
         
         .residents-table table {
@@ -213,14 +290,15 @@
         .residents-table td {
             padding: 12px 15px;
             text-align: left;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             font-size: 0.9rem;
+            color: #f6f7ff;
         }
         
         .residents-table th {
-            background: #f5f5f5;
+            background: rgba(255, 255, 255, 0.05);
             font-weight: 600;
-            color: #333;
+            color: #9bb0ff;
             font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -231,7 +309,7 @@
         }
         
         .residents-table tbody tr:hover {
-            background: #f9f9f9;
+            background: rgba(255, 255, 255, 0.05);
         }
         
         .residents-table tbody tr:last-child td {
@@ -239,11 +317,11 @@
         }
         
         .residents-table tbody tr.selected {
-            background: #e3f2fd;
+            background: rgba(102, 126, 234, 0.2);
         }
         
         .residents-table tbody tr.selected:hover {
-            background: #d1e9fc;
+            background: rgba(102, 126, 234, 0.25);
         }
         
         .selected-info {
@@ -291,7 +369,270 @@
             justify-content: flex-end;
             margin-top: 25px;
             padding-top: 20px;
-            border-top: 2px solid #f0f0f0;
+            border-top: 2px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Pagination Styles */
+        .table-pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 0 0 15px 15px;
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn-pagination {
+            min-width: 36px;
+            height: 36px;
+            padding: 0 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .btn-pagination:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        .btn-pagination:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-pagination.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: #ffffff;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .pagination-info {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        .pagination-per-page {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        .pagination-per-page select {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.05) !important;
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-size: 0.9rem;
+            cursor: pointer;
+            min-width: 60px;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+
+        .pagination-per-page select:focus {
+            outline: none;
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+            background: rgba(255, 255, 255, 0.08) !important;
+        }
+
+        .pagination-per-page select option {
+            background: #1f2432 !important;
+            background-color: #1f2432 !important;
+            color: #f6f7ff !important;
+            padding: 8px 12px;
+        }
+
+        .pagination-per-page select option:checked {
+            background: #667eea !important;
+            background-color: #667eea !important;
+            color: #ffffff !important;
+        }
+
+        .pagination-per-page select option:hover {
+            background: #3b4261 !important;
+            background-color: #3b4261 !important;
+            color: #ffffff !important;
+        }
+
+        /* Specific styling for itemsPerPage select - same as blockFilter */
+        #itemsPerPage {
+            background: rgba(255, 255, 255, 0.05) !important;
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            color: #fefefe !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+        }
+
+        #itemsPerPage,
+        #itemsPerPage option {
+            background: #1f2432 !important;
+            background-color: #1f2432 !important;
+            color: #f6f7ff !important;
+        }
+
+        #itemsPerPage option:checked,
+        #itemsPerPage option[selected] {
+            background: #667eea !important;
+            background-color: #667eea !important;
+            color: #ffffff !important;
+        }
+
+        #itemsPerPage option:hover {
+            background: #3b4261 !important;
+            background-color: #3b4261 !important;
+            color: #ffffff !important;
+        }
+
+        #itemsPerPage:focus {
+            background: rgba(255, 255, 255, 0.08) !important;
+            background-color: rgba(255, 255, 255, 0.08) !important;
+            border-color: #667eea !important;
+            outline: none !important;
+        }
+
+        /* Additional override for all selects in pagination - same as residents-section */
+        .table-pagination select {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            color: #fefefe !important;
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+        }
+
+        .table-pagination select option {
+            background: #1f2432 !important;
+            background-color: #1f2432 !important;
+            color: #f6f7ff !important;
+            padding: 8px 12px !important;
+        }
+
+        .table-pagination select option:checked,
+        .table-pagination select option[selected] {
+            background: #667eea !important;
+            background-color: #667eea !important;
+            color: #ffffff !important;
+        }
+
+        .table-pagination select option:hover {
+            background: #3b4261 !important;
+            background-color: #3b4261 !important;
+            color: #ffffff !important;
+        }
+
+        .table-pagination select:focus {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+            border-color: #667eea !important;
+            outline: none !important;
+        }
+
+        /* Custom dropdown for pagination per page selector */
+        .custom-pag-select {
+            position: relative;
+            display: inline-block;
+            min-width: 60px;
+        }
+
+        .custom-pag-select .select-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 60px;
+            user-select: none;
+        }
+
+        .custom-pag-select .select-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .custom-pag-select .select-btn .arrow {
+            margin-left: 8px;
+            font-size: 0.7rem;
+            transition: transform 0.3s;
+            opacity: 0.7;
+        }
+
+        .custom-pag-select.open .select-btn .arrow {
+            transform: rotate(180deg);
+        }
+
+        .custom-pag-select .select-options {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            background: #1f2432 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+            overflow: hidden;
+            display: none;
+            z-index: 10000;
+            min-width: 100%;
+            width: auto;
+        }
+
+        .custom-pag-select.open .select-options {
+            display: block;
+        }
+
+        .custom-pag-select .select-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            color: #f6f7ff !important;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            background: #1f2432 !important;
+            display: block;
+            white-space: nowrap;
+        }
+
+        .custom-pag-select .select-option:hover {
+            background: #3b4261 !important;
+            color: #ffffff !important;
+        }
+
+        .custom-pag-select .select-option.selected {
+            background: #667eea !important;
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+
+        .custom-pag-select .select-option:not(:last-child) {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
         
         /* Light theme (default) - ensure text is visible */
@@ -519,15 +860,54 @@
                                 <th>E-mail</th>
                                 <th>Последний вход</th>
                                 <th>Пароль</th>
+                                <th>Дома</th>
                                 <th>Действия</th>
                             </tr>
                         </thead>
                         <tbody id="tenantsTableBody">
                             <tr>
-                                <td colspan="8" class="text-center text-muted">Пока нет жителей</td>
+                                <td colspan="9" class="text-center text-muted">Пока нет жителей</td>
                             </tr>
                         </tbody>
                     </table>
+                    
+                    <!-- Pagination -->
+                    <div class="table-pagination">
+                        <div class="pagination-controls">
+                            <button class="btn-pagination" onclick="goToPage('prev')" disabled>
+                                <i class="bi bi-chevron-double-left"></i>
+                            </button>
+                            <button class="btn-pagination active" onclick="goToPage(1)">1</button>
+                            <button class="btn-pagination" onclick="goToPage('next')" disabled>
+                                <i class="bi bi-chevron-double-right"></i>
+                            </button>
+                        </div>
+                        <div class="pagination-info">
+                            <span>Стр. <span id="currentPage">1</span> из <span id="totalPages">1</span> · всего <span id="totalItems">0</span></span>
+                        </div>
+                        <div class="pagination-per-page">
+                            <span>На</span>
+                            <span>странице:</span>
+                            <div class="custom-pag-select" id="customItemsPerPage">
+                                <select id="itemsPerPage" onchange="changeItemsPerPage()" style="display: none;">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                <div class="select-btn">
+                                    <span class="select-text">25</span>
+                                    <span class="arrow">▾</span>
+                                </div>
+                                <div class="select-options">
+                                    <div class="select-option" data-value="10">10</div>
+                                    <div class="select-option selected" data-value="25">25</div>
+                                    <div class="select-option" data-value="50">50</div>
+                                    <div class="select-option" data-value="100">100</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -580,7 +960,7 @@
                         <div class="residents-header">
                             <div class="residents-filter-group">
                                 <label>Фильтр по блоку</label>
-                                <select id="blockFilter" onchange="filterResidents()" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; min-width: 150px;">
+                                <select id="blockFilter" onchange="filterResidents()" style="padding: 8px 12px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 6px; font-size: 0.9rem; min-width: 150px; background: rgba(255, 255, 255, 0.05); color: #fefefe;">
                                     <option value="all">Все</option>
                                     <option value="A">Блок A</option>
                                     <option value="B">Блок B</option>
@@ -859,6 +1239,287 @@
         });
     }
     
+    // Pagination State
+    let paginationState = {
+        currentPage: 1,
+        itemsPerPage: 25,
+        totalItems: 0,
+        totalPages: 1
+    };
+
+    // Pagination Functions
+    window.goToPage = function(page) {
+        if (page === 'prev') {
+            if (paginationState.currentPage > 1) {
+                paginationState.currentPage--;
+                updatePagination();
+                renderTable();
+            }
+        } else if (page === 'next') {
+            if (paginationState.currentPage < paginationState.totalPages) {
+                paginationState.currentPage++;
+                updatePagination();
+                renderTable();
+            }
+        } else if (typeof page === 'number') {
+            paginationState.currentPage = page;
+            updatePagination();
+            renderTable();
+        }
+    };
+
+    window.changeItemsPerPage = function() {
+        const select = document.getElementById('itemsPerPage');
+        if (select) {
+            paginationState.itemsPerPage = parseInt(select.value);
+            paginationState.currentPage = 1;
+            updatePagination();
+            renderTable();
+        }
+    };
+
+    // Initialize custom pagination dropdown
+    let paginationDropdownInitialized = false;
+    function initCustomPaginationDropdown() {
+        const customSelect = document.getElementById('customItemsPerPage');
+        if (!customSelect) {
+            console.log('Custom select not found');
+            return;
+        }
+
+        // Prevent double initialization
+        if (customSelect.dataset.initialized === 'true') {
+            return;
+        }
+        customSelect.dataset.initialized = 'true';
+
+        const nativeSelect = document.getElementById('itemsPerPage');
+        if (!nativeSelect) {
+            console.log('Native select not found');
+            return;
+        }
+
+        const selectBtn = customSelect.querySelector('.select-btn');
+        const selectText = customSelect.querySelector('.select-text');
+        const selectOptions = customSelect.querySelector('.select-options');
+        const options = customSelect.querySelectorAll('.select-option');
+
+        if (!selectBtn || !selectText || !selectOptions || options.length === 0) {
+            console.log('Dropdown elements not found');
+            return;
+        }
+
+        // Set initial value
+        const selectedValue = nativeSelect.value;
+        selectText.textContent = selectedValue;
+        
+        // Update selected option
+        options.forEach(opt => {
+            opt.classList.remove('selected');
+            if (opt.dataset.value === selectedValue) {
+                opt.classList.add('selected');
+            }
+        });
+
+        // Toggle dropdown on button click
+        selectBtn.onclick = function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            console.log('Button clicked');
+            customSelect.classList.toggle('open');
+        };
+
+        // Handle option click
+        options.forEach(option => {
+            option.onclick = function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                const value = option.dataset.value;
+                console.log('Option clicked:', value);
+                
+                // Update native select
+                nativeSelect.value = value;
+                nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                
+                // Update display
+                selectText.textContent = value;
+                
+                // Update selected state
+                options.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                
+                // Close dropdown
+                customSelect.classList.remove('open');
+            };
+        });
+
+        // Close dropdown when clicking outside (use event delegation)
+        if (!paginationDropdownInitialized) {
+            document.addEventListener('click', function(e) {
+                if (!customSelect.contains(e.target)) {
+                    customSelect.classList.remove('open');
+                }
+            });
+
+            // Close dropdown on Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && customSelect.classList.contains('open')) {
+                    customSelect.classList.remove('open');
+                }
+            });
+
+            paginationDropdownInitialized = true;
+        }
+
+        // Listen to native select changes (if changed programmatically)
+        nativeSelect.addEventListener('change', function() {
+            const value = nativeSelect.value;
+            selectText.textContent = value;
+            options.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.value === value) {
+                    opt.classList.add('selected');
+                }
+            });
+        });
+
+        console.log('Custom pagination dropdown initialized');
+    }
+
+    function updatePagination() {
+        const currentPageEl = document.getElementById('currentPage');
+        const totalPagesEl = document.getElementById('totalPages');
+        const totalItemsEl = document.getElementById('totalItems');
+        
+        if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
+        if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
+        if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
+
+        // Update pagination buttons
+        const paginationControls = document.querySelector('.pagination-controls');
+        if (paginationControls) {
+            const buttons = paginationControls.querySelectorAll('.btn-pagination');
+            const prevBtn = buttons[0];
+            const nextBtn = buttons[buttons.length - 1];
+            const pageBtns = Array.from(buttons).slice(1, -1);
+
+            // Update prev/next buttons
+            if (prevBtn) {
+                prevBtn.disabled = paginationState.currentPage === 1;
+            }
+            if (nextBtn) {
+                nextBtn.disabled = paginationState.currentPage === paginationState.totalPages;
+            }
+
+            // Update page number buttons
+            pageBtns.forEach((btn, index) => {
+                const pageNum = index + 1;
+                if (pageNum === paginationState.currentPage) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+    }
+
+    function updatePaginationCount() {
+        const allRows = document.querySelectorAll('#tenantsTableBody tr');
+        let visibleRows = 0;
+        
+        allRows.forEach(row => {
+            // Skip empty message row
+            if (row.querySelector('td[colspan]')) {
+                return;
+            }
+            // Count only visible rows
+            if (row.style.display !== 'none' && window.getComputedStyle(row).display !== 'none') {
+                visibleRows++;
+            }
+        });
+        
+        // If no visible rows, check if we have data rows at all
+        if (visibleRows === 0) {
+            const dataRows = Array.from(allRows).filter(row => !row.querySelector('td[colspan]'));
+            visibleRows = dataRows.length;
+        }
+        
+        paginationState.totalItems = visibleRows;
+        paginationState.totalPages = Math.max(1, Math.ceil(paginationState.totalItems / paginationState.itemsPerPage));
+        
+        if (paginationState.currentPage > paginationState.totalPages) {
+            paginationState.currentPage = paginationState.totalPages || 1;
+        }
+        
+        updatePagination();
+    }
+
+    function renderTable() {
+        const allRows = Array.from(document.querySelectorAll('#tenantsTableBody tr'));
+        
+        // Filter out empty message row and get only data rows
+        const emptyRow = allRows.find(row => row.querySelector('td[colspan]'));
+        const dataRows = allRows.filter(row => !row.querySelector('td[colspan]'));
+        
+        // Get visible rows (after filtering)
+        const visibleRows = dataRows.filter(row => {
+            return window.getComputedStyle(row).display !== 'none' && !row.style.display;
+        });
+        
+        // Hide empty message if we have visible rows
+        if (emptyRow) {
+            emptyRow.style.display = (visibleRows.length === 0) ? '' : 'none';
+        }
+
+        // Calculate pagination for visible rows
+        const startIndex = (paginationState.currentPage - 1) * paginationState.itemsPerPage;
+        const endIndex = startIndex + paginationState.itemsPerPage;
+
+        // Show only rows in current page range
+        visibleRows.forEach((row, visibleIndex) => {
+            if (visibleIndex >= startIndex && visibleIndex < endIndex) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        updatePagination();
+    }
+
+    // Update pagination when filters are applied
+    const originalApplyFilters = window.applyFilters;
+    window.applyFilters = function() {
+        originalApplyFilters();
+        setTimeout(() => {
+            updatePaginationCount();
+            renderTable();
+        }, 100);
+    };
+
+    // Initialize pagination on load
+    function initPagination() {
+        updatePaginationCount();
+        renderTable();
+        // Try to initialize dropdown multiple times in case DOM is not ready
+        setTimeout(() => {
+            initCustomPaginationDropdown();
+        }, 100);
+        setTimeout(() => {
+            initCustomPaginationDropdown();
+        }, 500);
+        setTimeout(() => {
+            initCustomPaginationDropdown();
+        }, 1000);
+    }
+    
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPagination);
+    } else {
+        initPagination();
+    }
+
     // Initialize
     setupEventListeners();
     
@@ -866,6 +1527,19 @@
     window.addEventListener('spa:contentLoaded', function(e) {
         if (e.detail.route === '/tenants') {
             setupEventListeners();
+            // Reset initialization flag when content reloads
+            const customSelect = document.getElementById('customItemsPerPage');
+            if (customSelect) {
+                customSelect.dataset.initialized = 'false';
+            }
+            setTimeout(() => {
+                updatePaginationCount();
+                renderTable();
+                initCustomPaginationDropdown();
+            }, 100);
+            setTimeout(() => {
+                initCustomPaginationDropdown();
+            }, 500);
         }
     });
     
