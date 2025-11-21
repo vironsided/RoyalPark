@@ -2984,3 +2984,92 @@ html[data-theme="dark"] .card.invoices-filters {
     overflow: hidden;
 }
 
+/* PAYMENTS FILTERS DARK THEME - максимальная специфичность */
+[data-theme="dark"] .payments-filters,
+[data-theme="dark"] .card.payments-filters,
+[data-theme="dark"] #spa-content .payments-filters,
+[data-theme="dark"] #spa-content .card.payments-filters,
+[data-theme="dark"] .dashboard-content .payments-filters,
+[data-theme="dark"] .dashboard-content .card.payments-filters,
+[data-theme="dark"] .content-wrapper .payments-filters,
+[data-theme="dark"] .content-wrapper .card.payments-filters,
+[data-theme="dark"] .payments-page .payments-filters,
+[data-theme="dark"] .payments-page .card.payments-filters,
+body[data-theme="dark"] .payments-filters,
+body[data-theme="dark"] .card.payments-filters,
+body[data-theme="dark"] #spa-content .payments-filters,
+body[data-theme="dark"] #spa-content .card.payments-filters,
+body[data-theme="dark"] .dashboard-content .payments-filters,
+body[data-theme="dark"] .dashboard-content .card.payments-filters,
+body[data-theme="dark"] .content-wrapper .payments-filters,
+body[data-theme="dark"] .content-wrapper .card.payments-filters,
+body[data-theme="dark"] .payments-page .payments-filters,
+body[data-theme="dark"] .payments-page .card.payments-filters,
+html[data-theme="dark"] .payments-filters,
+html[data-theme="dark"] .card.payments-filters,
+html[data-theme="dark"] #spa-content .payments-filters,
+html[data-theme="dark"] #spa-content .card.payments-filters,
+html[data-theme="dark"] .dashboard-content .payments-filters,
+html[data-theme="dark"] .dashboard-content .card.payments-filters,
+html[data-theme="dark"] .content-wrapper .payments-filters,
+html[data-theme="dark"] .content-wrapper .card.payments-filters,
+html[data-theme="dark"] .payments-page .payments-filters,
+html[data-theme="dark"] .payments-page .card.payments-filters {
+    background-color: #242831 !important;
+    background: #242831 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: #e4e6eb !important;
+}
+
+[data-theme="dark"] .payments-filters-group label,
+body[data-theme="dark"] .payments-filters-group label,
+html[data-theme="dark"] .payments-filters-group label,
+[data-theme="dark"] #spa-content .payments-filters-group label,
+body[data-theme="dark"] #spa-content .payments-filters-group label,
+html[data-theme="dark"] #spa-content .payments-filters-group label {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+[data-theme="dark"] .payments-filters-group input,
+[data-theme="dark"] .payments-filters-group select,
+body[data-theme="dark"] .payments-filters-group input,
+body[data-theme="dark"] .payments-filters-group select,
+html[data-theme="dark"] .payments-filters-group input,
+html[data-theme="dark"] .payments-filters-group select,
+[data-theme="dark"] #spa-content .payments-filters-group input,
+[data-theme="dark"] #spa-content .payments-filters-group select,
+body[data-theme="dark"] #spa-content .payments-filters-group input,
+body[data-theme="dark"] #spa-content .payments-filters-group select,
+html[data-theme="dark"] #spa-content .payments-filters-group input,
+html[data-theme="dark"] #spa-content .payments-filters-group select {
+    background: rgba(255, 255, 255, 0.05) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: #fefefe !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] .payments-filters-group select option,
+body[data-theme="dark"] .payments-filters-group select option,
+html[data-theme="dark"] .payments-filters-group select option,
+[data-theme="dark"] #spa-content .payments-filters-group select option,
+body[data-theme="dark"] #spa-content .payments-filters-group select option,
+html[data-theme="dark"] #spa-content .payments-filters-group select option {
+    background: #242831 !important;
+    background-color: #242831 !important;
+    color: #f6f7ff !important;
+}
+
+[data-theme="dark"] .payments-filters-group select option:hover,
+body[data-theme="dark"] .payments-filters-group select option:hover,
+html[data-theme="dark"] .payments-filters-group select option:hover {
+    background: #3b4261 !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .payments-filters-group select option:checked,
+body[data-theme="dark"] .payments-filters-group select option:checked,
+html[data-theme="dark"] .payments-filters-group select option:checked {
+    background: #667eea !important;
+    color: #ffffff !important;
+}
+
