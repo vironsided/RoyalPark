@@ -1892,11 +1892,13 @@ html, body {
 .dashboard-content .content-wrapper,
 .dashboard-content .block-map-container,
 .dashboard-content .filters-container {
-    background: var(--glass-bg) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    border: 1px solid var(--glass-border) !important;
-    box-shadow: var(--card-shadow) !important;
+    /* Фон и границы убраны глобально - прозрачный фон для всех режимов */
+    background: transparent !important;
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 #spa-content .block-details .card,
@@ -1916,10 +1918,53 @@ html, body {
 [data-theme="dark"] .dashboard-content .block-map-container,
 [data-theme="dark"] .dashboard-content .filters-container,
 [data-theme="dark"] .dashboard-content .block-details .card {
-    background: rgba(36, 40, 49, 0.95) !important;
+    /* Фон и границы убраны глобально - прозрачный фон */
+    background: transparent !important;
+    background-color: transparent !important;
     color: #e4e6eb !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Прозрачный фон для светлого режима тоже */
+body:not([data-theme="dark"]) #spa-content .content-wrapper,
+body:not([data-theme="dark"]) #spa-content .block-map-container,
+body:not([data-theme="dark"]) #spa-content .filters-container,
+body:not([data-theme="dark"]) .dashboard-content .content-wrapper,
+body:not([data-theme="dark"]) .dashboard-content .block-map-container,
+body:not([data-theme="dark"]) .dashboard-content .filters-container {
+    background: transparent !important;
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Глобальное убирание рамок и фона у content-wrapper для всех страниц - МАКСИМАЛЬНЫЙ ПРИОРИТЕТ */
+/* Убрать фон, рамку и тени у content-wrapper чтобы не было белой/темной рамки между элементами */
+#spa-content .content-wrapper,
+body[data-theme="dark"] #spa-content .content-wrapper,
+html[data-theme="dark"] #spa-content .content-wrapper,
+[data-theme="dark"] #spa-content .content-wrapper,
+body #spa-content .content-wrapper,
+html #spa-content .content-wrapper,
+body:not([data-theme="dark"]) #spa-content .content-wrapper,
+.dashboard-content .content-wrapper,
+body[data-theme="dark"] .dashboard-content .content-wrapper,
+html[data-theme="dark"] .dashboard-content .content-wrapper,
+.content-wrapper {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    border-width: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 [data-theme="dark"] .complex-map {

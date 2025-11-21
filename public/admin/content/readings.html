@@ -12,6 +12,19 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
+        /* Темный фон для filters-container в темном режиме */
+        [data-theme="dark"] .filters-container,
+        body[data-theme="dark"] .filters-container,
+        html[data-theme="dark"] .filters-container,
+        [data-theme="dark"] #spa-content .filters-container,
+        body[data-theme="dark"] #spa-content .filters-container,
+        html[data-theme="dark"] #spa-content .filters-container {
+            background: #242831 !important;
+            background-color: #242831 !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        
         .filters-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -47,6 +60,40 @@
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Темные стили для фильтров в темном режиме */
+        [data-theme="dark"] .filter-group label,
+        body[data-theme="dark"] .filter-group label,
+        html[data-theme="dark"] .filter-group label {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        
+        [data-theme="dark"] .filter-group select,
+        [data-theme="dark"] .filter-group input,
+        body[data-theme="dark"] .filter-group select,
+        body[data-theme="dark"] .filter-group input,
+        html[data-theme="dark"] .filter-group select,
+        html[data-theme="dark"] .filter-group input {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: #fefefe !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        }
+        
+        [data-theme="dark"] .filter-group select:focus,
+        [data-theme="dark"] .filter-group input:focus,
+        body[data-theme="dark"] .filter-group select:focus,
+        body[data-theme="dark"] .filter-group input:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            background: rgba(255, 255, 255, 0.08) !important;
+        }
+        
+        [data-theme="dark"] .filter-group select option,
+        body[data-theme="dark"] .filter-group select option,
+        html[data-theme="dark"] .filter-group select option {
+            background: #242831 !important;
+            color: #f6f7ff !important;
         }
         
         .filters-actions {
@@ -307,6 +354,26 @@
         
         [data-theme="dark"] .modal-actions {
             border-top: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Темный фон для карточки таблицы в темном режиме */
+        [data-theme="dark"] .card,
+        body[data-theme="dark"] .card,
+        html[data-theme="dark"] .card,
+        [data-theme="dark"] #spa-content .card,
+        body[data-theme="dark"] #spa-content .card,
+        html[data-theme="dark"] #spa-content .card {
+            background: rgba(36, 40, 49, 0.95) !important;
+            background-color: rgba(36, 40, 49, 0.95) !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        
+        [data-theme="dark"] .card-body,
+        body[data-theme="dark"] .card-body,
+        html[data-theme="dark"] .card-body {
+            background: transparent !important;
+            color: #e4e6eb !important;
         }
     </style>
 

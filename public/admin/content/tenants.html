@@ -12,6 +12,19 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
+        /* Темный фон для filters-container в темном режиме */
+        [data-theme="dark"] .filters-container,
+        body[data-theme="dark"] .filters-container,
+        html[data-theme="dark"] .filters-container,
+        [data-theme="dark"] #spa-content .filters-container,
+        body[data-theme="dark"] #spa-content .filters-container,
+        html[data-theme="dark"] #spa-content .filters-container {
+            background: #242831 !important;
+            background-color: #242831 !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        
         .filter-row {
             display: flex;
             gap: 15px;
@@ -45,6 +58,29 @@
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Темные стили для фильтров в темном режиме */
+        [data-theme="dark"] .filter-group label,
+        body[data-theme="dark"] .filter-group label,
+        html[data-theme="dark"] .filter-group label {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        
+        [data-theme="dark"] .filter-group input,
+        body[data-theme="dark"] .filter-group input,
+        html[data-theme="dark"] .filter-group input {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: #fefefe !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        }
+        
+        [data-theme="dark"] .filter-group input:focus,
+        body[data-theme="dark"] .filter-group input:focus,
+        html[data-theme="dark"] .filter-group input:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            background: rgba(255, 255, 255, 0.08) !important;
         }
         
         /* Modal Styles */
@@ -640,16 +676,17 @@
             color: #1a1d2e;
         }
         
-        .filters-container {
+        /* Стили для светлой темы */
+        body:not([data-theme="dark"]) .filters-container {
             background: rgba(255, 255, 255, 0.9);
             border: 1px solid rgba(0, 0, 0, 0.1);
         }
         
-        .filter-group label {
+        body:not([data-theme="dark"]) .filter-group label {
             color: #495057;
         }
         
-        .filter-group input {
+        body:not([data-theme="dark"]) .filter-group input {
             background: #ffffff;
             color: #212529;
             border: 1px solid #dee2e6;

@@ -10,7 +10,7 @@
         border: none !important;
         border-radius: 15px;
         padding: 25px;
-        margin-bottom: 25px;
+        margin-bottom: 30px !important;
         box-shadow: none !important;
     }
 
@@ -190,6 +190,8 @@
         background: rgba(36, 40, 49, 0.95) !important;
         border: none !important;
         border-radius: 15px !important;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
     }
 
     [data-theme="dark"] .payments-page .card,
@@ -731,9 +733,45 @@
         border: none !important;
         outline: none !important;
     }
-    .content-wrapper.payments-page{
+    .content-wrapper.payments-page {
         border-radius: 20px;
-        }
+    }
+    
+    /* Дополнительный отступ между фильтрами и таблицей для четкого разделения */
+    .payments-page .payments-filters {
+        margin-bottom: 50px !important;
+        position: relative;
+        z-index: 1;
+    }
+    
+    /* Увеличить расстояние между элементами */
+    .payments-page > * + * {
+        margin-top: 50px !important;
+    }
+    
+    .payments-page .card {
+        margin-top: 0 !important;
+        clear: both;
+        position: relative;
+        z-index: 2;
+    }
+    
+    /* Убрать задний фон у content-wrapper чтобы не было белой/темной рамки между элементами */
+    #spa-content .content-wrapper.payments-page,
+    body[data-theme="dark"] #spa-content .content-wrapper.payments-page,
+    html[data-theme="dark"] #spa-content .content-wrapper.payments-page,
+    [data-theme="dark"] #spa-content .content-wrapper.payments-page,
+    body #spa-content .content-wrapper.payments-page,
+    html #spa-content .content-wrapper.payments-page,
+    body:not([data-theme="dark"]) #spa-content .content-wrapper.payments-page,
+    .content-wrapper.payments-page {
+        background: transparent !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    
 
 </style>
 
@@ -1448,13 +1486,17 @@
                 cardBody.style.setProperty('color', '#e4e6eb', 'important');
             }
 
-            // Скрыть границу у .content-wrapper.payments-page
+            // Скрыть границу и фон у .content-wrapper.payments-page
             const contentWrapper = document.querySelector('.content-wrapper.payments-page');
             if (contentWrapper) {
                 contentWrapper.style.setProperty('border', 'none', 'important');
                 contentWrapper.style.setProperty('border-width', '0', 'important');
                 contentWrapper.style.setProperty('outline', 'none', 'important');
                 contentWrapper.style.setProperty('box-shadow', 'none', 'important');
+                contentWrapper.style.setProperty('background', 'transparent', 'important');
+                contentWrapper.style.setProperty('background-color', 'transparent', 'important');
+                contentWrapper.style.setProperty('backdrop-filter', 'none', 'important');
+                contentWrapper.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
             }
 
             // Применить серый фон к select и option элементам
@@ -1507,6 +1549,11 @@
             contentWrapper.style.setProperty('border-width', '0', 'important');
             contentWrapper.style.setProperty('outline', 'none', 'important');
             contentWrapper.style.setProperty('box-shadow', 'none', 'important');
+            contentWrapper.style.setProperty('background', 'transparent', 'important');
+            contentWrapper.style.setProperty('background-color', 'transparent', 'important');
+            contentWrapper.style.setProperty('background-image', 'none', 'important');
+            contentWrapper.style.setProperty('backdrop-filter', 'none', 'important');
+            contentWrapper.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
         }
     }
     

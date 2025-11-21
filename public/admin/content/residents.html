@@ -11,6 +11,19 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
+        /* Dark mode styles for filters */
+        [data-theme="dark"] .filters-container,
+        body[data-theme="dark"] .filters-container,
+        html[data-theme="dark"] .filters-container,
+        [data-theme="dark"] #spa-content .filters-container,
+        body[data-theme="dark"] #spa-content .filters-container,
+        html[data-theme="dark"] #spa-content .filters-container {
+            background: #242831 !important;
+            background-color: #242831 !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        
         .filters-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -44,6 +57,40 @@
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Dark theme inputs */
+        [data-theme="dark"] .filter-group label,
+        body[data-theme="dark"] .filter-group label,
+        html[data-theme="dark"] .filter-group label {
+            color: rgba(255,255,255,0.8) !important;
+        }
+        
+        [data-theme="dark"] .filter-group select,
+        [data-theme="dark"] .filter-group input,
+        body[data-theme="dark"] .filter-group select,
+        body[data-theme="dark"] .filter-group input,
+        html[data-theme="dark"] .filter-group select,
+        html[data-theme="dark"] .filter-group input {
+            background: rgba(255,255,255,0.05) !important;
+            color: #fefefe !important;
+            border: 1px solid rgba(255,255,255,0.12) !important;
+        }
+        
+        [data-theme="dark"] .filter-group select:focus,
+        [data-theme="dark"] .filter-group input:focus,
+        body[data-theme="dark"] .filter-group select:focus,
+        body[data-theme="dark"] .filter-group input:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+            background: rgba(255,255,255,0.08) !important;
+        }
+        
+        [data-theme="dark"] .filter-group select option,
+        body[data-theme="dark"] .filter-group select option,
+        html[data-theme="dark"] .filter-group select option {
+            background: #242831 !important;
+            color: #f6f7ff !important;
         }
         
         .filters-actions {

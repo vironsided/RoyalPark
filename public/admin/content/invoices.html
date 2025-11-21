@@ -66,11 +66,29 @@
         background: rgba(255, 255, 255, 0.05);
     }
 
+    /* Invoices Page */
+    .invoices-page {
+        padding: 0 !important;
+    }
+    
+    /* Убрать верхний отступ у content-wrapper для invoices-page */
+    #spa-content .content-wrapper.invoices-page,
+    body[data-theme="dark"] #spa-content .content-wrapper.invoices-page,
+    html[data-theme="dark"] #spa-content .content-wrapper.invoices-page,
+    [data-theme="dark"] #spa-content .content-wrapper.invoices-page,
+    body #spa-content .content-wrapper.invoices-page,
+    html #spa-content .content-wrapper.invoices-page,
+    body:not([data-theme="dark"]) #spa-content .content-wrapper.invoices-page,
+    .content-wrapper.invoices-page {
+        padding-top: 0 !important;
+    }
+    
     /* Invoices Actions Section */
     .invoices-actions {
         border-radius: 15px;
         padding: 25px;
         margin-bottom: 25px;
+        margin-top: 0 !important;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
 
@@ -324,6 +342,7 @@
         border-radius: 15px;
         padding: 25px;
         margin-bottom: 25px;
+        margin-top: 0 !important;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
 
@@ -811,7 +830,7 @@
     }
 </style>
 
-<div class="content-wrapper invoices-page">
+<div class="content-wrapper invoices-page" style="padding-top: 0 !important;">
     <!-- Actions Section -->
     <div class="invoices-actions">
         <div class="invoices-actions-row">
