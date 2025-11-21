@@ -266,6 +266,18 @@ class SPARouter {
             // Вставляем контент
             this.contentContainer.innerHTML = html;
             
+            // Hide any plan tooltip from blocks page when navigating away
+            const planTooltip = document.getElementById('planTooltip');
+            if (planTooltip) {
+                planTooltip.classList.add('hidden');
+                planTooltip.style.display = 'none';
+            }
+            
+            // Also call global hide function if it exists
+            if (window.hidePlanTooltip) {
+                window.hidePlanTooltip();
+            }
+            
             // Обновляем заголовок и breadcrumb
             this.updatePageTitle(route);
             

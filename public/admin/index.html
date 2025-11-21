@@ -501,6 +501,33 @@
     
     <!-- Initialize Theme Toggle and Language Selector -->
     <script>
+        // Global function to hide plan tooltip from blocks page
+        function hidePlanTooltip() {
+            const tooltip = document.getElementById('planTooltip');
+            if (tooltip) {
+                tooltip.classList.add('hidden');
+                tooltip.style.display = 'none';
+                tooltip.style.visibility = 'hidden';
+                tooltip.style.opacity = '0';
+            }
+        }
+        
+        // Hide tooltip on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', hidePlanTooltip);
+        } else {
+            hidePlanTooltip();
+        }
+        
+        // Hide tooltip on hash change (navigation)
+        window.addEventListener('hashchange', hidePlanTooltip);
+        
+        // Hide tooltip on popstate (browser back/forward)
+        window.addEventListener('popstate', hidePlanTooltip);
+        
+        // Make function globally accessible
+        window.hidePlanTooltip = hidePlanTooltip;
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Theme Toggle Button
             const themeToggle = document.getElementById('themeToggle');
