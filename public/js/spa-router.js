@@ -21,6 +21,8 @@ class SPARouter {
             '/payments': '/admin/content/payments.html',
             '/invoices': '/admin/content/invoices.html',
             '/debts': '/admin/content/debts.html',
+            '/appeals-table': '/admin/content/appeals-table.html',
+            '/invoice-view': '/admin/content/invoice-view.html',
             
             // Обслуживание
             '/repair-requests': '/admin/content/repair-requests.html',
@@ -102,8 +104,18 @@ class SPARouter {
                 section: 'Финансы'
             },
             '/debts': {
-                title: 'Задолженности',
-                breadcrumb: ['Финансы', 'Задолженности'],
+                title: 'Обращения',
+                breadcrumb: ['Финансы', 'Обращения'],
+                section: 'Финансы'
+            },
+            '/appeals-table': {
+                title: 'Обращения жителей',
+                breadcrumb: ['Финансы', 'Обращения', 'Таблица'],
+                section: 'Финансы'
+            },
+            '/invoice-view': {
+                title: 'Invoice view',
+                breadcrumb: ['Финансы', 'Счета', 'Invoice view'],
                 section: 'Финансы'
             },
             
@@ -145,6 +157,13 @@ class SPARouter {
         this.contentContainer = null;
         this.currentRoute = null;
         this.isLoading = false;
+    }
+    
+    normalizeRoute(route) {
+        if (!route) return '/dashboard';
+        const [baseRoute] = route.split('?');
+        if (!baseRoute || baseRoute === '/') return '/dashboard';
+        return baseRoute;
     }
     
     init() {
@@ -229,6 +248,7 @@ class SPARouter {
     }
     
     updateActiveMenuItem(route) {
+        const baseRoute = this.normalizeRoute(route);
         // Убираем active со всех пунктов
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active');
@@ -239,7 +259,7 @@ class SPARouter {
             const href = item.getAttribute('href');
             const itemRoute = this.extractRoute(href);
             
-            if (itemRoute === route) {
+            if (itemRoute === baseRoute) {
                 item.classList.add('active');
             }
         });
@@ -248,7 +268,8 @@ class SPARouter {
     async loadContent(route, updateHistory = true) {
         if (this.isLoading) return;
         
-        const contentPath = this.routes[route] || this.routes['/dashboard'];
+        const baseRoute = this.normalizeRoute(route);
+        const contentPath = this.routes[baseRoute] || this.routes['/dashboard'];
         
         try {
             this.isLoading = true;
@@ -279,7 +300,7 @@ class SPARouter {
             }
             
             // Обновляем заголовок и breadcrumb
-            this.updatePageTitle(route);
+            this.updatePageTitle(baseRoute);
             
             // Обновляем историю браузера
             if (updateHistory) {
@@ -352,16 +373,27 @@ class SPARouter {
         // Обновляем breadcrumb
         const breadcrumbContainer = titleContainer.querySelector('.page-breadcrumb');
         if (breadcrumbContainer) {
-            breadcrumbContainer.innerHTML = `
-                <span class="breadcrumb-item">
+            let breadcrumbHtml = '';
+            pageInfo.breadcrumb.forEach((crumb, index) => {
+                if (index > 0) {
+                    breadcrumbHtml += '<span>›</span>';
+                }
+                
+                const iconHtml = index === 0 ? `
                     <svg width="14" height="14" fill="currentColor" style="margin-right: 0.25rem; vertical-align: middle;">
                         <use href="/images/icons.svg#icon-apartments"></use>
                     </svg>
-                    ${pageInfo.breadcrumb[0]}
-                </span>
-                <span>›</span>
-                <span class="breadcrumb-item">${pageInfo.breadcrumb[1]}</span>
-            `;
+                ` : '';
+                
+                breadcrumbHtml += `
+                    <span class="breadcrumb-item">
+                        ${iconHtml}
+                        ${crumb}
+                    </span>
+                `;
+            });
+            
+            breadcrumbContainer.innerHTML = breadcrumbHtml;
         }
         
         // Обновляем title страницы

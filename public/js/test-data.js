@@ -227,7 +227,7 @@ const TestData = {
         }
     ],
 
-    // 💰 Задолженности / Borclar / Debts
+    // 💰 Обращения по квитанциям / Borc müraciətləri / Billing complaints
     debts: [
         {
             id: 1,
@@ -242,7 +242,29 @@ const TestData = {
             status: "overdue",
             assignedTo: "Məmmədov Tofiq",
             task: "Связаться с жильцом для оплаты",
-            notes: "Не отвечает на звонки"
+            notes: "Не отвечает на звонки",
+            submittedAt: "2025-11-24T09:32:00",
+            invoiceNumber: "INV-2024/000245",
+            expectedAmount: 50,
+            receivedAmount: 70,
+            complaintReason: "Счёт за газ выше обычного",
+            residentComment: "Каждый месяц плачу 50₼, показания не менялись.",
+            accountant: {
+                name: "Məmmədov Tofiq",
+                status: "Проверяет начисления",
+                viewedAt: "2025-11-24T10:05:00"
+            },
+            maintenance: {
+                name: "Əliyev Vüqar",
+                status: "Запланирован выезд для повторного снятия показаний",
+                scheduledAt: "2025-11-25T11:00:00"
+            },
+            stage: "in_progress",
+            viewed: true,
+            timeline: [
+                { date: "2025-11-24T09:32:00", text: "Обращение отправлено жителем", icon: "chat-dots-fill", color: "primary" },
+                { date: "2025-11-24T10:05:00", text: "Бухгалтерия проверяет квитанцию", icon: "file-earmark-text-fill", color: "info" }
+            ]
         },
         {
             id: 2,
@@ -257,7 +279,30 @@ const TestData = {
             status: "critical",
             assignedTo: "Əliyev Rəşad",
             task: "Юридическое уведомление отправлено",
-            notes: "Планируется личная встреча"
+            notes: "Планируется личная встреча",
+            submittedAt: "2025-11-23T14:12:00",
+            invoiceNumber: "INV-2024/000513",
+            expectedAmount: 65,
+            receivedAmount: 110,
+            complaintReason: "Повторное начисление за прошлый период",
+            residentComment: "Сумма включает прошлый месяц, хотя он оплачен.",
+            accountant: {
+                name: "Əliyev Rəşad",
+                status: "Ждёт подтверждение платежа",
+                viewedAt: "2025-11-23T15:00:00"
+            },
+            maintenance: {
+                name: "Quliyev Tural",
+                status: "Снял показания и передал данные",
+                scheduledAt: "2025-11-24T09:30:00"
+            },
+            stage: "escalated",
+            viewed: true,
+            timeline: [
+                { date: "2025-11-23T14:12:00", text: "Житель подал обращение", icon: "chat-dots-fill", color: "primary" },
+                { date: "2025-11-23T16:45:00", text: "Сняты новые показания счётчика", icon: "speedometer2", color: "warning" },
+                { date: "2025-11-24T09:30:00", text: "Отчёт передан в бухгалтерию", icon: "clipboard-check-fill", color: "success" }
+            ]
         },
         {
             id: 3,
@@ -272,7 +317,28 @@ const TestData = {
             status: "overdue",
             assignedTo: "Həsənov Rafiq",
             task: "Отправлено SMS напоминание",
-            notes: "Обещал оплатить до конца недели"
+            notes: "Обещал оплатить до конца недели",
+            submittedAt: "2025-11-24T08:10:00",
+            invoiceNumber: "INV-2024/000377",
+            expectedAmount: 45,
+            receivedAmount: 65,
+            complaintReason: "Дублируется услуга техобслуживания",
+            residentComment: "В счёте два раза указали техобслуживание.",
+            accountant: {
+                name: "Həsənov Rafiq",
+                status: "Не открыт",
+                viewedAt: null
+            },
+            maintenance: {
+                name: null,
+                status: "Не назначен",
+                scheduledAt: null
+            },
+            stage: "new",
+            viewed: false,
+            timeline: [
+                { date: "2025-11-24T08:10:00", text: "Поступило новое обращение", icon: "chat-dots-fill", color: "primary" }
+            ]
         },
         {
             id: 4,
@@ -287,7 +353,29 @@ const TestData = {
             status: "overdue",
             assignedTo: "Məmmədov Tofiq",
             task: "Ожидается оплата частями",
-            notes: "Договорились о рассрочке"
+            notes: "Договорились о рассрочке",
+            submittedAt: "2025-11-22T18:40:00",
+            invoiceNumber: "INV-2024/000412",
+            expectedAmount: 80,
+            receivedAmount: 120,
+            complaintReason: "Счёт выставлен за неоказанную услугу",
+            residentComment: "Включили уборку парковки, но её не было.",
+            accountant: {
+                name: "Məmmədov Tofiq",
+                status: "Ожидает подтверждения службы эксплуатации",
+                viewedAt: "2025-11-22T19:05:00"
+            },
+            maintenance: {
+                name: "Rəhimov Kamil",
+                status: "Подтвердил отсутствие услуги",
+                scheduledAt: "2025-11-23T10:00:00"
+            },
+            stage: "in_progress",
+            viewed: true,
+            timeline: [
+                { date: "2025-11-22T18:40:00", text: "Житель отправил претензию по квитанции", icon: "chat-dots-fill", color: "primary" },
+                { date: "2025-11-23T10:00:00", text: "Эксплуатация подтвердила отсутствие услуги", icon: "tools", color: "warning" }
+            ]
         }
     ],
 
