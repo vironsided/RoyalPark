@@ -10,11 +10,14 @@
     };
 
     const state = {
-        appeals: [],
-        filtered: []
+        appeals: []
     };
 
-    document.addEventListener('DOMContentLoaded', init);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init, { once: true });
+    } else {
+        init();
+    }
 
     function init() {
         const users = (TestData?.users || []).reduce((acc, user) => {
@@ -51,8 +54,8 @@
     function cacheDom() {
         tableBody = document.getElementById('appealsTableBody');
         emptyState = document.getElementById('appealsEmptyState');
-        statusSelect = document.getElementById('appealsStatusFilter');
-        searchInput = document.getElementById('appealsSearch');
+        statusSelect = null;
+        searchInput = null;
         modalOverlay = document.getElementById('appealModal');
         modalResident = document.getElementById('modalResident');
         modalApartment = document.getElementById('modalApartment');
@@ -85,34 +88,19 @@
     }
 
     function applyFilters() {
-        const statusValue = statusSelect?.value || 'all';
-        const query = (searchInput?.value || '').toLowerCase().trim();
-
-        state.filtered = state.appeals.filter((appeal) => {
-            const matchesStatus = statusValue === 'all' || appeal.status === statusValue;
-            const matchesQuery = !query || [
-                appeal.resident,
-                appeal.block,
-                appeal.home,
-                appeal.phone,
-                appeal.email
-            ].some(field => (field || '').toString().toLowerCase().includes(query));
-            return matchesStatus && matchesQuery;
-        });
-
         renderTable();
     }
 
     function renderTable() {
         if (!tableBody) return;
-        if (!state.filtered.length) {
+        if (!state.appeals.length) {
             tableBody.innerHTML = '';
             emptyState.style.display = 'block';
             return;
         }
 
         emptyState.style.display = 'none';
-        tableBody.innerHTML = state.filtered.map(appeal => {
+        tableBody.innerHTML = state.appeals.map(appeal => {
             const status = statusStyles[appeal.status] || statusStyles.unread;
             return `
                 <tr>

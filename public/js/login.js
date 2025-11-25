@@ -8,6 +8,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const loginForm = document.getElementById('loginForm');
     const alertBox = document.getElementById('alert');
+    const userLoginBtn = document.getElementById('userLoginBtn');
+    const staffToggleBtn = document.getElementById('staffToggleBtn');
+    const staffPanel = document.getElementById('staffPanel');
+    const staffLoginBtn = document.getElementById('staffLoginBtn');
+    const staffRoles = document.querySelectorAll('input[name="staffRole"]');
+    let activeButton = null;
+    let currentRole = 'user';
 
     // Handle form submission
     loginForm.addEventListener('submit', async function(e) {
@@ -15,31 +22,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
-        const role = document.querySelector('input[name="role"]:checked');
+        const role = currentRole || 'user';
+        const targetButton = activeButton || userLoginBtn;
+        const btnText = targetButton.querySelector('.btn-text');
+        const btnIcon = targetButton.querySelector('.btn-icon');
 
-        // Validation
-        if (!role) {
-            showAlert('Пожалуйста, выберите роль', 'error');
-            shakeElement(document.querySelector('.role-selector'));
-            return;
-        }
-
-        // Show loading state
-        const submitBtn = loginForm.querySelector('button[type="submit"]');
-        const btnText = submitBtn.querySelector('.btn-text');
-        const btnIcon = submitBtn.querySelector('.btn-icon');
-        
-        submitBtn.classList.add('loading');
-        btnText.style.opacity = '0';
-        btnIcon.style.opacity = '0';
+        targetButton.classList.add('loading');
+        if (btnText) btnText.style.opacity = '0';
+        if (btnIcon) btnIcon.style.opacity = '0';
 
         try {
             // Simulate API call (replace with actual backend)
-            await simulateLogin(username, password, role.value);
+            await simulateLogin(username, password, role);
             
             // Save token to localStorage
             localStorage.setItem('authToken', 'demo-token-' + Date.now());
-            localStorage.setItem('userRole', role.value);
+            localStorage.setItem('userRole', role);
             localStorage.setItem('username', username);
 
             showAlert('Вход выполнен успешно! Перенаправление...', 'success');
@@ -49,18 +47,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Redirect based on role
             setTimeout(() => {
-                switch(role.value) {
-                    case 'admin':
-                        window.location.href = '/admin/#/dashboard';
-                        break;
+                switch(role) {
                     case 'user':
                         window.location.href = '/user/dashboard.html';
                         break;
+                    case 'admin':
                     case 'maintenance':
-                        window.location.href = '/maintenance/dashboard.html';
-                        break;
                     case 'accountant':
-                        window.location.href = '/accountant/dashboard.html';
+                        window.location.href = '/admin/#/dashboard';
                         break;
                     default:
                         window.location.href = '/';
@@ -71,10 +65,34 @@ document.addEventListener('DOMContentLoaded', function() {
             showAlert(error.message || 'Ошибка входа в систему', 'error');
             shakeElement(submitBtn);
         } finally {
-            submitBtn.classList.remove('loading');
-            btnText.style.opacity = '1';
-            btnIcon.style.opacity = '1';
+            targetButton.classList.remove('loading');
+            if (btnText) btnText.style.opacity = '1';
+            if (btnIcon) btnIcon.style.opacity = '1';
+            activeButton = null;
+            currentRole = 'user';
         }
+    });
+
+    userLoginBtn?.addEventListener('click', () => {
+        currentRole = 'user';
+        activeButton = userLoginBtn;
+        loginForm.requestSubmit();
+    });
+
+    staffToggleBtn?.addEventListener('click', () => {
+        staffPanel?.classList.toggle('show');
+    });
+
+    staffLoginBtn?.addEventListener('click', () => {
+        const selected = Array.from(staffRoles).find(role => role.checked);
+        if (!selected) {
+            showAlert('Выберите роль сотрудника', 'error');
+            shakeElement(staffPanel);
+            return;
+        }
+        currentRole = selected.value;
+        activeButton = staffLoginBtn;
+        loginForm.requestSubmit();
     });
 
     // Simulate login (replace with actual API call)

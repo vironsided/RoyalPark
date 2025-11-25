@@ -376,6 +376,116 @@ const TestData = {
                 { date: "2025-11-22T18:40:00", text: "Житель отправил претензию по квитанции", icon: "chat-dots-fill", color: "primary" },
                 { date: "2025-11-23T10:00:00", text: "Эксплуатация подтвердила отсутствие услуги", icon: "tools", color: "warning" }
             ]
+        },
+        {
+            id: 5,
+            userId: 6,
+            userName: "İsmayılova Leyla Vüqar qızı",
+            apartment: "C-502",
+            amount: 210.10,
+            type: "heating",
+            period: "Октябрь 2024",
+            dueDate: "2024-10-15",
+            daysOverdue: 5,
+            status: "overdue",
+            assignedTo: "Əliyev Rəşad",
+            task: "Проверить начисление тепла",
+            notes: "Жалуется на неверные показания",
+            submittedAt: "2025-11-24T11:20:00",
+            invoiceNumber: "INV-2024/000520",
+            expectedAmount: 120,
+            receivedAmount: 210.1,
+            complaintReason: "Начислено тепло несмотря на отключение",
+            residentComment: "В квартире было отключено отопление половину месяца.",
+            accountant: {
+                name: "Əliyev Rəşad",
+                status: "Сравнивает показания",
+                viewedAt: null
+            },
+            maintenance: {
+                name: "Quliyev Tural",
+                status: "Ожидает доступа в квартиру",
+                scheduledAt: "2025-11-25T15:30:00"
+            },
+            stage: "in_progress",
+            viewed: false,
+            timeline: [
+                { date: "2025-11-24T11:20:00", text: "Житель оставил обращение", icon: "chat-dots-fill", color: "primary" }
+            ]
+        },
+        {
+            id: 6,
+            userId: 7,
+            userName: "Rəhimov Tural Ağa oğlu",
+            apartment: "A-303",
+            amount: 95.40,
+            type: "service",
+            period: "Октябрь 2024",
+            dueDate: "2024-10-10",
+            daysOverdue: 15,
+            status: "overdue",
+            assignedTo: "Həsənov Rafiq",
+            task: "Подтвердить отсутствие уборки подъезда",
+            notes: "Жалоба на качество услуги",
+            submittedAt: "2025-11-23T08:50:00",
+            invoiceNumber: "INV-2024/000421",
+            expectedAmount: 60,
+            receivedAmount: 95.40,
+            complaintReason: "Списана услуга без фактического выполнения",
+            residentComment: "Уборки не было, но сумму начислили.",
+            accountant: {
+                name: "Həsənov Rafiq",
+                status: "Связался со службой эксплуатации",
+                viewedAt: "2025-11-23T09:10:00"
+            },
+            maintenance: {
+                name: "Rəhimov Kamil",
+                status: "Отправлен инспектор",
+                scheduledAt: "2025-11-24T12:00:00"
+            },
+            stage: "escalated",
+            viewed: true,
+            timeline: [
+                { date: "2025-11-23T08:50:00", text: "Поступило обращение по уборке", icon: "chat-dots-fill", color: "primary" },
+                { date: "2025-11-23T09:15:00", text: "Служба эксплуатации уведомлена", icon: "bell-fill", color: "info" }
+            ]
+        },
+        {
+            id: 7,
+            userId: 1,
+            userName: "Əliyev Rəşad Əli oğlu",
+            apartment: "A-101",
+            amount: 180.00,
+            type: "utility",
+            period: "Октябрь 2024",
+            dueDate: "2024-10-05",
+            daysOverdue: 18,
+            status: "overdue",
+            assignedTo: "Məmmədov Tofiq",
+            task: "Сверить счетчики воды",
+            notes: "Сомневается в корректности показаний",
+            submittedAt: "2025-11-21T17:45:00",
+            invoiceNumber: "INV-2024/000398",
+            expectedAmount: 95,
+            receivedAmount: 180,
+            complaintReason: "Показания воды удвоены",
+            residentComment: "Вода расходуется стабильно, но сумма выросла вдвое.",
+            accountant: {
+                name: "Məmmədov Tofiq",
+                status: "Ждёт отчёт от техслужбы",
+                viewedAt: "2025-11-22T09:30:00"
+            },
+            maintenance: {
+                name: "Əliyev Vüqar",
+                status: "Назначен повторный опрос жильца",
+                scheduledAt: "2025-11-24T10:00:00"
+            },
+            stage: "in_progress",
+            viewed: true,
+            timeline: [
+                { date: "2025-11-21T17:45:00", text: "Житель сообщил о двойном начислении", icon: "chat-dots-fill", color: "primary" },
+                { date: "2025-11-22T09:30:00", text: "Бухгалтерия запросила проверку счетчиков", icon: "clipboard-data", color: "info" }
+            ]
         }
     ],
 

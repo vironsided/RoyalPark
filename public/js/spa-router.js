@@ -21,7 +21,6 @@ class SPARouter {
             '/payments': '/admin/content/payments.html',
             '/invoices': '/admin/content/invoices.html',
             '/debts': '/admin/content/debts.html',
-            '/appeals-table': '/admin/content/appeals-table.html',
             '/invoice-view': '/admin/content/invoice-view.html',
             
             // Обслуживание
@@ -106,11 +105,6 @@ class SPARouter {
             '/debts': {
                 title: 'Обращения',
                 breadcrumb: ['Финансы', 'Обращения'],
-                section: 'Финансы'
-            },
-            '/appeals-table': {
-                title: 'Обращения жителей',
-                breadcrumb: ['Финансы', 'Обращения', 'Таблица'],
                 section: 'Финансы'
             },
             '/invoice-view': {

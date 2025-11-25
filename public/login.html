@@ -49,48 +49,6 @@
 
             <form class="login-form" id="loginForm">
                 <div class="form-group">
-                    <label class="form-label" data-i18n="login_select_role">Выберите роль</label>
-                    <div class="role-selector">
-                        <div class="role-option">
-                            <input type="radio" name="role" id="role-admin" value="admin" required>
-                            <label for="role-admin" class="role-label">
-                                <div class="role-icon role-admin">
-                                    <i class="bi bi-person-gear"></i>
-                                </div>
-                                <div class="role-name" data-i18n="role_admin">Администратор</div>
-                            </label>
-                        </div>
-                        <div class="role-option">
-                            <input type="radio" name="role" id="role-user" value="user">
-                            <label for="role-user" class="role-label">
-                                <div class="role-icon role-user">
-                                    <i class="bi bi-person"></i>
-                                </div>
-                                <div class="role-name" data-i18n="role_user">Пользователь</div>
-                            </label>
-                        </div>
-                        <div class="role-option">
-                            <input type="radio" name="role" id="role-maintenance" value="maintenance">
-                            <label for="role-maintenance" class="role-label">
-                                <div class="role-icon role-maintenance">
-                                    <i class="bi bi-tools"></i>
-                                </div>
-                                <div class="role-name" data-i18n="role_maintenance">Служба</div>
-                            </label>
-                        </div>
-                        <div class="role-option">
-                            <input type="radio" name="role" id="role-accountant" value="accountant">
-                            <label for="role-accountant" class="role-label">
-                                <div class="role-icon role-accountant">
-                                    <i class="bi bi-cash-coin"></i>
-                                </div>
-                                <div class="role-name" data-i18n="role_accountant">Бухгалтер</div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
                     <label for="username" class="form-label">
                         <i class="bi bi-person-circle"></i> <span data-i18n="username">Имя пользователя</span>
                     </label>
@@ -137,10 +95,55 @@
                     <a href="#forgot" data-i18n="forgot_password">Забыли пароль?</a>
                 </div>
 
-                <button type="submit" class="btn btn-primary login-btn">
+                <button type="button" class="btn btn-primary login-btn" id="userLoginBtn">
                     <span class="btn-text" data-i18n="login_button">Войти в систему</span>
                     <span class="btn-icon"><i class="bi bi-arrow-right-circle"></i></span>
                 </button>
+
+                <button type="button" class="btn btn-outline-primary login-btn staff-toggle-btn" id="staffToggleBtn">
+                    <span class="btn-text">Войти как сотрудник</span>
+                    <span class="btn-icon"><i class="bi bi-shield-lock"></i></span>
+                </button>
+
+                <div class="staff-panel" id="staffPanel">
+                    <div class="staff-panel-header">
+                        <h5>Доступ для персонала</h5>
+                        <p>Администратор · Служба · Бухгалтер</p>
+                    </div>
+                    <div class="role-selector compact">
+                        <div class="role-option">
+                            <input type="radio" name="staffRole" id="staff-admin" value="admin">
+                            <label for="staff-admin" class="role-label">
+                                <div class="role-icon role-admin">
+                                    <i class="bi bi-person-gear"></i>
+                                </div>
+                                <div class="role-name">Администратор</div>
+                            </label>
+                        </div>
+                        <div class="role-option">
+                            <input type="radio" name="staffRole" id="staff-maintenance" value="maintenance">
+                            <label for="staff-maintenance" class="role-label">
+                                <div class="role-icon role-maintenance">
+                                    <i class="bi bi-tools"></i>
+                                </div>
+                                <div class="role-name">Служба</div>
+                            </label>
+                        </div>
+                        <div class="role-option">
+                            <input type="radio" name="staffRole" id="staff-accountant" value="accountant">
+                            <label for="staff-accountant" class="role-label">
+                                <div class="role-icon role-accountant">
+                                    <i class="bi bi-cash-coin"></i>
+                                </div>
+                                <div class="role-name">Бухгалтер</div>
+                            </label>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-dark staff-login-btn" id="staffLoginBtn">
+                        <span class="btn-text">Войти в панель</span>
+                        <span class="btn-icon"><i class="bi bi-box-arrow-in-right"></i></span>
+                    </button>
+                </div>
             </form>
 
             <div class="login-footer">

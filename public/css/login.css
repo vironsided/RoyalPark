@@ -274,6 +274,11 @@ body {
     margin-bottom: 2rem;
 }
 
+.role-selector.compact {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    margin-bottom: 1rem;
+}
+
 .role-option {
     position: relative;
 }
@@ -358,6 +363,76 @@ body {
     font-weight: 600;
     color: #495057;
     transition: var(--transition-smooth);
+}
+
+.staff-toggle-btn {
+    margin-top: 1rem;
+    border-width: 2px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    color: #5c63d4;
+    border-color: rgba(102, 126, 234, 0.4);
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.staff-toggle-btn:hover {
+    border-color: #667eea;
+    box-shadow: 0 10px 25px rgba(102,126,234,0.25);
+}
+
+.staff-panel {
+    display: none;
+    margin-top: 1.25rem;
+    padding: 1.5rem;
+    border-radius: 1.5rem;
+    background: rgba(255,255,255,0.9);
+    border: 1px dashed rgba(102,126,234,0.4);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+    animation: fadeInPanel 0.4s ease forwards;
+}
+
+.staff-panel.show {
+    display: block;
+}
+
+.staff-panel-header h5 {
+    margin: 0;
+    font-weight: 700;
+    color: #1f1f2e;
+}
+
+.staff-panel-header p {
+    margin: 0.35rem 0 1rem;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.staff-login-btn {
+    width: 100%;
+    border-radius: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    background: #1f2330;
+    border: none;
+}
+
+.staff-login-btn .btn-icon {
+    color: white;
+}
+
+@keyframes fadeInPanel {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* 📝 ФОРМА */
