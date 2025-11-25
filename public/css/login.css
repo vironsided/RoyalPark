@@ -160,18 +160,18 @@ body {
     z-index: 1;
 }
 
-/* 🎨 ОФИГЕННАЯ КАРТОЧКА ВХОДА */
+/*  ОФИГЕННАЯ КАРТОЧКА ВХОДА */
 .login-box {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
+    background: rgba(8, 10, 26, 0.95);
+    backdrop-filter: blur(32px);
     border-radius: 2rem;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 35px 70px rgba(3, 5, 20, 0.75);
     padding: 3rem;
     width: 100%;
-    max-width: 480px;
+    max-width: 500px;
     position: relative;
     overflow: hidden;
-    border: 2px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     animation-duration: 1s;
 }
 
@@ -261,7 +261,7 @@ body {
 }
 
 .login-header p {
-    color: #6c757d;
+    color: rgba(255, 255, 255, 0.82);
     font-size: 0.95rem;
     font-weight: 500;
 }
@@ -292,12 +292,12 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 1.5rem 1rem;
-    border: 2px solid #e9ecef;
+    padding: 1.2rem 1rem;
+    border: 1px solid rgba(255,255,255,0.15);
     border-radius: 1rem;
     cursor: pointer;
     transition: var(--transition-smooth);
-    background: white;
+    background: rgba(255,255,255,0.06);
     position: relative;
     overflow: hidden;
 }
@@ -361,20 +361,20 @@ body {
 .role-name {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #495057;
+    color: rgba(255,255,255,0.9);
     transition: var(--transition-smooth);
 }
 
 .staff-toggle-btn {
-    margin-top: 1rem;
+    margin-top: 1.2rem;
     border-width: 2px;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 0.5rem;
-    color: #5c63d4;
-    border-color: rgba(102, 126, 234, 0.4);
-    background: rgba(255, 255, 255, 0.8);
+    gap: 0.6rem;
+    color: #bfc4ff;
+    border-color: rgba(191,196,255,0.35);
+    background: rgba(191,196,255,0.08);
 }
 
 .staff-toggle-btn:hover {
@@ -384,13 +384,14 @@ body {
 
 .staff-panel {
     display: none;
-    margin-top: 1.25rem;
+    margin-top: 1.5rem;
     padding: 1.5rem;
     border-radius: 1.5rem;
-    background: rgba(255,255,255,0.9);
-    border: 1px dashed rgba(102,126,234,0.4);
-    box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+    background: rgba(17, 20, 39, 0.97);
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 30px 70px rgba(0,0,0,0.55);
     animation: fadeInPanel 0.4s ease forwards;
+    color: rgba(255,255,255,0.92);
 }
 
 .staff-panel.show {
@@ -400,12 +401,12 @@ body {
 .staff-panel-header h5 {
     margin: 0;
     font-weight: 700;
-    color: #1f1f2e;
+    color: #f2f4ff;
 }
 
 .staff-panel-header p {
     margin: 0.35rem 0 1rem;
-    color: #6c757d;
+    color: rgba(255,255,255,0.6);
     font-size: 0.9rem;
 }
 

@@ -1,0 +1,376 @@
+        .content-wrapper {
+            padding: 0 32px 32px 32px;
+        }
+        
+        .filters-container {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        /* Темный фон для filters-container в темном режиме */
+        [data-theme="dark"] .filters-container,
+        body[data-theme="dark"] .filters-container,
+        html[data-theme="dark"] .filters-container,
+        [data-theme="dark"] #spa-content .filters-container,
+        body[data-theme="dark"] #spa-content .filters-container,
+        html[data-theme="dark"] #spa-content .filters-container {
+            background: #242831 !important;
+            background-color: #242831 !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            padding: 10px 15px;
+            background: #ffffff;
+            color: #212529;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+        
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Темные стили для фильтров в темном режиме */
+        [data-theme="dark"] .filter-group label,
+        body[data-theme="dark"] .filter-group label,
+        html[data-theme="dark"] .filter-group label {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        
+        [data-theme="dark"] .filter-group select,
+        [data-theme="dark"] .filter-group input,
+        body[data-theme="dark"] .filter-group select,
+        body[data-theme="dark"] .filter-group input,
+        html[data-theme="dark"] .filter-group select,
+        html[data-theme="dark"] .filter-group input {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: #fefefe !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        }
+        
+        [data-theme="dark"] .filter-group select:focus,
+        [data-theme="dark"] .filter-group input:focus,
+        body[data-theme="dark"] .filter-group select:focus,
+        body[data-theme="dark"] .filter-group input:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            background: rgba(255, 255, 255, 0.08) !important;
+        }
+        
+        [data-theme="dark"] .filter-group select option,
+        body[data-theme="dark"] .filter-group select option,
+        html[data-theme="dark"] .filter-group select option {
+            background: #242831 !important;
+            color: #f6f7ff !important;
+        }
+        
+        .filters-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #ffffff;
+            color: #212529;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.75rem;
+            color: #1a1d2e;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s;
+        }
+        
+        .modal-close:hover {
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            background: #ffffff;
+            color: #212529;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+        
+        .readings-table {
+            margin-top: 20px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+        
+        /* Light theme (default) - ensure text is visible */
+        .content-wrapper h2 {
+            color: #1a1d2e;
+        }
+        
+        .filters-container {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .filter-group label {
+            color: #495057;
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            background: #ffffff;
+            color: #212529;
+            border: 1px solid #dee2e6;
+        }
+        
+        .readings-table table {
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .readings-table thead th {
+            color: #495057;
+            background: rgba(102, 126, 234, 0.05);
+            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .readings-table tbody td {
+            color: #212529;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .modal-content {
+            background: #ffffff;
+            color: #212529;
+        }
+        
+        .modal-content h3 {
+            color: #1a1d2e;
+        }
+        
+        .form-group label {
+            color: #495057;
+        }
+        
+        .form-group input,
+        .form-group select {
+            background: #ffffff;
+            color: #212529;
+            border: 1px solid #dee2e6;
+        }
+        
+        /* Dark theme support */
+        [data-theme="dark"] .content-wrapper h2 {
+            color: #ffffff;
+        }
+        
+        [data-theme="dark"] .filters-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        [data-theme="dark"] .filter-group label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        [data-theme="dark"] .filter-group select,
+        [data-theme="dark"] .filter-group input {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        [data-theme="dark"] .readings-table table {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        [data-theme="dark"] .readings-table thead th {
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(102, 126, 234, 0.1);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        [data-theme="dark"] .readings-table tbody td {
+            color: #ffffff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        [data-theme="dark"] .empty-state {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        [data-theme="dark"] .modal-content {
+            background: #1e2128;
+            color: #ffffff;
+        }
+        
+        [data-theme="dark"] .modal-content h3 {
+            color: #ffffff;
+        }
+        
+        [data-theme="dark"] .modal-header h2 {
+            color: #ffffff;
+        }
+        
+        [data-theme="dark"] .form-group label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        [data-theme="dark"] .form-group input,
+        [data-theme="dark"] .form-group select {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        [data-theme="dark"] .modal-header {
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        [data-theme="dark"] .modal-actions {
+            border-top: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Темный фон для карточки таблицы в темном режиме */
+        [data-theme="dark"] .card,
+        body[data-theme="dark"] .card,
+        html[data-theme="dark"] .card,
+        [data-theme="dark"] #spa-content .card,
+        body[data-theme="dark"] #spa-content .card,
+        html[data-theme="dark"] #spa-content .card {
+            background: rgba(36, 40, 49, 0.95) !important;
+            background-color: rgba(36, 40, 49, 0.95) !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        
+        [data-theme="dark"] .card-body,
+        body[data-theme="dark"] .card-body,
+        html[data-theme="dark"] .card-body {
+            background: transparent !important;
+            color: #e4e6eb !important;
+        }
