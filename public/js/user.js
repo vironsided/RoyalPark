@@ -100,9 +100,11 @@ function initNavigation() {
     const navItems = document.querySelectorAll('.nav-item');
 
     navItems.forEach(item => {
+        if (item.hasAttribute('data-user-route')) {
+            return;
+        }
+
         item.addEventListener('click', function(e) {
-            e.preventDefault();
-            
             // Remove active class from all items
             navItems.forEach(navItem => navItem.classList.remove('active'));
             
@@ -111,7 +113,15 @@ function initNavigation() {
 
             // Get the href and load corresponding content
             const href = this.getAttribute('href');
-            console.log('Loading section:', href);
+            const isAnchorLink = !href || href.startsWith('#');
+
+            if (isAnchorLink) {
+                e.preventDefault();
+                console.log('Loading section:', href);
+            } else {
+                // Allow default navigation for full links
+                console.log('Navigating to:', href);
+            }
         });
     });
 }
@@ -162,6 +172,7 @@ function addRippleEffect() {
         });
     });
 }
+
 
 // Logout functionality
 function logout() {

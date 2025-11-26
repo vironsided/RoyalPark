@@ -1,0 +1,67 @@
+<section class="user-bills-section user-report-payment">
+    <div class="user-bills-card user-report-card">
+        <div class="user-bills-header user-report-header">
+            <h2>Сообщить об оплате</h2>
+        </div>
+        <p class="user-report-subtitle">Укажите данные платежа, чтобы мы могли связать его с вашими счетами.</p>
+
+        <form class="user-report-form">
+            <div class="user-report-grid">
+                <div class="form-group">
+                    <label>Дом</label>
+                    <select>
+                        <option value="x2">X / 2</option>
+                    </select>
+                </div>
+
+                <div class="form-group date-group">
+                    <label>Дата оплаты</label>
+                    <div class="date-input-wrapper">
+                        <input type="date" id="reportPaymentDate" placeholder="дд.мм.гггг">
+                        <button type="button" class="btn-calendar" onclick="document.getElementById('reportPaymentDate')?.showPicker()">
+                            <i class="bi bi-calendar"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Сумма</label>
+                    <input type="number" placeholder="0.00" step="0.01">
+                </div>
+
+                <div class="form-group">
+                    <label>Метод</label>
+                    <select>
+                        <option>TRANSFER</option>
+                        <option>CARD</option>
+                        <option>CASH</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="user-report-grid full-row">
+                <div class="form-group">
+                    <label>№/Референс</label>
+                    <input type="text" placeholder="номер квитанции/перевода">
+                </div>
+            </div>
+
+            <div class="user-report-grid full-row">
+                <div class="form-group">
+                    <label>Комментарий</label>
+                    <input type="text" placeholder="любая доп. информация">
+                </div>
+            </div>
+
+            <div class="user-report-footer">
+                <p>После отправки оператор проверит информацию и применит платёж к вашим счетам.</p>
+                <div class="user-report-actions">
+                    <button type="button" class="btn btn-outline-secondary">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Отправить</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+
+
