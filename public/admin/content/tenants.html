@@ -14,6 +14,20 @@
                         </div>
                     </div>
 
+<!-- Tenant action confirmation modal -->
+<div class="modal-overlay" id="tenantActionModal">
+    <div class="confirm-modal">
+        <div class="confirm-modal-body">
+            <h3 id="tenantActionTitle">Подтверждение</h3>
+            <p id="tenantActionMessage"></p>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeTenantActionModal()">Отмена</button>
+            <button type="button" class="btn btn-danger" id="tenantActionConfirm" onclick="confirmTenantAction()">Подтвердить</button>
+        </div>
+    </div>
+</div>
+
                     <div class="stat-card solid-green">
                         <div class="stat-icon green">
                             <svg width="40" height="40" fill="white">
@@ -61,12 +75,29 @@
                             <label>Поиск</label>
                             <input type="text" id="filterSearch" placeholder="Логин, ФИО, телефон, e-mail">
                         </div>
-                        <button class="btn btn-outline-secondary" onclick="applyFilters()" style="height: 42px;">
-                            <i class="bi bi-funnel"></i> Фильтр
-                        </button>
-                        <button class="btn btn-primary" onclick="openCreateModal()" style="height: 42px;">
-                            <i class="bi bi-plus-lg"></i> Создать жителя
-                        </button>
+                        <div class="filter-group">
+                            <label>Блок</label>
+                            <select id="filterBlock">
+                                <option value="all">Все блоки</option>
+                                <option value="A">Блок A</option>
+                                <option value="B">Блок B</option>
+                                <option value="K">Блок K</option>
+                                <option value="X">Блок X</option>
+                                <option value="Z">Блок Z</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Номер дома</label>
+                            <input type="text" id="filterHouse" placeholder="Например, 205 или 101-105">
+                        </div>
+                        <div class="filter-actions">
+                            <button class="btn btn-outline-secondary" onclick="applyFilters()" style="height: 42px;">
+                                <i class="bi bi-funnel"></i> Фильтр
+                            </button>
+                            <button class="btn btn-primary" onclick="openCreateModal()" style="height: 42px;">
+                                <i class="bi bi-plus-lg"></i> Создать жителя
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -75,7 +106,7 @@
                         <h3>Список жителей (проживающих)</h3>
                         <button class="btn btn-sm btn-outline-primary">Экспорт</button>
                     </div>
-                    <table class="table table-hover">
+                    <table class="table table-hover tenants-table">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -89,50 +120,8 @@
                                 <th>Действия</th>
                             </tr>
                         </thead>
-                        <tbody id="tenantsTableBody">
-                            <tr>
-                                <td colspan="9" class="text-center text-muted">Пока нет жителей</td>
-                            </tr>
-                        </tbody>
+                        <tbody id="tenantsTableBody"></tbody>
                     </table>
-                    
-                    <!-- Pagination -->
-                    <div class="table-pagination">
-                        <div class="pagination-controls">
-                            <button class="btn-pagination" onclick="goToPage('prev')" disabled>
-                                <i class="bi bi-chevron-double-left"></i>
-                            </button>
-                            <button class="btn-pagination active" onclick="goToPage(1)">1</button>
-                            <button class="btn-pagination" onclick="goToPage('next')" disabled>
-                                <i class="bi bi-chevron-double-right"></i>
-                            </button>
-                        </div>
-                        <div class="pagination-info">
-                            <span>Стр. <span id="currentPage">1</span> из <span id="totalPages">1</span> · всего <span id="totalItems">0</span></span>
-                        </div>
-                        <div class="pagination-per-page">
-                            <span>На</span>
-                            <span>странице:</span>
-                            <div class="custom-pag-select" id="customItemsPerPage">
-                                <select id="itemsPerPage" onchange="changeItemsPerPage()" style="display: none;">
-                                    <option value="10">10</option>
-                                    <option value="25" selected>25</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                </select>
-                                <div class="select-btn">
-                                    <span class="select-text">25</span>
-                                    <span class="arrow">▾</span>
-                                </div>
-                                <div class="select-options">
-                                    <div class="select-option" data-value="10">10</div>
-                                    <div class="select-option selected" data-value="25">25</div>
-                                    <div class="select-option" data-value="50">50</div>
-                                    <div class="select-option" data-value="100">100</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -196,7 +185,7 @@
                             </div>
                         </div>
                         
-                        <div class="residents-table">
+                    <div class="residents-table">
                             <table>
                                 <thead>
                                     <tr>
@@ -212,9 +201,10 @@
                                         <td>A</td>
                                         <td>205</td>
                                         <td>
-                                            <button type="button" class="btn btn-sm btn-primary" onclick="selectResident(1, 'A', '205')">
-                                                Выбрать
-                                            </button>
+                                            <label class="resident-checkbox">
+                                                <input type="checkbox" onchange="toggleResidentSelection(1, 'A', '205', this)" hidden>
+                                                <span>Выбрать</span>
+                                            </label>
                                         </td>
                                     </tr>
                                     <tr>
@@ -222,9 +212,10 @@
                                         <td>B</td>
                                         <td>101</td>
                                         <td>
-                                            <button type="button" class="btn btn-sm btn-primary" onclick="selectResident(2, 'B', '101')">
-                                                Выбрать
-                                            </button>
+                                            <label class="resident-checkbox">
+                                                <input type="checkbox" onchange="toggleResidentSelection(2, 'B', '101', this)" hidden>
+                                                <span>Выбрать</span>
+                                            </label>
                                         </td>
                                     </tr>
                                     <tr>
@@ -232,9 +223,10 @@
                                         <td>K</td>
                                         <td>305</td>
                                         <td>
-                                            <button type="button" class="btn btn-sm btn-primary" onclick="selectResident(3, 'K', '305')">
-                                                Выбрать
-                                            </button>
+                                            <label class="resident-checkbox">
+                                                <input type="checkbox" onchange="toggleResidentSelection(3, 'K', '305', this)" hidden>
+                                                <span>Выбрать</span>
+                                            </label>
                                         </td>
                                     </tr>
                                     <tr>
@@ -242,9 +234,10 @@
                                         <td>X</td>
                                         <td>102</td>
                                         <td>
-                                            <button type="button" class="btn btn-sm btn-primary" onclick="selectResident(4, 'X', '102')">
-                                                Выбрать
-                                            </button>
+                                            <label class="resident-checkbox">
+                                                <input type="checkbox" onchange="toggleResidentSelection(4, 'X', '102', this)" hidden>
+                                                <span>Выбрать</span>
+                                            </label>
                                         </td>
                                     </tr>
                                     <tr>
@@ -252,18 +245,19 @@
                                         <td>Z</td>
                                         <td>50</td>
                                         <td>
-                                            <button type="button" class="btn btn-sm btn-primary" onclick="selectResident(5, 'Z', '50')">
-                                                Выбрать
-                                            </button>
+                                            <label class="resident-checkbox">
+                                                <input type="checkbox" onchange="toggleResidentSelection(5, 'Z', '50', this)" hidden>
+                                                <span>Выбрать</span>
+                                            </label>
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                         
-                        <div id="selectedResidentInfo" class="selected-info">
+                        <div id="selectedResidentInfo" class="selected-info" style="display: none;">
                             <i class="bi bi-check-circle-fill"></i>
-                            <strong>Выбран резидент:</strong> <span id="selectedResidentText"></span>
+                            <strong>Выбраны резиденты:</strong> <span id="selectedResidentText"></span>
                         </div>
                     </div>
                 </div>
@@ -285,13 +279,74 @@
 (function() {
     'use strict';
     
-    let selectedResidentId = null;
+    const tenantsSeedData = [
+        {
+            id: 2,
+            login: 'X2',
+            name: 'Vusal Guleli Teymurov',
+            phone: '+994 51 385 78 46',
+            email: 'vusal.teymurov520@gmail.com',
+            lastLogin: '2025-11-27 06:54:54',
+            passwordStatus: 'установлен',
+            comment: '',
+            residentIds: [2],
+            homes: [{ block: 'X', number: '2', count: 1 }]
+        }
+    ];
+    
+    let tenantsData = [...tenantsSeedData];
+    let filteredTenants = [...tenantsData];
+    let selectedResidentIds = new Set();
+    let isEditMode = false;
+    let editingTenantId = null;
+    let pendingAction = { type: null, tenantId: null };
+    populateTenantsTable(filteredTenants);
+    
+    function populateTenantsTable(rows) {
+        const tbody = document.getElementById('tenantsTableBody');
+        if (!tbody) return;
+        
+        if (!rows.length) {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted">Пока нет жителей</td></tr>`;
+            return;
+        }
+        
+        tbody.innerHTML = rows.map(tenant => {
+            const homes = tenant.homes?.map(home => `
+                <div class="tenant-home-pill" title="${home.block} / ${home.number}">
+                    ${home.count}
+                </div>
+            `).join('') || '<span class="tenant-home-pill">—</span>';
+            
+            return `
+                <tr data-tenant-id="${tenant.id}">
+                    <td>${tenant.id}</td>
+                    <td>${tenant.login}</td>
+                    <td>${tenant.name}</td>
+                    <td>${tenant.phone}</td>
+                    <td><a class="tenant-email" href="mailto:${tenant.email}">${tenant.email}</a></td>
+                    <td><div class="tenant-last-login">${tenant.lastLogin || '—'}</div></td>
+                    <td><span class="tenant-password-badge">${tenant.passwordStatus}</span></td>
+                    <td><div class="tenant-homes">${homes}</div></td>
+                    <td>
+                        <div class="tenant-actions">
+                            <button class="action-btn edit" onclick="openEditTenant(${tenant.id})">Редактировать</button>
+                            <button class="action-btn reset" onclick="openTenantActionModal('reset', ${tenant.id})">Сброс пароля</button>
+                            <button class="action-btn delete" onclick="openTenantActionModal('delete', ${tenant.id})">Удалить</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
     
     // Filter Functions
-    window.applyFilters = function() {
+    window.applyFilters = function(options = {}) {
         const searchTerm = document.getElementById('filterSearch').value.toLowerCase();
+        const blockFilter = document.getElementById('filterBlock')?.value || 'all';
+        const houseFilter = document.getElementById('filterHouse')?.value.trim().toLowerCase() || '';
         
-        console.log('Applying filters:', { searchTerm });
+        console.log('Applying filters:', { searchTerm, blockFilter, houseFilter });
         
         // Get all table rows
         const rows = document.querySelectorAll('#tenantsTableBody tr');
@@ -302,9 +357,23 @@
             if (cells.length <= 1) return; // Skip empty rows
             
             let shouldShow = true;
+            const housesCell = cells[7]?.textContent.toLowerCase() || '';
+            
+            if (blockFilter !== 'all' && shouldShow) {
+                const blockToken = blockFilter.toLowerCase();
+                if (!housesCell.includes(blockToken)) {
+                    shouldShow = false;
+                }
+            }
+            
+            if (houseFilter && shouldShow) {
+                if (!housesCell.includes(houseFilter)) {
+                    shouldShow = false;
+                }
+            }
             
             // Filter by search term
-            if (searchTerm) {
+            if (searchTerm && shouldShow) {
                 const rowText = row.textContent.toLowerCase();
                 if (!rowText.includes(searchTerm)) {
                     shouldShow = false;
@@ -315,18 +384,30 @@
             row.style.display = shouldShow ? '' : 'none';
         });
         
-        if (typeof showSuccess === 'function') {
+        if (!options.silent && typeof showSuccess === 'function') {
             showSuccess('Фильтры применены!');
         }
     };
     
+    window.clearFilters = function() {
+        document.getElementById('filterSearch').value = '';
+        document.getElementById('filterBlock').value = 'all';
+        document.getElementById('filterHouse').value = '';
+        filteredTenants = [...tenantsData];
+        populateTenantsTable(tenantsData);
+        if (typeof showSuccess === 'function') {
+            showSuccess('Фильтры очищены!');
+        }
+    };
+    
     // Modal Functions
-    window.openCreateModal = function() {
+    window.openCreateModal = function(mode = 'create') {
         const modal = document.getElementById('createTenantModal');
         if (modal) {
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
         }
+        setTenantModalMode(mode);
     };
     
     window.closeCreateModal = function() {
@@ -339,10 +420,13 @@
         const form = document.getElementById('createTenantForm');
         if (form) form.reset();
         
-        selectedResidentId = null;
+        selectedResidentIds.clear();
         
         const selectedInfo = document.getElementById('selectedResidentInfo');
-        if (selectedInfo) selectedInfo.style.display = 'none';
+        if (selectedInfo) {
+            selectedInfo.style.display = 'none';
+            document.getElementById('selectedResidentText').textContent = '';
+        }
         
         // Remove selected class from all rows
         document.querySelectorAll('#residentsListBody tr').forEach(row => {
@@ -356,6 +440,8 @@
         if (typeof window.filterResidents === 'function') {
             window.filterResidents();
         }
+        
+        setTenantModalMode('create');
     };
     
     // Residents Filter
@@ -377,37 +463,47 @@
         });
     };
     
-    // Select Resident
-    window.selectResident = function(id, block, number) {
-        selectedResidentId = id;
-        
-        // Remove selected class from all rows
-        document.querySelectorAll('#residentsListBody tr').forEach(row => {
-            row.classList.remove('selected');
-        });
-        
-        // Add selected class to current row
-        event.target.closest('tr').classList.add('selected');
-        
-        // Update selected info
+    // Select Residents (multi-select)
+    window.toggleResidentSelection = function(id, block, number, checkbox) {
+        if (checkbox.checked) {
+            selectedResidentIds.add(id);
+            checkbox.closest('tr').classList.add('selected');
+        } else {
+            selectedResidentIds.delete(id);
+            checkbox.closest('tr').classList.remove('selected');
+        }
+        updateSelectedResidentsInfo();
+    };
+    
+    function updateSelectedResidentsInfo() {
         const selectedText = document.getElementById('selectedResidentText');
         const selectedInfo = document.getElementById('selectedResidentInfo');
         
-        if (selectedText) {
-            selectedText.textContent = `Блок ${block}, № ${number}`;
+        if (!selectedText || !selectedInfo) return;
+        
+        if (selectedResidentIds.size === 0) {
+            selectedInfo.style.display = 'none';
+            selectedText.textContent = '';
+            return;
         }
-        if (selectedInfo) {
-            selectedInfo.style.display = 'block';
-        }
-    };
+        
+        selectedInfo.style.display = 'block';
+        selectedText.textContent = `${selectedResidentIds.size} шт. (ID: ${Array.from(selectedResidentIds).join(', ')})`;
+    }
     
     // Create Tenant Function
     window.createTenant = function(event) {
         event.preventDefault();
         
-        if (!selectedResidentId) {
+        const isEditing = isEditMode && editingTenantId !== null;
+        const existingTenant = tenantsData.find(t => t.id === editingTenantId);
+        const residentIds = isEditing 
+            ? (existingTenant?.residentIds || [])
+            : Array.from(selectedResidentIds);
+        
+        if (!isEditing && residentIds.length === 0) {
             if (typeof showWarning === 'function') {
-                showWarning('Пожалуйста, выберите резидента!');
+                showWarning('Пожалуйста, выберите хотя бы одного резидента!');
             }
             return;
         }
@@ -418,27 +514,182 @@
             phone: document.getElementById('tenantPhone').value,
             email: document.getElementById('tenantEmail').value,
             comment: document.getElementById('tenantComment').value,
-            residentId: selectedResidentId
+            residentIds
         };
         
         console.log('Creating tenant:', formData);
         
-        // TODO: Send to backend API
-        // fetch('/api/tenants', {
-        //     method: 'POST',
-        //     headers: {'Content-Type': 'application/json'},
-        //     body: JSON.stringify(formData)
-        // }).then(response => {
-        //     if (response.ok) {
-        //         closeCreateModal();
-        //         // Reload tenants list
-        //     }
-        // });
-        
-        if (typeof showSuccess === 'function') {
-            showSuccess(`Житель "${formData.name}" успешно создан! Логин: ${formData.login}`);
+        if (isEditing && existingTenant) {
+            existingTenant.login = formData.login;
+            existingTenant.name = formData.name;
+            existingTenant.phone = formData.phone;
+            existingTenant.email = formData.email;
+            existingTenant.comment = formData.comment;
+            existingTenant.residentIds = residentIds;
+            
+            refreshTenantsTable();
+            
+            if (typeof showSuccess === 'function') {
+                showSuccess(`Житель "${formData.name}" обновлён`);
+            }
+        } else {
+            const newId = tenantsData.length ? Math.max(...tenantsData.map(t => t.id)) + 1 : 1;
+            tenantsData.push({
+                id: newId,
+                ...formData,
+                lastLogin: '—',
+                passwordStatus: 'установлен',
+                homes: formData.residentIds.map(residentId => ({
+                    block: '—',
+                    number: residentId,
+                    count: 1
+                }))
+            });
+            refreshTenantsTable();
+            
+            if (typeof showSuccess === 'function') {
+                showSuccess(`Житель "${formData.name}" успешно создан! Логин: ${formData.login}`);
+            }
         }
+        
         window.closeCreateModal();
+    };
+    
+    function refreshTenantsTable() {
+        filteredTenants = [...tenantsData];
+        populateTenantsTable(tenantsData);
+        if (hasActiveFilters()) {
+            window.applyFilters({ silent: true });
+        }
+    }
+    
+    function hasActiveFilters() {
+        const searchTerm = document.getElementById('filterSearch')?.value.trim();
+        const blockFilter = document.getElementById('filterBlock')?.value;
+        const houseFilter = document.getElementById('filterHouse')?.value.trim();
+        return Boolean(
+            (searchTerm && searchTerm.length) ||
+            (houseFilter && houseFilter.length) ||
+            (blockFilter && blockFilter !== 'all')
+        );
+    }
+    
+    function setTenantModalMode(mode) {
+        const title = document.querySelector('#createTenantModal h2');
+        const submitBtn = document.querySelector('#createTenantForm button[type="submit"]');
+        if (!title || !submitBtn) return;
+        
+        if (mode === 'edit') {
+            isEditMode = true;
+            submitBtn.textContent = 'Сохранить';
+            title.textContent = 'Редактировать жителя';
+        } else {
+            isEditMode = false;
+            editingTenantId = null;
+            submitBtn.textContent = 'Создать';
+            title.textContent = 'Создать жителя';
+        }
+    }
+    
+    window.openEditTenant = function(id) {
+        const tenant = tenantsData.find(t => t.id === id);
+        if (!tenant) return;
+        
+        editingTenantId = id;
+        setTenantModalMode('edit');
+        
+        document.getElementById('tenantLogin').value = tenant.login || '';
+        document.getElementById('tenantName').value = tenant.name || '';
+        document.getElementById('tenantPhone').value = tenant.phone || '';
+        document.getElementById('tenantEmail').value = tenant.email || '';
+        document.getElementById('tenantComment').value = tenant.comment || '';
+        
+        selectedResidentIds = new Set(tenant.residentIds || []);
+        updateSelectedResidentsInfo();
+        
+        // Sync checkboxes
+        document.querySelectorAll('#residentsListBody tr').forEach(row => {
+            row.classList.remove('selected');
+            const checkbox = row.querySelector('input[type="checkbox"]');
+            if (!checkbox) return;
+            const residentId = parseInt(row.cells[0]?.textContent, 10);
+            const isSelected = selectedResidentIds.has(residentId);
+            checkbox.checked = isSelected;
+            if (isSelected) {
+                row.classList.add('selected');
+            }
+        });
+        
+        window.openCreateModal('edit');
+    };
+    
+    window.openTenantActionModal = function(type, tenantId) {
+        const tenant = tenantsData.find(t => t.id === tenantId);
+        if (!tenant) return;
+        
+        pendingAction = { type, tenantId };
+        
+        const modal = document.getElementById('tenantActionModal');
+        const titleEl = document.getElementById('tenantActionTitle');
+        const messageEl = document.getElementById('tenantActionMessage');
+        const confirmBtn = document.getElementById('tenantActionConfirm');
+        
+        if (!modal || !titleEl || !messageEl || !confirmBtn) return;
+        
+        if (type === 'reset') {
+            titleEl.textContent = 'Сброс пароля';
+            messageEl.textContent = `Вы уверены, что хотите сбросить пароль для "${tenant.name}"? Ему будет отправлена ссылка для установки нового пароля.`;
+            confirmBtn.textContent = 'Сбросить';
+            confirmBtn.className = 'btn btn-warning';
+        } else if (type === 'delete') {
+            titleEl.textContent = 'Удаление жителя';
+            messageEl.textContent = `Это действие нельзя отменить. Удалить "${tenant.name}" (логин: ${tenant.login})?`;
+            confirmBtn.textContent = 'Удалить';
+            confirmBtn.className = 'btn btn-danger';
+        }
+        
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    };
+    
+    window.closeTenantActionModal = function() {
+        const modal = document.getElementById('tenantActionModal');
+        if (modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+        pendingAction = { type: null, tenantId: null };
+    };
+    
+    window.confirmTenantAction = function() {
+        const { type, tenantId } = pendingAction;
+        if (!type || !tenantId) {
+            window.closeTenantActionModal();
+            return;
+        }
+        
+        const tenant = tenantsData.find(t => t.id === tenantId);
+        if (!tenant) {
+            window.closeTenantActionModal();
+            return;
+        }
+        
+        if (type === 'reset') {
+            tenant.passwordStatus = 'сброшен';
+            if (typeof showSuccess === 'function') {
+                showSuccess(`Пароль для "${tenant.name}" будет сброшен`);
+            }
+        } else if (type === 'delete') {
+            tenantsData = tenantsData.filter(t => t.id !== tenantId);
+            selectedResidentIds.clear();
+            refreshTenantsTable();
+            if (typeof showSuccess === 'function') {
+                showSuccess(`Житель "${tenant.name}" удалён`);
+            }
+        }
+        
+        refreshTenantsTable();
+        window.closeTenantActionModal();
     };
     
     // Setup event listeners
@@ -463,287 +714,6 @@
             }
         });
     }
-    
-    // Pagination State
-    let paginationState = {
-        currentPage: 1,
-        itemsPerPage: 25,
-        totalItems: 0,
-        totalPages: 1
-    };
-
-    // Pagination Functions
-    window.goToPage = function(page) {
-        if (page === 'prev') {
-            if (paginationState.currentPage > 1) {
-                paginationState.currentPage--;
-                updatePagination();
-                renderTable();
-            }
-        } else if (page === 'next') {
-            if (paginationState.currentPage < paginationState.totalPages) {
-                paginationState.currentPage++;
-                updatePagination();
-                renderTable();
-            }
-        } else if (typeof page === 'number') {
-            paginationState.currentPage = page;
-            updatePagination();
-            renderTable();
-        }
-    };
-
-    window.changeItemsPerPage = function() {
-        const select = document.getElementById('itemsPerPage');
-        if (select) {
-            paginationState.itemsPerPage = parseInt(select.value);
-            paginationState.currentPage = 1;
-            updatePagination();
-            renderTable();
-        }
-    };
-
-    // Initialize custom pagination dropdown
-    let paginationDropdownInitialized = false;
-    function initCustomPaginationDropdown() {
-        const customSelect = document.getElementById('customItemsPerPage');
-        if (!customSelect) {
-            console.log('Custom select not found');
-            return;
-        }
-
-        // Prevent double initialization
-        if (customSelect.dataset.initialized === 'true') {
-            return;
-        }
-        customSelect.dataset.initialized = 'true';
-
-        const nativeSelect = document.getElementById('itemsPerPage');
-        if (!nativeSelect) {
-            console.log('Native select not found');
-            return;
-        }
-
-        const selectBtn = customSelect.querySelector('.select-btn');
-        const selectText = customSelect.querySelector('.select-text');
-        const selectOptions = customSelect.querySelector('.select-options');
-        const options = customSelect.querySelectorAll('.select-option');
-
-        if (!selectBtn || !selectText || !selectOptions || options.length === 0) {
-            console.log('Dropdown elements not found');
-            return;
-        }
-
-        // Set initial value
-        const selectedValue = nativeSelect.value;
-        selectText.textContent = selectedValue;
-        
-        // Update selected option
-        options.forEach(opt => {
-            opt.classList.remove('selected');
-            if (opt.dataset.value === selectedValue) {
-                opt.classList.add('selected');
-            }
-        });
-
-        // Toggle dropdown on button click
-        selectBtn.onclick = function(e) {
-            e.stopPropagation();
-            e.preventDefault();
-            console.log('Button clicked');
-            customSelect.classList.toggle('open');
-        };
-
-        // Handle option click
-        options.forEach(option => {
-            option.onclick = function(e) {
-                e.stopPropagation();
-                e.preventDefault();
-                const value = option.dataset.value;
-                console.log('Option clicked:', value);
-                
-                // Update native select
-                nativeSelect.value = value;
-                nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                
-                // Update display
-                selectText.textContent = value;
-                
-                // Update selected state
-                options.forEach(opt => opt.classList.remove('selected'));
-                option.classList.add('selected');
-                
-                // Close dropdown
-                customSelect.classList.remove('open');
-            };
-        });
-
-        // Close dropdown when clicking outside (use event delegation)
-        if (!paginationDropdownInitialized) {
-            document.addEventListener('click', function(e) {
-                if (!customSelect.contains(e.target)) {
-                    customSelect.classList.remove('open');
-                }
-            });
-
-            // Close dropdown on Escape key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && customSelect.classList.contains('open')) {
-                    customSelect.classList.remove('open');
-                }
-            });
-
-            paginationDropdownInitialized = true;
-        }
-
-        // Listen to native select changes (if changed programmatically)
-        nativeSelect.addEventListener('change', function() {
-            const value = nativeSelect.value;
-            selectText.textContent = value;
-            options.forEach(opt => {
-                opt.classList.remove('selected');
-                if (opt.dataset.value === value) {
-                    opt.classList.add('selected');
-                }
-            });
-        });
-
-        console.log('Custom pagination dropdown initialized');
-    }
-
-    function updatePagination() {
-        const currentPageEl = document.getElementById('currentPage');
-        const totalPagesEl = document.getElementById('totalPages');
-        const totalItemsEl = document.getElementById('totalItems');
-        
-        if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
-        if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
-        if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
-
-        // Update pagination buttons
-        const paginationControls = document.querySelector('.pagination-controls');
-        if (paginationControls) {
-            const buttons = paginationControls.querySelectorAll('.btn-pagination');
-            const prevBtn = buttons[0];
-            const nextBtn = buttons[buttons.length - 1];
-            const pageBtns = Array.from(buttons).slice(1, -1);
-
-            // Update prev/next buttons
-            if (prevBtn) {
-                prevBtn.disabled = paginationState.currentPage === 1;
-            }
-            if (nextBtn) {
-                nextBtn.disabled = paginationState.currentPage === paginationState.totalPages;
-            }
-
-            // Update page number buttons
-            pageBtns.forEach((btn, index) => {
-                const pageNum = index + 1;
-                if (pageNum === paginationState.currentPage) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-        }
-    }
-
-    function updatePaginationCount() {
-        const allRows = document.querySelectorAll('#tenantsTableBody tr');
-        let visibleRows = 0;
-        
-        allRows.forEach(row => {
-            // Skip empty message row
-            if (row.querySelector('td[colspan]')) {
-                return;
-            }
-            // Count only visible rows
-            if (row.style.display !== 'none' && window.getComputedStyle(row).display !== 'none') {
-                visibleRows++;
-            }
-        });
-        
-        // If no visible rows, check if we have data rows at all
-        if (visibleRows === 0) {
-            const dataRows = Array.from(allRows).filter(row => !row.querySelector('td[colspan]'));
-            visibleRows = dataRows.length;
-        }
-        
-        paginationState.totalItems = visibleRows;
-        paginationState.totalPages = Math.max(1, Math.ceil(paginationState.totalItems / paginationState.itemsPerPage));
-        
-        if (paginationState.currentPage > paginationState.totalPages) {
-            paginationState.currentPage = paginationState.totalPages || 1;
-        }
-        
-        updatePagination();
-    }
-
-    function renderTable() {
-        const allRows = Array.from(document.querySelectorAll('#tenantsTableBody tr'));
-        
-        // Filter out empty message row and get only data rows
-        const emptyRow = allRows.find(row => row.querySelector('td[colspan]'));
-        const dataRows = allRows.filter(row => !row.querySelector('td[colspan]'));
-        
-        // Get visible rows (after filtering)
-        const visibleRows = dataRows.filter(row => {
-            return window.getComputedStyle(row).display !== 'none' && !row.style.display;
-        });
-        
-        // Hide empty message if we have visible rows
-        if (emptyRow) {
-            emptyRow.style.display = (visibleRows.length === 0) ? '' : 'none';
-        }
-
-        // Calculate pagination for visible rows
-        const startIndex = (paginationState.currentPage - 1) * paginationState.itemsPerPage;
-        const endIndex = startIndex + paginationState.itemsPerPage;
-
-        // Show only rows in current page range
-        visibleRows.forEach((row, visibleIndex) => {
-            if (visibleIndex >= startIndex && visibleIndex < endIndex) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-
-        updatePagination();
-    }
-
-    // Update pagination when filters are applied
-    const originalApplyFilters = window.applyFilters;
-    window.applyFilters = function() {
-        originalApplyFilters();
-        setTimeout(() => {
-            updatePaginationCount();
-            renderTable();
-        }, 100);
-    };
-
-    // Initialize pagination on load
-    function initPagination() {
-        updatePaginationCount();
-        renderTable();
-        // Try to initialize dropdown multiple times in case DOM is not ready
-        setTimeout(() => {
-            initCustomPaginationDropdown();
-        }, 100);
-        setTimeout(() => {
-            initCustomPaginationDropdown();
-        }, 500);
-        setTimeout(() => {
-            initCustomPaginationDropdown();
-        }, 1000);
-    }
-    
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initPagination);
-    } else {
-        initPagination();
-    }
 
     // Initialize
     setupEventListeners();
@@ -751,20 +721,8 @@
     // Re-initialize when SPA content loads
     window.addEventListener('spa:contentLoaded', function(e) {
         if (e.detail.route === '/tenants') {
+            populateTenantsTable(tenantsSeedData);
             setupEventListeners();
-            // Reset initialization flag when content reloads
-            const customSelect = document.getElementById('customItemsPerPage');
-            if (customSelect) {
-                customSelect.dataset.initialized = 'false';
-            }
-            setTimeout(() => {
-                updatePaginationCount();
-                renderTable();
-                initCustomPaginationDropdown();
-            }, 100);
-            setTimeout(() => {
-                initCustomPaginationDropdown();
-            }, 500);
         }
     });
     

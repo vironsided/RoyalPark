@@ -115,28 +115,58 @@
             </div>
             
             <form id="recordReadingForm" onsubmit="recordReading(event)">
-                <div class="form-group">
-                    <label>Блок</label>
-                    <select id="modalBlock" required onchange="loadResidents()">
-                        <option value="">— выберите —</option>
-                        <option value="A">A</option>
-                        <option value="B">B</option>
-                        <option value="K">K</option>
-                        <option value="X">X</option>
-                        <option value="Z">Z</option>
-                    </select>
+                <div class="record-form-grid">
+                    <div class="form-group">
+                        <label>Блок</label>
+                        <select id="modalBlock" required onchange="loadResidents()">
+                            <option value="">— выберите —</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="K">K</option>
+                            <option value="X">X</option>
+                            <option value="Z">Z</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Резидент</label>
+                        <select id="modalResident" required disabled>
+                            <option value="">— выберите блок —</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Дата показаний</label>
+                        <input type="date" id="modalDate" required>
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <label>Резидент</label>
-                    <select id="modalResident" required disabled>
-                        <option value="">— выберите блок —</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>Дата показаний</label>
-                    <input type="date" id="modalDate" required>
+
+                <div id="meterDetailsSection" class="meter-details hidden">
+                    <div class="meter-table-wrapper">
+                        <table class="meter-table">
+                            <thead>
+                                <tr>
+                                    <th>Тип</th>
+                                    <th>Тариф</th>
+                                    <th>Предыдущее</th>
+                                    <th>Новое / Отметить</th>
+                                    <th>Расход</th>
+                                    <th>Сумма</th>
+                                    <th>Удалить последнее</th>
+                                </tr>
+                            </thead>
+                            <tbody id="meterTableBody">
+                                <tr>
+                                    <td colspan="7" class="text-muted text-center">Выберите резидента, чтобы увидеть тарифы</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Комментарий</label>
+                        <textarea id="modalComment" rows="2" placeholder="Например, показания снял охранник..."></textarea>
+                    </div>
                 </div>
                 
                 <div class="modal-actions">
@@ -187,6 +217,7 @@
             document.getElementById('recordReadingForm').reset();
             document.getElementById('modalResident').disabled = true;
             document.getElementById('modalResident').innerHTML = '<option value="">— выберите блок —</option>';
+            hideMeterDetails();
         }
         
         // Close modal on overlay click
@@ -203,10 +234,58 @@
             }
         });
         
+        const sampleMeterTariffs = {
+            1: [
+                { id: 'gas-a-1', type: 'Газ', tariff: 'A-gas', prev: 120, unit: 'м³', price: 45, placeholder: '≥ 120' },
+                { id: 'water-a-1', type: 'Вода', tariff: 'A-su', prev: 80, unit: 'м³', price: 30, value: 95 },
+            ],
+            2: [
+                { id: 'electric-a-2', type: 'Электричество', tariff: 'A tok', prev: 40, unit: 'кВт·ч', price: 70, value: 185 },
+                { id: 'water-a-2', type: 'Вода', tariff: 'A aqua', prev: 60, unit: 'м³', price: 28, placeholder: '≥ 60' },
+                { id: 'gas-a-2', type: 'Газ', tariff: 'A gas+', prev: 25, unit: 'м³', price: 55, value: 40 },
+            ],
+            3: [
+                { id: 'water-b-0', type: 'Вода', tariff: 'B aqua', prev: 10, unit: 'м³', price: 28, value: 16 },
+                { id: 'electric-b-0', type: 'Электричество', tariff: 'B tok', prev: 100, unit: 'кВт·ч', price: 82, placeholder: '≥ 100' },
+            ],
+            4: [
+                { id: 'gas-b-1', type: 'Газ', tariff: 'Qaz', prev: 50, unit: 'м³', price: 55, placeholder: '≥ 50', value: 60 },
+                { id: 'electric-b-1', type: 'Электричество', tariff: 'B tok', prev: 0, unit: 'кВт·ч', price: 80, value: 220 },
+                { id: 'water-b-1', type: 'Вода', tariff: 'B su', prev: 30, unit: 'м³', price: 28, placeholder: '≥ 30' },
+            ],
+            5: [
+                { id: 'electric-k-1', type: 'Электричество', tariff: 'K tok', prev: 300, unit: 'кВт·ч', price: 78, value: 430 },
+                { id: 'water-k-1', type: 'Вода', tariff: 'K aqua', prev: 140, unit: 'м³', price: 32, value: 180 },
+            ],
+            6: [
+                { id: 'gas-k-2', type: 'Газ', tariff: 'K gas', prev: 0, unit: 'м³', price: 60, placeholder: '≥ 0' },
+                { id: 'water-k-2', type: 'Вода', tariff: 'K aqua+', prev: 70, unit: 'м³', price: 29, value: 110 },
+            ],
+            7: [
+                { id: 'gas-main', type: 'Газ', tariff: 'Qaz', prev: 0, unit: 'м³', price: 50, placeholder: '≥ 0' },
+                { id: 'electric', type: 'Электричество', tariff: 'X2 tok', prev: 0, unit: 'кВт·ч', price: 75, value: 200 },
+                { id: 'gas-aux', type: 'Газ', tariff: 'Qaz', prev: 0, unit: 'м³', price: 50, placeholder: '≥ 0' },
+                { id: 'water', type: 'Вода', tariff: 'X2 su', prev: 0, unit: 'м³', price: 50, value: 300 },
+            ],
+            8: [
+                { id: 'electric-x-2', type: 'Электричество', tariff: 'X tok+', prev: 150, unit: 'кВт·ч', price: 77, value: 280 },
+                { id: 'water-x-2', type: 'Вода', tariff: 'X su+', prev: 90, unit: 'м³', price: 35, placeholder: '≥ 90' },
+            ],
+            9: [
+                { id: 'electric-z-1', type: 'Электричество', tariff: 'Z tok', prev: 400, unit: 'кВт·ч', price: 65, value: 540 },
+                { id: 'water-z-1', type: 'Вода', tariff: 'Z aqua', prev: 220, unit: 'м³', price: 25, placeholder: '≥ 220' },
+            ],
+            10: [
+                { id: 'gas-z-2', type: 'Газ', tariff: 'Z gas', prev: 95, unit: 'м³', price: 58, value: 120 },
+                { id: 'electric-z-2', type: 'Электричество', tariff: 'Z tok+', prev: 210, unit: 'кВт·ч', price: 68, placeholder: '≥ 210' },
+            ]
+        };
+
         // Load residents based on selected block
         function loadResidents() {
             const block = document.getElementById('modalBlock').value;
             const residentSelect = document.getElementById('modalResident');
+            hideMeterDetails();
             
             if (block) {
                 // Enable resident select
@@ -262,7 +341,9 @@
             const formData = {
                 block: document.getElementById('modalBlock').value,
                 resident: document.getElementById('modalResident').value,
-                date: document.getElementById('modalDate').value
+                date: document.getElementById('modalDate').value,
+                comment: document.getElementById('modalComment').value,
+                meters: collectMeterData()
             };
             
             console.log('Recording reading:', formData);
@@ -282,5 +363,113 @@
             showSuccess('Показатель успешно записан! Дата: ' + formData.date);
             closeRecordModal();
         }
+
+        function collectMeterData() {
+            const rows = document.querySelectorAll('#meterTableBody tr[data-meter-id]');
+            return Array.from(rows).map(row => ({
+                id: row.dataset.meterId,
+                newValue: row.querySelector('input')?.value || '',
+                prev: row.dataset.prevValue,
+                consumption: row.dataset.consumption || '0',
+                amount: row.dataset.amount || '0'
+            }));
+        }
+
+        function hideMeterDetails() {
+            const section = document.getElementById('meterDetailsSection');
+            if (section) {
+                section.classList.add('hidden');
+                document.getElementById('meterTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-muted text-center">Выберите резидента, чтобы увидеть тарифы</td>
+                    </tr>`;
+            }
+        }
+
+        document.getElementById('modalResident').addEventListener('change', function() {
+            const residentId = this.value;
+            if (!residentId) {
+                hideMeterDetails();
+                return;
+            }
+            renderMeterDetails(residentId);
+        });
+
+        function renderMeterDetails(residentId) {
+            const section = document.getElementById('meterDetailsSection');
+            const tbody = document.getElementById('meterTableBody');
+            const data = sampleMeterTariffs[residentId];
+            
+            if (!section || !tbody) return;
+            
+            if (!data) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-muted text-center">Для выбранного резидента нет тарифов</td></tr>`;
+                section.classList.remove('hidden');
+                return;
+            }
+            
+            tbody.innerHTML = data.map(meter => {
+                const prev = meter.prev ?? 0;
+                const newVal = meter.value ?? '';
+                const consumption = meter.value ? (meter.value - prev) : 0;
+                const amount = consumption * meter.price;
+                return `
+                    <tr data-meter-id="${meter.id}" data-prev-value="${prev}" data-consumption="${consumption}" data-amount="${amount}">
+                        <td><span class="meter-type-pill">${meter.type}</span></td>
+                        <td>${meter.tariff}</td>
+                        <td>${prev} ${meter.unit || ''}</td>
+                        <td>
+                            <input type="number"
+                                   class="meter-input"
+                                   placeholder="${meter.placeholder || 'Введите'}"
+                                   value="${newVal}"
+                                   min="${prev}"
+                                   oninput="handleMeterInput(this)">
+                        </td>
+                        <td><span class="meter-consumption">${consumption.toFixed(3)}</span></td>
+                        <td><span class="meter-amount">${amount.toFixed(2)}</span></td>
+                        <td>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeMeterRow('${meter.id}')">
+                                Удалить
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            section.classList.remove('hidden');
+        }
+
+        window.handleMeterInput = function(input) {
+            const row = input.closest('tr');
+            if (!row) return;
+            const prev = parseFloat(row.dataset.prevValue || '0');
+            const price = parseFloat(sampleMeterTariffsPrice(row.dataset.meterId));
+            const value = parseFloat(input.value || '0');
+            const consumption = Math.max(0, value - prev);
+            const amount = consumption * (price || 0);
+            
+            row.dataset.consumption = consumption.toFixed(3);
+            row.dataset.amount = amount.toFixed(2);
+            row.querySelector('.meter-consumption').textContent = consumption.toFixed(3);
+            row.querySelector('.meter-amount').textContent = amount.toFixed(2);
+        };
+
+        function sampleMeterTariffsPrice(meterId) {
+            const residentId = document.getElementById('modalResident').value;
+            const data = sampleMeterTariffs[residentId] || [];
+            const found = data.find(m => m.id === meterId);
+            return found ? found.price : 0;
+        }
+
+        window.removeMeterRow = function(id) {
+            const row = document.querySelector(`#meterTableBody tr[data-meter-id="${id}"]`);
+            if (row) {
+                row.remove();
+            }
+            if (!document.querySelectorAll('#meterTableBody tr').length) {
+                hideMeterDetails();
+            }
+        };
 </script>
 

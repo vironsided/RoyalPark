@@ -123,12 +123,12 @@
             background: #ffffff;
             color: #212529;
             border-radius: 20px;
-            padding: 30px;
-            max-width: 600px;
-            width: 90%;
+            padding: 36px;
+            max-width: 960px;
+            width: min(96vw, 960px);
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
             animation: modalSlideIn 0.3s ease-out;
         }
         
@@ -193,6 +193,92 @@
             border-radius: 8px;
             font-size: 1rem;
             transition: all 0.3s;
+        }
+
+        .record-form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .meter-details {
+            margin-top: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .meter-details.hidden {
+            display: none;
+        }
+
+        .meter-table-wrapper {
+            overflow-x: auto;
+        }
+
+        .meter-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        .meter-table th,
+        .meter-table td {
+            padding: 12px 14px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .meter-table thead th {
+            text-transform: uppercase;
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.55);
+        }
+
+        .meter-type-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.85);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .meter-input {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fefefe;
+        }
+
+        .meter-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-outline-danger {
+            border: 1px solid rgba(255, 99, 132, 0.45);
+            color: #ff7b8c;
+            background: transparent;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-outline-danger:hover {
+            background: rgba(255, 99, 132, 0.1);
         }
         
         .form-group input:focus,
@@ -346,6 +432,24 @@
             color: #ffffff;
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
+
+        [data-theme="dark"] .form-group select option,
+        [data-theme="dark"] .filter-group select option,
+        body[data-theme="dark"] .form-group select option,
+        body[data-theme="dark"] .filter-group select option,
+        html[data-theme="dark"] .form-group select option,
+        html[data-theme="dark"] .filter-group select option {
+            background: #1c202c !important;
+            color: #f6f7ff !important;
+        }
+
+        [data-theme="dark"] .form-group select:focus,
+        [data-theme="dark"] .filter-group select:focus {
+            outline: none;
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+            background: rgba(255, 255, 255, 0.08) !important;
+        }
         
         [data-theme="dark"] .modal-header {
             border-bottom: 2px solid rgba(255, 255, 255, 0.1);
@@ -353,6 +457,23 @@
         
         [data-theme="dark"] .modal-actions {
             border-top: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        [data-theme="dark"] .meter-details {
+            background: rgba(12, 14, 24, 0.85);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        [data-theme="dark"] .meter-table th,
+        [data-theme="dark"] .meter-table td {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #f5f6ff;
+        }
+
+        [data-theme="dark"] .meter-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #fff;
         }
         
         /* Темный фон для карточки таблицы в темном режиме */
