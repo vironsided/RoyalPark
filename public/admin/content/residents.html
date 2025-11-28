@@ -6,6 +6,10 @@
                 <div class="filters-container">
                     <div class="filters-row">
                         <div class="filter-group">
+                            <label>Поиск</label>
+                            <input type="text" id="filterSearch" placeholder="Логин, ФИО, телефон, e-mail">
+                        </div>
+                        <div class="filter-group">
                             <label>Блок</label>
                             <select id="filterBlock">
                                 <option value="all">Все</option>
@@ -17,6 +21,13 @@
                             </select>
                         </div>
                         
+                        <div class="filter-group">
+                            <label>Номер дома</label>
+                            <input type="text" id="filterHouse" placeholder="Например, 205 или 101-105">
+                        </div>
+                    </div>
+
+                    <div class="filters-row">
                         <div class="filter-group">
                             <label>Статус</label>
                             <select id="filterStatus">
@@ -35,11 +46,6 @@
                                 <option value="subtenant">Субарендатор</option>
                                 <option value="office">Офис</option>
                             </select>
-                        </div>
-                        
-                        <div class="filter-group">
-                            <label>Поиск</label>
-                            <input type="text" id="filterSearch" placeholder="Имя, телефон, e-mail, № дома">
                         </div>
                     </div>
                     
@@ -61,7 +67,7 @@
                         <h3>Резиденты</h3>
                         <button class="btn btn-sm btn-outline-primary">Экспорт</button>
                     </div>
-                    <table class="table table-hover">
+                    <table class="table table-hover residents-table">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -72,7 +78,7 @@
                                 <th>Статус</th>
                                 <th>Контакты</th>
                                 <th>Счётчики</th>
-                                <th>Действия</th>
+                                <th class="text-center">Действия</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -91,9 +97,27 @@
                                     <span class="badge bg-info">Эл: 12345</span>
                                     <span class="badge bg-info">Вод: 67890</span>
                                 </td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary">Просмотр</button>
-                                    <button class="btn btn-sm btn-outline-secondary">Изменить</button>
+                                <td class="text-center actions-column">
+                                    <button class="btn btn-sm btn-outline-primary"
+                                        onclick="openEditResident(this)"
+                                        data-id="1"
+                                        data-block="A"
+                                        data-number="205"
+                                        data-status="active"
+                                        data-type="private"
+                                        data-registration="individual"
+                                        data-name="Əliyev Rəşad Əli oğlu"
+                                        data-phone="+994 50 123 45 67"
+                                        data-email="rashad@mail.az"
+                                        data-comment="">
+                                        Редактировать
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                        onclick="openDeleteModal(this)"
+                                        data-id="1"
+                                        data-name="Əliyev Rəşad Əli oğlu">
+                                        Удалить
+                                    </button>
                                 </td>
                             </tr>
                             <tr>
@@ -111,9 +135,27 @@
                                     <span class="badge bg-info">Эл: 23456</span>
                                     <span class="badge bg-info">Газ: 78901</span>
                                 </td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary">Просмотр</button>
-                                    <button class="btn btn-sm btn-outline-secondary">Изменить</button>
+                                <td class="text-center actions-column">
+                                    <button class="btn btn-sm btn-outline-primary"
+                                        onclick="openEditResident(this)"
+                                        data-id="2"
+                                        data-block="B"
+                                        data-number="101-105"
+                                        data-status="active"
+                                        data-type="office"
+                                        data-registration="legal"
+                                        data-name="Royal Park MMC"
+                                        data-phone="+994 12 567 89 00"
+                                        data-email="info@royalpark.az"
+                                        data-comment="">
+                                        Редактировать
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                        onclick="openDeleteModal(this)"
+                                        data-id="2"
+                                        data-name="Royal Park MMC">
+                                        Удалить
+                                    </button>
                                 </td>
                             </tr>
                             <tr>
@@ -131,9 +173,27 @@
                                     <span class="badge bg-info">Эл: 34567</span>
                                     <span class="badge bg-info">Вод: 89012</span>
                                 </td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary">Просмотр</button>
-                                    <button class="btn btn-sm btn-outline-secondary">Изменить</button>
+                                <td class="text-center actions-column">
+                                    <button class="btn btn-sm btn-outline-primary"
+                                        onclick="openEditResident(this)"
+                                        data-id="3"
+                                        data-block="K"
+                                        data-number="305"
+                                        data-status="active"
+                                        data-type="private"
+                                        data-registration="individual"
+                                        data-name="Məmmədova Günel Tofiq qızı"
+                                        data-phone="+994 55 234 56 78"
+                                        data-email="gunel@mail.az"
+                                        data-comment="">
+                                        Редактировать
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                        onclick="openDeleteModal(this)"
+                                        data-id="3"
+                                        data-name="Məmmədова Günel Tofiq qızı">
+                                        Удалить
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
@@ -146,8 +206,8 @@
     <!-- Create Resident Modal -->
     <div class="modal-overlay" id="createResidentModal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2>Создать резидента</h2>
+                <div class="modal-header">
+                    <h2 id="residentModalTitle">Создать резидента</h2>
                 <button class="modal-close" onclick="closeCreateModal()">
                     <i class="bi bi-x-lg"></i>
                 </button>
@@ -300,11 +360,30 @@
                     <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">
                         Отмена
                     </button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" id="residentSubmitBtn">
                         Создать
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+    
+    <!-- Delete Resident Confirmation Modal -->
+    <div class="modal-overlay" id="deleteResidentModal">
+        <div class="modal-content confirmation-modal">
+            <div class="modal-header">
+                <h2>Удалить резидента</h2>
+                <button class="modal-close" onclick="closeDeleteModal()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить <strong id="deleteResidentName">этого резидента</strong>? Это действие нельзя отменить.</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" type="button" onclick="closeDeleteModal()">Отмена</button>
+                <button class="btn btn-danger" type="button" onclick="confirmDeleteResident()">Удалить</button>
+            </div>
         </div>
     </div>
 
@@ -315,8 +394,9 @@
             const status = document.getElementById('filterStatus').value;
             const type = document.getElementById('filterType').value;
             const searchTerm = document.getElementById('filterSearch').value.toLowerCase();
+            const houseNumber = document.getElementById('filterHouse').value.trim().toLowerCase();
             
-            console.log('Applying filters:', { block, status, type, searchTerm });
+            console.log('Applying filters:', { block, status, type, searchTerm, houseNumber });
             
             // Get all table rows
             const rows = document.querySelectorAll('tbody tr');
@@ -363,6 +443,13 @@
                     }
                 }
                 
+                // Filter by house number
+                if (houseNumber && shouldShow) {
+                    if (!numberCell.toLowerCase().includes(houseNumber)) {
+                        shouldShow = false;
+                    }
+                }
+                
                 // Filter by search term
                 if (searchTerm && shouldShow) {
                     const searchableText = nameCell + ' ' + contactsCell + ' ' + blockCell.toLowerCase() + numberCell;
@@ -383,6 +470,7 @@
             document.getElementById('filterStatus').value = 'all';
             document.getElementById('filterType').value = 'all';
             document.getElementById('filterSearch').value = '';
+            document.getElementById('filterHouse').value = '';
             
             // Show all rows
             const rows = document.querySelectorAll('tbody tr');
@@ -394,7 +482,51 @@
         }
         
         // Modal Functions
+        let isEditMode = false;
+        let editingResidentId = null;
+        let pendingDelete = null;
+        
+        function setResidentModalMode(mode) {
+            const titleEl = document.getElementById('residentModalTitle');
+            const submitBtn = document.getElementById('residentSubmitBtn');
+            
+            if (mode === 'edit') {
+                titleEl.textContent = 'Редактировать резидента';
+                submitBtn.textContent = 'Сохранить';
+            } else {
+                titleEl.textContent = 'Создать резидента';
+                submitBtn.textContent = 'Создать';
+            }
+        }
+        
         function openCreateModal() {
+            isEditMode = false;
+            editingResidentId = null;
+            setResidentModalMode('create');
+            document.getElementById('createResidentForm').reset();
+            document.getElementById('createResidentModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function openEditResident(button) {
+            const data = button.dataset;
+            isEditMode = true;
+            editingResidentId = data.id || null;
+            setResidentModalMode('edit');
+            
+            // Reset form before populating
+            document.getElementById('createResidentForm').reset();
+            
+            document.getElementById('residentBlock').value = data.block || 'A';
+            document.getElementById('residentNumber').value = data.number || '';
+            document.getElementById('residentStatus').value = data.status || 'active';
+            document.getElementById('residentType').value = data.type || 'private';
+            document.getElementById('residentRegistration').value = data.registration || 'individual';
+            document.getElementById('residentComment').value = data.comment || '';
+            document.getElementById('residentName').value = data.name || '';
+            document.getElementById('residentPhone').value = data.phone || '';
+            document.getElementById('residentEmail').value = data.email || '';
+            
             document.getElementById('createResidentModal').classList.add('active');
             document.body.style.overflow = 'hidden';
         }
@@ -403,6 +535,28 @@
             document.getElementById('createResidentModal').classList.remove('active');
             document.body.style.overflow = 'auto';
             document.getElementById('createResidentForm').reset();
+            isEditMode = false;
+            editingResidentId = null;
+            setResidentModalMode('create');
+        }
+        
+        function openDeleteModal(button) {
+            const data = button.dataset;
+            pendingDelete = {
+                row: button.closest('tr'),
+                id: data.id || null,
+                name: data.name || 'резидента'
+            };
+            
+            document.getElementById('deleteResidentName').textContent = pendingDelete.name;
+            document.getElementById('deleteResidentModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteResidentModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            pendingDelete = null;
         }
         
         // Close modal on overlay click
@@ -411,11 +565,21 @@
                 closeCreateModal();
             }
         });
+        document.getElementById('deleteResidentModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
         
         // Close modal on Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                closeCreateModal();
+                const deleteModal = document.getElementById('deleteResidentModal');
+                if (deleteModal.classList.contains('active')) {
+                    closeDeleteModal();
+                } else {
+                    closeCreateModal();
+                }
             }
         });
         
@@ -563,7 +727,13 @@
                 });
             });
             
-            console.log('Creating resident:', formData);
+            if (isEditMode) {
+                console.log('Updating resident:', editingResidentId, formData);
+                showSuccess(`Данные резидента "${formData.name}" сохранены (ID: ${editingResidentId || 'N/A'})`);
+            } else {
+                console.log('Creating resident:', formData);
+                showSuccess(`Резидент "${formData.name}" успешно создан! Блок: ${formData.block}-${formData.number}`);
+            }
             
             // TODO: Send to backend API
             // fetch('/api/residents', {
@@ -576,9 +746,16 @@
             //         // Reload residents list
             //     }
             // });
-            
-            showSuccess(`Резидент "${formData.name}" успешно создан! Блок: ${formData.block}-${formData.number}`);
             closeCreateModal();
+        }
+
+        function confirmDeleteResident() {
+            if (!pendingDelete) return;
+            
+            pendingDelete.row?.remove();
+            console.log('Deleting resident:', pendingDelete.id, pendingDelete.name);
+            showSuccess(`Резидент "${pendingDelete.name}" удалён`);
+            closeDeleteModal();
         }
 </script>
 

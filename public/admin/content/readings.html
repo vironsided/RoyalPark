@@ -78,27 +78,102 @@
                 </div>
                 
                 <!-- Readings Table -->
-                <div class="card">
-                    <table class="table table-hover readings-table">
-                        <thead>
-                            <tr>
-                                <th>Резидент</th>
-                                <th>Расход по счётчикам</th>
-                                <th>Сумма по счётчикам</th>
-                                <th>Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody id="readingsTableBody">
-                            <tr>
-                                <td colspan="4">
-                                    <div class="empty-state">
-                                        <i class="bi bi-speedometer"></i>
-                                        <p>Нет показаний за период</p>
+                <div class="card readings-card">
+                    <div class="readings-head">
+                        <div>Резидент</div>
+                        <div>Расход по счётчикам</div>
+                        <div>Сумма по счётчикам</div>
+                        <div>Действия</div>
+                    </div>
+
+                    <div class="readings-list" id="readingsTableBody">
+                        <div class="reading-row" data-reading-key="a41">
+                            <div class="reading-col reading-col-resident">
+                                <div class="resident-badge">
+                                    <span class="resident-code">A / 41</span>
+                                    <span class="resident-info">Блок A, №41</span>
+                                </div>
+                            </div>
+                            <div class="reading-col">
+                                <div class="meter-stack">
+                                    <div class="meter-item">
+                                        <span class="meter-chip">Электричество</span>
+                                        <span class="meter-value">8.000 кВт·ч</span>
                                     </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                </div>
+                            </div>
+                            <div class="reading-col">
+                                <div class="amount-stack">
+                                    <div class="amount-item">
+                                        <span class="status-pill status-paid">Оплачено</span>
+                                        <span class="amount-value">0.00 ₼</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="reading-col reading-col-actions">
+                                <div class="reading-actions">
+                                    <button class="table-btn table-btn-primary" type="button" onclick="openReadingEditor('a41')">
+                                        <i class="bi bi-pencil"></i>
+                                        Редактировать
+                                    </button>
+                                    <button class="table-btn table-btn-secondary" type="button" onclick="openReadingDetails('a41')">
+                                        <i class="bi bi-info-circle"></i>
+                                        Подробнее
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="reading-row" data-reading-key="a50">
+                            <div class="reading-col reading-col-resident">
+                                <div class="resident-badge">
+                                    <span class="resident-code">A / 50</span>
+                                    <span class="resident-info">Блок A, №50</span>
+                                </div>
+                            </div>
+                            <div class="reading-col">
+                                <div class="meter-stack">
+                                    <div class="meter-item">
+                                        <span class="meter-chip">Электричество</span>
+                                        <span class="meter-value">12.000 кВт·ч</span>
+                                    </div>
+                                    <div class="meter-item">
+                                        <span class="meter-chip chip-warning">Строительство</span>
+                                        <span class="meter-value">1.000 мес</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="reading-col">
+                                <div class="amount-stack">
+                                    <div class="amount-item">
+                                        <span class="status-pill status-due">Электричество</span>
+                                        <span class="amount-value amount-value-alert">12.00 ₼</span>
+                                    </div>
+                                    <div class="amount-item">
+                                        <span class="status-pill status-due">Строительство</span>
+                                        <span class="amount-value amount-value-alert">80.00 ₼</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="reading-col reading-col-actions">
+                                <div class="reading-actions">
+                                    <button class="table-btn table-btn-primary" type="button" onclick="openReadingEditor('a50')">
+                                        <i class="bi bi-pencil"></i>
+                                        Редактировать
+                                    </button>
+                                    <button class="table-btn table-btn-secondary" type="button" onclick="openReadingDetails('a50')">
+                                        <i class="bi bi-info-circle"></i>
+                                        Подробнее
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="reading-total">
+                            <span>Итого:</span>
+                            <span class="reading-total-value">92.00 ₼</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -181,6 +256,21 @@
         </div>
     </div>
 
+    <!-- Reading Details Modal -->
+    <div class="modal-overlay" id="readingDetailsModal">
+        <div class="modal-content readings-detail-modal">
+            <div class="modal-header">
+                <h2 id="readingDetailsTitle">Резидент</h2>
+                <button class="modal-close" onclick="closeReadingDetails()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="reading-details-body" id="readingDetailsBody">
+                <div class="text-muted">Выберите запись, чтобы увидеть детали</div>
+            </div>
+        </div>
+    </div>
+
 <script>
 // Set today's date as default
         document.addEventListener('DOMContentLoaded', function() {
@@ -226,11 +316,21 @@
                 closeRecordModal();
             }
         });
+
+        const detailsModal = document.getElementById('readingDetailsModal');
+        if (detailsModal) {
+            detailsModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeReadingDetails();
+                }
+            });
+        }
         
         // Close modal on Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeRecordModal();
+                closeReadingDetails();
             }
         });
         
@@ -278,7 +378,95 @@
             10: [
                 { id: 'gas-z-2', type: 'Газ', tariff: 'Z gas', prev: 95, unit: 'м³', price: 58, value: 120 },
                 { id: 'electric-z-2', type: 'Электричество', tariff: 'Z tok+', prev: 210, unit: 'кВт·ч', price: 68, placeholder: '≥ 210' },
+            ],
+            11: [
+                { id: 'gas-a-41', type: 'Газ', tariff: 'Qaz', prev: 180, unit: 'м³', price: 55, placeholder: '≥ 180' },
+                { id: 'water-a-41', type: 'Вода', tariff: 'X2 su', prev: 250, unit: 'м³', price: 35, value: 300 },
+            ],
+            12: [
+                { id: 'electric-a-50', type: 'Электричество', tariff: 'X2 tok', prev: 100, unit: 'кВт·ч', price: 75, value: 200 },
+                { id: 'water-a-50', type: 'Вода', tariff: 'X2 su', prev: 0, unit: 'м³', price: 50, value: 300 },
+                { id: 'gas-a-50', type: 'Газ', tariff: 'Qaz', prev: 0, unit: 'м³', price: 55, placeholder: '≥ 0' },
             ]
+        };
+
+        const readingDetailsData = {
+            a41: {
+                title: 'Резидент: A / 41',
+                meters: [
+                    {
+                        type: 'Газ',
+                        meter: '№ 123',
+                        tariff: 'Qaz',
+                        unit: 'м³',
+                        rows: []
+                    },
+                    {
+                        type: 'Электричество',
+                        meter: '№ 1234',
+                        tariff: 'X2 tok',
+                        unit: 'кВт·ч',
+                        rows: [
+                            { date: '2025-11-26', value: '200.000', consumption: '200.000', amount: '15000.00', vat: '0', comment: '—' }
+                        ]
+                    },
+                    {
+                        type: 'Газ',
+                        meter: '№ 13445',
+                        tariff: 'Qaz',
+                        unit: 'м³',
+                        rows: []
+                    },
+                    {
+                        type: 'Вода',
+                        meter: '№ 58585',
+                        tariff: 'X2 su',
+                        unit: 'м³',
+                        rows: [
+                            { date: '2025-11-26', value: '300.000', consumption: '300.000', amount: '15000.00', vat: '0', comment: '—' }
+                        ]
+                    }
+                ]
+            },
+            a50: {
+                title: 'Резидент: A / 50',
+                meters: [
+                    {
+                        type: 'Электричество',
+                        meter: '№ 9801',
+                        tariff: 'X2 tok',
+                        unit: 'кВт·ч',
+                        rows: [
+                            { date: '2025-11-15', value: '120.000', consumption: '120.000', amount: '8200.00', vat: '0', comment: 'Оплачено' },
+                            { date: '2025-10-15', value: '100.000', consumption: '100.000', amount: '6500.00', vat: '0', comment: '—' }
+                        ]
+                    },
+                    {
+                        type: 'Вода',
+                        meter: '№ 7742',
+                        tariff: 'A su',
+                        unit: 'м³',
+                        rows: [
+                            { date: '2025-11-10', value: '180.000', consumption: '40.000', amount: '2400.00', vat: '0', comment: 'Контрольное снятие' }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        const readingEditorPrefill = {
+            a41: {
+                block: 'A',
+                residentId: '11',
+                date: '2025-11-26',
+                comment: 'Показания подтверждены охраной'
+            },
+            a50: {
+                block: 'A',
+                residentId: '12',
+                date: '2025-11-15',
+                comment: 'Заполнено вручную'
+            }
         };
 
         // Load residents based on selected block
@@ -296,6 +484,8 @@
                     'A': [
                         {id: 1, name: 'Блок A, № 205'},
                         {id: 2, name: 'Блок A, № 305'},
+                        {id: 11, name: 'Блок A, № 41'},
+                        {id: 12, name: 'Блок A, № 50'},
                     ],
                     'B': [
                         {id: 3, name: 'Блок B, № 101'},
@@ -332,6 +522,101 @@
                 residentSelect.disabled = true;
                 residentSelect.innerHTML = '<option value="">— выберите блок —</option>';
             }
+        }
+
+        function openReadingEditor(key) {
+            const prefill = readingEditorPrefill[key];
+            openRecordModal();
+            if (!prefill) return;
+
+            const blockSelect = document.getElementById('modalBlock');
+            const residentSelect = document.getElementById('modalResident');
+            const dateInput = document.getElementById('modalDate');
+            const commentField = document.getElementById('modalComment');
+
+            if (blockSelect && prefill.block) {
+                blockSelect.value = prefill.block;
+                loadResidents();
+            }
+
+            if (residentSelect && prefill.residentId) {
+                residentSelect.disabled = false;
+                residentSelect.value = prefill.residentId;
+                renderMeterDetails(prefill.residentId);
+            }
+
+            if (dateInput && prefill.date) {
+                dateInput.value = prefill.date;
+            }
+
+            if (commentField) {
+                commentField.value = prefill.comment || '';
+            }
+        }
+
+        function openReadingDetails(key) {
+            const modal = document.getElementById('readingDetailsModal');
+            const title = document.getElementById('readingDetailsTitle');
+            const body = document.getElementById('readingDetailsBody');
+            if (!modal || !title || !body) return;
+
+            const data = readingDetailsData[key];
+            title.textContent = data?.title || 'Детали показаний';
+
+            if (!data) {
+                body.innerHTML = '<div class="detail-empty">Для этой записи пока нет подробностей.</div>';
+            } else {
+                body.innerHTML = data.meters.map(renderDetailMeterCard).join('');
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function renderDetailMeterCard(meter) {
+            const rows = (meter.rows && meter.rows.length)
+                ? meter.rows.map(row => `
+                    <div class="detail-grid-row">
+                        <div>${row.date || '—'}</div>
+                        <div>${row.value || '—'}</div>
+                        <div>${row.consumption || '—'}</div>
+                        <div class="detail-amount ${row.amount && Number(row.amount) > 0 ? 'detail-amount-alert' : ''}">${row.amount || '0.00'}</div>
+                        <div>${row.vat ?? '—'}</div>
+                        <div>${row.comment || '—'}</div>
+                    </div>
+                `).join('')
+                : '<div class="detail-empty-row">Нет записей</div>';
+
+            return `
+                <div class="detail-meter-card">
+                    <div class="detail-meter-head">
+                        <span class="detail-meter-badge">${meter.type}</span>
+                        <div class="detail-meter-info">
+                            <span>${meter.meter}</span>
+                            <span>тариф: ${meter.tariff}</span>
+                        </div>
+                        <span class="detail-unit-chip">${meter.unit || ''}</span>
+                    </div>
+                    <div class="detail-grid detail-grid-head">
+                        <div>Дата</div>
+                        <div>Показание</div>
+                        <div>Расход</div>
+                        <div>Начислено</div>
+                        <div>НДС, %</div>
+                        <div>Комментарий</div>
+                    </div>
+                    <div class="detail-grid-body">
+                        ${rows}
+                    </div>
+                </div>
+            `;
+        }
+
+        function closeReadingDetails() {
+            const modal = document.getElementById('readingDetailsModal');
+            if (!modal) return;
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
         }
         
         // Record Reading Function

@@ -183,8 +183,9 @@
             font-size: 0.9rem;
         }
         
-        .form-group input,
-        .form-group select {
+.form-group input,
+.form-group select,
+.form-group textarea {
             width: 100%;
             padding: 12px 15px;
             background: #ffffff;
@@ -192,8 +193,13 @@
             border: 1px solid #dee2e6;
             border-radius: 8px;
             font-size: 1rem;
-            transition: all 0.3s;
+    transition: all 0.3s;
         }
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 88px;
+}
 
         .record-form-grid {
             display: grid;
@@ -266,6 +272,20 @@
             background: rgba(255, 255, 255, 0.08);
         }
 
+.meter-amount {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    background: rgba(102, 126, 234, 0.12);
+    color: #3c5edc;
+    border: 1px solid rgba(102, 126, 234, 0.35);
+}
+
         .btn-outline-danger {
             border: 1px solid rgba(255, 99, 132, 0.45);
             color: #ff7b8c;
@@ -281,8 +301,9 @@
             background: rgba(255, 99, 132, 0.1);
         }
         
-        .form-group input:focus,
-        .form-group select:focus {
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -297,10 +318,314 @@
             border-top: 2px solid #f0f0f0;
         }
         
-        .readings-table {
-            margin-top: 20px;
+        .readings-card {
+            padding: 24px;
         }
         
+        .readings-head {
+            display: grid;
+            grid-template-columns: 1.4fr 2.2fr 2fr 1.4fr;
+            gap: 24px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            font-size: 0.82rem;
+            letter-spacing: 0.08em;
+            color: rgba(26, 29, 46, 0.65);
+            padding: 0 8px;
+        }
+        
+        .readings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .reading-row {
+            display: grid;
+            grid-template-columns: 1.4fr 2.2fr 2fr 1.4fr;
+            gap: 24px;
+            padding: 20px 24px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            box-shadow: 0 18px 32px rgba(15, 23, 42, 0.08);
+        }
+        
+        .reading-col {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            justify-content: center;
+        }
+        
+        .reading-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .reading-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 24px 0;
+            margin-top: 8px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            font-weight: 700;
+            color: #1a1d2e;
+        }
+        
+        .reading-total-value {
+            font-size: 1.05rem;
+            color: #d72e2f;
+            font-variant-numeric: tabular-nums;
+        }
+
+.readings-detail-modal {
+    max-width: 1120px;
+    width: min(96vw, 1120px);
+    background: linear-gradient(135deg, #222636, #181c27);
+    color: #f2f4ff;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.reading-details-body {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.detail-meter-card {
+    background: rgba(16, 20, 33, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 16px 20px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.detail-meter-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.detail-meter-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.78rem;
+}
+
+.detail-meter-info {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.detail-unit-chip {
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr 1fr 1fr 0.6fr 1.5fr;
+    gap: 8px;
+}
+
+.detail-grid-head {
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 6px;
+}
+
+.detail-grid-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.detail-grid-row {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr 1fr 1fr 0.6fr 1.5fr;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    align-items: center;
+}
+
+.detail-empty-row {
+    padding: 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.detail-amount {
+    font-weight: 700;
+    color: #7bd38f;
+    font-variant-numeric: tabular-nums;
+}
+
+.detail-amount-alert {
+    color: #ff6b7a;
+}
+
+.detail-empty {
+    padding: 40px 0;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.95rem;
+}
+
+.resident-badge {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.resident-code {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #1d1f2b;
+}
+
+.resident-info {
+    font-size: 0.82rem;
+    color: #6c768f;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.meter-stack,
+.amount-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.meter-item,
+.amount-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.amount-item {
+    justify-content: space-between;
+    width: 100%;
+}
+
+.amount-value {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    min-width: 70px;
+    flex-grow: 1;
+}
+.meter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    background: rgba(102, 126, 234, 0.12);
+    color: #4055c4;
+    border: 1px solid rgba(102, 126, 234, 0.45);
+}
+
+.chip-warning {
+    background: rgba(255, 160, 71, 0.15);
+    border-color: rgba(255, 160, 71, 0.4);
+    color: #c85a00;
+}
+
+.meter-value {
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.95rem;
+    color: #1f2432;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-paid {
+    background: rgba(76, 201, 91, 0.18);
+    color: #1f8a36;
+    border: 1px solid rgba(76, 201, 91, 0.4);
+}
+
+.status-due {
+    background: rgba(255, 99, 132, 0.15);
+    color: #aa2746;
+    border: 1px solid rgba(255, 99, 132, 0.35);
+}
+
+.amount-value-alert {
+    color: #e55253;
+}
+
+.table-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    border: 1px solid transparent;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.table-btn-primary {
+    background: rgba(56, 189, 248, 0.2);
+    color: #2ea8d4;
+    border-color: rgba(56, 189, 248, 0.35);
+}
+
+.table-btn-secondary {
+    background: rgba(108, 117, 125, 0.2);
+    color: #7c8490;
+    border-color: rgba(108, 117, 125, 0.35);
+}
+
+.table-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -334,19 +659,8 @@
             border: 1px solid #dee2e6;
         }
         
-        .readings-table table {
-            background: rgba(255, 255, 255, 0.9);
-        }
-        
-        .readings-table thead th {
-            color: #495057;
-            background: rgba(102, 126, 234, 0.05);
-            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
-        }
-        
-        .readings-table tbody td {
-            color: #212529;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        .readings-head div {
+            color: rgba(73, 80, 87, 0.95);
         }
         
         .modal-content {
@@ -362,8 +676,9 @@
             color: #495057;
         }
         
-        .form-group input,
-        .form-group select {
+.form-group input,
+.form-group select,
+.form-group textarea {
             background: #ffffff;
             color: #212529;
             border: 1px solid #dee2e6;
@@ -390,21 +705,41 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
-        [data-theme="dark"] .readings-table table {
-            background: rgba(255, 255, 255, 0.02);
-        }
-        
-        [data-theme="dark"] .readings-table thead th {
-            color: rgba(255, 255, 255, 0.8);
-            background: rgba(102, 126, 234, 0.1);
-            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        [data-theme="dark"] .readings-table tbody td {
-            color: #ffffff;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        
+[data-theme="dark"] .resident-code {
+    color: #f5f6ff;
+}
+
+[data-theme="dark"] .resident-info {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+[data-theme="dark"] .meter-value {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+[data-theme="dark"] .reading-row {
+    background: rgba(19, 23, 34, 0.95);
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 25px 45px rgba(0, 0, 0, 0.55);
+}
+
+[data-theme="dark"] .readings-head div {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="dark"] .reading-total {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.75);
+}
+
+[data-theme="dark"] .reading-total-value {
+    color: #ff5e6c;
+}
+
+[data-theme="dark"] .table-btn-secondary {
+    color: rgba(255, 255, 255, 0.75);
+}
+
         [data-theme="dark"] .empty-state {
             color: rgba(255, 255, 255, 0.6);
         }
@@ -426,14 +761,20 @@
             color: rgba(255, 255, 255, 0.8);
         }
         
-        [data-theme="dark"] .form-group input,
-        [data-theme="dark"] .form-group select {
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group select,
+[data-theme="dark"] .form-group textarea {
             background: rgba(255, 255, 255, 0.1);
             color: #ffffff;
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        [data-theme="dark"] .form-group select option,
+[data-theme="dark"] .form-group textarea {
+    background: rgba(18, 21, 30, 0.85);
+    border-radius: 12px;
+}
+
+[data-theme="dark"] .form-group select option,
         [data-theme="dark"] .filter-group select option,
         body[data-theme="dark"] .form-group select option,
         body[data-theme="dark"] .filter-group select option,
@@ -443,8 +784,9 @@
             color: #f6f7ff !important;
         }
 
-        [data-theme="dark"] .form-group select:focus,
-        [data-theme="dark"] .filter-group select:focus {
+[data-theme="dark"] .form-group select:focus,
+[data-theme="dark"] .form-group textarea:focus,
+[data-theme="dark"] .filter-group select:focus {
             outline: none;
             border-color: #667eea !important;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
@@ -475,6 +817,12 @@
             border: 1px solid rgba(255, 255, 255, 0.12);
             color: #fff;
         }
+
+[data-theme="dark"] .meter-amount {
+    background: rgba(123, 102, 255, 0.22);
+    color: #cfd4ff;
+    border-color: rgba(123, 102, 255, 0.45);
+}
         
         /* Темный фон для карточки таблицы в темном режиме */
         [data-theme="dark"] .card,

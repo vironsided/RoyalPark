@@ -45,67 +45,38 @@
                 
                 <!-- Tariffs List -->
                 <div id="tariffsContainer">
-                    <!-- Блок A -->
-                <h3 class="mt-4">Блок A</h3>
-                <div class="block-tariffs">
-                    <div class="tariff-card">
-                        <div class="tariff-header">
-                            <div class="tariff-type">Юридические лица</div>
-                            <span class="entity-badge entity-legal">Юр. лицо</span>
+                    <div class="tariffs-table-wrapper">
+                        <div class="tariffs-table-header">
+                            <div>
+                                <h3>Список тарифов</h3>
+                            </div>
                         </div>
-                        <table class="tariff-table">
-                            <tr><td>Электричество</td><td>₼0.12 / кВт·ч</td></tr>
-                            <tr><td>Холодная вода</td><td>₼2.50 / м³</td></tr>
-                            <tr><td>Горячая вода</td><td>₼4.80 / м³</td></tr>
-                            <tr><td>Газ</td><td>₼0.25 / м³</td></tr>
-                            <tr><td>Интернет</td><td>₼45 / мес</td></tr>
-                        </table>
-                    </div>
-                    
-                    <div class="tariff-card">
-                        <div class="tariff-header">
-                            <div class="tariff-type">Физические лица</div>
-                            <span class="entity-badge entity-individual">Физ. лицо</span>
+                        <div class="tariffs-table-shell">
+                            <div class="table-responsive">
+                                <table class="tariffs-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Название</th>
+                                            <th>Назначение</th>
+                                            <th>Тип клиента</th>
+                                            <th>НДС, %</th>
+                                            <th>Ступени</th>
+                                            <th>Действия</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tariffsTableBody">
+                                        <!-- rows rendered via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <table class="tariff-table">
-                            <tr><td>Электричество</td><td>₼0.08 / кВт·ч</td></tr>
-                            <tr><td>Холодная вода</td><td>₼1.80 / м³</td></tr>
-                            <tr><td>Горячая вода</td><td>₼3.50 / м³</td></tr>
-                            <tr><td>Газ</td><td>₼0.18 / м³</td></tr>
-                            <tr><td>Интернет</td><td>₼35 / мес</td></tr>
-                        </table>
                     </div>
-                </div>
 
-                <!-- Блок B -->
-                <h3 class="mt-4">Блок B</h3>
-                <div class="block-tariffs">
-                    <div class="tariff-card">
-                        <div class="tariff-header">
-                            <div class="tariff-type">Юридические лица</div>
-                            <span class="entity-badge entity-legal">Юр. лицо</span>
-                        </div>
-                        <table class="tariff-table">
-                            <tr><td>Электричество</td><td>₼0.12 / кВт·ч</td></tr>
-                            <tr><td>Холодная вода</td><td>₼2.50 / м³</td></tr>
-                            <tr><td>Горячая вода</td><td>₼4.80 / м³</td></tr>
-                            <tr><td>Газ</td><td>₼0.25 / м³</td></tr>
-                        </table>
-                    </div>
-                    
-                    <div class="tariff-card">
-                        <div class="tariff-header">
-                            <div class="tariff-type">Физические лица</div>
-                            <span class="entity-badge entity-individual">Физ. лицо</span>
-                        </div>
-                        <table class="tariff-table">
-                            <tr><td>Электричество</td><td>₼0.08 / кВт·ч</td></tr>
-                            <tr><td>Холодная вода</td><td>₼1.80 / м³</td></tr>
-                            <tr><td>Горячая вода</td><td>₼3.50 / м³</td></tr>
-                            <tr><td>Газ</td><td>₼0.18 / м³</td></tr>
-                        </table>
-                    </div>
-                </div>
+                    <!-- <div class="blocks-tariffs-wrapper">
+                        <h3 class="mt-4">Тарифы по блокам</h3>
+                        <div id="tariffsBlocksWrapper"></div>
+                    </div> -->
                 </div>
             </div>
         </main>
@@ -170,7 +141,7 @@
                             </div>
                             <div class="step-input-group">
                                 <label>Ед. изм.</label>
-                                <input type="text" value="кВт-ч">
+                                <input type="text" value="кВт-ч" class="unit-chip" readonly>
                             </div>
                             <div class="step-input-group">
                                 <label>Цена</label>
@@ -196,57 +167,147 @@
     </div>
 
 <script>
+        const tariffsData = [
+            {
+                id: 1,
+                name: 'Qaz',
+                block: 'Блок A',
+                purpose: 'Газ',
+                purposeKey: 'gas',
+                clientType: 'individual',
+                clientTypeLabel: 'Индивидуальный',
+                vat: 0,
+                steps: [
+                    { from: 0, to: 20, price: 0.5, unit: 'м³' },
+                    { from: 20, to: 50, price: 0.7, unit: 'м³' }
+                ]
+            },
+            {
+                id: 2,
+                name: 'X2 servis',
+                block: 'Блок B',
+                purpose: 'Сервис',
+                purposeKey: 'service',
+                clientType: 'individual',
+                clientTypeLabel: 'Индивидуальный',
+                vat: 0,
+                steps: [
+                    { from: 0, to: null, price: 100, unit: 'м³' }
+                ]
+            },
+            {
+                id: 3,
+                name: 'X2 tok',
+                block: 'Блок A',
+                purpose: 'Электричество',
+                purposeKey: 'electricity',
+                clientType: 'individual',
+                clientTypeLabel: 'Индивидуальный',
+                vat: 0,
+                steps: [
+                    { from: 0, to: 50, price: 100, unit: 'кВт-ч' },
+                    { from: 50, to: 100, price: 200, unit: 'кВт-ч' }
+                ]
+            },
+            {
+                id: 4,
+                name: 'X2 qaz',
+                block: 'Блок B',
+                purpose: 'Электричество',
+                purposeKey: 'electricity',
+                clientType: 'legal',
+                clientTypeLabel: 'Юридический',
+                vat: 0,
+                steps: [
+                    { from: 0, to: 50, price: 100, unit: 'кВт-ч' },
+                    { from: 50, to: 100, price: 200, unit: 'кВт-ч' }
+                ]
+            },
+            {
+                id: 5,
+                name: 'X2 su',
+                block: 'Блок A',
+                purpose: 'Вода',
+                purposeKey: 'water',
+                clientType: 'individual',
+                clientTypeLabel: 'Индивидуальный',
+                vat: 0,
+                steps: [
+                    { from: 0, to: 50, price: 100, unit: 'м³' },
+                    { from: 50, to: 100, price: 200, unit: 'м³' }
+                ]
+            }
+        ];
+
+        // const blockTariffsData = [
+        //     ...
+        // ];
+
+        renderTariffsTable(tariffsData);
+        // renderBlockTariffs(blockTariffsData);
+
+        function renderTariffsTable(data) {
+            const tbody = document.getElementById('tariffsTableBody');
+            if (!tbody) return;
+
+            if (!data.length) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-table">
+                            Нет тарифов по указанным параметрам
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = data.map(tariff => `
+                <tr>
+                    <td>${tariff.id}</td>
+                    <td>${tariff.name}</td>
+                    <td>${tariff.purpose}</td>
+                    <td>${tariff.clientTypeLabel}</td>
+                    <td>${tariff.vat}</td>
+                    <td>${formatSteps(tariff.steps)}</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn btn-sm btn-outline-info" onclick="openCreateModal()">Редактировать</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="showWarning('Удаление тарифа временно недоступно')">Удалить</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function formatSteps(steps = []) {
+            return steps.map(step => {
+                const from = step.from?.toFixed(4) ?? '0.0000';
+                if (step.to === null || step.to === undefined) {
+                    return `${from}+: ${step.price.toFixed(4)} / ${step.unit}`;
+                }
+                const to = step.to.toFixed(4);
+                return `${from}–${to}: ${step.price.toFixed(4)} / ${step.unit}`;
+            }).join(' | ');
+        }
+
+        // function renderBlockTariffs(blocks) {
+        //     ...
+        // }
+
 // Filter Functions
         function applyFilters() {
             const purpose = document.getElementById('filterPurpose').value;
             const clientType = document.getElementById('filterClientType').value;
             const searchTerm = document.getElementById('filterSearch').value.toLowerCase();
             
-            console.log('Applying filters:', { purpose, clientType, searchTerm });
-            
-            // Get all tariff cards
-            const tariffCards = document.querySelectorAll('.tariff-card');
-            
-            tariffCards.forEach(card => {
-                let shouldShow = true;
-                
-                // Filter by client type
-                if (clientType !== 'all') {
-                    const isLegal = card.querySelector('.entity-legal') !== null;
-                    const isIndividual = card.querySelector('.entity-individual') !== null;
-                    
-                    if (clientType === 'legal' && !isLegal) shouldShow = false;
-                    if (clientType === 'individual' && !isIndividual) shouldShow = false;
-                }
-                
-                // Filter by purpose (service type)
-                if (purpose !== 'all' && shouldShow) {
-                    const tableRows = card.querySelectorAll('.tariff-table tr');
-                    let hasService = false;
-                    
-                    tableRows.forEach(row => {
-                        const serviceName = row.querySelector('td:first-child')?.textContent.toLowerCase();
-                        if (serviceName) {
-                            if (purpose === 'electricity' && serviceName.includes('электричество')) hasService = true;
-                            if (purpose === 'gas' && serviceName.includes('газ')) hasService = true;
-                            if (purpose === 'water' && (serviceName.includes('вода'))) hasService = true;
-                        }
-                    });
-                    
-                    if (!hasService) shouldShow = false;
-                }
-                
-                // Filter by search term
-                if (searchTerm && shouldShow) {
-                    const cardText = card.textContent.toLowerCase();
-                    if (!cardText.includes(searchTerm)) shouldShow = false;
-                }
-                
-                // Show/hide card
-                card.style.display = shouldShow ? 'block' : 'none';
+            const filtered = tariffsData.filter(item => {
+                const matchesPurpose = purpose === 'all' || item.purposeKey === purpose;
+                const matchesClient = clientType === 'all' || item.clientType === clientType;
+                const matchesSearch = !searchTerm || item.name.toLowerCase().includes(searchTerm) || item.purpose.toLowerCase().includes(searchTerm);
+                return matchesPurpose && matchesClient && matchesSearch;
             });
             
-            // Show notification
+            renderTariffsTable(filtered);
             showSuccess('Фильтры применены!');
         }
         
@@ -254,13 +315,7 @@
             document.getElementById('filterPurpose').value = 'all';
             document.getElementById('filterClientType').value = 'all';
             document.getElementById('filterSearch').value = '';
-            
-            // Show all cards
-            const tariffCards = document.querySelectorAll('.tariff-card');
-            tariffCards.forEach(card => {
-                card.style.display = 'block';
-            });
-            
+            renderTariffsTable(tariffsData);
             showSuccess('Фильтры очищены!');
         }
         
@@ -293,20 +348,35 @@
         // Tariff Step Functions
         function addTariffStep() {
             const container = document.getElementById('tariffStepsContainer');
+            const steps = container.querySelectorAll('.step-row');
+            let defaultFrom = 0;
+            
+            if (steps.length > 0) {
+                const lastStepInputs = steps[steps.length - 1].querySelectorAll('input');
+                const lastToValue = lastStepInputs[1].value.trim();
+                
+                if (!lastToValue || lastToValue === '∞') {
+                    showWarning('Укажите граничное значение "ДО (искл.)" для предыдущей ступени.');
+                    return;
+                }
+                
+                defaultFrom = lastToValue;
+            }
+            
             const newStep = document.createElement('div');
             newStep.className = 'step-row';
             newStep.innerHTML = `
                 <div class="step-input-group">
                     <label>ОТ (вкл.)</label>
-                    <input type="number" value="0" min="0" step="0.01">
+                    <input type="number" value="${defaultFrom}" min="0" step="0.01">
                 </div>
                 <div class="step-input-group">
                     <label>ДО (искл.)</label>
-                    <input type="text" value="∞">
+                    <input type="text" value="">
                 </div>
                 <div class="step-input-group">
                     <label>Ед. изм.</label>
-                    <input type="text" value="кВт-ч">
+                    <input type="text" value="кВт-ч" class="unit-chip" readonly>
                 </div>
                 <div class="step-input-group">
                     <label>Цена</label>

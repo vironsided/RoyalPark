@@ -41,27 +41,29 @@
 
     <!-- Distribution Section -->
     <div class="distribution-section">
-        <h3>Распределение по счетам</h3>
-        <div class="distribution-form-group">
-            <label>Счёт (период)</label>
-            <select id="distributionAccount">
-                <option value="">Нет открытых счетов</option>
-            </select>
-            <div class="no-accounts" id="noAccountsMessage" style="display: none;">Нет открытых счетов</div>
+        <div class="distribution-header">
+            <h3>Распределение по счетам</h3>
+            <button class="btn-secondary" type="button" onclick="autoDistribute()">Автораспределить</button>
         </div>
-        <div class="distribution-actions">
-            <button class="btn-primary" onclick="saveDistribution()">Сохранить распределение</button>
-            <button class="btn-primary" onclick="autoDistribute()">Автораспределить</button>
+
+        <div class="distribution-table-wrapper">
+            <table class="distribution-table">
+                <thead>
+                    <tr>
+                        <th>Счёт (период)</th>
+                        <th>Сумма</th>
+                        <th>Осталось оплатить</th>
+                        <th>Применить</th>
+                    </tr>
+                </thead>
+                <tbody id="distributionTableBody">
+                    <!-- Заполняется из JS -->
+                </tbody>
+            </table>
         </div>
-        <div class="distribution-info">
-            <div class="distribution-info-item">
-                <label>Осталось оплатить</label>
-                <div class="value" id="remainingToPay">20.00</div>
-            </div>
-            <div class="distribution-info-item">
-                <label>Применить</label>
-                <div class="value" id="applyAmount">0.00</div>
-            </div>
+
+        <div class="distribution-footer">
+            <button class="btn-primary" type="button" onclick="saveDistribution()">Сохранить распределение</button>
         </div>
     </div>
 
@@ -93,6 +95,9 @@
     const urlParams = new URLSearchParams(window.location.search);
     const paymentId = urlParams.get('id') || window.location.hash.split('/').pop() || window.location.hash.split('=').pop();
     
+    let currentPayment = null;
+    let currentDistributionRows = [];
+
     // Load payment data
     function loadPayment(id) {
         // TODO: Load from API
@@ -115,6 +120,7 @@
     }
     
     function renderPayment(payment) {
+        currentPayment = payment;
         // Update title
         document.getElementById('paymentTitle').textContent = `Платеж #${payment.id}`;
         
@@ -135,10 +141,18 @@
             balanceEl.className = 'badge-debt';
         }
         
-        // Update distribution info
-        document.getElementById('remainingToPay').textContent = payment.balance.toFixed(2);
-        const totalApplied = payment.applications.reduce((sum, app) => sum + app.amount, 0);
-        document.getElementById('applyAmount').textContent = totalApplied.toFixed(2);
+        // Mock distribution rows (пример как на скрине)
+        currentDistributionRows = [
+            {
+                id: 1,
+                account: '2025-11/000002',
+                total: 92.00,
+                remaining: 82.00,
+                apply: 0
+            }
+        ];
+
+        renderDistributionTable();
         
         // Update applications table
         const tbody = document.getElementById('applicationsTable');
@@ -155,13 +169,7 @@
             tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">Нет применений</td></tr>';
         }
         
-        // Update distribution account dropdown
-        // TODO: Load available accounts from API
-        const accountSelect = document.getElementById('distributionAccount');
-        if (!payment.applications || payment.applications.length === 0) {
-            accountSelect.innerHTML = '<option value="">Нет открытых счетов</option>';
-            document.getElementById('noAccountsMessage').style.display = 'block';
-        }
+        updateDistributionTotals();
     }
     
     window.goBackToPayments = function() {
@@ -222,45 +230,99 @@
         updatePageHeaderForPaymentsView();
     }
     
-    window.saveDistribution = function() {
-        const accountId = document.getElementById('distributionAccount').value;
-        const applyAmount = parseFloat(document.getElementById('applyAmount').textContent) || 0;
-        
-        if (!accountId) {
-            if (typeof showWarning === 'function') {
-                showWarning('Пожалуйста, выберите счёт!');
-            }
+    function renderDistributionTable() {
+        const tbody = document.getElementById('distributionTableBody');
+        if (!tbody) return;
+
+        if (!currentDistributionRows.length) {
+            tbody.innerHTML = '<tr><td colspan="4" style="padding: 14px; text-align: center; color: rgba(255,255,255,0.6);">Нет открытых счетов</td></tr>';
             return;
         }
-        
-        if (applyAmount <= 0) {
+
+        tbody.innerHTML = currentDistributionRows.map(row => `
+            <tr>
+                <td>
+                    <a href="#" class="distribution-invoice-link" onclick="viewInvoice(event, '${row.account}')">${row.account}</a>
+                </td>
+                <td class="distribution-amount">${row.total.toFixed(2)}</td>
+                <td class="distribution-remaining">${row.remaining.toFixed(2)}</td>
+                <td>
+                    <input
+                        type="number"
+                        class="apply-input"
+                        min="0"
+                        step="0.01"
+                        value="${row.apply.toFixed(2)}"
+                        data-id="${row.id}"
+                        oninput="updateDistributionFromInputs()"
+                    />
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function updateDistributionTotals() {
+        if (!currentPayment) return;
+        const totalApplied = currentDistributionRows.reduce((sum, r) => sum + (r.apply || 0), 0);
+        const remainingToPay = Math.max(0, currentPayment.balance - totalApplied);
+
+        const remainingEl = document.getElementById('remainingToPay');
+        const applyEl = document.getElementById('applyAmount');
+        if (remainingEl) remainingEl.textContent = remainingToPay.toFixed(2);
+        if (applyEl) applyEl.textContent = totalApplied.toFixed(2);
+    }
+
+    window.updateDistributionFromInputs = function() {
+        const inputs = document.querySelectorAll('.apply-input[data-id]');
+        inputs.forEach(input => {
+            const id = Number(input.getAttribute('data-id'));
+            const row = currentDistributionRows.find(r => r.id === id);
+            if (!row) return;
+            const value = parseFloat(input.value.replace(',', '.')) || 0;
+            row.apply = Math.max(0, value);
+        });
+        updateDistributionTotals();
+    };
+
+    window.saveDistribution = function() {
+        const totalApplied = currentDistributionRows.reduce((sum, r) => sum + (r.apply || 0), 0);
+
+        if (totalApplied <= 0) {
             if (typeof showWarning === 'function') {
                 showWarning('Сумма применения должна быть больше нуля!');
             }
             return;
         }
-        
-        console.log('Saving distribution:', { accountId, applyAmount });
-        // TODO: Save via API
-        
+
+        console.log('Saving distribution:', {
+            paymentId: currentPayment?.id,
+            rows: currentDistributionRows
+        });
+
         if (typeof showSuccess === 'function') {
             showSuccess('Распределение успешно сохранено!');
         }
     };
-    
+
     window.autoDistribute = function() {
-        const remaining = parseFloat(document.getElementById('remainingToPay').textContent) || 0;
-        
-        if (remaining <= 0) {
+        if (!currentPayment || !currentDistributionRows.length) {
             if (typeof showWarning === 'function') {
-                showWarning('Нет остатка для распределения!');
+                showWarning('Нет счетов для распределения!');
             }
             return;
         }
-        
-        console.log('Auto-distributing:', remaining);
-        // TODO: Implement auto-distribution logic via API
-        
+
+        let remaining = currentPayment.balance;
+        currentDistributionRows.forEach(row => {
+            const maxForRow = row.remaining;
+            const apply = Math.min(remaining, maxForRow);
+            row.apply = apply;
+            remaining -= apply;
+        });
+
+        renderDistributionTable();
+        updateDistributionTotals();
+
         if (typeof showSuccess === 'function') {
             showSuccess('Автораспределение выполнено!');
         }

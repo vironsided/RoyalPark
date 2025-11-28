@@ -74,10 +74,25 @@
     <div class="payments-section">
         <h3>Оплаты по счёту</h3>
         <div id="paymentsList">
-            <p style="color: rgba(255, 255, 255, 0.6); margin: 0;">Оплаты по этому счёту отсутствуют.</p>
+            <table class="payments-table">
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Метод</th>
+                        <th>Сумма</th>
+                        <th>Платёж</th>
+                        <th>Комментарий</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentsTableBody">
+                    <tr class="payments-empty-row">
+                        <td colspan="5">Оплаты по этому счёту отсутствуют.</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
         <div class="payments-summary" id="paymentsSummary">
-            Оплачено: <strong>0.00</strong> Остаток: <strong>10.00</strong> из <strong>10.00</strong>
+            Оплачено: <strong>0.00</strong> · Остаток: <strong>10.00</strong> из <strong>10.00</strong>
         </div>
     </div>
 
@@ -155,9 +170,12 @@
             status: 'DRAFT',
             dueDate: null,
             total: 10.00,
-            paid: 0.00,
-            remaining: 10.00,
+            paid: 10.00,
+            remaining: 0.00,
             note: null,
+            payments: [
+                { date: '2025-11-21', method: 'CARD', amount: 10.00, paymentId: 1, reference: '123456', comment: '—' }
+            ],
             lineItems: [
                 { description: 'Газ 20.0 м³', amount: 10.00, vat: 0.00, total: 10.00 }
             ]
@@ -206,9 +224,35 @@
             tbody.innerHTML = html;
         }
         
+        // Render payments table
+        const paymentsTbody = document.getElementById('paymentsTableBody');
+        if (paymentsTbody) {
+            if (invoice.payments && invoice.payments.length > 0) {
+                paymentsTbody.innerHTML = invoice.payments.map(p => `
+                    <tr>
+                        <td>${p.date}</td>
+                        <td>${p.method}</td>
+                        <td class="payments-amount-cell">${p.amount.toFixed(2)}</td>
+                        <td>
+                            <a 
+                                href="#/payment-view?id=${p.paymentId}" 
+                                class="payment-link"
+                                onclick="if (window.viewPayment) { viewPayment(${p.paymentId}); } else { window.location.href = '/admin/#/payment-view?id=${p.paymentId}'; } return false;"
+                            >
+                                #${p.paymentId} / ${p.reference || ''}
+                            </a>
+                        </td>
+                        <td>${p.comment || '—'}</td>
+                    </tr>
+                `).join('');
+            } else {
+                paymentsTbody.innerHTML = '<tr class="payments-empty-row"><td colspan="5">Оплаты по этому счёту отсутствуют.</td></tr>';
+            }
+        }
+
         // Update payments summary
         document.getElementById('paymentsSummary').innerHTML = `
-            Оплачено: <strong>${invoice.paid.toFixed(2)}</strong> Остаток: <strong>${invoice.remaining.toFixed(2)}</strong> из <strong>${invoice.total.toFixed(2)}</strong>
+            Оплачено: <strong>${invoice.paid.toFixed(2)}</strong> · Остаток: <strong>${invoice.remaining.toFixed(2)}</strong> из <strong>${invoice.total.toFixed(2)}</strong>
         `;
     }
     
