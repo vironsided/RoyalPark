@@ -1,0 +1,198 @@
+<section class="user-appeals-section">
+    <div class="user-appeals-layout">
+        <!-- Left: create appeal -->
+        <div class="user-appeals-card user-appeals-form-card">
+            <h2 class="user-appeals-title" data-i18n="user_appeals_form_title">Сообщить о проблеме</h2>
+
+            <form class="user-appeals-form">
+                <div class="user-appeals-field">
+                    <label for="appealHouse" data-i18n="user_appeals_house">Дом</label>
+                    <select id="appealHouse">
+                        <option value="x2">X / 2</option>
+                        <option value="a50">A / 50</option>
+                    </select>
+                </div>
+
+                <div class="user-appeals-field">
+                    <label for="appealText" data-i18n="user_appeals_description">Опишите проблему</label>
+                    <textarea id="appealText" rows="6" data-i18n-placeholder="user_appeals_placeholder" placeholder="Например: в доме 12Б не работает уличное освещение..."></textarea>
+                    <small class="user-appeals-hint" data-i18n="user_appeals_hint">Максимум 2000 символов.</small>
+                </div>
+
+                <div class="user-appeals-actions">
+                    <button type="submit" class="btn btn-primary" data-i18n="user_appeals_submit">Отправить</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Right: recent appeals -->
+        <div class="user-appeals-card user-appeals-list-card">
+            <div class="user-appeals-list-header">
+                <h2 class="user-appeals-title" data-i18n="user_appeals_list_title">Недавние обращения</h2>
+            </div>
+
+            <div class="user-appeals-list">
+                <div class="user-appeal-item" data-apartment="A / 50" data-created="23.11.2025 15:42" data-status="read" data-text="В подъезде перегорела лампочка на 3 этаже.">
+                    <div class="user-appeal-main">
+                        <div>
+                            <div class="user-appeal-house">A / 50</div>
+                            <div class="user-appeal-date">23.11.2025 15:42</div>
+                        </div>
+                        <span class="user-appeal-badge user-appeal-badge-read" data-i18n="user_appeal_status_read">Прочитано</span>
+                    </div>
+                    <button type="button" class="btn btn-outline-info btn-sm user-appeal-view" data-i18n="apply">Просмотр</button>
+                </div>
+
+                <div class="user-appeal-item" data-apartment="A / 50" data-created="22.11.2025 09:02" data-status="unread" data-text="Шум в подвале по ночам, возможно, неисправность оборудования.">
+                    <div class="user-appeal-main">
+                        <div>
+                            <div class="user-appeal-house">A / 50</div>
+                            <div class="user-appeal-date">22.11.2025 09:02</div>
+                        </div>
+                        <span class="user-appeal-badge user-appeal-badge-unread" data-i18n="user_appeal_status_unread">Не прочитано</span>
+                    </div>
+                    <button type="button" class="btn btn-outline-info btn-sm user-appeal-view" data-i18n="apply">Просмотр</button>
+                </div>
+
+                <div class="user-appeals-empty" style="display:none;" data-i18n="no_data">
+                    Обращений пока нет.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="user-appeal-modal-overlay" id="userAppealModal">
+        <div class="user-appeal-modal">
+            <div class="user-appeal-modal-header">
+                <h3 data-i18n="user_appeal_modal_title">Обращение</h3>
+                <button type="button" class="user-appeal-modal-close" id="userAppealModalClose">&times;</button>
+            </div>
+            <div class="user-appeal-modal-body">
+                <div class="user-appeal-modal-row">
+                    <span data-i18n="user_appeals_house">Дом</span>
+                    <strong id="userAppealModalApartment">—</strong>
+                </div>
+                <div class="user-appeal-modal-row">
+                    <span data-i18n="user_appeal_modal_created">Создано</span>
+                    <strong id="userAppealModalCreated">—</strong>
+                </div>
+                <div class="user-appeal-modal-row">
+                    <span data-i18n="user_appeal_modal_status">Статус</span>
+                    <strong id="userAppealModalStatus">—</strong>
+                </div>
+                <div class="user-appeal-modal-text">
+                    <span class="label" data-i18n="user_appeal_modal_text_label">Текст обращения</span>
+                    <p id="userAppealModalText">—</p>
+                </div>
+                <div class="user-appeal-modal-edit">
+                    <label for="userAppealModalEdit" data-i18n="user_appeal_modal_edit_label">Изменить текст обращения</label>
+                    <textarea id="userAppealModalEdit" rows="4"></textarea>
+                    <small data-i18n="user_appeal_modal_edit_hint">Можно редактировать до прочтения оператором.</small>
+                </div>
+            </div>
+            <div class="user-appeal-modal-footer">
+                <button type="button" class="btn btn-danger btn-sm" id="userAppealDelete" data-i18n="user_appeal_modal_delete">Удалить</button>
+                <button type="button" class="btn btn-primary btn-sm" id="userAppealSave" data-i18n="user_appeal_modal_save">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Скрипт инициализируется сразу после загрузки фрагмента SPA
+        (function () {
+            const form = document.querySelector('.user-appeals-form');
+            const textarea = document.getElementById('appealText');
+            const list = document.querySelector('.user-appeals-list');
+            const emptyState = list?.querySelector('.user-appeals-empty');
+
+            const modal = document.getElementById('userAppealModal');
+            const modalClose = document.getElementById('userAppealModalClose');
+            const modalApartment = document.getElementById('userAppealModalApartment');
+            const modalCreated = document.getElementById('userAppealModalCreated');
+            const modalStatus = document.getElementById('userAppealModalStatus');
+            const modalText = document.getElementById('userAppealModalText');
+            const modalEdit = document.getElementById('userAppealModalEdit');
+
+            if (!list || !modal) return;
+
+            function openModalFromItem(item) {
+                modalApartment.textContent = item.dataset.apartment || '—';
+                modalCreated.textContent = item.dataset.created || '—';
+
+                // Локализуем статус по ключу (read/unread) через i18n
+                const statusKey = item.dataset.status;
+                if (statusKey === 'read' && window.languageManager) {
+                    modalStatus.textContent = window.languageManager.translateKey
+                        ? window.languageManager.translateKey('user_appeal_status_read')
+                        : translations[window.languageManager.currentLanguage || 'ru'].user_appeal_status_read;
+                } else if (statusKey === 'unread' && window.languageManager) {
+                    modalStatus.textContent = window.languageManager.translateKey
+                        ? window.languageManager.translateKey('user_appeal_status_unread')
+                        : translations[window.languageManager.currentLanguage || 'ru'].user_appeal_status_unread;
+                } else {
+                    modalStatus.textContent = item.dataset.status || '—';
+                }
+                modalText.textContent = item.dataset.text || '—';
+                modalEdit.value = item.dataset.text || '';
+                modal.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeModal() {
+                modal.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+
+            list.addEventListener('click', (e) => {
+                const viewBtn = e.target.closest('.user-appeal-view');
+                if (!viewBtn) return;
+                const item = viewBtn.closest('.user-appeal-item');
+                if (item) openModalFromItem(item);
+            });
+
+            if (modalClose) {
+                modalClose.addEventListener('click', closeModal);
+            }
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
+            });
+
+            if (form && textarea && emptyState) {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const text = textarea.value.trim();
+                    if (!text) return;
+
+                    const select = document.getElementById('appealHouse');
+                    const house = select ? select.options[select.selectedIndex].textContent : '—';
+                    const now = new Date();
+                    const created = now.toLocaleDateString('ru-RU') + ' ' + now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+                    const item = document.createElement('div');
+                    item.className = 'user-appeal-item';
+                    item.dataset.apartment = house;
+                    item.dataset.created = created;
+                    item.dataset.status = 'Не прочитано';
+                    item.dataset.text = text;
+                    item.innerHTML = `
+                        <div class="user-appeal-main">
+                            <div>
+                                <div class="user-appeal-house">${house}</div>
+                                <div class="user-appeal-date">${created}</div>
+                            </div>
+                            <span class="user-appeal-badge user-appeal-badge-unread">не прочитано</span>
+                        </div>
+                        <button type="button" class="btn btn-outline-info btn-sm user-appeal-view">Просмотр</button>
+                    `;
+
+                    list.insertBefore(item, emptyState);
+                    emptyState.style.display = 'none';
+                    textarea.value = '';
+                });
+            }
+        })();
+    </script>
+</section>
+
+

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="user_invoice_print_title">Счёт на оплату</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="/admin/content_css/invoice-print.css">
+    <style>
+        .language-selector { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="print-actions">
+        <button class="btn-print" onclick="window.print()">
+            <i class="bi bi-printer"></i> <span data-i18n="user_invoice_print_print_button">Печать</span>
+        </button>
+    </div>
+
+    <div class="print-container">
+        <div class="print-header">
+            <h1 data-i18n="user_invoice_print_title">Счёт на оплату</h1>
+        </div>
+
+        <div class="invoice-info">
+            <div class="invoice-info-left">
+                <div class="info-item">
+                    <label data-i18n="user_invoice_print_number_label">№</label>
+                    <div class="value" id="invoiceNumber">2025-11/000001</div>
+                </div>
+                <div class="info-item">
+                    <label data-i18n="user_invoice_print_resident_label">Резидент</label>
+                    <div class="value" id="invoiceResident">X / 2</div>
+                </div>
+                <div class="info-item">
+                    <label data-i18n="user_invoice_print_period_label">Период</label>
+                    <div class="value" id="invoicePeriod">2025-11</div>
+                </div>
+                <div class="info-item">
+                    <label data-i18n="user_invoice_print_status_label">Статус</label>
+                    <div class="value" id="invoiceStatus">PAID</div>
+                </div>
+            </div>
+            <div class="invoice-info-right">
+                <div class="info-item">
+                    <label data-i18n="user_invoice_print_due_date_label">Срок оплаты</label>
+                    <div class="value" id="invoiceDueDate">—</div>
+                </div>
+                <div class="info-item">
+                    <label data-i18n="user_invoice_print_total_label">Сумма к оплате</label>
+                    <div class="value" id="invoiceTotal" style="font-size: 18px; color: #000;">30000.00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Таблица оплат по счёту -->
+        <h2 style="margin-top: 24px; margin-bottom: 8px;" data-i18n="user_invoice_print_payments_title">Оплата по счёту</h2>
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th data-i18n="user_invoice_payments_th_date">Дата</th>
+                    <th data-i18n="user_invoice_payments_th_method">Метод</th>
+                    <th data-i18n="user_invoice_payments_th_amount">Сумма</th>
+                    <th data-i18n="user_invoice_payments_th_comment">Комментарий</th>
+                </tr>
+            </thead>
+            <tbody id="paymentsTable"><!-- наполняется из JS --></tbody>
+        </table>
+        <p style="margin-top: 6px; font-size: 13px;">
+            <span data-i18n="user_invoice_print_payments_summary">Оплачено: <strong>10.00</strong>, Остаток: <strong>29990.00</strong> из <strong>30000.00</strong></span>
+        </p>
+
+        <!-- Основная таблица с позициями счёта (как в админском шаблоне, но с данными пользователя) -->
+        <h2 style="margin-top: 24px; margin-bottom: 8px;" data-i18n="user_invoice_print_items_title">Описание</h2>
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th data-i18n="user_invoice_items_th_description">Описание</th>
+                    <th data-i18n="user_invoice_items_th_charged">Начислено</th>
+                    <th>НДС</th>
+                    <th data-i18n="user_invoice_items_th_total">Итого</th>
+                </tr>
+            </thead>
+            <tbody id="lineItemsTable"><!-- наполняется из JS --></tbody>
+        </table>
+
+        <div class="invoice-footer">
+            <p><span data-i18n="user_invoice_print_generated_prefix">Квитанция сгенерирована:</span> <span id="generatedDate"></span></p>
+            <p data-i18n="user_invoice_print_footer_note">Для печати нажмите кнопку сверху или используйте «Печать в PDF».</p>
+        </div>
+    </div>
+
+    <script src="/js/i18n.js"></script>
+    <script src="/js/i18n-auto.js"></script>
+    <script>
+        // Шаблон рендера для бэкенда: сейчас используем моковые данные,
+        // позже loadInvoice можно заменить загрузкой из API.
+        (function () {
+            function loadInvoice() {
+                // MOCK-ДАННЫЕ: структура, которой сможет пользоваться бэкенд
+                const invoice = {
+                    number: '2025-11/000001',
+                    resident: 'X / 2',
+                    period: '2025-11',
+                    status: 'PAID',
+                    dueDate: null,
+                    total: 30000.0,
+                    payments: [
+                        { date: '2025-11-21', method: 'CARD', amount: 10.0, comment: '—' }
+                    ],
+                    items: [
+                        { description: 'Электричество 200.0 кВт·ч', amount: 15000.0, vat: 0.0, total: 15000.0 },
+                        { description: 'Вода 300.0 м³',             amount: 15000.0, vat: 0.0, total: 15000.0 }
+                    ]
+                };
+
+                renderInvoice(invoice);
+            }
+
+            function renderInvoice(invoice) {
+                // Хедер
+                document.getElementById('invoiceNumber').textContent  = invoice.number;
+                document.getElementById('invoiceResident').textContent = invoice.resident;
+                document.getElementById('invoicePeriod').textContent   = invoice.period;
+                document.getElementById('invoiceStatus').textContent   = invoice.status;
+                document.getElementById('invoiceDueDate').textContent  = invoice.dueDate || '—';
+                document.getElementById('invoiceTotal').textContent    = invoice.total.toFixed(2);
+
+                // Таблица оплат
+                const paymentsTbody = document.getElementById('paymentsTable');
+                if (paymentsTbody && invoice.payments && invoice.payments.length) {
+                    paymentsTbody.innerHTML = invoice.payments.map(p => `
+                        <tr>
+                            <td>${p.date}</td>
+                            <td>${p.method}</td>
+                            <td>${p.amount.toFixed(2)}</td>
+                            <td>${p.comment || '—'}</td>
+                        </tr>
+                    `).join('');
+                }
+
+                // Таблица позиций
+                const itemsTbody = document.getElementById('lineItemsTable');
+                if (itemsTbody && invoice.items && invoice.items.length) {
+                    const lang = (window.i18n && window.i18n.currentLanguage) || localStorage.getItem('language') || 'ru';
+                    const dict = (window.translations && window.translations[lang]) || {};
+
+                    // Строки с позициями:
+                    // Если это демо-описания "Электричество 200.0 кВт·ч" / "Вода 300.0 м³",
+                    // то подменяем их на переводы из i18n (чтобы язык менялся).
+                    let html = invoice.items.map(it => {
+                        let desc = it.description;
+                        if (desc === 'Электричество 200.0 кВт·ч' && dict.user_invoice_item_electricity_sample) {
+                            desc = dict.user_invoice_item_electricity_sample;
+                        } else if (desc === 'Вода 300.0 м³' && dict.user_invoice_item_water_sample) {
+                            desc = dict.user_invoice_item_water_sample;
+                        }
+
+                        return `
+                            <tr>
+                                <td>${desc}</td>
+                                <td>${it.amount.toFixed(2)}</td>
+                                <td>${it.vat.toFixed(2)}</td>
+                                <td>${it.total.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    // Лейбл "Итого к оплате" берём из i18n по текущему языку
+                    const total = invoice.items.reduce((sum, it) => sum + it.total, 0);
+                    const totalLabel = dict.user_invoice_items_total_row || 'Итого к оплате';
+
+                    html += `
+                        <tr class="total-row">
+                            <td colspan="3">${totalLabel}</td>
+                            <td class="total-value">${total.toFixed(2)}</td>
+                        </tr>
+                    `;
+
+                    itemsTbody.innerHTML = html;
+                }
+
+                // Дата генерации
+                const now = new Date();
+                const el = document.getElementById('generatedDate');
+                if (el) {
+                    el.textContent = now.toLocaleString('ru-RU');
+                }
+            }
+
+            // Сейчас сразу рендерим мок, позже backend может дернуть renderInvoice(...) со своими данными.
+            loadInvoice();
+        })();
+    </script>
+</body>
+</html>

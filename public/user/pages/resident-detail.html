@@ -2,49 +2,49 @@
     <div class="resident-detail-card">
         <div class="resident-detail-info">
             <div>
-                <p class="label">Блок</p>
+                <p class="label" data-i18n="user_resident_block_label">Блок</p>
                 <p class="value">X</p>
             </div>
             <div>
-                <p class="label">Квартира</p>
+                <p class="label" data-i18n="user_resident_apartment_label">Квартира</p>
                 <p class="value">#2</p>
             </div>
             <div>
-                <p class="label">Статус</p>
-                <span class="badge badge-success">Активен</span>
+                <p class="label" data-i18n="user_resident_status_label">Статус</p>
+                <span class="badge badge-success" data-i18n="user_resident_status_active">Активен</span>
             </div>
             <div>
-                <p class="label">Баланс</p>
+                <p class="label" data-i18n="user_resident_balance_label">Баланс</p>
                 <p class="value">₼0.00</p>
             </div>
         </div>
         <button class="back-button" data-user-route-target="dashboard">
-            ← Назад
+            <span data-i18n="user_resident_back_btn">← Назад</span>
         </button>
     </div>
 
     <div class="resident-filter-card">
         <div class="date-range">
             <div class="input-group">
-                <label>От</label>
+                <label data-i18n="user_resident_date_from">От</label>
                 <input id="filterDateFrom" type="date" value="2025-11-01">
             </div>
             <div class="input-group">
-                <label>До</label>
+                <label data-i18n="user_resident_date_to">До</label>
                 <input id="filterDateTo" type="date" value="2025-11-30">
             </div>
         </div>
         <div class="filter-actions">
-            <button class="btn btn-outline-light" id="filterApplyBtn">Фильтр</button>
-            <button class="btn btn-outline-warning" id="filterResetBtn">Очистить</button>
+            <button class="btn btn-outline-light" id="filterApplyBtn" data-i18n="user_resident_filter_btn">Фильтр</button>
+            <button class="btn btn-outline-warning" id="filterResetBtn" data-i18n="user_resident_reset_btn">Очистить</button>
         </div>
         <div class="quick-filter">
-            <span>Быстрый выбор</span>
+            <span data-i18n="user_resident_quick_select">Быстрый выбор</span>
             <div class="quick-filter-buttons">
-                <button class="quick-filter-btn active" data-range="month">За месяц</button>
-                <button class="quick-filter-btn" data-range="quarter">За 3 мес.</button>
-                <button class="quick-filter-btn" data-range="half">За 6 мес.</button>
-                <button class="quick-filter-btn" data-range="year">За год</button>
+                <button class="quick-filter-btn active" data-range="month" data-i18n="user_resident_quick_month">За месяц</button>
+                <button class="quick-filter-btn" data-range="quarter" data-i18n="user_resident_quick_quarter">За 3 мес.</button>
+                <button class="quick-filter-btn" data-range="half" data-i18n="user_resident_quick_half">За 6 мес.</button>
+                <button class="quick-filter-btn" data-range="year" data-i18n="user_resident_quick_year">За год</button>
             </div>
         </div>
     </div>
@@ -52,7 +52,7 @@
     <div class="meters-list">
         <div class="meter-card">
             <div class="meter-card-header">
-                <span class="meter-tag meter-gas">Газ</span>
+                <span class="meter-tag meter-gas" data-i18n="user_resident_meter_gas">Газ</span>
                 <div class="meter-meta">
                     <span>№ 123 &nbsp; Тариф: Qaz</span>
                     <span class="meter-unit">м³</span>
@@ -60,12 +60,12 @@
             </div>
             <div class="meter-table" data-meter-key="gasMain">
                 <div class="meter-row meter-head">
-                    <span>Дата</span>
-                    <span class="meter-head-label"><span>Показание</span><span class="meter-head-unit">м³</span></span>
-                    <span class="meter-head-label"><span>Расход</span><span class="meter-head-unit">м³</span></span>
-                    <span>Начислено</span>
+                    <span data-i18n="user_resident_table_date">Дата</span>
+                    <span class="meter-head-label"><span data-i18n="user_resident_table_reading">Показание</span><span class="meter-head-unit">м³</span></span>
+                    <span class="meter-head-label"><span data-i18n="user_resident_table_usage">Расход</span><span class="meter-head-unit">м³</span></span>
+                    <span data-i18n="user_resident_table_charge">Начислено</span>
                     <span>НДС, %</span>
-                    <span>Комментарий</span>
+                    <span data-i18n="user_resident_table_comment">Комментарий</span>
                 </div>
                 <div class="meter-body"></div>
             </div>
@@ -73,7 +73,7 @@
 
         <div class="meter-card">
             <div class="meter-card-header">
-                <span class="meter-tag meter-electric">Электричество</span>
+                <span class="meter-tag meter-electric" data-i18n="user_resident_meter_electricity">Электричество</span>
                 <div class="meter-meta">
                     <span>№ 1234 &nbsp; Тариф: X2 tok</span>
                     <span class="meter-unit">кВт⋅ч</span>
@@ -81,12 +81,12 @@
             </div>
             <div class="meter-table" data-meter-key="electricMain">
                 <div class="meter-row meter-head">
-                    <span>Дата</span>
-                    <span class="meter-head-label"><span>Показание</span><span class="meter-head-unit">кВт⋅ч</span></span>
-                    <span class="meter-head-label"><span>Расход</span><span class="meter-head-unit">кВт⋅ч</span></span>
-                    <span>Начислено</span>
+                    <span data-i18n="user_resident_table_date">Дата</span>
+                    <span class="meter-head-label"><span data-i18n="user_resident_table_reading">Показание</span><span class="meter-head-unit">кВт⋅ч</span></span>
+                    <span class="meter-head-label"><span data-i18n="user_resident_table_usage">Расход</span><span class="meter-head-unit">кВт⋅ч</span></span>
+                    <span data-i18n="user_resident_table_charge">Начислено</span>
                     <span>НДС, %</span>
-                    <span>Комментарий</span>
+                    <span data-i18n="user_resident_table_comment">Комментарий</span>
                 </div>
                 <div class="meter-body"></div>
             </div>
@@ -94,7 +94,7 @@
 
         <div class="meter-card">
             <div class="meter-card-header">
-                <span class="meter-tag meter-gas">Газ</span>
+                <span class="meter-tag meter-gas" data-i18n="user_resident_meter_gas">Газ</span>
                 <div class="meter-meta">
                     <span>№ 13445 &nbsp; Тариф: Qaz</span>
                     <span class="meter-unit">м³</span>
@@ -102,12 +102,12 @@
             </div>
             <div class="meter-table" data-meter-key="gasSecond">
                 <div class="meter-row meter-head">
-                    <span>Дата</span>
-                    <span class="meter-head-label"><span>Показание</span><span class="meter-head-unit">м³</span></span>
-                    <span class="meter-head-label"><span>Расход</span><span class="meter-head-unit">м³</span></span>
-                    <span>Начислено</span>
-                    <span>НДС, %</span>
-                    <span>Комментарий</span>
+                    <span data-i18n="user_resident_table_date">Дата</span>
+                    <span class="meter-head-label"><span data-i18n="user_resident_table_reading">Показание</span><span class="meter-head-unit">м³</span></span>
+                    <span class="meter-head-label"><span data-i18n="user_resident_table_usage">Расход</span><span class="meter-head-unit">м³</span></span>
+                    <span data-i18n="user_resident_table_charge">Начислено</span>
+                    <span data-i18n="user_resident_table_vat">НДС, %</span>
+                    <span data-i18n="user_resident_table_comment">Комментарий</span>
                 </div>
                 <div class="meter-body"></div>
             </div>
@@ -115,7 +115,7 @@
 
         <div class="meter-card">
             <div class="meter-card-header">
-                <span class="meter-tag meter-water">Вода</span>
+                <span class="meter-tag meter-water" data-i18n="user_resident_meter_water">Вода</span>
                 <div class="meter-meta">
                     <span>№ 58585 &nbsp; Тариф: X2 su</span>
                     <span class="meter-unit">м³</span>
@@ -123,12 +123,12 @@
             </div>
             <div class="meter-table" data-meter-key="waterMain">
                 <div class="meter-row meter-head">
-                    <span>Дата</span>
-                    <span class="meter-head-label"><span>Показание</span><span class="meter-head-unit">м³</span></span>
-                    <span class="meter-head-label"><span>Расход</span><span class="meter-head-unit">м³</span></span>
-                    <span>Начислено</span>
-                    <span>НДС, %</span>
-                    <span>Комментарий</span>
+                    <span data-i18n="user_resident_table_date">Дата</span>
+                    <span class="meter-head-label"><span data-i18n="user_resident_table_reading">Показание</span><span class="meter-head-unit">м³</span></span>
+                    <span class="meter-head-label"><span data-i18n="user_resident_table_usage">Расход</span><span class="meter-head-unit">м³</span></span>
+                    <span data-i18n="user_resident_table_charge">Начислено</span>
+                    <span data-i18n="user_resident_table_vat">НДС, %</span>
+                    <span data-i18n="user_resident_table_comment">Комментарий</span>
                 </div>
                 <div class="meter-body"></div>
             </div>

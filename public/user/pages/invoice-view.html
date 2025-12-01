@@ -3,9 +3,12 @@
 <div class="content-wrapper invoice-view-page">
     <div class="invoice-header">
         <button class="btn-back" type="button" onclick="window.userSpaRouter ? window.userSpaRouter.navigate('bills', true) : history.back()">
-            ← К списку счетов
+            <span data-i18n="user_invoice_back_to_list">← К списку счетов</span>
         </button>
-        <h1>Счёт: 2025-11/000001</h1>
+        <h1>
+            <span data-i18n="user_invoice_title_prefix">Счёт:</span>
+            2025-11/000001
+        </h1>
         <button class="btn-outline-secondary invoice-pdf-btn" type="button">
             PDF
         </button>
@@ -14,39 +17,39 @@
     <!-- Краткая информация по счёту -->
     <div class="invoice-summary user-invoice-summary">
         <div class="invoice-summary-item">
-            <label>Дом</label>
+            <label data-i18n="user_invoice_house_label">Дом</label>
             <div class="value">X / 2</div>
         </div>
         <div class="invoice-summary-item">
-            <label>Период</label>
+            <label data-i18n="user_invoice_period_label">Период</label>
             <div class="value">2025-11</div>
         </div>
         <div class="invoice-summary-item">
-            <label>Статус</label>
+            <label data-i18n="user_invoice_status_label">Статус</label>
             <div class="value">
                 <span class="user-bill-status paid">PAID</span>
             </div>
         </div>
         <div class="invoice-summary-item">
-            <label>Срок оплаты</label>
+            <label data-i18n="user_invoice_due_date_label">Срок оплаты</label>
             <div class="value">—</div>
         </div>
         <div class="invoice-summary-item">
-            <label>Итого</label>
+            <label data-i18n="user_invoice_total_label">Итого</label>
             <div class="value total">30000.00</div>
         </div>
     </div>
 
     <!-- Оплаты по счёту -->
     <div class="payments-section user-invoice-payments">
-        <h3>Оплаты по счёту</h3>
+        <h3 data-i18n="user_invoice_payments_title">Оплаты по счёту</h3>
         <table class="line-items-table">
             <thead>
                 <tr>
-                    <th>Дата</th>
-                    <th>Метод</th>
-                    <th>Сумма</th>
-                    <th>Комментарий</th>
+                    <th data-i18n="user_invoice_payments_th_date">Дата</th>
+                    <th data-i18n="user_invoice_payments_th_method">Метод</th>
+                    <th data-i18n="user_invoice_payments_th_amount">Сумма</th>
+                    <th data-i18n="user_invoice_payments_th_comment">Комментарий</th>
                 </tr>
             </thead>
             <tbody>
@@ -59,38 +62,38 @@
             </tbody>
         </table>
         <div class="payments-summary">
-            Оплачено: <strong>10.00</strong> · Остаток: <strong>29990.00</strong> из <strong>30000.00</strong>
+            <span data-i18n="user_invoice_payments_summary">Оплачено: <strong>10.00</strong> · Остаток: <strong>29990.00</strong> из <strong>30000.00</strong></span>
         </div>
     </div>
 
     <!-- Позиции счёта -->
     <div class="user-invoice-items">
-        <h3>Описание</h3>
+        <h3 data-i18n="user_invoice_items_title">Описание</h3>
         <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 12px; padding: 20px; overflow-x: auto;">
             <table class="line-items-table">
                 <thead>
                     <tr>
-                        <th>Описание</th>
-                        <th>Начислено</th>
+                        <th data-i18n="user_invoice_items_th_description">Описание</th>
+                        <th data-i18n="user_invoice_items_th_charged">Начислено</th>
                         <th>НДС</th>
-                        <th>Итого</th>
+                        <th data-i18n="user_invoice_items_th_total">Итого</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>Электричество 200.0 кВт·ч</td>
+                        <td data-i18n="user_invoice_item_electricity_sample">Электричество 200.0 кВт·ч</td>
                         <td>15000.00</td>
                         <td>0.00</td>
                         <td class="total-value">15000.00</td>
                     </tr>
                     <tr>
-                        <td>Вода 300.0 м³</td>
+                        <td data-i18n="user_invoice_item_water_sample">Вода 300.0 м³</td>
                         <td>15000.00</td>
                         <td>0.00</td>
                         <td class="total-value">15000.00</td>
                     </tr>
                     <tr class="total-row">
-                        <td colspan="3">Итого к оплате</td>
+                        <td colspan="3" data-i18n="user_invoice_items_total_row">Итого к оплате</td>
                         <td class="total-value">30000.00</td>
                     </tr>
                 </tbody>
@@ -99,4 +102,16 @@
     </div>
 </div>
 
+<script>
+    // Обработчик кнопки PDF в пользовательском просмотре счёта
+    (function () {
+        const pdfBtn = document.querySelector('.invoice-pdf-btn');
+        if (!pdfBtn) return;
 
+        pdfBtn.addEventListener('click', () => {
+            // Открываем пользовательский печатный шаблон с теми же таблицами, что и на этой странице
+            const url = '/user/invoice-print.html';
+            window.open(url, '_blank', 'noopener');
+        });
+    })();
+</script>
