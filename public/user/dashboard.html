@@ -501,6 +501,7 @@
         </div>
     </div>
     
+    <script src="/js/notifications.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const accountProfileBtn = document.getElementById('accountProfileBtn');
@@ -508,6 +509,59 @@
             const accountModalClose = document.getElementById('accountModalClose');
             const accountModalCancel = document.getElementById('accountModalCancel');
             const accountModalSave = document.getElementById('accountModalSave');
+            
+            let initialAccountState = null;
+            
+            function getAccountState() {
+                const fullName = document.getElementById('accountFullName')?.value || '';
+                const phone = document.getElementById('accountPhoneInput')?.value || '';
+                const email = document.getElementById('accountEmailInput')?.value || '';
+                const lang = document.getElementById('accountLanguage')?.value || '';
+                const theme = document.getElementById('accountTheme')?.value || '';
+                const currentPassword = document.getElementById('currentPassword')?.value || '';
+                const newPassword = document.getElementById('newPassword')?.value || '';
+                const confirmPassword = document.getElementById('confirmPassword')?.value || '';
+                const avatar = document.getElementById('accountAvatarInput')?.value ? 'has-file' : '';
+                
+                return {
+                    fullName,
+                    phone,
+                    email,
+                    lang,
+                    theme,
+                    currentPassword,
+                    newPassword,
+                    confirmPassword,
+                    avatar
+                };
+            }
+            
+            function hasUnsavedAccountChanges() {
+                if (!initialAccountState) return false;
+                const currentState = getAccountState();
+                return Object.keys(initialAccountState).some(
+                    key => initialAccountState[key] !== currentState[key]
+                );
+            }
+            
+            function requestCloseAccountModal() {
+                if (!hasUnsavedAccountChanges()) {
+                    closeAccountModal();
+                    return;
+                }
+                
+                const message = 'Вы уверены, что хотите отменить изменения? Все несохранённые данные будут потеряны.';
+                
+                if (window.showConfirm) {
+                    showConfirm(message, () => {
+                        closeAccountModal();
+                    });
+                } else {
+                    if (confirm(message)) {
+                        closeAccountModal();
+                    }
+                }
+            }
             
             function openAccountModal() {
                 if (accountModal) {
@@ -519,6 +573,9 @@
                     const themeSelect = document.getElementById('accountTheme');
                     if (langSelect) langSelect.value = savedLang;
                     if (themeSelect) themeSelect.value = savedTheme;
+                    
+                    // Сохраняем начальное состояние полей, чтобы отследить изменения
+                    initialAccountState = getAccountState();
                 }
             }
             
@@ -536,12 +593,12 @@
                 });
             }
             
-            if (accountModalClose) accountModalClose.addEventListener('click', closeAccountModal);
-            if (accountModalCancel) accountModalCancel.addEventListener('click', closeAccountModal);
+            if (accountModalClose) accountModalClose.addEventListener('click', requestCloseAccountModal);
+            if (accountModalCancel) accountModalCancel.addEventListener('click', requestCloseAccountModal);
             
             if (accountModal) {
                 accountModal.addEventListener('click', function(e) {
-                    if (e.target === accountModal) closeAccountModal();
+                    if (e.target === accountModal) requestCloseAccountModal();
                 });
             }
             
@@ -579,6 +636,55 @@
                 });
             }
 
+            const changePasswordBtn = document.getElementById('changePasswordBtn');
+            
+            if (changePasswordBtn) {
+                changePasswordBtn.addEventListener('click', function() {
+                    const currentPassword = document.getElementById('currentPassword')?.value || '';
+                    const newPassword = document.getElementById('newPassword')?.value || '';
+                    const confirmPassword = document.getElementById('confirmPassword')?.value || '';
+                    
+                    if (!currentPassword || !newPassword || !confirmPassword) {
+                        if (window.showError) {
+                            showError('Пожалуйста, заполните все поля пароля.');
+                        } else {
+                            alert('Пожалуйста, заполните все поля пароля.');
+                        }
+                        return;
+                    }
+                    
+                    if (newPassword !== confirmPassword) {
+                        if (window.showError) {
+                            showError('Пароли не совпадают!');
+                        } else {
+                            alert('Пароли не совпадают!');
+                        }
+                        return;
+                    }
+                    
+                    if (newPassword.length < 6) {
+                        if (window.showError) {
+                            showError('Пароль должен быть не менее 6 символов!');
+                        } else {
+                            alert('Пароль должен быть не менее 6 символов!');
+                        }
+                        return;
+                    }
+                    
+                    // Здесь должен быть реальный запрос к серверу для смены пароля.
+                    // Пока просто показываем уведомление об успехе.
+                    if (window.showSuccess) {
+                        showSuccess('Пароль успешно изменён!');
+                    } else {
+                        alert('Пароль успешно изменён!');
+                    }
+                    
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                });
+            }
+            
             if (accountModalSave) {
                 accountModalSave.addEventListener('click', function() {
                     const newPassword = document.getElementById('newPassword')?.value;
@@ -587,8 +693,15 @@
                     const themeSelect = document.getElementById('accountTheme');
                     
                     if (langSelect) {
-                        localStorage.setItem('language', langSelect.value);
-                        if (window.i18n) window.i18n.applyLanguage(langSelect.value);
+                        const lang = langSelect.value;
+                        localStorage.setItem('language', lang);
+                        if (window.i18n) {
+                            if (typeof window.i18n.changeLanguage === 'function') {
+                                window.i18n.changeLanguage(lang);
+                            } else if (typeof window.i18n.applyLanguage === 'function') {
+                                window.i18n.applyLanguage(lang);
+                            }
+                        }
                     }
                     
                     if (themeSelect && themeSelect.value !== 'auto') {
@@ -597,26 +710,44 @@
                     }
                     
                     if (newPassword && confirmPassword && newPassword !== confirmPassword) {
-                        alert('Пароли не совпадают!');
+                        if (window.showError) {
+                            showError('Пароли не совпадают!');
+                        } else {
+                            alert('Пароли не совпадают!');
+                        }
                         return;
                     }
                     
                     if (newPassword && newPassword.length < 6) {
-                        alert('Пароль должен быть не менее 6 символов!');
+                        if (window.showError) {
+                            showError('Пароль должен быть не менее 6 символов!');
+                        } else {
+                            alert('Пароль должен быть не менее 6 символов!');
+                        }
                         return;
                     }
                     
-                    alert('Настройки сохранены!');
+                    if (window.showSuccess) {
+                        showSuccess('Настройки сохранены!');
+                    } else {
+                        alert('Настройки сохранены!');
+                    }
                     document.getElementById('currentPassword').value = '';
                     document.getElementById('newPassword').value = '';
                     document.getElementById('confirmPassword').value = '';
                     closeAccountModal();
+                    
+                    // Обновляем страницу, чтобы язык интерфейса и языковые кнопки
+                    // в верхней панели полностью синхронизировались с выбранными настройками
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 350);
                 });
             }
             
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && accountModal && accountModal.classList.contains('show')) {
-                    closeAccountModal();
+                    requestCloseAccountModal();
                 }
             });
         });

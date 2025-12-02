@@ -156,6 +156,59 @@
     border-color: #667eea;
 }
 
+/* Account modal inputs in dark theme */
+[data-theme="dark"] .account-modal-body {
+    background: transparent;
+}
+
+[data-theme="dark"] .account-form-group input,
+[data-theme="dark"] .account-form-group select {
+    background: #232734;
+    border-color: #3a3f4a;
+    color: #e4e6eb;
+}
+
+[data-theme="dark"] .account-form-group input::placeholder {
+    color: #8d9199;
+}
+
+/* Extra guarantee for password tab inputs (делаем ещё темнее, перекрываем любые другие стили) */
+[data-theme="dark"] .account-tab-panel .account-form-group input {
+    background: #1e222d !important;
+    border-color: #3a3f4a !important;
+    color: #e4e6eb !important;
+}
+
+/* File input in account modal (Аватар) */
+[data-theme="dark"] #accountAvatarInput {
+    background: #232734;
+    border-color: #3a3f4a;
+    color: #e4e6eb;
+}
+
+[data-theme="dark"] #accountAvatarInput::file-selector-button {
+    background: #2d3139;
+    border: 1px solid #3a3f4a;
+    color: #e4e6eb;
+    border-radius: 999px;
+    padding: 0.3rem 0.9rem;
+    cursor: pointer;
+}
+
+[data-theme="dark"] #accountAvatarInput::file-selector-button:hover {
+    background: #3a3f4a;
+    border-color: #667eea;
+}
+
+/* Date input (в том числе в "Сообщить об оплате") */
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] .user-report-form .date-group input[type="date"] {
+    background: #2d3139;
+    color: #e4e6eb;
+    border-color: #3a3f4a;
+    color-scheme: dark; /* попытка затемнить всплывающий календарь в поддерживаемых браузерах */
+}
+
 /* Meter Verification Dark Mode */
 [data-theme="dark"] .meter-header {
     background: linear-gradient(135deg, #2d3139 0%, #242831 100%);

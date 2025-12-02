@@ -45,31 +45,27 @@
                 
                 <!-- Tariffs List -->
                 <div id="tariffsContainer">
-                    <div class="tariffs-table-wrapper">
-                        <div class="tariffs-table-header">
-                            <div>
-                                <h3>Список тарифов</h3>
-                            </div>
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h3>Список тарифов</h3>
                         </div>
-                        <div class="tariffs-table-shell">
-                            <div class="table-responsive">
-                                <table class="tariffs-table">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Название</th>
-                                            <th>Назначение</th>
-                                            <th>Тип клиента</th>
-                                            <th>НДС, %</th>
-                                            <th>Ступени</th>
-                                            <th>Действия</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tariffsTableBody">
-                                        <!-- rows rendered via JS -->
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover tariffs-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Название</th>
+                                        <th>Назначение</th>
+                                        <th>Тип клиента</th>
+                                        <th>НДС, %</th>
+                                        <th>Ступени</th>
+                                        <th class="text-center">Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tariffsTableBody">
+                                    <!-- rows rendered via JS -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
@@ -265,8 +261,16 @@
                 <tr>
                     <td>${tariff.id}</td>
                     <td>${tariff.name}</td>
-                    <td>${tariff.purpose}</td>
-                    <td>${tariff.clientTypeLabel}</td>
+                    <td>
+                        <span class="badge ${getPurposeBadgeClass(tariff.purposeKey)}">
+                            ${tariff.purpose}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge ${tariff.clientType === 'legal' ? 'bg-primary' : 'bg-success'}">
+                            ${tariff.clientTypeLabel}
+                        </span>
+                    </td>
                     <td>${tariff.vat}</td>
                     <td>${formatSteps(tariff.steps)}</td>
                     <td>
@@ -279,15 +283,27 @@
             `).join('');
         }
 
+        function getPurposeBadgeClass(purposeKey) {
+            switch (purposeKey) {
+                case 'gas': return 'bg-danger';
+                case 'electricity': return 'bg-info';
+                case 'water': return 'bg-primary';
+                case 'service': return 'bg-warning text-dark';
+                default: return 'bg-secondary';
+            }
+        }
+
         function formatSteps(steps = []) {
             return steps.map(step => {
-                const from = step.from?.toFixed(4) ?? '0.0000';
+                const from = step.from?.toFixed ? step.from.toFixed(4) : Number(step.from ?? 0).toFixed(4);
+                const price = step.price?.toFixed ? step.price.toFixed(4) : Number(step.price ?? 0).toFixed(4);
+                const unit = step.unit || '';
                 if (step.to === null || step.to === undefined) {
-                    return `${from}+: ${step.price.toFixed(4)} / ${step.unit}`;
+                    return `<span class="badge bg-secondary me-1">${from}+: ${price} / ${unit}</span>`;
                 }
-                const to = step.to.toFixed(4);
-                return `${from}–${to}: ${step.price.toFixed(4)} / ${step.unit}`;
-            }).join(' | ');
+                const to = step.to?.toFixed ? step.to.toFixed(4) : Number(step.to).toFixed(4);
+                return `<span class="badge bg-secondary me-1">${from}–${to}: ${price} / ${unit}</span>`;
+            }).join(' ');
         }
 
         // function renderBlockTariffs(blocks) {

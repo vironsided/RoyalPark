@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initSmoothScroll();
     addRippleEffect();
     initPlanTooltip();
+    initPlanLegendNavigation();
     
     // Add loading complete class for animations
     setTimeout(() => {
@@ -30,6 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 window.addEventListener('spa:contentLoaded', function() {
     initPlanTooltip();
+    initPlanLegendNavigation();
 });
 
 // Check if user is authenticated and has admin role
@@ -438,12 +440,14 @@ function initPlanTooltip() {
             titleEl.textContent = label;
             descEl.textContent = info;
             tooltip.classList.remove('hidden');
+            tooltip.classList.add('visible');
         }, { passive: true });
         
         area.addEventListener('pointermove', moveTooltip, { passive: true });
         
         area.addEventListener('pointerleave', () => {
             tooltip.classList.add('hidden');
+            tooltip.classList.remove('visible');
         }, { passive: true });
     });
 }
@@ -467,6 +471,50 @@ function ensurePlanTooltipElement() {
     document.body.appendChild(tooltip);
     window.planTooltipElement = tooltip;
     return tooltip;
+}
+
+// Навигация по плану по клику на легенду блоков
+function initPlanLegendNavigation() {
+    const planFrame = document.querySelector('.plan-image-frame');
+    const legendItems = document.querySelectorAll('.plan-legend span[data-block-code]');
+    const areas = document.querySelectorAll('.plan-area[data-block-code]');
+    
+    if (!planFrame || !legendItems.length || !areas.length) {
+        return;
+    }
+    
+    const areaByCode = {};
+    areas.forEach(area => {
+        const code = (area.dataset.blockCode || '').toUpperCase();
+        if (code) {
+            areaByCode[code] = area;
+        }
+    });
+    
+    legendItems.forEach(item => {
+        if (item.dataset.planLegendBound === 'true') return;
+        item.dataset.planLegendBound = 'true';
+        item.style.cursor = 'pointer';
+        
+        item.addEventListener('click', () => {
+            const code = (item.dataset.blockCode || '').toUpperCase();
+            const targetArea = areaByCode[code];
+            
+            // Плавно скроллим к плану
+            planFrame.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+            
+            // Кратко подсвечиваем нужный блок
+            if (targetArea) {
+                targetArea.classList.add('highlight');
+                setTimeout(() => {
+                    targetArea.classList.remove('highlight');
+                }, 1200);
+            }
+        });
+    });
 }
 
 // Add CSS for ripple effect dynamically

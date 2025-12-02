@@ -22,26 +22,117 @@
     box-shadow: 0 12px 24px rgba(109, 91, 255, 0.35);
 }
 
+/* Делаем шапку сайдбара тем же цветом, что и остальная часть в user-кабинете */
+.user-app .sidebar-header {
+    background: transparent;
+    /* убираем нижнюю линию у шапки сайдбара, чтобы не было разрыва с линией топ-бара */
+    border-bottom: none;
+}
+
 .main-content {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     overflow: visible;
-    padding-top: 1.5rem;
+    padding-top: 0;
+}
+
+/* Общий overlay для user-кабинета (фон + blur) */
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 2000; /* гарантированно выше контента */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Mobile layout tweaks specifically for user cabinet */
+@media (max-width: 768px) {
+    /* Управляем шириной сайдбара через класс collapsed, а не через .open */
+    body.user-app .sidebar {
+        width: 80px !important;
+        min-width: 80px !important;
+        max-width: 80px !important;
+    }
+
+    body.user-app .sidebar:not(.collapsed) {
+        width: 260px !important;
+        min-width: 260px !important;
+        max-width: 260px !important;
+    }
+
+    /* Контент сдвигается в зависимости от того, свернут сайдбар или нет */
+    body.user-app .sidebar ~ .main-content {
+        margin-left: 80px !important;
+        width: calc(100% - 80px) !important;
+        max-height: none !important;
+    }
+
+    body.user-app .sidebar:not(.collapsed) ~ .main-content {
+        margin-left: 260px !important;
+        width: calc(100% - 260px) !important;
+    }
+
 }
 
 .main-content .top-bar {
     position: sticky;
-    top: 1.5rem;
+    top: 0;
     z-index: 30;
     background: var(--bg-secondary);
     border-radius: 0;
     box-shadow: var(--shadow-lg);
-    margin-bottom: 1.5rem;
+    /* убираем отступ между топ-баром и контентом */
+    margin-bottom: 0;
+    padding: 0.75rem 1.25rem;
 }
 
 .main-content .dashboard-content {
     flex: 1;
+}
+
+/* Убираем глобальные отступы dashboard-content для user-кабинета */
+.user-app .dashboard-content {
+    margin-top: 0 !important;
+    padding-top: 1.5rem !important; /* чуть-чуть воздуха над приветствием */
+}
+
+/* Responsive tweaks for top bar in user cabinet */
+@media (max-width: 768px) {
+    .top-bar {
+        /* сначала показываем панель действий, затем заголовок */
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+
+    .top-bar-actions {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    /* В мобильном режиме скрываем поиск, переключатель темы и языки —
+       остаются только колокольчик и профиль, остальные настройки есть в модале аккаунта */
+    .top-bar-actions .search-box {
+        display: none;
+    }
+
+    .top-bar-actions .theme-toggle,
+    .top-bar-actions .language-selector {
+        display: none !important;
+    }
 }
 
 [data-theme="dark"] .main-content .top-bar {
@@ -59,6 +150,13 @@
     height: 1px;
     background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.15), rgba(255,255,255,0));
     opacity: 0.5;
+}
+
+/* Для user-кабинета растягиваем линию топ-бара до самого бокового меню,
+   чтобы не было видимой «ступеньки» стыка */
+.user-app .main-content .top-bar::after {
+    /* в user-кабинете убираем линию совсем, чтобы не было «нестыковки» со стороны сайдбара */
+    content: none;
 }
 
 /* Collaborative Overview */
@@ -718,6 +816,248 @@
     color: #fff;
 }
 
+/* Appeals (Заявки) */
+.user-appeals-section {
+    padding: 0 var(--spacing-lg) var(--spacing-lg);
+}
+
+.user-appeals-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 1.5rem;
+}
+
+.user-appeals-card {
+    background: var(--bg-secondary);
+    border-radius: 1.5rem;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    padding: 1.75rem 2rem 2rem;
+}
+
+.user-appeals-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+}
+
+.user-appeals-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.user-appeals-field label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.user-appeals-field select,
+.user-appeals-field textarea {
+    width: 100%;
+    border-radius: 0.9rem;
+    border: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--text-primary);
+    padding: 0.55rem 0.9rem;
+    font-size: 0.9rem;
+    resize: vertical;
+}
+
+.user-appeals-field textarea::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.user-appeals-hint {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.user-appeals-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.user-appeals-list-card {
+    max-height: 100%;
+}
+
+.user-appeals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.user-appeal-item {
+    padding: 0.9rem 1rem;
+    border-radius: 1rem;
+    border: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.user-appeal-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.user-appeal-house {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.user-appeal-date {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.user-appeal-badge {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+.user-appeal-badge-read {
+    background: rgba(52, 199, 89, 0.18);
+    color: #34c759;
+}
+
+.user-appeal-badge-unread {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.user-appeals-empty {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 1.5rem 0.5rem;
+}
+
+/* Appeal modal */
+.user-appeal-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    z-index: 1200;
+    padding-top: 40px; /* небольшой отступ от верхнего края, чтобы модал не прилипал к топ-бару */
+}
+
+.user-appeal-modal-overlay.show {
+    display: flex;
+}
+
+.user-appeal-modal {
+    background: #1f2330;
+    color: var(--text-primary);
+    border-radius: 1rem;
+    width: min(520px, 90vw);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+}
+
+.user-appeal-modal-header,
+.user-appeal-modal-footer {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-appeal-modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: none;
+}
+
+.user-appeal-modal-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.user-appeal-modal-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    font-size: 0.95rem;
+}
+
+.user-appeal-modal-row span {
+    color: var(--text-secondary);
+    min-width: 90px;
+}
+
+.user-appeal-modal-text .label {
+    display: block;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.user-appeal-modal-text p {
+    margin: 0;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+.user-appeal-modal-close {
+    border: none;
+    background: transparent;
+    color: #fff;
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+
+.user-appeal-modal-edit textarea {
+    width: 100%;
+    border-radius: 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--text-primary);
+    padding: 0.55rem 0.9rem;
+    font-size: 0.9rem;
+    resize: vertical;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.user-appeal-modal-edit textarea:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 1px rgba(102, 126, 234, 0.8);
+    background: rgba(8, 12, 24, 0.9);
+}
+
+.user-appeal-modal-edit small {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 992px) {
+    .user-appeals-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 /* Dark dropdown options inside user bills selects */
 [data-theme="dark"] .user-bills-section select,
 body[data-theme="dark"] .user-bills-section select {
@@ -752,6 +1092,33 @@ body[data-theme="dark"] .user-bills-section select option {
 .user-bills-table td {
     padding: 0.85rem 1rem;
     white-space: nowrap;
+}
+
+/* Мобильная адаптация "Мои счета" */
+@media (max-width: 768px) {
+    /* Заголовок и фильтры становятся вертикально один под другим */
+    .user-bills-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .user-bills-filters {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .user-bills-filter-group select {
+        min-width: 140px;
+    }
+
+    /* Таблица остаётся обычной, но при необходимости можно пролистывать по горизонтали */
+    .user-bills-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
 }
 
 .user-bills-table th {
@@ -849,6 +1216,23 @@ body[data-theme="dark"] .user-bills-section select option {
     margin-bottom: 20px;
 }
 
+@media (max-width: 768px) {
+    .user-app .invoice-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .user-app .invoice-header h1 {
+        font-size: 1.4rem;
+    }
+
+    .user-app .invoice-header-actions {
+        display: flex;
+        gap: 8px;
+    }
+}
+
 .user-app .invoice-header h1 {
     flex: 1;
     font-size: 1.8rem;
@@ -883,6 +1267,18 @@ body[data-theme="dark"] .user-bills-section select option {
 
 .user-app .user-invoice-items {
     margin-top: 32px;
+}
+
+/* Горизонтальный скролл для таблицы "Оплаты по счёту" в мобильном режиме */
+@media (max-width: 768px) {
+    .user-app .user-invoice-payments {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .user-app .user-invoice-payments .line-items-table {
+        min-width: 420px; /* чтобы появился скролл, если экран уже */
+    }
 }
 
 /* Report payment (Сообщить об оплате) */
@@ -927,6 +1323,17 @@ body[data-theme="dark"] .user-bills-section select option {
     color: var(--text-primary);
     padding: 0.55rem 0.8rem;
     font-size: 0.9rem;
+}
+
+/* Убираем светлые стандартные стрелки у числового поля "Сумма" */
+.user-report-form .form-group input[type="number"]::-webkit-inner-spin-button,
+.user-report-form .form-group input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.user-report-form .form-group input[type="number"] {
+    -moz-appearance: textfield; /* Firefox */
 }
 
 .user-report-form .form-group input::placeholder {

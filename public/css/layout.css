@@ -366,14 +366,16 @@ html, body {
     }
 
     .main-content {
+        /* На мобильных убираем зависимость от viewport-width,
+           чтобы не было скачков при появлении/исчезновении скроллбара */
         margin-left: 80px !important;
-        width: calc(100vw - 80px) !important;
-        max-height: 100vh;
+        width: calc(100% - 80px) !important;
+        max-height: none;
     }
 
     .sidebar.open ~ .main-content {
         margin-left: 260px !important;
-        width: calc(100vw - 260px) !important;
+        width: calc(100% - 260px) !important;
     }
 
     .sidebar-overlay {

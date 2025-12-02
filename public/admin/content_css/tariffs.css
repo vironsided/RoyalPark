@@ -100,25 +100,7 @@
             justify-content: flex-end;
         }
         
-        .tariffs-table-wrapper,
-        .blocks-tariffs-wrapper {
-            margin-top: 30px;
-            border-radius: 24px;
-            padding: 30px;
-            background: radial-gradient(circle at top right, rgba(109, 136, 255, 0.2), transparent 55%),
-                        radial-gradient(circle at bottom left, rgba(66, 214, 233, 0.15), transparent 50%),
-                        #1c2232;
-            box-shadow: 0 25px 60px rgba(8, 11, 23, 0.75);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        
-        .tariffs-table-shell {
-            background: rgba(10, 13, 24, 0.75);
-            border-radius: 20px;
-            padding: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
-        }
+        /* Карточка списка тарифов оформляется так же, как и стандартные .card */
         
         .tariffs-table-header {
             display: flex;
@@ -158,7 +140,6 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            color: #f5f7ff;
         }
         
         .tariffs-table thead th {
@@ -202,7 +183,71 @@
         
         .tariffs-table tbody td:nth-child(6) {
             font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.75);
+        }
+        
+        /* Цветные бейджи в таблице тарифов */
+        .tariff-purpose-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: #0f172a;
+            background: #e5e7eb;
+        }
+        
+        .tariff-purpose-gas {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        
+        .tariff-purpose-electricity {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        
+        .tariff-purpose-water {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+        
+        .tariff-purpose-service {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .tariff-client-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        
+        .tariff-client-individual {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+        
+        .tariff-client-legal {
+            background: rgba(59, 130, 246, 0.16);
+            color: #3b82f6;
+        }
+        
+        .tariff-steps-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            background: rgba(148, 163, 184, 0.2);
+            color: #e5e7eb;
+            margin-right: 4px;
+            margin-bottom: 4px;
         }
         
         .table-actions {

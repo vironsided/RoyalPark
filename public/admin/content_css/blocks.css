@@ -150,14 +150,15 @@
     }
 
     .plan-image-frame {
-        position: relative;
-        width: 100%;
-        padding-bottom: calc(3505 / 4959 * 100%);
-        border-radius: 16px;
-        overflow: hidden;
-        background: radial-gradient(circle, rgba(255,255,255,0.08), transparent 60%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-    }
+    position: relative;
+    width: 100%;
+    /* Соотношение сторон под viewBox 0 0 2752 1536 */
+    padding-bottom: calc(1536 / 2752 * 100%);
+    border-radius: 16px;
+    overflow: hidden;
+    background: radial-gradient(circle, rgba(255,255,255,0.08), transparent 60%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
     
     .plan-image-frame img {
         position: absolute;
@@ -193,6 +194,13 @@
         stroke-width: 8px;
     }
     
+    .plan-area.highlight {
+        fill: rgba(79, 172, 254, 0.45);
+        stroke: rgba(79, 172, 254, 1);
+        stroke-width: 10px;
+        transition: fill 0.25s ease, stroke 0.25s ease, stroke-width 0.25s ease;
+    }
+    
     .plan-tooltip {
         position: fixed;
         z-index: 9999;
@@ -209,6 +217,12 @@
         box-shadow: 0 18px 40px rgba(0,0,0,0.45);
         border: 1px solid rgba(255, 255, 255, 0.1);
         backdrop-filter: blur(16px);
+    }
+
+    .plan-tooltip.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, calc(-100% - 14px)) scale(1);
     }
     
     .plan-tooltip::after {
@@ -312,7 +326,8 @@
         }
 
         .plan-image-frame {
-            padding-bottom: 90%;
+            /* То же соотношение сторон на мобильных */
+            padding-bottom: calc(1536 / 2752 * 100%);
         }
     }
     .content-wrapper {

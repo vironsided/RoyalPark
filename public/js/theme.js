@@ -6,7 +6,8 @@
 
     // Initialize theme on page load
     function initTheme() {
-        const savedTheme = localStorage.getItem('theme') || 'light';
+        // Default to dark theme if user hasn't chosen anything yet
+        const savedTheme = localStorage.getItem('theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
         
         // Create theme toggle button if it doesn't exist
@@ -44,7 +45,15 @@
         // Add to top-bar-actions instead of body
         const topBarActions = document.querySelector('.top-bar-actions');
         if (topBarActions) {
-            topBarActions.appendChild(toggle);
+            // В user‑/accountant‑/maintenance‑кабинетах ставим переключатель
+            // перед блоком профиля, чтобы порядок был:
+            // поиск → уведомления → тема → язык → профиль
+            const profile = topBarActions.querySelector('.user-profile');
+            if (profile) {
+                topBarActions.insertBefore(toggle, profile);
+            } else {
+                topBarActions.appendChild(toggle);
+            }
         } else {
             document.body.appendChild(toggle);
         }

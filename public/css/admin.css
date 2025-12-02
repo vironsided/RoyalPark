@@ -214,6 +214,7 @@ html, body {
     overflow-x: hidden !important;
 }
 
+/* Базовая шапка сайдбара (будет переопределена ниже для единого цвета) */
 .sidebar-header {
     padding: var(--spacing-lg);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -1735,6 +1736,18 @@ html, body {
     border-right-color: #3a3f4a;
 }
 
+/* 🧱 Единый цвет шапки сайдбара как у всего nav-menu (и в светлой, и в тёмной теме) */
+.admin-container .sidebar-header {
+    background: transparent !important;
+    border-bottom: none !important;
+    backdrop-filter: none !important;
+}
+
+[data-theme="dark"] .admin-container .sidebar-header {
+    background: transparent !important;
+    border-bottom: none !important;
+}
+
 [data-theme="dark"] .nav-item {
     color: #b8bcc4;
 }
@@ -2539,11 +2552,12 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
 .language-selector {
     display: flex;
     gap: 6px;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
-    border: 1px solid rgba(102, 126, 234, 0.15);
-    border-radius: 12px;
-    padding: 6px;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.08);
+    /* полностью убираем общий контейнер‑подложку вокруг RU/AZ/EN */
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
 }
 
 .lang-btn {
@@ -2595,7 +2609,7 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
 }
 
 [data-theme="dark"] .language-selector {
-    background: #2d3139;
+    background: transparent;
 }
 
 [data-theme="dark"] .lang-btn {
@@ -2755,7 +2769,8 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
     border-radius: 8px;
     font-size: 0.95rem;
     transition: all 0.3s ease;
-    background: #ffffff;
+    /* более мягкий светлый фон вместо чисто белого */
+    background: #f3f5ff;
     color: #1a1d2e;
 }
 
@@ -2818,6 +2833,74 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     margin: 0 auto 1.5rem;
     box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
+
+/* Tabs inside account modal (Профиль / Пароль) */
+.account-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.account-tab-btn {
+    position: relative;
+    padding: 0.6rem 1.4rem;
+    border: none;
+    background: transparent;
+    color: #6c7280;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    border-radius: 999px 999px 0 0;
+    transition: all 0.2s ease;
+}
+
+.account-tab-btn.active {
+    color: #1a1d2e;
+    background: #ffffff;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.account-tab-panel {
+    display: none;
+}
+
+.account-tab-panel.active {
+    display: block;
+}
+
+.account-profile-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.account-profile-avatar {
+    text-align: center;
+}
+
+.account-form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.account-hint {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: #888;
+}
+
+@media (max-width: 768px) {
+    .account-profile-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .account-form-row {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Dark theme for account modal */

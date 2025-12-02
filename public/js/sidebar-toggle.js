@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const toggleSidebarBtn = document.getElementById('toggleSidebar');
     const sidebar = document.querySelector('.sidebar') || document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
     
     console.log('Sidebar Toggle Script loaded');
     
@@ -46,6 +47,8 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('=== TOGGLE BUTTON CLICKED ===');
             console.log('Timestamp:', new Date().toLocaleTimeString());
             
+            const isMobile = window.innerWidth <= 768;
+
             // Check current state IMMEDIATELY
             const classList = Array.from(sidebar.classList);
             const hasCollapsedClass = classList.includes('collapsed');
@@ -58,6 +61,31 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('  - currentWidth:', currentWidth + 'px');
             console.log('  - computedWidth:', computedWidth);
             console.log('  - style.width:', sidebar.style.width);
+
+            // На мобильных используем overlay и не трогаем width через inline-стили
+            if (isMobile) {
+                // hasCollapsedClass === true  -> сейчас закрыто, после клика ОТКРОЕМ
+                // hasCollapsedClass === false -> сейчас открыто, после клика ЗАКРОЕМ
+                const willBeCollapsed = !hasCollapsedClass;
+                sidebar.classList.toggle('collapsed', willBeCollapsed);
+
+                const isNowOpen = !willBeCollapsed;
+                if (sidebarOverlay) {
+                    sidebarOverlay.classList.toggle('show', isNowOpen);
+                }
+
+                // Убираем системный скроллбар, чтобы не было неразмытой полосы
+                if (isNowOpen) {
+                    document.documentElement.style.overflow = 'hidden';
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.documentElement.style.overflow = '';
+                    document.body.style.overflow = '';
+                }
+
+                localStorage.setItem('sidebarCollapsed', willBeCollapsed ? 'true' : 'false');
+                return;
+            }
             
             if (hasCollapsedClass) {
                 // Expand sidebar
@@ -140,6 +168,19 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('sidebarCollapsed', 'false');
             setTimeout(() => window.debugSidebar(), 100);
         };
+
+        // Overlay click to close on mobile
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', function () {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.add('collapsed');
+                    sidebarOverlay.classList.remove('show');
+                    localStorage.setItem('sidebarCollapsed', 'true');
+                    document.documentElement.style.overflow = '';
+                    document.body.style.overflow = '';
+                }
+            });
+        }
         
         console.log('💡 Debug commands available:');
         console.log('  - debugSidebar() - показать состояние');

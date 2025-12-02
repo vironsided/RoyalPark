@@ -24,6 +24,11 @@
                     bodyClass: 'resident-detail-page',
                     parentNav: 'dashboard'
                 },
+                appeals: {
+                    type: 'remote',
+                    path: '/user/pages/appeals.html',
+                    bodyClass: ''
+                },
                 invoice: {
                     type: 'remote',
                     path: '/user/pages/invoice-view.html',
