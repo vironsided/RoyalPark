@@ -44,6 +44,10 @@
         .sidebar {
             width: 280px !important;
             transition: width 0.3s ease !important;
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100vh !important;
+            overflow: hidden !important; /* скролл убираем с всего сайдбара */
         }
         
         .sidebar.collapsed {
@@ -63,6 +67,22 @@
         
         .sidebar.collapsed .nav-item {
             justify-content: center !important;
+        }
+        
+        .sidebar-header {
+            flex-shrink: 0 !important;
+            padding: 20px !important;
+        }
+        
+        .sidebar-scroll {
+            flex: 1 1 auto !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            padding-bottom: 20px !important;
+        }
+        
+        .nav-menu {
+            padding-top: 10px !important; /* чтобы скролл начинался сразу под header */
         }
         
         .main-content {
@@ -95,6 +115,7 @@
                 </button>
             </div>
 
+            <div class="sidebar-scroll">
             <nav class="nav-menu">
                 <div class="nav-section">
                     <div class="nav-section-title">Главное</div>
@@ -279,6 +300,7 @@
                     </a>
                 </div>
             </nav>
+            </div>
         </aside>
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
 

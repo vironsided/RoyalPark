@@ -438,7 +438,16 @@ function initPlanTooltip() {
             const label = area.dataset.blockLabel || 'Зона';
             const info = area.dataset.blockInfo || 'Информация уточняется.';
             titleEl.textContent = label;
-            descEl.textContent = info;
+
+            // Если в data-block-info передан HTML (начинается с '<'),
+            // рендерим как HTML (например, список этажей/квартир/жителей/заселённости),
+            // иначе выводим как обычный текст.
+            if (info && info.trim().startsWith('<')) {
+                descEl.innerHTML = info;
+            } else {
+                descEl.textContent = info;
+            }
+
             tooltip.classList.remove('hidden');
             tooltip.classList.add('visible');
         }, { passive: true });
