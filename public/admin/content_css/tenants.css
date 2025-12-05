@@ -454,9 +454,37 @@ html[data-theme="dark"] .filter-group select:focus {
             border: 1px solid rgba(76, 201, 91, 0.25);
         }
 
+        .tenant-password-badge.temp-password {
+            background: rgba(252, 211, 77, 0.2);
+            color: #ffd86b;
+            border: 1px solid rgba(252, 211, 77, 0.35);
+        }
+
         .tenant-homes {
             display: flex;
             gap: 8px;
+            align-items: center;
+        }
+
+        .tenant-homes-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            padding: 4px 12px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.9);
+            cursor: help;
+            transition: all 0.2s;
+        }
+
+        .tenant-homes-count:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: scale(1.05);
         }
 
         .tenant-home-pill {

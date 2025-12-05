@@ -16,10 +16,10 @@
                 <label>Метод</label>
                 <select id="filterMethod">
                     <option value="all">Все</option>
-                    <option value="cash">Наличные</option>
-                    <option value="card">CARD</option>
-                    <option value="bank_transfer">Банк</option>
-                    <option value="online">Онлайн</option>
+                    <option value="CASH">Наличные</option>
+                    <option value="CARD">CARD</option>
+                    <option value="TRANSFER">Банк</option>
+                    <option value="ONLINE">Онлайн</option>
                 </select>
             </div>
             
@@ -156,10 +156,10 @@
                     <div class="accept-payment-form-group">
                         <label for="paymentMethod">Метод</label>
                         <select id="paymentMethod" required>
-                            <option value="cash" selected>CASH</option>
-                            <option value="card">CARD</option>
-                            <option value="bank_transfer">Банк</option>
-                            <option value="online">Онлайн</option>
+                            <option value="CASH" selected>CASH</option>
+                            <option value="CARD">CARD</option>
+                            <option value="TRANSFER">Банк</option>
+                            <option value="ONLINE">Онлайн</option>
                         </select>
                     </div>
                 </div>
@@ -190,37 +190,22 @@
 
 <script>
 (function(){
-    const methods = {
-        bank_transfer: 'Банк',
-        cash: 'Наличные',
-        card: 'CARD',
-        online: 'Онлайн'
+    const API_BASE = 'http://localhost:8000';
+    const methodLabels = {
+        'CASH': 'Наличные',
+        'CARD': 'CARD',
+        'TRANSFER': 'Банк',
+        'ONLINE': 'Онлайн'
     };
     
-    // Store original data
-    let allPayments = [];
-    let filteredPayments = [];
-    
-    // Initialize data
-    if (typeof TestData !== 'undefined' && TestData.payments) {
-        allPayments = [...TestData.payments];
-        filteredPayments = [...TestData.payments];
-    } else {
-        // Mock data
-        allPayments = [
-            {
-                id: 1,
-                date: '2025-11-21',
-                resident: 'X/2',
-                amount: 30.00,
-                method: 'card',
-                balance: 20.00,
-                balanceType: 'advance',
-                link: '123456'
-            }
-        ];
-        filteredPayments = [...allPayments];
-    }
+    let residents = [];
+    let paymentsData = {
+        items: [],
+        total: 0,
+        page: 1,
+        per_page: 25,
+        last_page: 1
+    };
     
     // Pagination state
     let paginationState = {
@@ -230,35 +215,87 @@
         totalPages: 1
     };
     
-    // Render table function
-    function renderTable(payments) {
-    const tbody = document.getElementById('paymentsTable');
-        if (!tbody) return;
-        
-        // Update pagination state
-        paginationState.totalItems = payments.length;
-        paginationState.totalPages = Math.max(1, Math.ceil(paginationState.totalItems / paginationState.itemsPerPage));
-        
-        if (paginationState.currentPage > paginationState.totalPages) {
-            paginationState.currentPage = paginationState.totalPages || 1;
+    // Load payments from API
+    async function loadPayments() {
+        const tbody = document.getElementById('paymentsTable');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Загрузка...</td></tr>';
         }
         
-        // Get paginated data
-        const startIndex = (paginationState.currentPage - 1) * paginationState.itemsPerPage;
-        const endIndex = startIndex + paginationState.itemsPerPage;
-        const pagePayments = payments.slice(startIndex, endIndex);
+        const params = new URLSearchParams();
+        params.append('page', paginationState.currentPage);
+        params.append('per_page', paginationState.itemsPerPage);
         
-        if (pagePayments.length === 0) {
+        const residentId = document.getElementById('filterResident')?.value;
+        if (residentId && residentId !== 'all') {
+            params.append('resident_id', residentId);
+        }
+        
+        const method = document.getElementById('filterMethod')?.value;
+        if (method && method !== 'all') {
+            params.append('method', method);
+        }
+        
+        const dateFrom = document.getElementById('filterDateFrom')?.value;
+        if (dateFrom) {
+            params.append('date_from', dateFrom);
+        }
+        
+        const dateTo = document.getElementById('filterDateTo')?.value;
+        if (dateTo) {
+            params.append('date_to', dateTo);
+        }
+        
+        const search = document.getElementById('filterSearch')?.value.trim();
+        if (search) {
+            params.append('q', search);
+        }
+        
+        try {
+            let response = await fetch(`${API_BASE}/api/payments?${params.toString()}`);
+            if (!response.ok && response.status === 401) {
+                response = await fetch(`${API_BASE}/api/payments/public?${params.toString()}`);
+            }
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            paymentsData = data;
+            paginationState.totalItems = data.total;
+            paginationState.totalPages = data.last_page;
+            paginationState.currentPage = data.page;
+            
+            renderTable();
+        } catch (error) {
+            console.error('Error loading payments:', error);
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Ошибка загрузки данных</td></tr>';
+            }
+            if (typeof showError === 'function') {
+                showError('Ошибка загрузки платежей: ' + error.message);
+            }
+        }
+    }
+    
+    // Render table function
+    function renderTable() {
+        const tbody = document.getElementById('paymentsTable');
+        if (!tbody) return;
+        
+        const payments = paymentsData.items || [];
+        
+        if (payments.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Нет данных по текущим фильтрам</td></tr>';
         } else {
-            tbody.innerHTML = pagePayments.map(p => {
-                const date = p.date || '—';
-                const resident = p.resident || p.userName || '—';
-                const amount = typeof p.amount === 'number' ? p.amount.toFixed(2) : (p.amount || '0.00');
-                const method = methods[p.method] || p.method || '—';
-                const balance = typeof p.balance === 'number' ? p.balance.toFixed(2) : '0.00';
-                const balanceType = p.balanceType || 'advance';
-                const link = p.link || p.checkNumber || '—';
+            tbody.innerHTML = payments.map(p => {
+                const date = p.received_at || '—';
+                const resident = p.resident_code || '—';
+                const amount = typeof p.amount_total === 'number' ? p.amount_total.toFixed(2) : (p.amount_total || '0.00');
+                const method = methodLabels[p.method] || p.method || '—';
+                const leftover = typeof p.leftover === 'number' ? p.leftover.toFixed(2) : '0.00';
+                const reference = p.reference || '—';
                 
                 return `<tr>
                     <td>${date}</td>
@@ -266,9 +303,9 @@
                     <td class="amount-red">${amount} ₼</td>
                     <td>${method}</td>
                     <td>
-                        ${balanceType === 'advance' ? `<span class="badge-advance">Аванс ${balance}</span>` : balance}
+                        ${parseFloat(leftover) > 0 ? `<span class="badge-advance">Аванс ${leftover}</span>` : '0.00'}
                     </td>
-                    <td>${link}</td>
+                    <td>${reference}</td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary" onclick="viewPayment(${p.id})">Открыть</button>
                     </td>
@@ -301,16 +338,16 @@
         if (page === 'prev') {
             if (paginationState.currentPage > 1) {
                 paginationState.currentPage--;
-                renderTable(filteredPayments);
+                loadPayments();
             }
         } else if (page === 'next') {
             if (paginationState.currentPage < paginationState.totalPages) {
                 paginationState.currentPage++;
-                renderTable(filteredPayments);
+                loadPayments();
             }
         } else if (typeof page === 'number') {
             paginationState.currentPage = page;
-            renderTable(filteredPayments);
+            loadPayments();
         }
     };
     
@@ -319,64 +356,49 @@
         if (select) {
             paginationState.itemsPerPage = parseInt(select.value);
             paginationState.currentPage = 1;
-            renderTable(filteredPayments);
+            loadPayments();
             updateCustomPaginationDropdown();
         }
     };
     
     // Filter functions
     window.applyPaymentFilters = function() {
-        const resident = document.getElementById('filterResident').value;
-        const method = document.getElementById('filterMethod').value;
-        const dateFrom = document.getElementById('filterDateFrom').value;
-        const dateTo = document.getElementById('filterDateTo').value;
-        const search = document.getElementById('filterSearch').value.toLowerCase();
-        
-        filteredPayments = allPayments.filter(payment => {
-            // Filter by resident
-            if (resident && resident !== 'all') {
-                if (payment.residentId && payment.residentId.toString() !== resident) {
-                    return false;
-                }
-            }
-            
-            // Filter by method
-            if (method && method !== 'all') {
-                if (payment.method !== method) {
-                    return false;
-                }
-            }
-            
-            // Filter by date range
-            if (dateFrom) {
-                if (payment.date < dateFrom) {
-                    return false;
-                }
-            }
-            if (dateTo) {
-                if (payment.date > dateTo) {
-                    return false;
-                }
-            }
-            
-            // Filter by search
-            if (search) {
-                const searchText = `${payment.link || ''} ${payment.checkNumber || ''} ${payment.comment || ''}`.toLowerCase();
-                if (!searchText.includes(search)) {
-                    return false;
-                }
-            }
-            
-            return true;
-        });
-        
         paginationState.currentPage = 1;
-        renderTable(filteredPayments);
-        
-        if (typeof showSuccess === 'function') {
-            showSuccess(`Найдено записей: ${filteredPayments.length}`);
-        }
+        loadPayments();
     };
+    
+    // Load residents for filters and modal
+    async function loadResidents() {
+        try {
+            let response = await fetch(`${API_BASE}/api/residents`);
+            if (!response.ok && response.status === 401) {
+                response = await fetch(`${API_BASE}/api/residents/public`);
+            }
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            residents = Array.isArray(data) ? data : (data.residents || []);
+            
+            // Populate filter dropdown
+            const filterResident = document.getElementById('filterResident');
+            if (filterResident) {
+                filterResident.innerHTML = '<option value="all">Все</option>' + 
+                    residents.map(r => `<option value="${r.id}">${r.block_name} / ${r.unit_number}</option>`).join('');
+            }
+            
+            // Populate modal dropdown
+            const paymentResident = document.getElementById('paymentResident');
+            if (paymentResident) {
+                paymentResident.innerHTML = '<option value="">Выберите резидента</option>' + 
+                    residents.map(r => `<option value="${r.id}">${r.block_name} / ${r.unit_number}</option>`).join('');
+            }
+        } catch (error) {
+            console.error('Error loading residents:', error);
+        }
+    }
     
     window.acceptPayment = function() {
         const modal = document.getElementById('acceptPaymentModal');
@@ -401,11 +423,11 @@
                 }
                 const residentSelect = document.getElementById('paymentResident');
                 if (residentSelect) {
-                    residentSelect.value = '1'; // X / 2
+                    residentSelect.value = '';
                 }
                 const methodSelect = document.getElementById('paymentMethod');
                 if (methodSelect) {
-                    methodSelect.value = 'cash';
+                    methodSelect.value = 'CASH';
                 }
             }
         }
@@ -418,7 +440,7 @@
         }
     };
     
-    window.savePayment = function(event) {
+    window.savePayment = async function(event) {
         if (event) {
             event.preventDefault();
         }
@@ -427,16 +449,16 @@
         if (!form) return;
         
         // Get form values
-        const resident = document.getElementById('paymentResident').value;
+        const residentId = parseInt(document.getElementById('paymentResident').value);
         const date = document.getElementById('paymentDate').value;
         const amount = parseFloat(document.getElementById('paymentAmount').value);
         const method = document.getElementById('paymentMethod').value;
-        const reference = document.getElementById('paymentReference').value;
-        const comment = document.getElementById('paymentComment').value;
-        const checkNumber = document.getElementById('paymentCheckNumber').value;
+        const reference = document.getElementById('paymentReference').value.trim();
+        const comment = document.getElementById('paymentComment').value.trim();
+        const checkNumber = document.getElementById('paymentCheckNumber').value.trim();
         
         // Validate required fields
-        if (!resident || !date || !amount || !method) {
+        if (!residentId || !date || !amount || !method) {
             if (typeof showWarning === 'function') {
                 showWarning('Пожалуйста, заполните все обязательные поля!');
             }
@@ -452,43 +474,63 @@
         
         // Create payment object
         const paymentData = {
-            resident,
-            date,
-            amount,
-            method,
-            reference,
-            comment,
-            checkNumber
+            resident_id: residentId,
+            received_at: date,
+            amount_total: amount,
+            method: method,
+            reference: reference || checkNumber || null,
+            comment: comment || null
         };
         
-        console.log('Saving payment:', paymentData);
-        
-        // TODO: Save via API
-        // Simulate API call
-        setTimeout(() => {
-            // Add to payments list
-            const newPayment = {
-                id: allPayments.length + 1,
-                date: date,
-                resident: document.getElementById('paymentResident').options[document.getElementById('paymentResident').selectedIndex].text,
-                amount: amount,
-                method: method,
-                balance: amount,
-                balanceType: 'advance',
-                link: reference || checkNumber || ''
-            };
+        try {
+            let response = await fetch(`${API_BASE}/api/payments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(paymentData)
+            });
             
-            allPayments.unshift(newPayment);
-            applyPaymentFilters();
+            if (!response.ok && response.status === 401) {
+                response = await fetch(`${API_BASE}/api/payments/public`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(paymentData)
+                });
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
             
             // Close modal
             closeAcceptPaymentModal();
+            
+            // Reload payments
+            loadPayments();
             
             // Show success message
             if (typeof showSuccess === 'function') {
                 showSuccess('Платеж успешно принят!');
             }
-        }, 500);
+            
+            // Open payment view
+            if (result.id) {
+                setTimeout(() => {
+                    viewPayment(result.id);
+                }, 500);
+            }
+        } catch (error) {
+            console.error('Error saving payment:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка сохранения платежа: ' + error.message);
+            }
+        }
     };
     
     // Close modal on overlay click
@@ -505,6 +547,9 @@
     
     window.viewPayment = function(id) {
         console.log('Opening payment view for ID:', id);
+        
+        // Store payment ID for payment-view.html
+        window.__currentPaymentId = id;
         
         // Загрузить страницу просмотра через fetch и вставить в SPA контейнер
         const viewUrl = `/admin/content/payment-view.html?id=${id}`;
@@ -545,10 +590,8 @@
                 // Обновить заголовок страницы и breadcrumb
                 updatePageHeaderForPaymentView(id);
                 
-                // Обновить URL в браузере
-                if (window.history && window.history.pushState) {
-                    window.history.pushState({ route: 'payment-view', id: id }, '', `#/payment-view?id=${id}`);
-                }
+                // Обновить URL в браузере через hash (для SPA роутера)
+                window.location.hash = `#/payment-view?id=${id}`;
                 
                 // Скроллить наверх
                 contentContainer.scrollTop = 0;
@@ -660,19 +703,23 @@
     }
     
     // Auto-apply filters on input change
-    document.addEventListener('DOMContentLoaded', function() {
+    function initFilters() {
         const filterInputs = ['filterResident', 'filterMethod', 'filterDateFrom', 'filterDateTo', 'filterSearch'];
         filterInputs.forEach(inputId => {
             const input = document.getElementById(inputId);
             if (input) {
+                // Remove existing listeners
+                const newInput = input.cloneNode(true);
+                input.parentNode.replaceChild(newInput, input);
+                
                 if (inputId === 'filterSearch') {
                     let searchTimeout;
-                    input.addEventListener('input', function() {
+                    newInput.addEventListener('input', function() {
                         clearTimeout(searchTimeout);
                         searchTimeout = setTimeout(applyPaymentFilters, 300);
                     });
                 } else {
-                    input.addEventListener('change', applyPaymentFilters);
+                    newInput.addEventListener('change', applyPaymentFilters);
                 }
             }
         });
@@ -681,7 +728,7 @@
         setTimeout(() => {
             initCustomPaginationDropdown();
         }, 500);
-    });
+    }
     
     // ПРИНУДИТЕЛЬНО ПРИМЕНИТЬ СЕРЫЙ ФОН В DARK THEME
     function applyDarkThemeStyles() {
@@ -825,7 +872,31 @@
         });
     });
     
-    // Initial render
-    renderTable(filteredPayments);
+    // Initialize on page load
+    function initPaymentsPage() {
+        loadResidents().then(() => {
+            loadPayments();
+            initFilters();
+        });
+    }
+    
+    // Listen for SPA content loaded event
+    // Удаляем старый обработчик, если он существует
+    if (window._paymentsContentLoadedHandler) {
+        document.removeEventListener('spa:contentLoaded', window._paymentsContentLoadedHandler);
+    }
+    
+    window._paymentsContentLoadedHandler = function() {
+        initPaymentsPage();
+    };
+    
+    document.addEventListener('spa:contentLoaded', window._paymentsContentLoadedHandler);
+    
+    // Initial load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPaymentsPage);
+    } else {
+        initPaymentsPage();
+    }
 })();
 </script>

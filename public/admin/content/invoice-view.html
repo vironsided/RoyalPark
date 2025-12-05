@@ -2,7 +2,7 @@
 <div class="content-wrapper invoice-view-page">
     <div class="invoice-header">
         <h1 id="invoiceTitle">Счёт: <span id="invoiceNumber">2025-11/000001</span></h1>
-        <a href="#" onclick="history.back(); return false;" class="btn-back">
+        <a href="#" onclick="if (window.goBack) { window.goBack('/invoices'); } else if (window.spaRouter && typeof window.spaRouter.goBack === 'function') { window.spaRouter.goBack('/invoices'); } else if (window.spaRouter && typeof window.spaRouter.navigate === 'function') { window.spaRouter.navigate('/invoices'); } else { window.location.hash = '#/invoices'; } return false;" class="btn-back">
             <i class="bi bi-arrow-left"></i> Назад
         </a>
     </div>
@@ -44,12 +44,12 @@
             </button>
         </div>
         
-        <div class="invoice-form-group">
+        <div class="invoice-form-group" id="invoiceNumberGroup">
             <label>№ счета</label>
             <input type="text" id="editInvoiceNumber" value="2025-11/000001" readonly>
         </div>
 
-        <div class="invoice-form-group">
+        <div class="invoice-form-group" id="dueDateGroup">
             <label>Срок оплаты</label>
             <div class="date-input-wrapper">
                 <input type="date" id="editDueDate">
@@ -59,14 +59,15 @@
             </div>
         </div>
 
-        <div class="invoice-form-group">
+        <div class="invoice-form-group" id="noteGroup">
             <label>Примечание</label>
             <textarea id="editNote" rows="3" placeholder="Введите примечание..."></textarea>
         </div>
 
         <div class="invoice-form-buttons">
-            <button class="btn-primary" onclick="saveInvoice()">Выставить / Обновить</button>
-            <button class="btn-danger" onclick="cancelInvoice()">Отменить</button>
+            <button class="btn-primary" id="saveInvoiceBtn" onclick="saveInvoice()">Выставить / Обновить</button>
+            <button class="btn-primary" id="reissueInvoiceBtn" onclick="reissueInvoice()" style="display: none;">Выставить заново</button>
+            <button class="btn-danger" id="cancelInvoiceBtn" onclick="cancelInvoice()">Отменить</button>
         </div>
     </div>
 
@@ -154,51 +155,213 @@
 
 <script>
 (function() {
-    // Get invoice ID from URL
+    const API_BASE = 'http://localhost:8000';
+    
+    // URL params - need to be accessible globally
     const urlParams = new URLSearchParams(window.location.search);
-    const invoiceId = urlParams.get('id') || window.location.hash.split('/').pop();
+    
+    // Get invoice ID from multiple sources (priority order)
+    let invoiceId = null;
+    
+    // 1. Try global variable (set by SPA loader)
+    if (window.__currentInvoiceId) {
+        invoiceId = window.__currentInvoiceId;
+        console.log('📋 Got invoice ID from window.__currentInvoiceId:', invoiceId);
+    }
+    
+    // 2. Try URL query params
+    if (!invoiceId) {
+        const urlParams = new URLSearchParams(window.location.search);
+        invoiceId = urlParams.get('id');
+        if (invoiceId) {
+            console.log('📋 Got invoice ID from window.location.search:', invoiceId);
+        }
+    }
+    
+    // 3. Try hash query params
+    if (!invoiceId) {
+        const hashParts = window.location.hash.split('?');
+        if (hashParts.length > 1) {
+            const hashParams = new URLSearchParams(hashParts[1]);
+            invoiceId = hashParams.get('id');
+            if (invoiceId) {
+                console.log('📋 Got invoice ID from window.location.hash query:', invoiceId);
+            }
+        }
+    }
+    
+    // 4. Try hash path
+    if (!invoiceId) {
+        const hashParts = window.location.hash.split('?');
+        const hashPath = hashParts[0];
+        const lastPart = hashPath.split('/').pop();
+        // Only use if it's a number
+        if (lastPart && !isNaN(lastPart) && lastPart !== 'invoice-view') {
+            invoiceId = lastPart;
+            console.log('📋 Got invoice ID from hash path:', invoiceId);
+        }
+    }
+    
+    // Clean up invoiceId - remove any non-numeric characters
+    if (invoiceId) {
+        invoiceId = invoiceId.toString().trim();
+        // If it contains "invoices", extract the number part
+        if (invoiceId.includes('invoices')) {
+            const match = invoiceId.match(/\d+/);
+            invoiceId = match ? match[0] : null;
+        }
+        // Ensure it's a valid number
+        if (invoiceId && (isNaN(invoiceId) || invoiceId === '')) {
+            invoiceId = null;
+        }
+    }
+    
+    console.log('📋 Final extracted invoice ID:', invoiceId);
     
     // Load invoice data
-    function loadInvoice(id) {
-        // TODO: Load from API
-        // For now, use mock data
-        const invoice = {
-            id: id || 1,
-            invoiceNumber: '2025-11/000001',
-            resident: 'X/2',
-            period: '2025-11',
-            status: 'DRAFT',
-            dueDate: null,
-            total: 10.00,
-            paid: 10.00,
-            remaining: 0.00,
-            note: null,
-            payments: [
-                { date: '2025-11-21', method: 'CARD', amount: 10.00, paymentId: 1, reference: '123456', comment: '—' }
-            ],
-            lineItems: [
-                { description: 'Газ 20.0 м³', amount: 10.00, vat: 0.00, total: 10.00 }
-            ]
-        };
+    async function loadInvoice(id) {
+        console.log('🔍 loadInvoice called with id:', id, 'type:', typeof id);
         
-        renderInvoice(invoice);
+        if (!id) {
+            console.error('No invoice ID provided');
+            if (typeof showError === 'function') {
+                showError('Не указан ID счета');
+            }
+            return;
+        }
+        
+        // Ensure id is a number string
+        const cleanId = String(id).trim();
+        if (isNaN(cleanId)) {
+            console.error('Invalid invoice ID (not a number):', cleanId);
+            if (typeof showError === 'function') {
+                showError(`Неверный ID счета: ${cleanId}`);
+            }
+            return;
+        }
+        
+        try {
+            let url = `${API_BASE}/api/invoices/${cleanId}`;
+            console.log('📤 Fetching invoice from:', url);
+            let response = await fetch(url);
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    url = `${API_BASE}/api/invoices/${cleanId}/public`;
+                    console.log('📤 Trying public endpoint:', url);
+                    response = await fetch(url);
+                }
+            }
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            console.log('📋 Invoice data received:', data);
+            console.log('💰 Payments in data:', data.payments);
+            
+            // Transform API data to frontend format
+            const invoice = {
+                id: data.id,
+                invoiceNumber: data.number || `${data.period_year}-${String(data.period_month).padStart(2, '0')}/000000`,
+                resident: data.resident_code,
+                period: `${data.period_year}-${String(data.period_month).padStart(2, '0')}`,
+                status: data.status,
+                dueDate: data.due_date || null,
+                total: data.amount_total,
+                paid: data.paid_amount,
+                remaining: data.remaining_amount,
+                note: data.notes || null,
+                payments: data.payments || [],
+                lineItems: data.lines || []
+            };
+            
+            console.log('📋 Transformed invoice:', invoice);
+            console.log('💰 Payments in invoice:', invoice.payments);
+            
+            renderInvoice(invoice);
+        } catch (error) {
+            console.error('Error loading invoice:', error);
+            if (typeof showError === 'function') {
+                showError(`Ошибка загрузки счета: ${error.message}`);
+            } else {
+                alert(`Ошибка загрузки счета: ${error.message}`);
+            }
+        }
     }
     
     function renderInvoice(invoice) {
         document.getElementById('invoiceNumber').textContent = invoice.invoiceNumber;
         document.getElementById('invoiceResident').textContent = invoice.resident;
         document.getElementById('invoicePeriod').textContent = invoice.period;
-        document.getElementById('invoiceStatus').textContent = invoice.status;
-        document.getElementById('invoiceDueDate').textContent = invoice.dueDate || '—';
+        
+        // Status badge
+        const statusEl = document.getElementById('invoiceStatus');
+        statusEl.textContent = invoice.status;
+        statusEl.className = 'value';
+        
+        // Show/hide buttons based on status
+        const saveBtn = document.getElementById('saveInvoiceBtn');
+        const reissueBtn = document.getElementById('reissueInvoiceBtn');
+        const cancelBtn = document.getElementById('cancelInvoiceBtn');
+        
+        if (invoice.status === 'CANCELED') {
+            // For CANCELED: show only "Выставить заново" button, hide others and form fields
+            if (saveBtn) saveBtn.style.display = 'none';
+            if (reissueBtn) reissueBtn.style.display = 'inline-block';
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            
+            // Hide form fields for CANCELED status
+            const invoiceNumberGroup = document.getElementById('invoiceNumberGroup');
+            const dueDateGroup = document.getElementById('dueDateGroup');
+            const noteGroup = document.getElementById('noteGroup');
+            
+            if (invoiceNumberGroup) invoiceNumberGroup.style.display = 'none';
+            if (dueDateGroup) dueDateGroup.style.display = 'none';
+            if (noteGroup) noteGroup.style.display = 'none';
+        } else if (invoice.status === 'PAID') {
+            // For PAID: hide all action buttons (read-only)
+            if (saveBtn) saveBtn.style.display = 'none';
+            if (reissueBtn) reissueBtn.style.display = 'none';
+            if (cancelBtn) cancelBtn.style.display = 'none';
+        } else {
+            // For DRAFT, ISSUED, PARTIAL: show "Выставить / Обновить" and "Отменить"
+            if (saveBtn) saveBtn.style.display = 'inline-block';
+            if (reissueBtn) reissueBtn.style.display = 'none';
+            if (cancelBtn) cancelBtn.style.display = 'inline-block';
+            
+            // Show form fields for other statuses
+            const invoiceNumberGroup = document.getElementById('invoiceNumberGroup');
+            const dueDateGroup = document.getElementById('dueDateGroup');
+            const noteGroup = document.getElementById('noteGroup');
+            
+            if (invoiceNumberGroup) invoiceNumberGroup.style.display = '';
+            if (dueDateGroup) dueDateGroup.style.display = '';
+            if (noteGroup) noteGroup.style.display = '';
+        }
+        
+        // Format due date for display
+        let dueDateDisplay = '—';
+        if (invoice.dueDate) {
+            const date = new Date(invoice.dueDate);
+            dueDateDisplay = date.toLocaleDateString('ru-RU');
+        }
+        document.getElementById('invoiceDueDate').textContent = dueDateDisplay;
         document.getElementById('invoiceTotal').textContent = invoice.total.toFixed(2) + ' ₼';
         document.getElementById('invoiceNote').textContent = invoice.note || '—';
         
         document.getElementById('editInvoiceNumber').value = invoice.invoiceNumber;
         if (invoice.dueDate) {
+            // Convert YYYY-MM-DD to date input format
             document.getElementById('editDueDate').value = invoice.dueDate;
+        } else {
+            document.getElementById('editDueDate').value = '';
         }
         if (invoice.note) {
             document.getElementById('editNote').value = invoice.note;
+        } else {
+            document.getElementById('editNote').value = '';
         }
         
         // Render line items
@@ -206,14 +369,14 @@
         if (invoice.lineItems && invoice.lineItems.length > 0) {
             let html = invoice.lineItems.map(item => `
                 <tr>
-                    <td>${item.description}</td>
-                    <td>${item.amount.toFixed(2)}</td>
-                    <td>${item.vat.toFixed(2)}</td>
-                    <td class="total-value">${item.total.toFixed(2)}</td>
+                    <td>${item.description || '—'}</td>
+                    <td>${(item.amount_net || 0).toFixed(2)}</td>
+                    <td>${(item.amount_vat || 0).toFixed(2)}</td>
+                    <td class="total-value">${(item.amount_total || 0).toFixed(2)}</td>
                 </tr>
             `).join('');
             
-            const total = invoice.lineItems.reduce((sum, item) => sum + item.total, 0);
+            const total = invoice.lineItems.reduce((sum, item) => sum + (item.amount_total || 0), 0);
             html += `
                 <tr class="total-row">
                     <td colspan="3">Итого к оплате</td>
@@ -222,30 +385,50 @@
             `;
             
             tbody.innerHTML = html;
+        } else {
+            tbody.innerHTML = '<tr><td colspan="4">Нет данных</td></tr>';
         }
         
         // Render payments table
         const paymentsTbody = document.getElementById('paymentsTableBody');
         if (paymentsTbody) {
+            console.log('💰 Rendering payments:', invoice.payments);
             if (invoice.payments && invoice.payments.length > 0) {
-                paymentsTbody.innerHTML = invoice.payments.map(p => `
+                paymentsTbody.innerHTML = invoice.payments.map(p => {
+                    // Handle date - can be string or Date object
+                    let dateStr = '—';
+                    if (p.date) {
+                        try {
+                            if (typeof p.date === 'string') {
+                                dateStr = new Date(p.date).toLocaleDateString('ru-RU');
+                            } else {
+                                dateStr = new Date(p.date).toLocaleDateString('ru-RU');
+                            }
+                        } catch (e) {
+                            console.error('Error parsing date:', p.date, e);
+                            dateStr = p.date;
+                        }
+                    }
+                    return `
                     <tr>
-                        <td>${p.date}</td>
-                        <td>${p.method}</td>
-                        <td class="payments-amount-cell">${p.amount.toFixed(2)}</td>
+                        <td>${dateStr}</td>
+                        <td>${p.method || '—'}</td>
+                        <td class="payments-amount-cell">${(p.amount || 0).toFixed(2)}</td>
                         <td>
                             <a 
-                                href="#/payment-view?id=${p.paymentId}" 
+                                href="#/payment-view?id=${p.payment_id}" 
                                 class="payment-link"
-                                onclick="if (window.viewPayment) { viewPayment(${p.paymentId}); } else { window.location.href = '/admin/#/payment-view?id=${p.paymentId}'; } return false;"
+                                onclick="if (window.viewPayment) { viewPayment(${p.payment_id}); } else { window.location.href = '/admin/#/payment-view?id=${p.payment_id}'; } return false;"
                             >
-                                #${p.paymentId} / ${p.reference || ''}
+                                #${p.payment_id}${p.reference ? ' / ' + p.reference : ''}
                             </a>
                         </td>
                         <td>${p.comment || '—'}</td>
                     </tr>
-                `).join('');
+                `;
+                }).join('');
             } else {
+                console.log('💰 No payments found');
                 paymentsTbody.innerHTML = '<tr class="payments-empty-row"><td colspan="5">Оплаты по этому счёту отсутствуют.</td></tr>';
             }
         }
@@ -256,15 +439,101 @@
         `;
     }
     
-    window.saveInvoice = function() {
-        const invoiceId = urlParams.get('id') || window.location.hash.split('/').pop();
-        const dueDate = document.getElementById('editDueDate').value;
-        const note = document.getElementById('editNote').value;
+    window.saveInvoice = async function() {
+        // Use the global invoiceId variable, or try to get from URL
+        let currentInvoiceId = invoiceId || window.__currentInvoiceId;
         
-        console.log('Saving invoice:', { invoiceId, dueDate, note });
-        // TODO: Save via API
-        if (typeof showSuccess === 'function') {
-            showSuccess('Счёт успешно обновлён!');
+        if (!currentInvoiceId) {
+            // Try to get from URL params
+            const urlParams = new URLSearchParams(window.location.search);
+            currentInvoiceId = urlParams.get('id');
+            
+            if (!currentInvoiceId) {
+                const hashParts = window.location.hash.split('?');
+                if (hashParts.length > 1) {
+                    const hashParams = new URLSearchParams(hashParts[1]);
+                    currentInvoiceId = hashParams.get('id');
+                }
+            }
+        }
+        
+        if (!currentInvoiceId) {
+            if (typeof showError === 'function') {
+                showError('Не указан ID счета');
+            }
+            return;
+        }
+        
+        // Clean up invoiceId
+        const cleanId = String(currentInvoiceId).trim();
+        if (isNaN(cleanId)) {
+            if (typeof showError === 'function') {
+                showError(`Неверный ID счета: ${cleanId}`);
+            }
+            return;
+        }
+        
+        const dueDateInput = document.getElementById('editDueDate');
+        const dueDate = dueDateInput ? dueDateInput.value.trim() : '';
+        const noteInput = document.getElementById('editNote');
+        const note = noteInput ? noteInput.value.trim() : '';
+        
+        try {
+            const payload = {
+                due_date: dueDate || null,
+                notes: note || null
+            };
+            
+            console.log('💾 Saving invoice:', { cleanId, payload });
+            
+            let url = `${API_BASE}/api/invoices/${cleanId}`;
+            console.log('📤 PUT to:', url);
+            let response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            console.log('📥 Response status:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    url = `${API_BASE}/api/invoices/${cleanId}/public`;
+                    console.log('📤 Trying public endpoint:', url);
+                    response = await fetch(url, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    console.log('📥 Public response status:', response.status, response.statusText);
+                }
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: response.statusText }));
+                console.error('❌ Error response:', errorData);
+                throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            if (typeof showSuccess === 'function') {
+                showSuccess(result.message || 'Счёт успешно обновлён!');
+            }
+            
+            // Reload invoice data
+            await loadInvoice(cleanId);
+        } catch (error) {
+            console.error('Error saving invoice:', error);
+            if (typeof showError === 'function') {
+                showError(`Ошибка сохранения: ${error.message}`);
+            } else {
+                alert(`Ошибка сохранения: ${error.message}`);
+            }
         }
     };
     
@@ -289,12 +558,11 @@
         }
     };
     
-    window.confirmCancelInvoice = function() {
+    window.confirmCancelInvoice = async function() {
         const reasonTextarea = document.getElementById('cancelReason');
         const reason = reasonTextarea ? reasonTextarea.value.trim() : '';
         
         if (!reason) {
-            // Можно показать предупреждение, что нужно указать причину
             if (reasonTextarea) {
                 reasonTextarea.focus();
                 reasonTextarea.style.borderColor = '#ff6b6b';
@@ -302,35 +570,119 @@
                     reasonTextarea.style.borderColor = '';
                 }, 2000);
             }
+            if (typeof showWarning === 'function') {
+                showWarning('Укажите причину отмены');
+            }
             return;
         }
         
-        // Отключить кнопку во время отправки
         const confirmBtn = document.getElementById('confirmCancelBtn');
         if (confirmBtn) {
             confirmBtn.disabled = true;
             confirmBtn.textContent = 'Отмена...';
         }
         
-        // TODO: Отправить запрос на отмену счета через API
-        const invoiceId = urlParams.get('id') || window.location.hash.split('/').pop() || 1;
+        // Use the global invoiceId variable, or try to get from URL
+        let currentInvoiceId = invoiceId || window.__currentInvoiceId;
         
-        console.log('Canceling invoice:', { invoiceId, reason });
+        if (!currentInvoiceId) {
+            // Try to get from URL params
+            const urlParams = new URLSearchParams(window.location.search);
+            currentInvoiceId = urlParams.get('id');
+            
+            if (!currentInvoiceId) {
+                const hashParts = window.location.hash.split('?');
+                if (hashParts.length > 1) {
+                    const hashParams = new URLSearchParams(hashParts[1]);
+                    currentInvoiceId = hashParams.get('id');
+                }
+            }
+        }
         
-        // Симуляция API запроса
-        setTimeout(() => {
-            if (typeof showSuccess === 'function') {
-                showSuccess('Счёт отменён!');
+        if (!currentInvoiceId) {
+            if (typeof showError === 'function') {
+                showError('Не указан ID счета');
+            }
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Отменить счёт';
+            }
+            return;
+        }
+        
+        // Clean up invoiceId
+        const cleanId = String(currentInvoiceId).trim();
+        if (isNaN(cleanId)) {
+            if (typeof showError === 'function') {
+                showError(`Неверный ID счета: ${cleanId}`);
+            }
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Отменить счёт';
+            }
+            return;
+        }
+        
+        try {
+            const payload = { reason: reason };
+            
+            let url = `${API_BASE}/api/invoices/${cleanId}/cancel`;
+            let response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    url = `${API_BASE}/api/invoices/${cleanId}/cancel/public`;
+                    response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                }
             }
             
-            // Закрыть модальное окно
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: response.statusText }));
+                throw new Error(errorData.detail || `HTTP ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            if (typeof showSuccess === 'function') {
+                showSuccess(result.message || 'Счёт отменён!');
+            }
+            
             closeCancelModal();
             
-            // Вернуться назад или перезагрузить страницу
             setTimeout(() => {
-                history.back();
+                if (window.goBack) {
+                    window.goBack('/invoices');
+                } else if (window.spaRouter && typeof window.spaRouter.goBack === 'function') {
+                    window.spaRouter.goBack('/invoices');
+                } else {
+                    window.location.hash = '#/invoices';
+                }
             }, 1000);
-        }, 500);
+        } catch (error) {
+            console.error('Error canceling invoice:', error);
+            if (typeof showError === 'function') {
+                showError(`Ошибка отмены: ${error.message}`);
+            } else {
+                alert(`Ошибка отмены: ${error.message}`);
+            }
+            
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Отменить счёт';
+            }
+        }
     };
     
     // Закрытие модального окна при клике на overlay
@@ -353,19 +705,163 @@
     });
     
     window.printInvoice = function() {
-        const invoiceId = urlParams.get('id') || window.location.hash.split('/').pop() || 1;
-        const printUrl = `/admin/content/invoice-print.html?id=${invoiceId}`;
+        // Use the global invoiceId that was extracted at page load
+        let printId = invoiceId || window.__currentInvoiceId;
+        
+        if (!printId) {
+            // Try to get from URL params
+            const urlParams = new URLSearchParams(window.location.search);
+            printId = urlParams.get('id');
+            
+            if (!printId) {
+                const hashParts = window.location.hash.split('?');
+                if (hashParts.length > 1) {
+                    const hashParams = new URLSearchParams(hashParts[1]);
+                    printId = hashParams.get('id');
+                }
+            }
+        }
+        
+        if (!printId) {
+            if (typeof showError === 'function') {
+                showError('Не указан ID счета для печати');
+            }
+            return;
+        }
+        
+        // Clean up invoiceId
+        const cleanId = String(printId).trim();
+        if (isNaN(cleanId)) {
+            if (typeof showError === 'function') {
+                showError(`Неверный ID счета: ${cleanId}`);
+            }
+            return;
+        }
+        
+        // Open frontend print page which loads data from backend API
+        const printUrl = `/admin/content/invoice-print.html?id=${cleanId}`;
         window.open(printUrl, '_blank');
+    };
+    
+    window.reissueInvoice = async function() {
+        // Use the global invoiceId variable, or try to get from URL
+        let currentInvoiceId = invoiceId || window.__currentInvoiceId;
+        
+        if (!currentInvoiceId) {
+            // Try to get from URL params
+            const urlParams = new URLSearchParams(window.location.search);
+            currentInvoiceId = urlParams.get('id');
+            
+            if (!currentInvoiceId) {
+                const hashParts = window.location.hash.split('?');
+                if (hashParts.length > 1) {
+                    const hashParams = new URLSearchParams(hashParts[1]);
+                    currentInvoiceId = hashParams.get('id');
+                }
+            }
+        }
+        
+        if (!currentInvoiceId) {
+            if (typeof showError === 'function') {
+                showError('Не указан ID счета');
+            }
+            return;
+        }
+        
+        // Clean up invoiceId
+        const cleanId = String(currentInvoiceId).trim();
+        if (isNaN(cleanId)) {
+            if (typeof showError === 'function') {
+                showError(`Неверный ID счета: ${cleanId}`);
+            }
+            return;
+        }
+        
+        const dueDateInput = document.getElementById('editDueDate');
+        const dueDate = dueDateInput ? dueDateInput.value.trim() : '';
+        const noteInput = document.getElementById('editNote');
+        const comment = noteInput ? noteInput.value.trim() : '';
+        
+        try {
+            const payload = {
+                due_date: dueDate || null,
+                comment: comment || null
+            };
+            
+            console.log('🔄 Reissuing invoice:', { cleanId, payload });
+            
+            let url = `${API_BASE}/api/invoices/${cleanId}/reissue`;
+            console.log('📤 POST to:', url);
+            let response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            console.log('📥 Response status:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    url = `${API_BASE}/api/invoices/${cleanId}/reissue/public`;
+                    console.log('📤 Trying public endpoint:', url);
+                    response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    console.log('📥 Public response status:', response.status, response.statusText);
+                }
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: response.statusText }));
+                console.error('❌ Error response:', errorData);
+                throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            if (typeof showSuccess === 'function') {
+                showSuccess(result.message || 'Счёт выставлен заново!');
+            }
+            
+            // Reload invoice data
+            await loadInvoice(cleanId);
+        } catch (error) {
+            console.error('Error reissuing invoice:', error);
+            if (typeof showError === 'function') {
+                showError(`Ошибка: ${error.message}`);
+            } else {
+                alert(`Ошибка: ${error.message}`);
+            }
+        }
     };
     
     window.openDatePicker = function(inputId) {
         const input = document.getElementById(inputId);
         if (input) {
             if (input.showPicker && typeof input.showPicker === 'function') {
-                input.showPicker().catch(err => {
+                try {
+                    const pickerPromise = input.showPicker();
+                    if (pickerPromise && typeof pickerPromise.catch === 'function') {
+                        pickerPromise.catch(err => {
+                            console.warn('showPicker failed, using fallback:', err);
+                            input.focus();
+                            input.click();
+                        });
+                    } else {
+                        input.focus();
+                        input.click();
+                    }
+                } catch (err) {
+                    console.warn('showPicker not available, using fallback:', err);
                     input.focus();
                     input.click();
-                });
+                }
             } else {
                 input.focus();
                 input.click();
@@ -374,10 +870,37 @@
     };
     
     // Load invoice on page load
+    function initInvoiceView() {
+        if (invoiceId) {
+            loadInvoice(invoiceId);
+        } else {
+            console.warn('⚠️ No invoice ID found, waiting for spa:contentLoaded event...');
+        }
+    }
+    
+    // Listen for SPA content loaded event
+    // Удаляем старый обработчик, если он существует
+    if (window._invoiceViewContentLoadedHandler) {
+        document.removeEventListener('spa:contentLoaded', window._invoiceViewContentLoadedHandler);
+    }
+    
+    window._invoiceViewContentLoadedHandler = function(event) {
+        if (event.detail && event.detail.invoiceId) {
+            const eventId = event.detail.invoiceId;
+            console.log('📋 Got invoice ID from spa:contentLoaded event:', eventId);
+            if (!invoiceId) {
+                invoiceId = eventId;
+                loadInvoice(invoiceId);
+            }
+        }
+    };
+    
+    document.addEventListener('spa:contentLoaded', window._invoiceViewContentLoadedHandler);
+    
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => loadInvoice(invoiceId));
+        document.addEventListener('DOMContentLoaded', initInvoiceView);
     } else {
-        loadInvoice(invoiceId);
+        initInvoiceView();
     }
 })();
 </script>

@@ -1,16 +1,135 @@
 <style>
+    /* Стили для таблицы обращений */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-bottom: 0;
+    }
+
+    .table thead th {
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 1rem 0.75rem;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .table tbody td {
+        padding: 1rem 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    .table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Выравнивание колонок */
+    .table th:nth-child(1),
+    .table td:nth-child(1) {
+        width: 12%;
+        min-width: 140px;
+    }
+
+    .table th:nth-child(2),
+    .table td:nth-child(2) {
+        width: 8%;
+        min-width: 60px;
+        text-align: center;
+    }
+
+    .table th:nth-child(3),
+    .table td:nth-child(3) {
+        width: 8%;
+        min-width: 60px;
+        text-align: center;
+    }
+
+    .table th:nth-child(4),
+    .table td:nth-child(4) {
+        width: 18%;
+        min-width: 150px;
+    }
+
+    .table th:nth-child(5),
+    .table td:nth-child(5) {
+        width: 15%;
+        min-width: 120px;
+    }
+
+    .table th:nth-child(6),
+    .table td:nth-child(6) {
+        width: 18%;
+        min-width: 150px;
+    }
+
+    .table th:nth-child(7),
+    .table td:nth-child(7) {
+        width: 12%;
+        min-width: 120px;
+        text-align: center;
+    }
+
+    .table th:nth-child(8),
+    .table td:nth-child(8) {
+        width: 9%;
+        min-width: 140px;
+        text-align: right;
+    }
+
+    /* Стили для статусных бейджей */
     .appeals-status-badge {
         font-size: 0.75rem;
         text-transform: uppercase;
-        padding: 0.35rem 0.85rem;
-        border-radius: 999px;
+        padding: 0.4rem 0.9rem;
+        border-radius: 6px;
         font-weight: 600;
+        letter-spacing: 0.3px;
+        display: inline-block;
+        min-width: 100px;
+        text-align: center;
+        border: 1px solid transparent;
     }
+
+    .appeals-status-badge.bg-success {
+        background: rgba(40, 167, 69, 0.2) !important;
+        color: #28a745 !important;
+        border-color: rgba(40, 167, 69, 0.3);
+    }
+
+    .appeals-status-badge.bg-warning {
+        background: rgba(255, 193, 7, 0.25) !important;
+        color: #ffc107 !important;
+        border-color: rgba(255, 193, 7, 0.4);
+    }
+
+    .appeals-status-badge.bg-warning.text-dark {
+        background: rgba(255, 193, 7, 0.3) !important;
+        color: #ffc107 !important;
+        border-color: rgba(255, 193, 7, 0.5);
+    }
+
     .appeals-empty {
         text-align: center;
         padding: 3rem 1rem;
         color: var(--text-secondary);
     }
+
     .appeal-modal-overlay {
         position: fixed;
         top: 0;
@@ -23,9 +142,11 @@
         justify-content: center;
         z-index: 1100;
     }
+
     .appeal-modal-overlay.show {
         display: flex;
     }
+
     .appeal-modal {
         background: #1f2330;
         color: var(--text-primary);
@@ -34,6 +155,7 @@
         box-shadow: 0 20px 60px rgba(0,0,0,0.4);
         border: 1px solid rgba(255,255,255,0.08);
     }
+
     .appeal-modal-header, .appeal-modal-footer {
         padding: 1.25rem 1.5rem;
         border-bottom: 1px solid rgba(255,255,255,0.08);
@@ -41,20 +163,24 @@
         justify-content: space-between;
         align-items: center;
     }
+
     .appeal-modal-body {
         padding: 1.5rem;
         display: flex;
         flex-direction: column;
         gap: 1rem;
     }
+
     .appeal-info-row {
         display: flex;
         justify-content: space-between;
         gap: 1rem;
     }
+
     .appeal-info-row span:first-child {
         color: var(--text-secondary);
     }
+
     .appeals-action-btn {
         border-radius: 12px;
         font-weight: 600;
@@ -79,18 +205,95 @@
     .appeals-filter-select {
         min-width: 160px;
         padding: 0.45rem 0.9rem;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        background: rgba(255, 255, 255, 0.04);
+        padding-right: 2.5rem;
+        border-radius: 8px;
+        border: 1px solid rgba(102, 126, 234, 0.5);
+        background: rgba(31, 35, 48, 0.8);
         color: var(--text-primary);
         font-size: 0.9rem;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .appeals-filter-select:hover {
+        border-color: rgba(102, 126, 234, 0.7);
+        background-color: rgba(31, 35, 48, 0.95);
     }
 
     .appeals-filter-select:focus {
         outline: none;
         border-color: #667eea;
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
-        background: rgba(255, 255, 255, 0.08);
+        background-color: rgba(31, 35, 48, 1);
+    }
+
+    /* Темные стили для опций в выпадающем списке */
+    .appeals-filter-select option {
+        background: #1f2330 !important;
+        background-color: #1f2330 !important;
+        color: #ffffff !important;
+        padding: 0.5rem;
+    }
+
+    .appeals-filter-select option:hover,
+    .appeals-filter-select option:focus {
+        background: rgba(102, 126, 234, 0.3) !important;
+        background-color: rgba(102, 126, 234, 0.3) !important;
+    }
+
+    .appeals-filter-select option:checked {
+        background: #667eea !important;
+        background-color: #667eea !important;
+        color: white !important;
+    }
+
+    /* Дополнительные стили для темной темы select */
+    #appealsStatusFilter {
+        background-color: rgba(31, 35, 48, 0.9) !important;
+        background: rgba(31, 35, 48, 0.9) !important;
+        color: #ffffff !important;
+    }
+
+    #appealsStatusFilter option {
+        background: #1f2330 !important;
+        background-color: #1f2330 !important;
+        color: #ffffff !important;
+    }
+
+    /* Стили для модального окна подтверждения удаления */
+    #deleteConfirmModal {
+        z-index: 1200;
+    }
+
+    #deleteConfirmModal .appeal-modal-footer {
+        border-top: 1px solid rgba(255,255,255,0.08);
+        padding-top: 1rem;
+    }
+
+    #deleteConfirmModal .btn-primary {
+        background: #667eea;
+        border-color: #667eea;
+        color: white;
+    }
+
+    #deleteConfirmModal .btn-primary:hover {
+        background: #5568d3;
+        border-color: #5568d3;
+    }
+
+    #deleteConfirmModal .btn-outline-light {
+        border-color: rgba(255, 255, 255, 0.3);
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    #deleteConfirmModal .btn-outline-light:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.5);
     }
 </style>
 
@@ -103,10 +306,8 @@
                     <span>Статус:</span>
                     <select id="appealsStatusFilter" class="appeals-filter-select">
                         <option value="all">Все</option>
-                        <option value="unread">Не прочитано</option>
-                        <option value="read">Прочитано</option>
-                        <option value="in_progress">В процессе</option>
-                        <option value="escalated">На доп. проверке</option>
+                        <option value="UNREAD">Не прочитано</option>
+                        <option value="READ">Прочитано</option>
                     </select>
                 </div>
             </div>
@@ -125,7 +326,11 @@
                             <th class="text-end">Действия</th>
                         </tr>
                     </thead>
-                    <tbody id="appealsTableBody"></tbody>
+                    <tbody id="appealsTableBody">
+                        <tr>
+                            <td colspan="8" class="text-center">Загрузка данных...</td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
 
@@ -167,148 +372,103 @@
     </div>
 </div>
 
+<!-- Модальное окно подтверждения удаления -->
+<div class="appeal-modal-overlay" id="deleteConfirmModal" style="display: none;">
+    <div class="appeal-modal" style="width: min(400px, 90vw);">
+        <div class="appeal-modal-header">
+            <h5 class="mb-0">Подтвердите действие</h5>
+            <button type="button" class="btn-close btn-close-white" id="deleteConfirmModalClose"></button>
+        </div>
+        <div class="appeal-modal-body">
+            <p class="mb-0" id="deleteConfirmMessage">Вы уверены, что хотите удалить это обращение?</p>
+        </div>
+        <div class="appeal-modal-footer" style="justify-content: flex-end; gap: 0.75rem;">
+            <button class="btn btn-outline-light" id="deleteConfirmCancel">Отмена</button>
+            <button class="btn btn-primary" id="deleteConfirmOk">OK</button>
+        </div>
+    </div>
+</div>
+
 <script>
-// Appeals table variant: compact list of resident complaints
 (function() {
     'use strict';
 
-    const statusStyles = {
-        read: { text: 'прочитано', className: 'bg-success' },
-        unread: { text: 'не прочитано', className: 'bg-warning text-dark' },
-        in_progress: { text: 'в процессе', className: 'bg-primary' },
-        escalated: { text: 'на доп. проверке', className: 'bg-danger' }
-    };
-
+    const API_BASE = 'http://localhost:8000';
     const state = {
-        appeals: []
+        notifications: [],
+        currentNotification: null
     };
 
-    function init() {
-        const users = ((window.TestData && window.TestData.users) || []).reduce((acc, user) => {
-            acc[user.id] = user;
-            return acc;
-        }, {});
+    const statusStyles = {
+        READ: { text: 'прочитано', className: 'bg-success' },
+        UNREAD: { text: 'не прочитано', className: 'bg-warning text-dark' }
+    };
 
-        state.appeals = ((window.TestData && window.TestData.debts) || []).map((entry) => {
-            const resident = users[entry.userId] || {};
-            const submitted = entry.submittedAt || `${entry.dueDate || '2024-01-01'}T09:00:00`;
-            const [block, apt] = splitApartment(entry.apartment);
-            return {
-                id: entry.id,
-                createdAt: submitted,
-                block: block || resident.building || '—',
-                home: apt || resident.apartment || '—',
-                resident: resident.name || entry.userName || '—',
-                phone: resident.phone || '—',
-                email: resident.email || '—',
-                status: deriveStatus(entry),
-                raw: entry,
-                residentData: resident
-            };
-        });
-
-        // Если из TestData ничего не пришло, покажем несколько статических обращений
-        if (!state.appeals.length) {
-            state.appeals = [
-                {
-                    id: 1,
-                    createdAt: '2025-11-25T09:58:00',
-                    block: 'A',
-                    home: '50',
-                    resident: 'resident',
-                    phone: '—',
-                    email: '—',
-                    status: 'unread',
-                    raw: { residentComment: '—' }
-                },
-                {
-                    id: 2,
-                    createdAt: '2025-11-25T09:57:00',
-                    block: 'A',
-                    home: '50',
-                    resident: 'resident',
-                    phone: '—',
-                    email: '—',
-                    status: 'unread',
-                    raw: { residentComment: '—' }
-                }
-            ];
-        }
-
-        cacheDom();
-        applyFilters();
-        bindEvents();
-    }
-
-    let tableBody, emptyState, statusSelect, searchInput, modalOverlay;
+    let tableBody, emptyState, statusSelect, modalOverlay;
     let modalResident, modalApartment, modalContacts, modalDescription;
+    let deleteConfirmModal, deleteConfirmMessage, deleteConfirmOk, deleteConfirmCancel, deleteConfirmClose;
+    let pendingDeleteId = null;
 
     function cacheDom() {
         tableBody = document.getElementById('appealsTableBody');
         emptyState = document.getElementById('appealsEmptyState');
-        statusSelect = document.getElementById('appealsStatusFilter') || null;
-        searchInput = null;
+        statusSelect = document.getElementById('appealsStatusFilter');
         modalOverlay = document.getElementById('appealModal');
         modalResident = document.getElementById('modalResident');
         modalApartment = document.getElementById('modalApartment');
         modalContacts = document.getElementById('modalContacts');
         modalDescription = document.getElementById('modalDescription');
+        
+        // Элементы модального окна подтверждения удаления
+        deleteConfirmModal = document.getElementById('deleteConfirmModal');
+        deleteConfirmMessage = document.getElementById('deleteConfirmMessage');
+        deleteConfirmOk = document.getElementById('deleteConfirmOk');
+        deleteConfirmCancel = document.getElementById('deleteConfirmCancel');
+        deleteConfirmClose = document.getElementById('deleteConfirmModalClose');
     }
 
-    function bindEvents() {
-        if (statusSelect) {
-            statusSelect.addEventListener('change', applyFilters);
-        }
-        if (searchInput) {
-            searchInput.addEventListener('input', debounce(applyFilters, 200));
-        }
-
-        if (tableBody) {
-            tableBody.addEventListener('click', (event) => {
-                const viewBtn = event.target.closest('[data-action="view"]');
-                const deleteBtn = event.target.closest('[data-action="delete"]');
-                if (viewBtn) {
-                    const appeal = findAppeal(viewBtn.dataset.id);
-                    if (appeal) openModal(appeal);
-                } else if (deleteBtn) {
-                    const appeal = findAppeal(deleteBtn.dataset.id);
-                    if (appeal) deleteAppeal(appeal.id);
+    async function loadNotifications() {
+        try {
+            const statusValue = statusSelect?.value || 'all';
+            const statusParam = statusValue !== 'all' ? `&status=${statusValue}` : '';
+            // Используем /notifications/json вместо /api/notifications/public
+            const url = `${API_BASE}/notifications/json?page=1&per_page=200${statusParam}`;
+            
+            console.log('Loading notifications from:', url);
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    console.log('Not authorized, using public endpoint');
+                    // Уже используем публичный endpoint
+                    throw new Error('Unauthorized');
                 }
-            });
-        }
-
-        const closeBtn = document.getElementById('appealModalClose');
-        const dismissBtn = document.getElementById('appealModalDismiss');
-        if (closeBtn) closeBtn.addEventListener('click', closeModal);
-        if (dismissBtn) dismissBtn.addEventListener('click', closeModal);
-        if (modalOverlay) {
-            modalOverlay.addEventListener('click', (event) => {
-                if (event.target === modalOverlay) closeModal();
-            });
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Notifications data received:', data);
+            
+            state.notifications = data.notifications || [];
+            renderTable();
+        } catch (error) {
+            console.error('Error loading notifications:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка загрузки обращений: ' + error.message);
+            }
+            state.notifications = [];
+            renderTable();
         }
     }
 
-    function applyFilters() {
-        const items = getFilteredAppeals();
-        renderTable(items);
-    }
-
-    function getFilteredAppeals() {
-        let items = [...state.appeals];
-
-        const statusValue = statusSelect?.value || 'all';
-        if (statusValue !== 'all') {
-            items = items.filter(a => a.status === statusValue);
-        }
-
-        return items;
-    }
-
-    function renderTable(items = state.appeals) {
+    function renderTable() {
         if (!tableBody) {
             console.error('Table body not found!');
             return;
         }
+
+        const items = state.notifications;
+
         if (!items.length) {
             tableBody.innerHTML = '';
             if (emptyState) emptyState.style.display = 'block';
@@ -316,24 +476,38 @@
         }
 
         if (emptyState) emptyState.style.display = 'none';
-        tableBody.innerHTML = items.map(appeal => {
-            const status = statusStyles[appeal.status] || statusStyles.unread;
+        
+        tableBody.innerHTML = items.map(notif => {
+            const status = statusStyles[notif.status] || statusStyles.UNREAD;
+            const block = notif.block_name || '—';
+            const home = notif.unit_number || '—';
+            const resident = notif.user_full_name || '—';
+            const phone = notif.user_phone || '—';
+            const email = notif.user_email || '—';
+            
+            // Форматируем дату как на фотографии: отдельно дата и время
+            const dateStr = formatDateTime(notif.created_at);
+            const [datePart, timePart] = dateStr.split(', ');
+            
             return `
                 <tr>
-                    <td>${formatDateTime(appeal.createdAt)}</td>
-                    <td>${appeal.block}</td>
-                    <td>${appeal.home}</td>
-                    <td>${appeal.resident}</td>
-                    <td>${appeal.phone}</td>
-                    <td>${appeal.email}</td>
                     <td>
+                        <div style="font-weight: 500;">${datePart || '—'}</div>
+                        <div style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 2px;">${timePart || ''}</div>
+                    </td>
+                    <td style="text-align: center; font-weight: 500;">${block}</td>
+                    <td style="text-align: center; font-weight: 500;">${home}</td>
+                    <td style="font-weight: 500;">${resident}</td>
+                    <td>${phone}</td>
+                    <td>${email}</td>
+                    <td style="text-align: center;">
                         <span class="appeals-status-badge ${status.className}">${status.text}</span>
                     </td>
-                    <td class="text-end">
-                        <button class="btn btn-outline-primary btn-sm" data-action="view" data-id="${appeal.id}">
+                    <td style="text-align: right; white-space: nowrap;">
+                        <button class="btn btn-outline-primary btn-sm" data-action="view" data-id="${notif.id}" style="margin-right: 0.5rem;">
                             Просмотр
                         </button>
-                        <button class="btn btn-outline-danger btn-sm ms-2" data-action="delete" data-id="${appeal.id}">
+                        <button class="btn btn-outline-danger btn-sm" data-action="delete" data-id="${notif.id}">
                             Удалить
                         </button>
                     </td>
@@ -342,45 +516,129 @@
         }).join('');
     }
 
-    function openModal(appeal) {
-        if (modalApartment) modalApartment.textContent = `${appeal.block} / ${appeal.home}`;
-        if (modalResident) modalResident.textContent = appeal.resident;
-        if (modalContacts) modalContacts.textContent = `${appeal.phone} / ${appeal.email}`;
-        if (modalDescription) modalDescription.textContent = appeal.raw?.residentComment || appeal.raw?.complaintReason || '—';
+    async function viewNotification(id) {
+        try {
+            console.log('Opening notification modal for ID:', id);
+            // Используем /notifications/{id}/json вместо /api/notifications/{id}/public
+            const url = `${API_BASE}/notifications/${id}/json`;
+            console.log('Fetching from:', url);
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const notif = await response.json();
+            console.log('Notification data received:', notif);
+            state.currentNotification = notif;
+            
+            // Обрабатываем данные - проверяем разные форматы ответа
+            let block = '—';
+            let home = '—';
+            let residentName = '—';
+            let phone = '—';
+            let email = '—';
+            let message = '—';
+            
+            // Проверяем формат с вложенными объектами (старый формат)
+            if (notif.resident) {
+                block = notif.resident.block || '—';
+                home = notif.resident.unit_number || '—';
+            } else {
+                // Новый формат с плоскими полями
+                block = notif.block_name || '—';
+                home = notif.unit_number || '—';
+            }
+            
+            if (notif.user) {
+                residentName = notif.user.full_name || '—';
+                phone = notif.user.phone || '—';
+                email = notif.user.email || '—';
+            } else {
+                residentName = notif.user_full_name || '—';
+                phone = notif.user_phone || '—';
+                email = notif.user_email || '—';
+            }
+            
+            message = notif.message || '—';
+            
+            // Заполняем модальное окно
+            if (modalApartment) {
+                modalApartment.textContent = `${block} / ${home}`;
+            }
+            if (modalResident) {
+                modalResident.textContent = residentName;
+            }
+            if (modalContacts) {
+                modalContacts.textContent = `${phone} / ${email}`;
+            }
+            if (modalDescription) {
+                modalDescription.textContent = message;
+            }
+            
+            // Показываем модальное окно
+            if (modalOverlay) {
+                console.log('Showing modal overlay');
+                modalOverlay.classList.add('show');
+            } else {
+                console.error('Modal overlay not found!');
+            }
+            
+            // Перезагружаем список, чтобы обновить статус
+            await loadNotifications();
+        } catch (error) {
+            console.error('Error loading notification:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка загрузки обращения: ' + error.message);
+            } else {
+                alert('Ошибка загрузки обращения: ' + error.message);
+            }
+        }
+    }
 
-        appeal.status = 'read';
-        if (appeal.raw) appeal.raw.viewed = true;
-        if (modalOverlay) modalOverlay.classList.add('show');
-        applyFilters();
+    function showDeleteConfirm(id) {
+        pendingDeleteId = id;
+        if (deleteConfirmModal) {
+            deleteConfirmModal.style.display = 'flex';
+        }
+    }
+
+    function hideDeleteConfirm() {
+        pendingDeleteId = null;
+        if (deleteConfirmModal) {
+            deleteConfirmModal.style.display = 'none';
+        }
+    }
+
+    async function deleteNotification(id) {
+        try {
+            // Используем /notifications/{id}/json вместо /api/notifications/{id}/public
+            const url = `${API_BASE}/notifications/${id}/json`;
+            const response = await fetch(url, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            if (typeof showSuccess === 'function') {
+                showSuccess('Обращение успешно удалено!');
+            }
+            
+            hideDeleteConfirm();
+            await loadNotifications();
+        } catch (error) {
+            console.error('Error deleting notification:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка удаления обращения: ' + error.message);
+            }
+            hideDeleteConfirm();
+        }
     }
 
     function closeModal() {
         if (modalOverlay) modalOverlay.classList.remove('show');
-    }
-
-    function deleteAppeal(id) {
-        const index = state.appeals.findIndex(a => String(a.id) === String(id));
-        if (index >= 0) {
-            state.appeals.splice(index, 1);
-            applyFilters();
-        }
-    }
-
-    function findAppeal(id) {
-        return state.appeals.find(a => String(a.id) === String(id));
-    }
-
-    function deriveStatus(entry) {
-        if (!entry.viewed) return 'unread';
-        if (entry.stage === 'in_progress') return 'in_progress';
-        if (entry.stage === 'escalated') return 'escalated';
-        return 'read';
-    }
-
-    function splitApartment(apartment = '') {
-        if (!apartment) return ['—', '—'];
-        const parts = apartment.split('-');
-        return [parts[0] || '—', parts[1] || '—'];
     }
 
     function formatDateTime(value) {
@@ -395,20 +653,153 @@
         });
     }
 
-    function debounce(fn, delay = 200) {
-        let timeout;
-        return (...args) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => fn.apply(null, args), delay);
-        };
+    function bindEvents() {
+        // Обработчик change уже добавлен в initAppealsPage
+
+        if (tableBody) {
+            tableBody.addEventListener('click', (event) => {
+                const viewBtn = event.target.closest('[data-action="view"]');
+                const deleteBtn = event.target.closest('[data-action="delete"]');
+                if (viewBtn) {
+                    const id = parseInt(viewBtn.dataset.id);
+                    viewNotification(id);
+                } else if (deleteBtn) {
+                    const id = parseInt(deleteBtn.dataset.id);
+                    showDeleteConfirm(id);
+                }
+            });
+        }
+
+        const closeBtn = document.getElementById('appealModalClose');
+        const dismissBtn = document.getElementById('appealModalDismiss');
+        if (closeBtn) closeBtn.addEventListener('click', closeModal);
+        if (dismissBtn) dismissBtn.addEventListener('click', closeModal);
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', (event) => {
+                if (event.target === modalOverlay) closeModal();
+            });
+        }
+
+        // Обработчики для модального окна подтверждения удаления
+        if (deleteConfirmOk) {
+            deleteConfirmOk.addEventListener('click', () => {
+                if (pendingDeleteId !== null) {
+                    deleteNotification(pendingDeleteId);
+                }
+            });
+        }
+        if (deleteConfirmCancel) {
+            deleteConfirmCancel.addEventListener('click', hideDeleteConfirm);
+        }
+        if (deleteConfirmClose) {
+            deleteConfirmClose.addEventListener('click', hideDeleteConfirm);
+        }
+        if (deleteConfirmModal) {
+            deleteConfirmModal.addEventListener('click', (event) => {
+                if (event.target === deleteConfirmModal) {
+                    hideDeleteConfirm();
+                }
+            });
+        }
     }
 
-    // Запускаем инициализацию после загрузки DOM
+    function applyDarkThemeToSelect() {
+        const selectElement = document.getElementById('appealsStatusFilter');
+        if (selectElement) {
+            // Применить темные стили к select
+            selectElement.style.setProperty('background-color', 'rgba(31, 35, 48, 0.9)', 'important');
+            selectElement.style.setProperty('background', 'rgba(31, 35, 48, 0.9)', 'important');
+            selectElement.style.setProperty('color', '#ffffff', 'important');
+            selectElement.style.setProperty('border-color', 'rgba(102, 126, 234, 0.5)', 'important');
+            
+            // Применить темные стили к option элементам
+            const options = selectElement.querySelectorAll('option');
+            options.forEach(option => {
+                option.style.setProperty('background', '#1f2330', 'important');
+                option.style.setProperty('background-color', '#1f2330', 'important');
+                option.style.setProperty('color', '#ffffff', 'important');
+            });
+        }
+        
+        // Инъекция CSS для темных option элементов
+        const styleId = 'appeals-select-dark-theme';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = `
+                #appealsStatusFilter {
+                    background-color: rgba(31, 35, 48, 0.9) !important;
+                    background: rgba(31, 35, 48, 0.9) !important;
+                    color: #ffffff !important;
+                }
+                #appealsStatusFilter option {
+                    background: #1f2330 !important;
+                    background-color: #1f2330 !important;
+                    color: #ffffff !important;
+                }
+                #appealsStatusFilter option:checked {
+                    background: #667eea !important;
+                    background-color: #667eea !important;
+                    color: #ffffff !important;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+
+    function initAppealsPage() {
+        console.log('Initializing appeals2 page...');
+        cacheDom();
+        bindEvents();
+        
+        // Применить темные стили к выпадающему списку
+        applyDarkThemeToSelect();
+        
+        // Применить стили при открытии select
+        if (statusSelect) {
+            statusSelect.addEventListener('mousedown', function() {
+                setTimeout(applyDarkThemeToSelect, 10);
+            });
+            statusSelect.addEventListener('focus', function() {
+                setTimeout(applyDarkThemeToSelect, 10);
+            });
+            statusSelect.addEventListener('change', function() {
+                setTimeout(applyDarkThemeToSelect, 10);
+                loadNotifications();
+            });
+        }
+        
+        loadNotifications();
+        
+        // Повторно применить стили через небольшую задержку
+        setTimeout(applyDarkThemeToSelect, 100);
+        setTimeout(applyDarkThemeToSelect, 500);
+    }
+
+    // Удаляем старый обработчик, если он существует
+    if (window._appeals2ContentLoadedHandler) {
+        window.removeEventListener('spa:contentLoaded', window._appeals2ContentLoadedHandler);
+    }
+    
+    window._appeals2ContentLoadedHandler = function(e) {
+        console.log('SPA content loaded event:', e.detail);
+        const route = e.detail?.route || window.location.hash.split('?')[0].slice(1);
+        console.log('Current route:', route);
+        if (!route || route === '/appeals2' || route.startsWith('/appeals2')) {
+            console.log('Loading appeals2 from spa:contentLoaded');
+            setTimeout(() => {
+                initAppealsPage();
+            }, 100);
+        }
+    };
+    
+    window.addEventListener('spa:contentLoaded', window._appeals2ContentLoadedHandler);
+
+    // Загрузка при первой загрузке (если не через SPA)
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init, { once: true });
+        document.addEventListener('DOMContentLoaded', initAppealsPage);
     } else {
-        // Если DOM уже загружен, запускаем сразу
-        setTimeout(init, 100);
+        initAppealsPage();
     }
 
 })();

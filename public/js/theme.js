@@ -10,12 +10,28 @@
         const savedTheme = localStorage.getItem('theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
         
-        // Create theme toggle button if it doesn't exist
-        if (!document.querySelector('.theme-toggle')) {
-            createThemeToggle();
+        // Проверяем, находимся ли мы в админ-панели
+        const isAdminPanel = window.location.pathname.includes('/admin') || 
+                            document.querySelector('.admin-container') ||
+                            document.querySelector('#spa-content');
+        
+        // В админ-панели удаляем кнопку переключения темы, если она существует
+        if (isAdminPanel) {
+            const existingToggle = document.querySelector('.theme-toggle');
+            if (existingToggle) {
+                existingToggle.remove();
+            }
+            // Устанавливаем темную тему и фиксируем её
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            return; // Не создаем кнопку в админ-панели
         }
         
-        updateThemeIcon(savedTheme);
+        // Для других страниц создаем кнопку, если её нет
+        if (!document.querySelector('.theme-toggle')) {
+            createThemeToggle();
+            updateThemeIcon(savedTheme);
+        }
     }
 
     // Create theme toggle button

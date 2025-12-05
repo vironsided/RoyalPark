@@ -45,38 +45,31 @@
 
 <script>
 (function() {
-    // Sample users data
-    let users = [
-        {
-            id: 1,
-            login: 'root',
-            role: 'ROOT',
-            lastLogin: '2025-10-28 08:25:04.235780',
-            passwordStatus: 'set',
-            tempPassword: null
-        },
-        {
-            id: 2,
-            login: 'resident',
-            role: 'RESIDENT',
-            lastLogin: '2025-10-24 09:54:55.342651',
-            passwordStatus: 'set',
-            tempPassword: null
-        },
-        {
-            id: 3,
-            login: 'admin',
-            role: 'ADMIN',
-            lastLogin: '2025-10-27 14:32:10.123456',
-            passwordStatus: 'temp',
-            tempPassword: 'Abc123XyZ'
-        }
-    ];
+    // Текущий список пользователей из backend
+    let users = [];
     
-    let nextUserId = 4;
+    const API_BASE = window.BACKEND_API_BASE || 'http://localhost:8000';
+    
+    async function fetchUsers() {
+        try {
+            // Сначала пробуем с авторизацией
+            let resp = await fetch(`${API_BASE}/api/users`, { credentials: 'include' });
+            // Если 401, пробуем временный публичный endpoint
+            if (resp.status === 401) {
+                console.warn('Not authorized, using public endpoint');
+                resp = await fetch(`${API_BASE}/api/users/public`);
+            }
+            if (!resp.ok) throw new Error(`Failed to load users: ${resp.status}`);
+            users = await resp.json();
+        } catch (e) {
+            console.error('Users API error:', e);
+            users = [];
+        }
+    }
     
     // Load users on page load
-    function loadUsers() {
+    async function loadUsers() {
+        await fetchUsers();
         const tbody = document.getElementById('usersTableBody');
         if (!tbody) return;
         
@@ -86,19 +79,22 @@
             const row = document.createElement('tr');
             
             // Get role badge class
-            const roleClass = `role-${user.role.toLowerCase()}`;
+            const roleClass = `role-${String(user.role).toLowerCase()}`;
             
             // Password badge
             let passwordBadge = '';
-            if (user.passwordStatus === 'set') {
+            const passwordStatus = user.require_password_change ? 'temp' : 'set';
+            const tempPassword = user.temp_password_plain;
+            
+            if (passwordStatus === 'set') {
                 passwordBadge = '<span class="password-badge password-set">установлен</span>';
-            } else if (user.passwordStatus === 'temp' && user.tempPassword) {
-                passwordBadge = `<span class="password-badge password-temp">временный: ${user.tempPassword}</span>`;
+            } else if (passwordStatus === 'temp' && tempPassword) {
+                passwordBadge = `<span class="password-badge password-temp">временный: ${tempPassword}</span>`;
             }
             
             // Actions (only for non-root users)
             let actions = '';
-            if (user.login !== 'root') {
+            if (user.username !== 'root') {
                 actions = `
                     <div class="user-actions">
                         <button class="btn-user-action btn-reset-password" onclick="resetPassword(${user.id})">
@@ -123,9 +119,9 @@
             
             row.innerHTML = `
                 <td>${user.id}</td>
-                <td>${user.login}</td>
+                <td>${user.username}</td>
                 <td><span class="role-badge ${roleClass}">RoleEnum.${user.role}</span></td>
-                <td>${user.lastLogin}</td>
+                <td>${user.last_login_at || '—'}</td>
                 <td>${passwordBadge}</td>
                 <td>${actions}</td>
             `;
@@ -134,8 +130,8 @@
         });
     }
     
-    // Create user
-    window.createUser = function() {
+    // Create user через backend API
+    window.createUser = async function() {
         const loginInput = document.getElementById('newUserLogin');
         const roleSelect = document.getElementById('newUserRole');
         
@@ -153,69 +149,108 @@
             return;
         }
         
-        // Check if user already exists
-        if (users.find(u => u.login === login)) {
-            if (window.showWarning) {
-                showWarning('⚠️ Пользователь с таким логином уже существует');
-            } else {
-                alert('Пользователь с таким логином уже существует');
+        try {
+            // Сначала пробуем с авторизацией
+            let resp = await fetch(`${API_BASE}/api/users`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    username: login,
+                    role: role,
+                    full_name: null,
+                    phone: null,
+                    email: null
+                })
+            });
+            // Если 401, пробуем временный публичный endpoint
+            if (resp.status === 401) {
+                console.warn('Not authorized, using public endpoint');
+                resp = await fetch(`${API_BASE}/api/users/public`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: login,
+                        role: role,
+                        full_name: null,
+                        phone: null,
+                        email: null
+                    })
+                });
             }
-            return;
-        }
-        
-        // Generate temporary password
-        const tempPassword = generateTempPassword();
-        
-        const newUser = {
-            id: nextUserId++,
-            login: login,
-            role: role,
-            lastLogin: new Date().toISOString().replace('T', ' ').substring(0, 26),
-            passwordStatus: 'temp',
-            tempPassword: tempPassword
-        };
-        
-        users.push(newUser);
-        loadUsers();
-        
-        // Clear form
-        loginInput.value = '';
-        roleSelect.value = 'ADMIN';
-        
-        if (window.showSuccess) {
-            showSuccess(`✅ Пользователь "${login}" создан! Временный пароль: ${tempPassword}`);
-        } else {
-            alert(`Пользователь создан!\nЛогин: ${login}\nВременный пароль: ${tempPassword}`);
+            if (!resp.ok) {
+                const errorText = await resp.text();
+                throw new Error(`Failed to create user: ${resp.status} - ${errorText}`);
+            }
+            const created = await resp.json();
+            
+            await loadUsers();
+            
+            loginInput.value = '';
+            roleSelect.value = 'ADMIN';
+            
+            const tempPassword = created.temp_password_plain || 'установлен';
+            if (window.showSuccess) {
+                showSuccess(`✅ Пользователь "${login}" создан! Временный пароль: ${tempPassword}`);
+            } else {
+                alert(`Пользователь создан!\nЛогин: ${login}\nВременный пароль: ${tempPassword}`);
+            }
+        } catch (e) {
+            console.error('Create user error:', e);
+            if (window.showError) {
+                showError('❌ Не удалось создать пользователя');
+            } else {
+                alert('Не удалось создать пользователя');
+            }
         }
     };
     
     // Reset password
-    window.resetPassword = function(userId) {
+    window.resetPassword = async function(userId) {
         const user = users.find(u => u.id === userId);
         if (!user) return;
         
-        if (user.login === 'root') {
+        if (user.username === 'root') {
             if (window.showWarning) {
                 showWarning('⚠️ Невозможно сбросить пароль для root');
             }
             return;
         }
         
-        const tempPassword = generateTempPassword();
-        user.passwordStatus = 'temp';
-        user.tempPassword = tempPassword;
-        
-        loadUsers();
-        
-        if (window.showSuccess) {
-            showSuccess(`✅ Пароль сброшен! Новый временный пароль: ${tempPassword}`);
-        } else {
-            alert(`Пароль сброшен!\nНовый временный пароль: ${tempPassword}`);
+        try {
+            let resp = await fetch(`${API_BASE}/api/users/${userId}/reset`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            if (resp.status === 401) {
+                console.warn('Not authorized, using public endpoint');
+                resp = await fetch(`${API_BASE}/api/users/${userId}/reset/public`, {
+                    method: 'POST'
+                });
+            }
+            if (!resp.ok) throw new Error('Failed to reset password');
+            const updated = await resp.json();
+            
+            await loadUsers();
+            
+            const tempPassword = updated.temp_password_plain || 'временный пароль обновлён';
+            if (window.showSuccess) {
+                showSuccess(`✅ Пароль сброшен! Новый временный пароль: ${tempPassword}`);
+            } else {
+                alert(`Пароль сброшен!\nНовый временный пароль: ${tempPassword}`);
+            }
+        } catch (e) {
+            console.error('Reset password error:', e);
+            if (window.showError) {
+                showError('❌ Не удалось сбросить пароль');
+            } else {
+                alert('Не удалось сбросить пароль');
+            }
         }
     };
     
     // Rename user
-    window.renameUser = function(userId) {
+    window.renameUser = async function(userId) {
         const user = users.find(u => u.id === userId);
         if (!user) return;
         
@@ -233,34 +268,45 @@
             return;
         }
         
-        // Check if name already exists
-        if (users.find(u => u.login === newName && u.id !== userId)) {
-            if (window.showWarning) {
-                showWarning('⚠️ Пользователь с таким именем уже существует');
-            } else {
-                alert('Пользователь с таким именем уже существует');
+        try {
+            let resp = await fetch(`${API_BASE}/api/users/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ username: newName })
+            });
+            if (resp.status === 401) {
+                console.warn('Not authorized, using public endpoint');
+                resp = await fetch(`${API_BASE}/api/users/${userId}/public`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: newName })
+                });
             }
-            return;
-        }
-        
-        const oldName = user.login;
-        user.login = newName;
-        
-        loadUsers();
-        
-        if (window.showSuccess) {
-            showSuccess(`✅ Пользователь "${oldName}" переименован в "${newName}"`);
-        } else {
-            alert(`Пользователь переименован: ${oldName} → ${newName}`);
+            if (!resp.ok) throw new Error('Failed to rename user');
+            await loadUsers();
+            
+            if (window.showSuccess) {
+                showSuccess(`✅ Пользователь "${user.username}" переименован в "${newName}"`);
+            } else {
+                alert(`Пользователь переименован: ${user.username} → ${newName}`);
+            }
+        } catch (e) {
+            console.error('Rename user error:', e);
+            if (window.showError) {
+                showError('❌ Не удалось переименовать пользователя');
+            } else {
+                alert('Не удалось переименовать пользователя');
+            }
         }
     };
     
     // Delete user
-    window.deleteUser = function(userId) {
+    window.deleteUser = async function(userId) {
         const user = users.find(u => u.id === userId);
         if (!user) return;
         
-        if (user.login === 'root') {
+        if (user.username === 'root') {
             if (window.showWarning) {
                 showWarning('⚠️ Невозможно удалить root пользователя');
             }
@@ -270,35 +316,52 @@
         const confirmDelete = confirm(`Вы уверены, что хотите удалить пользователя "${user.login}"?`);
         
         if (confirmDelete) {
-            users = users.filter(u => u.id !== userId);
-            loadUsers();
-            
-            if (window.showSuccess) {
-                showSuccess(`✅ Пользователь "${user.login}" удалён`);
-            } else {
-                alert(`Пользователь "${user.login}" удалён`);
+            try {
+                let resp = await fetch(`${API_BASE}/api/users/${userId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                if (resp.status === 401) {
+                    console.warn('Not authorized, using public endpoint');
+                    resp = await fetch(`${API_BASE}/api/users/${userId}/public`, {
+                        method: 'DELETE'
+                    });
+                }
+                if (!resp.ok) throw new Error('Failed to delete user');
+                
+                await loadUsers();
+                
+                if (window.showSuccess) {
+                    showSuccess(`✅ Пользователь "${user.username}" удалён`);
+                } else {
+                    alert(`Пользователь "${user.username}" удалён`);
+                }
+            } catch (e) {
+                console.error('Delete user error:', e);
+                if (window.showError) {
+                    showError('❌ Не удалось удалить пользователя');
+                } else {
+                    alert('Не удалось удалить пользователя');
+                }
             }
         }
     };
-    
-    // Generate temporary password
-    function generateTempPassword() {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        let password = '';
-        for (let i = 0; i < 10; i++) {
-            password += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return password;
-    }
     
     // Initialize on page load
     loadUsers();
     
     // Re-initialize when SPA content loads
-    document.addEventListener('spa:contentLoaded', function(e) {
+    // Удаляем старый обработчик, если он существует
+    if (window._usersContentLoadedHandler) {
+        document.removeEventListener('spa:contentLoaded', window._usersContentLoadedHandler);
+    }
+    
+    window._usersContentLoadedHandler = function(e) {
         if (e.detail && e.detail.route === '/users') {
             loadUsers();
         }
-    });
+    };
+    
+    document.addEventListener('spa:contentLoaded', window._usersContentLoadedHandler);
 })();
 </script>

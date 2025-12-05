@@ -1,3 +1,390 @@
-<div class="dashboard-content">
-    <div class="card"><div class="card-body text-center py-5"><h4>📝 История действий</h4><p class="text-muted">Страница в разработке</p></div></div>
+<link rel="stylesheet" href="/admin/content_css/logs.css">
+<div class="content-wrapper">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3>История действий (логи показаний)</h3>
+        </div>
+        
+        <!-- Filters Section -->
+        <div class="card-body">
+            <div class="logs-filters mb-4">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Действие</label>
+                        <select id="filterAction" class="form-select">
+                            <option value="">Все</option>
+                            <option value="CREATE">Создание</option>
+                            <option value="UPDATE">Обновление</option>
+                            <option value="DELETE">Удаление</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Резидент</label>
+                        <select id="filterResident" class="form-select">
+                            <option value="">Все</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Пользователь</label>
+                        <select id="filterUser" class="form-select">
+                            <option value="">Все</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">На странице</label>
+                        <select id="filterPerPage" class="form-select">
+                            <option value="25">25</option>
+                            <option value="50" selected>50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row g-3 mt-2">
+                    <div class="col-md-12">
+                        <button class="btn btn-primary" onclick="applyFilters()">
+                            <i class="bi bi-funnel"></i> Применить фильтры
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                            <i class="bi bi-x-circle"></i> Очистить
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Table -->
+            <div class="table-responsive">
+                <table class="table logs-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>ДАТА/ВРЕМЯ</th>
+                            <th>ДЕЙСТВИЕ</th>
+                            <th>РЕЗИДЕНТ</th>
+                            <th>СЧЁТЧИК</th>
+                            <th>ПОЛЬЗОВАТЕЛЬ</th>
+                            <th>ДЕТАЛИ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">Загрузка...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    <span id="logsInfo">Загрузка...</span>
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary" id="prevPageBtn" onclick="changePage(-1)" disabled>← Назад</button>
+                    <span class="mx-2" id="pageInfo">Страница 1 из 1</span>
+                    <button class="btn btn-sm btn-outline-primary" id="nextPageBtn" onclick="changePage(1)" disabled>Вперёд →</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+(function() {
+    'use strict';
+    
+    const API_BASE = 'http://localhost:8000';
+    
+    let currentPage = 1;
+    let perPage = 50;
+    let lastPage = 1;
+    let total = 0;
+    let residents = [];
+    let users = [];
+    
+    // Загрузка списков для фильтров
+    async function loadFilterData() {
+        try {
+            // Загружаем резидентов
+            const residentsResp = await fetch(`${API_BASE}/api/residents/public`).catch(() => 
+                fetch(`${API_BASE}/api/residents`)
+            );
+            if (residentsResp.ok) {
+                const residentsData = await residentsResp.json();
+                residents = Array.isArray(residentsData) ? residentsData : (residentsData.residents || []);
+                
+                const residentSelect = document.getElementById('filterResident');
+                if (residentSelect) {
+                    residents.forEach(r => {
+                        const option = document.createElement('option');
+                        option.value = r.id;
+                        option.textContent = `${r.block_name || ''}/${r.unit_number || ''}`;
+                        residentSelect.appendChild(option);
+                    });
+                }
+            }
+            
+            // Загружаем пользователей
+            const usersResp = await fetch(`${API_BASE}/api/users/public`).catch(() => 
+                fetch(`${API_BASE}/api/users`)
+            );
+            if (usersResp.ok) {
+                const usersData = await usersResp.json();
+                users = Array.isArray(usersData) ? usersData : (usersData.users || []);
+                
+                const userSelect = document.getElementById('filterUser');
+                if (userSelect) {
+                    users.forEach(u => {
+                        const option = document.createElement('option');
+                        option.value = u.id;
+                        option.textContent = u.username || u.full_name || `User ${u.id}`;
+                        userSelect.appendChild(option);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error loading filter data:', error);
+        }
+    }
+    
+    // Загрузка логов
+    async function loadLogs() {
+        try {
+            const action = document.getElementById('filterAction')?.value || '';
+            const residentId = document.getElementById('filterResident')?.value || '';
+            const userId = document.getElementById('filterUser')?.value || '';
+            const perPageSelect = document.getElementById('filterPerPage');
+            if (perPageSelect) {
+                perPage = parseInt(perPageSelect.value) || 50;
+            }
+            
+            const params = new URLSearchParams();
+            params.append('page', currentPage);
+            params.append('per_page', perPage);
+            if (action) params.append('action', action);
+            if (residentId) params.append('resident_id', residentId);
+            if (userId) params.append('user_id', userId);
+            
+            const url = `${API_BASE}/api/logs/reading-logs?${params.toString()}`;
+            console.log('Loading logs from:', url);
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Logs loaded:', data);
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            total = data.total || 0;
+            lastPage = data.last_page || 1;
+            currentPage = data.page || 1;
+            
+            renderLogs(data.logs || []);
+            updatePaginationUI();
+        } catch (error) {
+            console.error('Error loading logs:', error);
+            const tbody = document.getElementById('logsTableBody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Ошибка загрузки логов: ' + error.message + '</td></tr>';
+            }
+        }
+    }
+    
+    function renderLogs(logs) {
+        const tbody = document.getElementById('logsTableBody');
+        if (!tbody) return;
+        
+        if (!logs.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Нет логов</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = logs.map(log => {
+            // Определяем класс бейджа для действия
+            let actionClass = 'badge-info';
+            if (log.action === 'СОЗДАНИЕ') {
+                actionClass = 'badge-success';
+            } else if (log.action === 'УДАЛЕНИЕ') {
+                actionClass = 'badge-danger';
+            } else if (log.action === 'ОБНОВЛЕНИЕ') {
+                actionClass = 'badge-warning';
+            }
+            
+            return `
+                <tr>
+                    <td>${log.id}</td>
+                    <td>${log.date_time}</td>
+                    <td><span class="badge ${actionClass}">${log.action}</span></td>
+                    <td>${log.resident}</td>
+                    <td>${log.meter}</td>
+                    <td>${log.user}</td>
+                    <td>${log.details}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    function updatePaginationUI() {
+        const infoEl = document.getElementById('logsInfo');
+        const pageInfoEl = document.getElementById('pageInfo');
+        const prevBtn = document.getElementById('prevPageBtn');
+        const nextBtn = document.getElementById('nextPageBtn');
+        
+        if (infoEl) {
+            const start = (currentPage - 1) * perPage + 1;
+            const end = Math.min(currentPage * perPage, total);
+            infoEl.textContent = `Показано ${start}-${end} из ${total}`;
+        }
+        
+        if (pageInfoEl) {
+            pageInfoEl.textContent = `Страница ${currentPage} из ${lastPage}`;
+        }
+        
+        if (prevBtn) {
+            prevBtn.disabled = currentPage <= 1;
+        }
+        
+        if (nextBtn) {
+            nextBtn.disabled = currentPage >= lastPage;
+        }
+    }
+    
+    function changePage(delta) {
+        const newPage = currentPage + delta;
+        if (newPage >= 1 && newPage <= lastPage) {
+            currentPage = newPage;
+            loadLogs();
+        }
+    }
+    
+    window.applyFilters = function() {
+        currentPage = 1;
+        loadLogs();
+    };
+    
+    window.clearFilters = function() {
+        document.getElementById('filterAction').value = '';
+        document.getElementById('filterResident').value = '';
+        document.getElementById('filterUser').value = '';
+        document.getElementById('filterPerPage').value = '50';
+        currentPage = 1;
+        perPage = 50;
+        loadLogs();
+    };
+    
+    // Инициализация
+    async function initLogsPage() {
+        await loadFilterData();
+        await loadLogs();
+    }
+    
+    // Инициализация при загрузке страницы
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLogsPage);
+    } else {
+        initLogsPage();
+    }
+    
+    // Также инициализируем при SPA загрузке
+    if (window._logsContentLoadedHandler) {
+        window.removeEventListener('spa:contentLoaded', window._logsContentLoadedHandler);
+    }
+    
+    window._logsContentLoadedHandler = function(e) {
+        const route = e.detail?.route || window.location.hash.split('?')[0].slice(1);
+        if (route === '/logs' || route.startsWith('/logs')) {
+            console.log('Loading logs from spa:contentLoaded');
+            setTimeout(() => {
+                initLogsPage();
+            }, 100);
+        }
+    };
+    
+    window.addEventListener('spa:contentLoaded', window._logsContentLoadedHandler);
+    
+})();
+</script>
+
+<style>
+.logs-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.logs-table thead th {
+    background-color: rgba(102, 126, 234, 0.1);
+    color: var(--text-primary);
+    font-weight: 600;
+    padding: 12px;
+    text-align: left;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+.logs-table tbody td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.logs-table tbody tr:hover {
+    background-color: rgba(102, 126, 234, 0.05);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-success {
+    background-color: #10b981;
+    color: white;
+}
+
+.badge-danger {
+    background-color: #ef4444;
+    color: white;
+}
+
+.badge-warning {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.badge-info {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.logs-filters {
+    background-color: rgba(255, 255, 255, 0.02);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.logs-filters .form-label {
+    color: var(--text-primary);
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.logs-filters .form-select {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    color: var(--text-primary);
+}
+
+.logs-filters .form-select:focus {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(102, 126, 234, 0.5);
+    color: var(--text-primary);
+}
+</style>

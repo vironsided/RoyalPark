@@ -100,7 +100,7 @@
 <body>
     <div class="admin-container">
         <!-- Sidebar -->
-        <aside class="sidebar collapsed" id="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
                     <div class="logo-text">
@@ -127,7 +127,7 @@
                         </span>
                         <span class="nav-text">Панель управления</span>
                     </a>
-                    <a href="/analytics" class="nav-item" data-route="/analytics">
+                    <!-- <a href="/analytics" class="nav-item" data-route="/analytics">
                         <span class="nav-icon">
                             <svg width="20" height="20" fill="currentColor">
                                 <use href="/images/icons.svg#icon-analytics"></use>
@@ -142,7 +142,7 @@
                             </svg>
                         </span>
                         <span class="nav-text">Отчеты</span>
-                    </a>
+                    </a> -->
                 </div>
 
                 <div class="nav-section">
@@ -170,7 +170,7 @@
                             </svg>
                         </span>
                         <span class="nav-text" data-i18n="nav_residents">Резиденты</span>
-                        <span class="nav-badge">245</span>
+                        <!-- <span class="nav-badge">245</span> -->
                     </a>
                     <a href="/tenants" class="nav-item" data-route="/tenants">
                         <span class="nav-icon">
@@ -215,27 +215,28 @@
                             </svg>
                         </span>
                         <span class="nav-text">Счета</span>
-                        <span class="nav-badge">12</span>
+                        <!-- <span class="nav-badge">12</span> -->
                     </a>
-                    <a href="/debts" class="nav-item" data-route="/debts">
+                    <!-- <a href="/debts" class="nav-item" data-route="/debts">
                         <span class="nav-icon">
                             <svg width="20" height="20" fill="currentColor">
                                 <use href="/images/icons.svg#icon-debts"></use>
                             </svg>
                         </span>
                         <span class="nav-text">Обращения</span>
-                    </a>
+                    </a> -->
                     <a href="/appeals2" class="nav-item" data-route="/appeals2">
                         <span class="nav-icon">
                             <svg width="20" height="20" fill="currentColor">
                                 <use href="/images/icons.svg#icon-debts"></use>
                             </svg>
                         </span>
-                        <span class="nav-text">Обращения 2</span>
+                        <span class="nav-text">Обращения</span>
+                        <span class="nav-badge" style="display: none;">0</span>
                     </a>
                 </div>
 
-                <div class="nav-section">
+                <!-- <div class="nav-section">
                     <div class="nav-section-title">Обслуживание</div>
                     <a href="/repair-requests" class="nav-item" data-route="/repair-requests">
                         <span class="nav-icon">
@@ -262,18 +263,18 @@
                         </span>
                         <span class="nav-text">Персонал</span>
                     </a>
-                </div>
+                </div> -->
 
                 <div class="nav-section">
                     <div class="nav-section-title">Система</div>
-                    <a href="/settings" class="nav-item" data-route="/settings">
+                    <!-- <a href="/settings" class="nav-item" data-route="/settings">
                         <span class="nav-icon">
                             <svg width="20" height="20" fill="currentColor">
                                 <use href="/images/icons.svg#icon-settings"></use>
                             </svg>
                         </span>
                         <span class="nav-text">Настройки</span>
-                    </a>
+                    </a> -->
                     <a href="/logs" class="nav-item" data-route="/logs">
                         <span class="nav-icon">
                             <svg width="20" height="20" fill="currentColor">
@@ -282,14 +283,14 @@
                         </span>
                         <span class="nav-text">Логи</span>
                     </a>
-                    <a href="/backup" class="nav-item" data-route="/backup">
+                    <!-- <a href="/backup" class="nav-item" data-route="/backup">
                         <span class="nav-icon">
                             <svg width="20" height="20" fill="currentColor">
                                 <use href="/images/icons.svg#icon-reports"></use>
                             </svg>
                         </span>
                         <span class="nav-text">Резервное копирование</span>
-                    </a>
+                    </a> -->
                     <a href="/login.html" class="nav-item logout-btn" id="logoutBtn">
                         <span class="nav-icon">
                             <svg width="20" height="20" fill="currentColor">
@@ -323,40 +324,11 @@
                 </div>
 
                 <div class="top-bar-actions">
-                    <div class="search-box">
-                        <span class="search-icon">
-                            <svg width="16" height="16" fill="currentColor">
-                                <use href="/images/icons.svg#icon-inspections"></use>
-                            </svg>
-                        </span>
-                        <input type="text" placeholder="Поиск..." id="topSearch" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" name="topSearch" />
-                    </div>
-
                     <button class="notification-btn" id="openNotifications" title="Уведомления">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                             <path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V11a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z"/>
                         </svg>
                         <span class="notification-badge" id="notificationsCount">3</span>
-                    </button>
-
-                    <!-- Theme Toggle -->
-                    <button class="theme-toggle" id="themeToggle" title="Переключить тему">
-                        <!-- Moon (dark mode icon) -->
-                        <svg class="theme-icon-dark" style="display: none;" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                        </svg>
-                        <!-- Sun (light mode icon) -->
-                        <svg class="theme-icon-light" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="12" cy="12" r="4"></circle>
-                            <line x1="12" y1="2" x2="12" y2="4"></line>
-                            <line x1="12" y1="20" x2="12" y2="22"></line>
-                            <line x1="2" y1="12" x2="4" y2="12"></line>
-                            <line x1="20" y1="12" x2="22" y2="12"></line>
-                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                        </svg>
                     </button>
 
                     <!-- Language Selector -->
@@ -422,14 +394,6 @@
                                         <option value="ru">Русский</option>
                                         <option value="az">Azərbaycan</option>
                                         <option value="en">English</option>
-                                    </select>
-                                </div>
-                                <div class="account-form-group">
-                                    <label>Тема оформления</label>
-                                    <select id="accountTheme">
-                                        <option value="light">Светлая</option>
-                                        <option value="dark">Тёмная</option>
-                                        <option value="auto">Автоматически</option>
                                     </select>
                                 </div>
                             </div>
@@ -552,77 +516,50 @@
         // Make function globally accessible
         window.hidePlanTooltip = hidePlanTooltip;
         
-        document.addEventListener('DOMContentLoaded', function() {
-            // Theme Toggle Button
-            const themeToggle = document.getElementById('themeToggle');
-            if (themeToggle) {
-                themeToggle.addEventListener('click', function() {
-                    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                    
-                    // Change theme
-                    document.documentElement.setAttribute('data-theme', newTheme);
-                    localStorage.setItem('theme', newTheme);
-                    
-                    // Update icons
-                    const lightIcon = this.querySelector('.theme-icon-light');
-                    const darkIcon = this.querySelector('.theme-icon-dark');
-                    
-                    if (newTheme === 'dark') {
-                        lightIcon.style.display = 'none';
-                        darkIcon.style.display = 'block';
-                    } else {
-                        lightIcon.style.display = 'block';
-                        darkIcon.style.display = 'none';
-                    }
-                    
-                    // Show notification
-                    if (window.showSuccess) {
-                        showSuccess(newTheme === 'dark' ? '🌙 Тёмная тема активирована' : '☀️ Светлая тема активирована');
-                    }
-                });
-                
-                // Initialize theme on load
-                const savedTheme = localStorage.getItem('theme') || 'light';
-                document.documentElement.setAttribute('data-theme', savedTheme);
-                
-                const lightIcon = themeToggle.querySelector('.theme-icon-light');
-                const darkIcon = themeToggle.querySelector('.theme-icon-dark');
-                
-                if (savedTheme === 'dark') {
-                    lightIcon.style.display = 'none';
-                    darkIcon.style.display = 'block';
-                } else {
-                    lightIcon.style.display = 'block';
-                    darkIcon.style.display = 'none';
+        // Функция для обновления счетчика непрочитанных обращений
+        async function updateAppealsBadge() {
+            try {
+                const response = await fetch('http://localhost:8000/api/notifications/unread-count');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-            }
-            
-            // Clear top search on load to avoid browser autofill
-            const topSearch = document.getElementById('topSearch');
-            if (topSearch) {
-                // Hard reset value and attributes to defeat browser autofill
-                topSearch.value = '';
-                topSearch.setAttribute('value', '');
-                topSearch.setAttribute('autocomplete', 'off');
-                topSearch.setAttribute('autocapitalize', 'off');
-                topSearch.setAttribute('autocorrect', 'off');
-                // Randomize name each load so the browser has no stored value
-                topSearch.setAttribute('name', 'topSearch_' + Math.random().toString(36).slice(2));
-                // Clear again shortly after load (some browsers fill asynchronously)
-                setTimeout(() => { if (topSearch) { topSearch.value = ''; topSearch.setAttribute('value',''); } }, 250);
-                // Clear on pageshow (bfcache restore)
-                window.addEventListener('pageshow', () => { if (topSearch) { topSearch.value=''; topSearch.setAttribute('value',''); } });
-                // Clear on route changes in SPA
-                window.addEventListener('hashchange', () => { if (topSearch) { topSearch.value=''; topSearch.setAttribute('value',''); } });
-                // If browser still injects text, wipe on focus
-                topSearch.addEventListener('focus', () => {
-                    if (topSearch.value && topSearch.value.toLowerCase() === 'admin') {
-                        topSearch.value = '';
-                        topSearch.setAttribute('value','');
+                const data = await response.json();
+                const unreadCount = data.count || 0;
+                
+                // Находим nav-badge для "Обращения"
+                const appealsNavItem = document.querySelector('a[data-route="/appeals2"]');
+                if (appealsNavItem) {
+                    let badge = appealsNavItem.querySelector('.nav-badge');
+                    if (unreadCount > 0) {
+                        if (!badge) {
+                            badge = document.createElement('span');
+                            badge.className = 'nav-badge';
+                            appealsNavItem.appendChild(badge);
+                        }
+                        badge.textContent = unreadCount;
+                        badge.style.display = 'flex';
+                    } else {
+                        if (badge) {
+                            badge.style.display = 'none';
+                        }
                     }
-                });
+                }
+            } catch (error) {
+                console.error('Error updating appeals badge:', error);
             }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Устанавливаем темную тему по умолчанию (интерфейс всегда будет темным)
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            
+            // Загружаем количество непрочитанных обращений
+            updateAppealsBadge();
+            
+            // Обновляем каждые 30 секунд
+            setInterval(updateAppealsBadge, 30000);
 
             // Language Selector Buttons
             const langButtons = document.querySelectorAll('.lang-btn');
@@ -689,9 +626,9 @@
                 // Load saved state
                 let storedSidebarState = localStorage.getItem('sidebarCollapsed');
                 if (storedSidebarState === null) {
-                    // по умолчанию держим меню в компактном виде
-                    storedSidebarState = 'true';
-                    localStorage.setItem('sidebarCollapsed', 'true');
+                    // по умолчанию sidebar открыт
+                    storedSidebarState = 'false';
+                    localStorage.setItem('sidebarCollapsed', 'false');
                 }
                 const sidebarCollapsed = storedSidebarState === 'true';
                 console.log('Saved collapsed state:', sidebarCollapsed);
@@ -699,6 +636,9 @@
                 if (sidebarCollapsed) {
                     sidebar.classList.add('collapsed');
                     console.log('Applied collapsed class from saved state');
+                } else {
+                    sidebar.classList.remove('collapsed');
+                    console.log('Sidebar is open by default');
                 }
                 
                 // Elements for mobile overlay
@@ -933,7 +873,6 @@
                 const phone = document.getElementById('accountPhoneInput')?.value || '';
                 const email = document.getElementById('accountEmailInput')?.value || '';
                 const lang = document.getElementById('accountLanguage')?.value || '';
-                const theme = document.getElementById('accountTheme')?.value || '';
                 const currentPassword = document.getElementById('currentPassword')?.value || '';
                 const newPassword = document.getElementById('newPassword')?.value || '';
                 const confirmPassword = document.getElementById('confirmPassword')?.value || '';
@@ -944,7 +883,6 @@
                     phone,
                     email,
                     lang,
-                    theme,
                     currentPassword,
                     newPassword,
                     confirmPassword,
@@ -989,11 +927,8 @@
                     accountModal.classList.add('show');
                     document.body.style.overflow = 'hidden';
                     const savedLang = localStorage.getItem('language') || 'ru';
-                    const savedTheme = localStorage.getItem('theme') || 'light';
                     const langSelect = document.getElementById('accountLanguage');
-                    const themeSelect = document.getElementById('accountTheme');
                     if (langSelect) langSelect.value = savedLang;
-                    if (themeSelect) themeSelect.value = savedTheme;
                     
                     initialAccountState = getAccountState();
                 }
@@ -1100,7 +1035,6 @@
                     const newPassword = document.getElementById('newPassword')?.value;
                     const confirmPassword = document.getElementById('confirmPassword')?.value;
                     const langSelect = document.getElementById('accountLanguage');
-                    const themeSelect = document.getElementById('accountTheme');
                     
                     if (langSelect) {
                         const lang = langSelect.value;
@@ -1117,10 +1051,9 @@
                         }
                     }
                     
-                    if (themeSelect && themeSelect.value !== 'auto') {
-                        localStorage.setItem('theme', themeSelect.value);
-                        document.documentElement.setAttribute('data-theme', themeSelect.value);
-                    }
+                    // Тема всегда темная
+                    localStorage.setItem('theme', 'dark');
+                    document.documentElement.setAttribute('data-theme', 'dark');
                     
                     if (newPassword && confirmPassword && newPassword !== confirmPassword) {
                         if (window.showError) {

@@ -91,80 +91,147 @@
 
 <script>
 (function() {
+    const API_BASE = 'http://localhost:8000';
+    const methodLabels = {
+        'CASH': 'Наличные',
+        'CARD': 'CARD',
+        'TRANSFER': 'Банк',
+        'ONLINE': 'Онлайн'
+    };
+    
     // Get payment ID from URL
     const urlParams = new URLSearchParams(window.location.search);
-    const paymentId = urlParams.get('id') || window.location.hash.split('/').pop() || window.location.hash.split('=').pop();
+    let paymentId = urlParams.get('id') || window.__currentPaymentId || window.location.hash.split('/').pop() || window.location.hash.split('=').pop();
+    if (paymentId) paymentId = parseInt(paymentId);
     
     let currentPayment = null;
     let currentDistributionRows = [];
+    let openInvoices = [];
 
     // Load payment data
-    function loadPayment(id) {
-        // TODO: Load from API
-        // For now, use mock data
-        const payment = {
-            id: id || 1,
-            resident: 'X / 2',
-            link: '123456',
-            date: '2025-11-21',
-            method: 'CARD',
-            amount: 30.00,
-            balance: 20.00,
-            balanceType: 'advance',
-            applications: [
-                { account: '2025-11/000001', amount: 10.00, invoiceId: 1 }
-            ]
-        };
+    async function loadPayment(id) {
+        if (!id) {
+            console.error('Payment ID is required');
+            return;
+        }
         
-        renderPayment(payment);
+        try {
+            let response = await fetch(`${API_BASE}/api/payments/${id}`);
+            if (!response.ok && response.status === 401) {
+                response = await fetch(`${API_BASE}/api/payments/${id}/public`);
+            }
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const payment = await response.json();
+            currentPayment = payment;
+            
+            // Load open invoices for distribution
+            await loadOpenInvoices(id);
+            
+            renderPayment(payment);
+        } catch (error) {
+            console.error('Error loading payment:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка загрузки платежа: ' + error.message);
+            }
+        }
+    }
+    
+    // Load open invoices for distribution
+    async function loadOpenInvoices(paymentId) {
+        try {
+            let response = await fetch(`${API_BASE}/api/payments/${paymentId}/open-invoices`);
+            if (!response.ok && response.status === 401) {
+                response = await fetch(`${API_BASE}/api/payments/${paymentId}/open-invoices/public`);
+            }
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('📋 Open invoices data:', data);
+            openInvoices = data.invoices || [];
+            console.log('📋 Open invoices count:', openInvoices.length);
+            console.log('📋 Open invoices:', openInvoices);
+            
+            // Build distribution rows
+            currentDistributionRows = openInvoices.map(inv => {
+                // Check if this invoice already has an application
+                const existingApp = currentPayment?.applications?.find(app => app.invoice_id === inv.id);
+                const row = {
+                    id: inv.id,
+                    invoice_number: inv.number || `${inv.period}/---`,
+                    period: inv.period,
+                    total: inv.amount_total,
+                    remaining: inv.left_to_pay,
+                    apply: existingApp ? parseFloat(existingApp.amount_applied) : 0
+                };
+                console.log('📋 Distribution row:', row);
+                return row;
+            });
+            
+            console.log('📋 Total distribution rows:', currentDistributionRows.length);
+            renderDistributionTable();
+        } catch (error) {
+            console.error('Error loading open invoices:', error);
+            openInvoices = [];
+            currentDistributionRows = [];
+            renderDistributionTable();
+        }
     }
     
     function renderPayment(payment) {
-        currentPayment = payment;
         // Update title
-        document.getElementById('paymentTitle').textContent = `Платеж #${payment.id}`;
+        const titleEl = document.getElementById('paymentTitle');
+        if (titleEl) titleEl.textContent = `Платеж #${payment.id}`;
         
         // Update summary
-        document.getElementById('paymentResident').textContent = payment.resident;
-        document.getElementById('paymentLink').textContent = payment.link || '-';
-        document.getElementById('paymentDate').textContent = payment.date;
-        document.getElementById('paymentMethod').textContent = payment.method;
-        document.getElementById('paymentAmount').textContent = payment.amount.toFixed(2);
+        const residentEl = document.getElementById('paymentResident');
+        if (residentEl) residentEl.textContent = payment.resident_code || '-';
+        
+        const linkEl = document.getElementById('paymentLink');
+        if (linkEl) linkEl.textContent = payment.reference || '-';
+        
+        const dateEl = document.getElementById('paymentDate');
+        if (dateEl) dateEl.textContent = payment.received_at || '-';
+        
+        const methodEl = document.getElementById('paymentMethod');
+        if (methodEl) methodEl.textContent = methodLabels[payment.method] || payment.method || '-';
+        
+        const amountEl = document.getElementById('paymentAmount');
+        if (amountEl) amountEl.textContent = parseFloat(payment.amount_total || 0).toFixed(2);
         
         // Update balance badge
         const balanceEl = document.getElementById('paymentBalance');
-        if (payment.balanceType === 'advance') {
-            balanceEl.textContent = `Аванс ${payment.balance.toFixed(2)}`;
-            balanceEl.className = 'badge-advance';
-        } else {
-            balanceEl.textContent = payment.balance.toFixed(2);
-            balanceEl.className = 'badge-debt';
-        }
-        
-        // Mock distribution rows (пример как на скрине)
-        currentDistributionRows = [
-            {
-                id: 1,
-                account: '2025-11/000002',
-                total: 92.00,
-                remaining: 82.00,
-                apply: 0
+        if (balanceEl) {
+            const leftover = parseFloat(payment.leftover || 0);
+            if (leftover > 0) {
+                balanceEl.textContent = `Аванс ${leftover.toFixed(2)}`;
+                balanceEl.className = 'badge-advance';
+            } else {
+                balanceEl.textContent = '0.00';
+                balanceEl.className = '';
             }
-        ];
-
-        renderDistributionTable();
+        }
         
         // Update applications table
         const tbody = document.getElementById('applicationsTable');
         if (payment.applications && payment.applications.length > 0) {
-            tbody.innerHTML = payment.applications.map(app => `
+            tbody.innerHTML = payment.applications.map(app => {
+                const invoiceDisplay = app.invoice_number || app.invoice_period || `${app.invoice_id}`;
+                return `
                 <tr>
                     <td>
-                        <a href="#" class="account-link" onclick="viewInvoice(event, '${app.account}')">${app.account}</a>
+                        <a href="#" class="account-link" onclick="viewInvoiceById(event, ${app.invoice_id})">${invoiceDisplay}</a>
                     </td>
-                    <td class="amount-value">${app.amount.toFixed(2)}</td>
+                    <td class="amount-value">${parseFloat(app.amount_applied || 0).toFixed(2)}</td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
         } else {
             tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">Нет применений</td></tr>';
         }
@@ -173,39 +240,16 @@
     }
     
     window.goBackToPayments = function() {
-        // Navigate back to payments list
-        if (window.router && typeof window.router.navigate === 'function') {
-            window.router.navigate('/payments');
+        // Navigate back to payments list using router
+        if (window.goBack) {
+            window.goBack('/payments');
+        } else if (window.spaRouter && typeof window.spaRouter.goBack === 'function') {
+            window.spaRouter.goBack('/payments');
+        } else if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+            window.spaRouter.navigate('/payments');
         } else {
-            // Fallback: reload payments page
-            const contentContainer = document.getElementById('spa-content');
-            if (contentContainer) {
-                fetch('/admin/content/payments.html')
-                    .then(response => response.text())
-                    .then(html => {
-                        contentContainer.innerHTML = html;
-                        const scripts = contentContainer.querySelectorAll('script');
-                        scripts.forEach(oldScript => {
-                            const newScript = document.createElement('script');
-                            Array.from(oldScript.attributes).forEach(attr => {
-                                newScript.setAttribute(attr.name, attr.value);
-                            });
-                            newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                            oldScript.parentNode.replaceChild(newScript, oldScript);
-                        });
-                        
-                        // Update page header
-                        if (typeof updatePageHeaderForPayments === 'function') {
-                            updatePageHeaderForPayments();
-                        }
-                        
-                        if (window.history && window.history.pushState) {
-                            window.history.pushState({ route: 'payments' }, '', '#/payments');
-                        }
-                    });
-            } else {
-                window.location.href = '/admin/#/payments';
-            }
+            // Fallback: update hash directly
+            window.location.hash = '#/payments';
         }
     };
     
@@ -239,32 +283,37 @@
             return;
         }
 
-        tbody.innerHTML = currentDistributionRows.map(row => `
+        tbody.innerHTML = currentDistributionRows.map(row => {
+            const invoiceDisplay = row.invoice_number || row.period || `${row.id}`;
+            return `
             <tr>
                 <td>
-                    <a href="#" class="distribution-invoice-link" onclick="viewInvoice(event, '${row.account}')">${row.account}</a>
+                    <a href="#" class="distribution-invoice-link" onclick="viewInvoiceById(event, ${row.id})">${invoiceDisplay}</a>
                 </td>
-                <td class="distribution-amount">${row.total.toFixed(2)}</td>
-                <td class="distribution-remaining">${row.remaining.toFixed(2)}</td>
+                <td class="distribution-amount">${parseFloat(row.total || 0).toFixed(2)}</td>
+                <td class="distribution-remaining">${parseFloat(row.remaining || 0).toFixed(2)}</td>
                 <td>
                     <input
                         type="number"
                         class="apply-input"
                         min="0"
                         step="0.01"
-                        value="${row.apply.toFixed(2)}"
+                        max="${row.remaining}"
+                        value="${parseFloat(row.apply || 0).toFixed(2)}"
                         data-id="${row.id}"
                         oninput="updateDistributionFromInputs()"
                     />
                 </td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
     }
 
     function updateDistributionTotals() {
         if (!currentPayment) return;
-        const totalApplied = currentDistributionRows.reduce((sum, r) => sum + (r.apply || 0), 0);
-        const remainingToPay = Math.max(0, currentPayment.balance - totalApplied);
+        const totalApplied = currentDistributionRows.reduce((sum, r) => sum + (parseFloat(r.apply) || 0), 0);
+        const leftover = parseFloat(currentPayment.leftover || 0);
+        const remainingToPay = Math.max(0, leftover - totalApplied);
 
         const remainingEl = document.getElementById('remainingToPay');
         const applyEl = document.getElementById('applyAmount');
@@ -284,8 +333,15 @@
         updateDistributionTotals();
     };
 
-    window.saveDistribution = function() {
-        const totalApplied = currentDistributionRows.reduce((sum, r) => sum + (r.apply || 0), 0);
+    window.saveDistribution = async function() {
+        if (!currentPayment || !currentPayment.id) {
+            if (typeof showError === 'function') {
+                showError('Платеж не загружен');
+            }
+            return;
+        }
+        
+        const totalApplied = currentDistributionRows.reduce((sum, r) => sum + (parseFloat(r.apply) || 0), 0);
 
         if (totalApplied <= 0) {
             if (typeof showWarning === 'function') {
@@ -293,56 +349,127 @@
             }
             return;
         }
+        
+        // Build applications array
+        const applications = currentDistributionRows
+            .filter(row => parseFloat(row.apply) > 0)
+            .map(row => ({
+                invoice_id: row.id,
+                amount: parseFloat(row.apply)
+            }));
 
-        console.log('Saving distribution:', {
-            paymentId: currentPayment?.id,
-            rows: currentDistributionRows
-        });
-
-        if (typeof showSuccess === 'function') {
-            showSuccess('Распределение успешно сохранено!');
+        try {
+            const formData = new FormData();
+            formData.append('data_json', JSON.stringify(applications));
+            
+            let response = await fetch(`${API_BASE}/api/payments/${currentPayment.id}/applications`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok && response.status === 401) {
+                response = await fetch(`${API_BASE}/api/payments/${currentPayment.id}/applications/public`, {
+                    method: 'POST',
+                    body: formData
+                });
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            // Reload payment to get updated data
+            await loadPayment(currentPayment.id);
+            
+            if (typeof showSuccess === 'function') {
+                showSuccess('Распределение успешно сохранено!');
+            }
+        } catch (error) {
+            console.error('Error saving distribution:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка сохранения распределения: ' + error.message);
+            }
         }
     };
 
-    window.autoDistribute = function() {
-        if (!currentPayment || !currentDistributionRows.length) {
+    window.autoDistribute = async function() {
+        if (!currentPayment || !currentPayment.id) {
+            if (typeof showError === 'function') {
+                showError('Платеж не загружен');
+            }
+            return;
+        }
+        
+        if (!currentDistributionRows.length) {
             if (typeof showWarning === 'function') {
                 showWarning('Нет счетов для распределения!');
             }
             return;
         }
 
-        let remaining = currentPayment.balance;
-        currentDistributionRows.forEach(row => {
-            const maxForRow = row.remaining;
-            const apply = Math.min(remaining, maxForRow);
-            row.apply = apply;
-            remaining -= apply;
-        });
+        try {
+            let response = await fetch(`${API_BASE}/api/payments/${currentPayment.id}/auto-apply`, {
+                method: 'POST'
+            });
+            
+            if (!response.ok && response.status === 401) {
+                response = await fetch(`${API_BASE}/api/payments/${currentPayment.id}/auto-apply/public`, {
+                    method: 'POST'
+                });
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            // Apply the plan to currentDistributionRows
+            if (result.plan && Array.isArray(result.plan)) {
+                result.plan.forEach(planItem => {
+                    const row = currentDistributionRows.find(r => r.id === planItem.invoice_id);
+                    if (row) {
+                        row.apply = parseFloat(planItem.amount || 0);
+                    }
+                });
+            } else {
+                // Fallback: manual distribution
+                let remaining = parseFloat(currentPayment.leftover || 0);
+                currentDistributionRows.forEach(row => {
+                    const maxForRow = parseFloat(row.remaining || 0);
+                    const apply = Math.min(remaining, maxForRow);
+                    row.apply = apply;
+                    remaining -= apply;
+                });
+            }
 
-        renderDistributionTable();
-        updateDistributionTotals();
+            renderDistributionTable();
+            updateDistributionTotals();
 
-        if (typeof showSuccess === 'function') {
-            showSuccess('Автораспределение выполнено!');
+            if (typeof showSuccess === 'function') {
+                showSuccess('Автораспределение выполнено!');
+            }
+        } catch (error) {
+            console.error('Error auto-distributing:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка автораспределения: ' + error.message);
+            }
         }
     };
     
-    window.viewInvoice = function(event, invoiceNumber) {
+    window.viewInvoiceById = function(event, invoiceId) {
         if (event) {
             event.preventDefault();
         }
         
-        console.log('Opening invoice view for invoice number:', invoiceNumber);
+        console.log('Opening invoice view for invoice ID:', invoiceId);
         
-        // Extract invoice ID from invoice number
-        // Format: "2025-11/000001" -> extract "000001" or use full number
-        // For now, extract the last part after "/"
-        let invoiceId = invoiceNumber;
-        if (invoiceNumber && invoiceNumber.includes('/')) {
-            const parts = invoiceNumber.split('/');
-            invoiceId = parts[parts.length - 1]; // Get last part (e.g., "000001")
-        }
+        // Store invoice ID for invoice-view.html
+        window.__currentInvoiceId = invoiceId;
         
         // Загрузить страницу просмотра через fetch и вставить в SPA контейнер
         const viewUrl = `/admin/content/invoice-view.html?id=${invoiceId}`;
@@ -383,10 +510,8 @@
                 // Обновить заголовок страницы и breadcrumb
                 updatePageHeaderForInvoiceView(invoiceId);
                 
-                // Обновить URL в браузере
-                if (window.history && window.history.pushState) {
-                    window.history.pushState({ route: 'invoice-view', id: invoiceId }, '', `#/invoice-view?id=${invoiceId}`);
-                }
+                // Обновить URL в браузере через hash (для SPA роутера)
+                window.location.hash = `#/invoice-view?id=${invoiceId}`;
                 
                 // Скроллить наверх
                 contentContainer.scrollTop = 0;
@@ -418,10 +543,37 @@
     }
     
     // Load payment on page load
+    function initPaymentView() {
+        if (paymentId) {
+            loadPayment(paymentId);
+        } else {
+            console.error('Payment ID not found');
+            if (typeof showError === 'function') {
+                showError('ID платежа не найден');
+            }
+        }
+    }
+    
+    // Listen for SPA content loaded event
+    // Удаляем старый обработчик, если он существует
+    if (window._paymentViewContentLoadedHandler) {
+        document.removeEventListener('spa:contentLoaded', window._paymentViewContentLoadedHandler);
+    }
+    
+    window._paymentViewContentLoadedHandler = function() {
+        // Re-extract payment ID in case it changed
+        const urlParams = new URLSearchParams(window.location.search);
+        paymentId = urlParams.get('id') || window.__currentPaymentId || window.location.hash.split('/').pop() || window.location.hash.split('=').pop();
+        if (paymentId) paymentId = parseInt(paymentId);
+        initPaymentView();
+    };
+    
+    document.addEventListener('spa:contentLoaded', window._paymentViewContentLoadedHandler);
+    
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => loadPayment(paymentId));
+        document.addEventListener('DOMContentLoaded', initPaymentView);
     } else {
-        loadPayment(paymentId);
+        initPaymentView();
     }
 })();
 </script>

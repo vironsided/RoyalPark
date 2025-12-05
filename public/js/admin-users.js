@@ -13,9 +13,36 @@
         updateStats();
     }
 
-    // Load users from test data
-    function loadUsers() {
-        currentUsers = TestData.users;
+    // Load users from backend API (fallback to TestData on error)
+    async function loadUsers() {
+        try {
+            const response = await fetch('/api/users', { credentials: 'include' });
+            if (!response.ok) {
+                throw new Error('Failed to load users from API');
+            }
+            const data = await response.json();
+            // Приводим структуру API к формату, который ждёт текущий UI
+            currentUsers = (data || []).map(u => ({
+                id: u.id,
+                // В API есть username + full_name; для витрины склеим
+                name: u.full_name || u.username,
+                phone: u.phone || '—',
+                email: u.email || '—',
+                apartment: '—', // эти поля будут браться из реальных residents позже
+                building: '—',
+                status: u.is_active ? 'active' : 'inactive',
+                debt: 0,
+                registeredDate: u.created_at || u.last_login_at || null,
+                balance: 0
+            }));
+        } catch (e) {
+            console.error('Users API error, using TestData fallback:', e);
+            if (window.TestData && Array.isArray(window.TestData.users)) {
+                currentUsers = window.TestData.users;
+            } else {
+                currentUsers = [];
+            }
+        }
         filteredUsers = [...currentUsers];
         renderUsersTable();
     }
@@ -291,52 +318,73 @@
         modal.show();
     };
 
-    // Save user changes
-    window.saveUserChanges = function() {
+    // Save user changes (пишем в backend)
+    window.saveUserChanges = async function() {
         const userId = parseInt(document.getElementById('editUserId')?.value);
         if (!userId) return;
 
         const user = currentUsers.find(u => u.id === userId);
         if (!user) return;
 
-        // Update user data
-        user.name = document.getElementById('editUserName').value;
-        user.phone = document.getElementById('editUserPhone').value;
-        user.email = document.getElementById('editUserEmail').value;
-        user.apartment = document.getElementById('editUserApartment').value;
-        user.building = document.getElementById('editUserBuilding').value;
-        user.status = document.getElementById('editUserStatus').value;
+        const payload = {
+            full_name: document.getElementById('editUserName').value,
+            phone: document.getElementById('editUserPhone').value,
+            email: document.getElementById('editUserEmail').value,
+            is_active: document.getElementById('editUserStatus').value === 'active'
+        };
 
-        // Refresh table
-        renderUsersTable();
-        updateStats();
+        try {
+            const resp = await fetch(`/api/users/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            });
 
-        // Close modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
-        modal.hide();
+            if (!resp.ok) {
+                throw new Error('Failed to update user');
+            }
 
-        // Show success message
-        showNotification('Изменения сохранены успешно!', 'success');
+            // Перезагружаем список пользователей из backend
+            await loadUsers();
+
+            // Закрываем модалку
+            const modal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
+            if (modal) modal.hide();
+
+            showNotification('Изменения сохранены успешно!', 'success');
+        } catch (e) {
+            console.error('Update user error', e);
+            showNotification('Не удалось сохранить изменения пользователя', 'danger');
+        }
     };
 
-    // Delete user
-    window.deleteUser = function(userId) {
+    // Delete user (через backend API)
+    window.deleteUser = async function(userId) {
         const user = currentUsers.find(u => u.id === userId);
         if (!user) return;
 
         if (confirm(`Вы уверены, что хотите удалить пользователя ${user.name}?`)) {
-            const index = currentUsers.findIndex(u => u.id === userId);
-            currentUsers.splice(index, 1);
-            filteredUsers = [...currentUsers];
-            
-            renderUsersTable();
-            updateStats();
-            
-            showNotification('Пользователь удален', 'warning');
+            try {
+                const resp = await fetch(`/api/users/${userId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+
+                if (!resp.ok) {
+                    throw new Error('Failed to delete user');
+                }
+
+                await loadUsers();
+                showNotification('Пользователь удален', 'warning');
+            } catch (e) {
+                console.error('Delete user error', e);
+                showNotification('Не удалось удалить пользователя', 'danger');
+            }
         }
     };
 
-    // Add new user
+    // Add new user (через backend API)
     window.addNewUser = function() {
         const modal = new bootstrap.Modal(document.getElementById('userModal'));
         const modalTitle = document.getElementById('userModalTitle');
@@ -379,8 +427,64 @@
             </form>
         `;
 
+        // Вешаем обработчик сохранения на кнопку "Сохранить" модалки (если она есть в разметке)
+        const saveBtn = document.getElementById('userModalSaveBtn');
+        if (saveBtn) {
+            saveBtn.onclick = async function() {
+                await createUserFromModal();
+            };
+        }
+
         modal.show();
     };
+
+    async function createUserFromModal() {
+        const nameEl = document.getElementById('newUserName');
+        const phoneEl = document.getElementById('newUserPhone');
+        const emailEl = document.getElementById('newUserEmail');
+
+        const full_name = nameEl?.value?.trim();
+        const phone = phoneEl?.value?.trim();
+        const email = emailEl?.value?.trim();
+
+        if (!full_name || !email) {
+            showNotification('Имя и Email обязательны', 'danger');
+            return;
+        }
+
+        // Простое правило: логин = email (можно будет поменять позже)
+        const payload = {
+            username: email,
+            full_name,
+            phone,
+            email,
+            // по умолчанию создаём как RESIDENT
+            role: 'RESIDENT'
+        };
+
+        try {
+            const resp = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            });
+
+            if (!resp.ok) {
+                throw new Error('Failed to create user');
+            }
+
+            await loadUsers();
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
+            if (modal) modal.hide();
+
+            showNotification('Пользователь успешно создан', 'success');
+        } catch (e) {
+            console.error('Create user error', e);
+            showNotification('Не удалось создать пользователя', 'danger');
+        }
+    }
 
     // Export users
     window.exportUsers = function() {

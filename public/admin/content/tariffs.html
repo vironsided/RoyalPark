@@ -12,6 +12,10 @@
                                 <option value="electricity">Электричество</option>
                                 <option value="gas">Газ</option>
                                 <option value="water">Вода</option>
+                                <option value="sewerage">Канализация</option>
+                                <option value="service">Услуги</option>
+                                <option value="rent">Аренда</option>
+                                <option value="construction">Строительство</option>
                             </select>
                         </div>
                         
@@ -96,11 +100,14 @@
                 
                 <div class="form-group">
                     <label>Для чего</label>
-                    <select id="tariffPurpose" required>
+                    <select id="tariffPurpose" required onchange="updateUnitsForPurpose(); updateStepFieldsType();">
                         <option value="electricity">Электричество</option>
                         <option value="gas">Газ</option>
                         <option value="water">Вода</option>
-                        <option value="internet">Интернет</option>
+                        <option value="sewerage">Канализация</option>
+                        <option value="service">Услуги</option>
+                        <option value="rent">Аренда</option>
+                        <option value="construction">Строительство</option>
                     </select>
                 </div>
                 
@@ -163,88 +170,146 @@
     </div>
 
 <script>
-        const tariffsData = [
-            {
-                id: 1,
-                name: 'Qaz',
-                block: 'Блок A',
-                purpose: 'Газ',
-                purposeKey: 'gas',
-                clientType: 'individual',
-                clientTypeLabel: 'Индивидуальный',
-                vat: 0,
-                steps: [
-                    { from: 0, to: 20, price: 0.5, unit: 'м³' },
-                    { from: 20, to: 50, price: 0.7, unit: 'м³' }
-                ]
-            },
-            {
-                id: 2,
-                name: 'X2 servis',
-                block: 'Блок B',
-                purpose: 'Сервис',
-                purposeKey: 'service',
-                clientType: 'individual',
-                clientTypeLabel: 'Индивидуальный',
-                vat: 0,
-                steps: [
-                    { from: 0, to: null, price: 100, unit: 'м³' }
-                ]
-            },
-            {
-                id: 3,
-                name: 'X2 tok',
-                block: 'Блок A',
-                purpose: 'Электричество',
-                purposeKey: 'electricity',
-                clientType: 'individual',
-                clientTypeLabel: 'Индивидуальный',
-                vat: 0,
-                steps: [
-                    { from: 0, to: 50, price: 100, unit: 'кВт-ч' },
-                    { from: 50, to: 100, price: 200, unit: 'кВт-ч' }
-                ]
-            },
-            {
-                id: 4,
-                name: 'X2 qaz',
-                block: 'Блок B',
-                purpose: 'Электричество',
-                purposeKey: 'electricity',
-                clientType: 'legal',
-                clientTypeLabel: 'Юридический',
-                vat: 0,
-                steps: [
-                    { from: 0, to: 50, price: 100, unit: 'кВт-ч' },
-                    { from: 50, to: 100, price: 200, unit: 'кВт-ч' }
-                ]
-            },
-            {
-                id: 5,
-                name: 'X2 su',
-                block: 'Блок A',
-                purpose: 'Вода',
-                purposeKey: 'water',
-                clientType: 'individual',
-                clientTypeLabel: 'Индивидуальный',
-                vat: 0,
-                steps: [
-                    { from: 0, to: 50, price: 100, unit: 'м³' },
-                    { from: 50, to: 100, price: 200, unit: 'м³' }
-                ]
+        const API_BASE = 'http://localhost:8000';
+        let tariffsData = [];
+        
+        // Маппинг типов для отображения
+        const meterTypeMap = {
+            'ELECTRIC': { label: 'Электричество', key: 'electricity', badge: 'bg-info' },
+            'GAS': { label: 'Газ', key: 'gas', badge: 'bg-danger' },
+            'WATER': { label: 'Вода', key: 'water', badge: 'bg-primary' },
+            'SEWERAGE': { label: 'Канализация', key: 'sewerage', badge: 'bg-secondary' },
+            'SERVICE': { label: 'Услуги', key: 'service', badge: 'bg-warning text-dark' },
+            'RENT': { label: 'Аренда', key: 'rent', badge: 'bg-success' },
+            'CONSTRUCTION': { label: 'Строительство', key: 'construction', badge: 'bg-dark' }
+        };
+        
+        const customerTypeMap = {
+            'INDIVIDUAL': { label: 'Индивидуальный', key: 'individual', badge: 'bg-success' },
+            'LEGAL': { label: 'Юридический', key: 'legal', badge: 'bg-primary' }
+        };
+        
+        // Загрузка тарифов из API
+        window.loadTariffs = async function() {
+            try {
+                console.log('Loading tariffs from API...');
+                let resp;
+                
+                // Сначала пробуем авторизованный endpoint
+                try {
+                    resp = await fetch(`${API_BASE}/api/tariffs`, { credentials: 'include' });
+                } catch (networkError) {
+                    console.warn('Network error on authorized endpoint, trying public:', networkError.message);
+                    resp = await fetch(`${API_BASE}/api/tariffs/public`);
+                }
+                
+                // Если получили 401/403, автоматически переключаемся на публичный endpoint
+                if (resp.status === 401 || resp.status === 403) {
+                    console.warn('Not authorized (401/403), using public endpoint');
+                    try {
+                        resp = await fetch(`${API_BASE}/api/tariffs/public`, {
+                            method: 'GET',
+                            headers: { 
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                    } catch (fetchError) {
+                        console.error('Error fetching public endpoint:', fetchError);
+                        throw new Error(`Failed to load tariffs: ${fetchError.message}`);
+                    }
+                }
+                
+                // Проверяем, что ответ успешный (после возможного переключения на публичный endpoint)
+                if (!resp.ok) {
+                    const errorText = await resp.text().catch(() => 'Unknown error');
+                    console.error('Failed to load tariffs:', resp.status, errorText);
+                    // Не показываем ошибку, если это просто проблема с авторизацией и публичный endpoint тоже не работает
+                    // (возможно, backend не запущен или endpoint не существует)
+                    if (resp.status === 401 || resp.status === 403) {
+                        console.warn('Both endpoints returned 401/403 - backend may need restart or endpoint may not exist');
+                    }
+                    throw new Error(`Failed to load tariffs: ${resp.status} ${errorText}`);
+                }
+                
+                const tariffs = await resp.json();
+                console.log('Loaded tariffs:', tariffs);
+                
+                if (!Array.isArray(tariffs)) {
+                    console.error('Tariffs is not an array:', tariffs);
+                    throw new Error('Invalid response format: expected array');
+                }
+                
+                // Преобразуем данные для отображения
+                tariffsData = tariffs.map(t => {
+                    const isConstruction = t.meter_type === 'CONSTRUCTION';
+                    return {
+                        id: t.id,
+                        name: t.name,
+                        purpose: meterTypeMap[t.meter_type]?.label || t.meter_type,
+                        purposeKey: meterTypeMap[t.meter_type]?.key || t.meter_type.toLowerCase(),
+                        clientType: customerTypeMap[t.customer_type]?.key || t.customer_type.toLowerCase(),
+                        clientTypeLabel: customerTypeMap[t.customer_type]?.label || t.customer_type,
+                        vat: t.vat_percent,
+                        steps: (t.steps || []).map(s => {
+                            if (isConstruction) {
+                                // Для строительства - даты
+                                return {
+                                    from_date: s.from_date,
+                                    to_date: s.to_date,
+                                    price: s.price,
+                                    unit: getUnitForMeterType(t.meter_type)
+                                };
+                            } else {
+                                // Для остальных - числа
+                                return {
+                                    from: s.from_value || 0,
+                                    to: s.to_value,
+                                    price: s.price,
+                                    unit: getUnitForMeterType(t.meter_type)
+                                };
+                            }
+                        })
+                    };
+                });
+                
+                console.log('Processed tariffs data:', tariffsData);
+                renderTariffsTable(tariffsData);
+            } catch (e) {
+                console.error('Load tariffs error:', e);
+                // Показываем ошибку только если оба endpoint не работают
+                // (если публичный endpoint работает, мы не должны попадать в этот catch)
+                if (typeof showError === 'function') {
+                    showError(`❌ Не удалось загрузить тарифы: ${e.message}`);
+                }
+                tariffsData = [];
+                renderTariffsTable([]);
             }
-        ];
-
-        // const blockTariffsData = [
-        //     ...
-        // ];
-
-        renderTariffsTable(tariffsData);
+        }
+        
+        function getUnitForMeterType(meterType) {
+            const units = {
+                'ELECTRIC': 'кВт-ч',
+                'GAS': 'м³',
+                'WATER': 'м³',
+                'SEWERAGE': 'м³',
+                'SERVICE': 'ед.',
+                'RENT': 'мес.',
+                'CONSTRUCTION': 'мес.'
+            };
+            return units[meterType] || '';
+        }
+        
+        // Инициализация будет выполнена в конце скрипта через IIFE
         // renderBlockTariffs(blockTariffsData);
 
         function renderTariffsTable(data) {
             const tbody = document.getElementById('tariffsTableBody');
-            if (!tbody) return;
+            if (!tbody) {
+                console.error('tariffsTableBody element not found!');
+                return;
+            }
+            console.log('Rendering tariffs table with', data.length, 'items');
 
             if (!data.length) {
                 tbody.innerHTML = `
@@ -271,12 +336,12 @@
                             ${tariff.clientTypeLabel}
                         </span>
                     </td>
-                    <td>${tariff.vat}</td>
+                    <td>${tariff.vat}%</td>
                     <td>${formatSteps(tariff.steps)}</td>
                     <td>
                         <div class="table-actions">
-                            <button class="btn btn-sm btn-outline-info" onclick="openCreateModal()">Редактировать</button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="showWarning('Удаление тарифа временно недоступно')">Удалить</button>
+                            <button class="btn btn-sm btn-outline-info" onclick="editTariff(${tariff.id})">Редактировать</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteTariff(${tariff.id})">Удалить</button>
                         </div>
                     </td>
                 </tr>
@@ -295,9 +360,22 @@
 
         function formatSteps(steps = []) {
             return steps.map(step => {
-                const from = step.from?.toFixed ? step.from.toFixed(4) : Number(step.from ?? 0).toFixed(4);
                 const price = step.price?.toFixed ? step.price.toFixed(4) : Number(step.price ?? 0).toFixed(4);
                 const unit = step.unit || '';
+                
+                // Для строительства - даты
+                if (step.from_date && step.to_date) {
+                    try {
+                        const fromDate = new Date(step.from_date).toLocaleDateString('ru-RU');
+                        const toDate = new Date(step.to_date).toLocaleDateString('ru-RU');
+                        return `<span class="badge bg-secondary me-1">${fromDate} - ${toDate}: ${price} / ${unit}</span>`;
+                    } catch (e) {
+                        return `<span class="badge bg-secondary me-1">${step.from_date} - ${step.to_date}: ${price} / ${unit}</span>`;
+                    }
+                }
+                
+                // Для остальных - числа
+                const from = step.from?.toFixed ? step.from.toFixed(4) : Number(step.from ?? 0).toFixed(4);
                 if (step.to === null || step.to === undefined) {
                     return `<span class="badge bg-secondary me-1">${from}+: ${price} / ${unit}</span>`;
                 }
@@ -311,41 +389,133 @@
         // }
 
 // Filter Functions
-        function applyFilters() {
+        window.applyFilters = async function() {
             const purpose = document.getElementById('filterPurpose').value;
             const clientType = document.getElementById('filterClientType').value;
-            const searchTerm = document.getElementById('filterSearch').value.toLowerCase();
+            const searchTerm = document.getElementById('filterSearch').value;
             
-            const filtered = tariffsData.filter(item => {
-                const matchesPurpose = purpose === 'all' || item.purposeKey === purpose;
-                const matchesClient = clientType === 'all' || item.clientType === clientType;
-                const matchesSearch = !searchTerm || item.name.toLowerCase().includes(searchTerm) || item.purpose.toLowerCase().includes(searchTerm);
-                return matchesPurpose && matchesClient && matchesSearch;
-            });
+            // Маппинг для API
+            const purposeMap = {
+                'electricity': 'ELECTRIC',
+                'gas': 'GAS',
+                'water': 'WATER',
+                'sewerage': 'SEWERAGE',
+                'service': 'SERVICE',
+                'rent': 'RENT',
+                'construction': 'CONSTRUCTION'
+            };
             
-            renderTariffsTable(filtered);
+            const clientTypeMap = {
+                'individual': 'INDIVIDUAL',
+                'legal': 'LEGAL'
+            };
+            
+            try {
+                const params = new URLSearchParams();
+                if (purpose !== 'all' && purposeMap[purpose]) {
+                    params.append('meter', purposeMap[purpose]);
+                }
+                if (clientType !== 'all' && clientTypeMap[clientType]) {
+                    params.append('ctype', clientTypeMap[clientType]);
+                }
+                if (searchTerm) {
+                    params.append('q', searchTerm);
+                }
+                
+                let resp = await fetch(`${API_BASE}/api/tariffs?${params.toString()}`, { credentials: 'include' });
+                if (resp.status === 401) {
+                    resp = await fetch(`${API_BASE}/api/tariffs/public?${params.toString()}`);
+                }
+                if (!resp.ok) throw new Error('Failed to load tariffs');
+                const tariffs = await resp.json();
+                
+                tariffsData = tariffs.map(t => ({
+                    id: t.id,
+                    name: t.name,
+                    purpose: meterTypeMap[t.meter_type]?.label || t.meter_type,
+                    purposeKey: meterTypeMap[t.meter_type]?.key || t.meter_type.toLowerCase(),
+                    clientType: customerTypeMap[t.customer_type]?.key || t.customer_type.toLowerCase(),
+                    clientTypeLabel: customerTypeMap[t.customer_type]?.label || t.customer_type,
+                    vat: t.vat_percent,
+                    steps: t.steps.map(s => ({
+                        from: s.from_value || 0,
+                        to: s.to_value,
+                        price: s.price,
+                        unit: getUnitForMeterType(t.meter_type)
+                    }))
+                }));
+                
+                renderTariffsTable(tariffsData);
+                if (typeof showSuccess === 'function') {
             showSuccess('Фильтры применены!');
+                }
+            } catch (e) {
+                console.error('Filter error:', e);
+            }
         }
         
-        function clearFilters() {
+        window.clearFilters = function() {
             document.getElementById('filterPurpose').value = 'all';
             document.getElementById('filterClientType').value = 'all';
             document.getElementById('filterSearch').value = '';
-            renderTariffsTable(tariffsData);
+            loadTariffs();
+            if (typeof showSuccess === 'function') {
             showSuccess('Фильтры очищены!');
+            }
         }
         
         // Modal Functions
-        function openCreateModal() {
+        window.openCreateModal = function() {
             document.getElementById('createTariffModal').classList.add('active');
             document.body.style.overflow = 'hidden';
+            
+            // Если не редактируем, добавляем первую ступень по умолчанию
+            if (!editingTariffId) {
+                const stepsContainer = document.getElementById('tariffStepsContainer');
+                if (stepsContainer && stepsContainer.children.length === 0) {
+                    // Небольшая задержка, чтобы форма успела отрендериться
+                    setTimeout(() => {
+                        addTariffStep();
+                        // Обновляем единицы измерения и тип полей для первой ступени
+                        updateUnitsForPurpose();
+                        updateStepFieldsType();
+                    }, 50);
+                }
+            } else {
+                // При редактировании обновляем тип полей
+                setTimeout(() => {
+                    updateStepFieldsType();
+                }, 50);
+            }
         }
         
         function closeCreateModal() {
             document.getElementById('createTariffModal').classList.remove('active');
             document.body.style.overflow = 'auto';
             document.getElementById('createTariffForm').reset();
+            
+            // Очищаем контейнер ступеней
+            const stepsContainer = document.getElementById('tariffStepsContainer');
+            if (stepsContainer) {
+                stepsContainer.innerHTML = '';
+            }
+            
+            // Сбрасываем режим редактирования
+            editingTariffId = null;
+            
+            // Возвращаем заголовок и кнопку
+            const modalTitle = document.querySelector('#createTariffModal .modal-header h2');
+            if (modalTitle) {
+                modalTitle.textContent = 'Создать тариф';
+            }
+            const submitBtn = document.querySelector('#createTariffForm button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.textContent = 'Создать';
+            }
         }
+        
+        // Экспортируем функцию в глобальную область видимости
+        window.closeCreateModal = closeCreateModal;
         
         // Close modal on overlay click
         document.getElementById('createTariffModal').addEventListener('click', function(e) {
@@ -361,26 +531,191 @@
             }
         });
         
+        // Функция для получения единицы измерения по типу тарифа
+        function getUnitForPurpose(purpose) {
+            const unitMap = {
+                'electricity': 'кВт-ч',
+                'gas': 'м³',
+                'water': 'м³',
+                'sewerage': 'м³',
+                'service': 'ед.',
+                'rent': 'мес.',
+                'construction': 'мес.'
+            };
+            return unitMap[purpose] || 'ед.';
+        }
+        
+        // Обновление единиц измерения при изменении типа тарифа
+        window.updateUnitsForPurpose = function() {
+            const purpose = document.getElementById('tariffPurpose');
+            if (!purpose) return;
+            const unit = getUnitForPurpose(purpose.value);
+            const unitInputs = document.querySelectorAll('#tariffStepsContainer .unit-chip');
+            unitInputs.forEach(input => {
+                input.value = unit;
+            });
+        };
+        
+        // Обработчик изменения типа тарифа (добавляем после загрузки DOM)
+        (function() {
+            function setupPurposeHandler() {
+                const purposeSelect = document.getElementById('tariffPurpose');
+                if (purposeSelect) {
+                    // Удаляем старый обработчик, если есть (используем копию функции)
+                    const oldHandler = purposeSelect._updateUnitsHandler;
+                    if (oldHandler) {
+                        purposeSelect.removeEventListener('change', oldHandler);
+                    }
+                    // Создаем новый обработчик
+                    const newHandler = function() {
+                        updateUnitsForPurpose();
+                    };
+                    purposeSelect._updateUnitsHandler = newHandler;
+                    purposeSelect.addEventListener('change', newHandler);
+                } else {
+                    // Если элемент еще не существует, пробуем снова через 100ms
+                    setTimeout(setupPurposeHandler, 100);
+                }
+            }
+            // Пробуем сразу и через небольшую задержку
+            setupPurposeHandler();
+            setTimeout(setupPurposeHandler, 200);
+        })();
+        
+        // Функция для проверки, является ли тип тарифа строительством
+        function isConstructionType() {
+            const purpose = document.getElementById('tariffPurpose');
+            return purpose && purpose.value === 'construction';
+        }
+        
+        // Функция для обновления типа полей в ступенях (числа или даты)
+        window.updateStepFieldsType = function() {
+            const isConstruction = isConstructionType();
+            const stepRows = document.querySelectorAll('#tariffStepsContainer .step-row');
+            
+            stepRows.forEach(row => {
+                const fromGroup = row.querySelector('.step-input-group:first-child');
+                const toGroup = row.querySelector('.step-input-group:nth-child(2)');
+                const unitGroup = row.querySelector('.step-input-group:nth-child(3)');
+                
+                if (!fromGroup || !toGroup) return;
+                
+                if (isConstruction) {
+                    // Для строительства - даты
+                    const fromInput = fromGroup.querySelector('input');
+                    const toInput = toGroup.querySelector('input');
+                    
+                    // Сохраняем текущие значения перед изменением типа
+                    const fromValue = fromInput.value || '';
+                    const toValue = toInput.value || '';
+                    
+                    fromGroup.querySelector('label').textContent = 'Дата от';
+                    fromInput.type = 'date';
+                    fromInput.value = fromValue; // Восстанавливаем значение
+                    fromInput.placeholder = '';
+                    
+                    toGroup.querySelector('label').textContent = 'Дата до';
+                    toInput.type = 'date';
+                    toInput.value = toValue; // Восстанавливаем значение
+                    toInput.placeholder = '';
+                    
+                    // Скрываем единицу измерения для строительства
+                    if (unitGroup) {
+                        unitGroup.style.display = 'none';
+                    }
+                } else {
+                    // Для остальных - числа
+                    const fromInput = fromGroup.querySelector('input');
+                    const toInput = toGroup.querySelector('input');
+                    
+                    // Сохраняем текущие значения перед изменением типа
+                    const fromValue = fromInput.value || '0';
+                    const toValue = toInput.value || '';
+                    
+                    fromGroup.querySelector('label').textContent = 'ОТ (вкл.)';
+                    fromInput.type = 'number';
+                    fromInput.min = '0';
+                    fromInput.step = '0.01';
+                    fromInput.value = fromValue; // Восстанавливаем значение
+                    
+                    toGroup.querySelector('label').textContent = 'ДО (искл.)';
+                    toInput.type = 'text';
+                    toInput.value = toValue; // Восстанавливаем значение
+                    toInput.placeholder = '∞ для бесконечности';
+                    
+                    // Показываем единицу измерения
+                    if (unitGroup) {
+                        unitGroup.style.display = '';
+                    }
+                }
+            });
+        }
+        
+        // Обновляем updateUnitsForPurpose, чтобы также обновлять тип полей
+        const originalUpdateUnits = window.updateUnitsForPurpose;
+        window.updateUnitsForPurpose = function() {
+            if (originalUpdateUnits) originalUpdateUnits();
+            if (window.updateStepFieldsType) {
+                window.updateStepFieldsType();
+            }
+        };
+        
         // Tariff Step Functions
-        function addTariffStep() {
+        window.addTariffStep = function() {
             const container = document.getElementById('tariffStepsContainer');
             const steps = container.querySelectorAll('.step-row');
-            let defaultFrom = 0;
+            const isConstruction = isConstructionType();
             
-            if (steps.length > 0) {
+            let defaultFrom = isConstruction ? '' : '0';
+            
+            if (!isConstruction && steps.length > 0) {
                 const lastStepInputs = steps[steps.length - 1].querySelectorAll('input');
                 const lastToValue = lastStepInputs[1].value.trim();
                 
                 if (!lastToValue || lastToValue === '∞') {
+                    if (typeof showWarning === 'function') {
                     showWarning('Укажите граничное значение "ДО (искл.)" для предыдущей ступени.');
+                    } else {
+                        alert('Укажите граничное значение "ДО (искл.)" для предыдущей ступени.');
+                    }
                     return;
                 }
                 
                 defaultFrom = lastToValue;
             }
             
+            // Получаем текущую единицу измерения из типа тарифа
+            const purpose = document.getElementById('tariffPurpose').value;
+            const unit = getUnitForPurpose(purpose);
+            
             const newStep = document.createElement('div');
             newStep.className = 'step-row';
+            
+            if (isConstruction) {
+                // Для строительства - поля с датами
+                newStep.innerHTML = `
+                    <div class="step-input-group">
+                        <label>Дата от</label>
+                        <input type="date" value="" required>
+                    </div>
+                    <div class="step-input-group">
+                        <label>Дата до</label>
+                        <input type="date" value="" required>
+                    </div>
+                    <div class="step-input-group" style="display: none;">
+                        <label>Ед. изм.</label>
+                        <input type="text" value="${unit}" class="unit-chip" readonly>
+                    </div>
+                    <div class="step-input-group">
+                        <label>Цена</label>
+                        <input type="number" step="0.01" min="0" required>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
+                        <i class="bi bi-trash"></i> Удалить
+                    </button>
+                `;
+            } else {
+                // Для остальных - числовые поля
             newStep.innerHTML = `
                 <div class="step-input-group">
                     <label>ОТ (вкл.)</label>
@@ -388,11 +723,11 @@
                 </div>
                 <div class="step-input-group">
                     <label>ДО (искл.)</label>
-                    <input type="text" value="">
+                        <input type="text" value="" placeholder="∞ для бесконечности">
                 </div>
                 <div class="step-input-group">
                     <label>Ед. изм.</label>
-                    <input type="text" value="кВт-ч" class="unit-chip" readonly>
+                        <input type="text" value="${unit}" class="unit-chip" readonly>
                 </div>
                 <div class="step-input-group">
                     <label>Цена</label>
@@ -402,10 +737,12 @@
                     <i class="bi bi-trash"></i> Удалить
                 </button>
             `;
+            }
+            
             container.appendChild(newStep);
         }
         
-        function removeStep(button) {
+        window.removeStep = function(button) {
             const stepsContainer = document.getElementById('tariffStepsContainer');
             const steps = stepsContainer.querySelectorAll('.step-row');
             
@@ -417,52 +754,387 @@
         }
         
         // Create Tariff Function
-        function createTariff(event) {
+        window.createTariff = async function(event) {
             event.preventDefault();
             
-            const name = document.getElementById('tariffName').value;
+            const name = document.getElementById('tariffName').value.trim();
             const purpose = document.getElementById('tariffPurpose').value;
             const type = document.getElementById('tariffType').value;
-            const vat = document.getElementById('tariffVAT').value;
+            const vat = parseInt(document.getElementById('tariffVAT').value) || 0;
+            
+            if (!name) {
+                if (typeof showWarning === 'function') {
+                    showWarning('Введите название тарифа');
+                } else {
+                    alert('Введите название тарифа');
+                }
+                return;
+            }
+            
+            // Маппинг значений для API
+            const meterTypeMap = {
+                'electricity': 'ELECTRIC',
+                'gas': 'GAS',
+                'water': 'WATER',
+                'sewerage': 'SEWERAGE',
+                'service': 'SERVICE',
+                'rent': 'RENT',
+                'construction': 'CONSTRUCTION'
+            };
+            
+            const customerTypeMap = {
+                'individual': 'INDIVIDUAL',
+                'legal': 'LEGAL'
+            };
             
             // Collect steps data
             const steps = [];
             const stepRows = document.querySelectorAll('#tariffStepsContainer .step-row');
-            stepRows.forEach(row => {
+            const isConstruction = purpose === 'construction';
+            
+            try {
+                stepRows.forEach((row, index) => {
                 const inputs = row.querySelectorAll('input');
+                    // Для строительства: inputs[0] = дата от, inputs[1] = дата до, inputs[2] = единица (скрыта), inputs[3] = цена
+                    // Для остальных: inputs[0] = от, inputs[1] = до, inputs[2] = единица, inputs[3] = цена
+                    // В обоих случаях цена - это последний input (inputs[inputs.length - 1])
+                    const priceInput = inputs[inputs.length - 1];
+                    const price = parseFloat(priceInput?.value) || 0;
+                    
+                    if (isConstruction) {
+                        // Для строительства - даты
+                        const fromDate = inputs[0].value; // Дата от
+                        const toDate = inputs[1].value;   // Дата до
+                        
+                        if (!fromDate || !toDate) {
+                            throw new Error(`Заполните обе даты для ступени ${index + 1}`);
+                        }
+                        
+                        steps.push({
+                            from_date: fromDate,
+                            to_date: toDate,
+                            price: price
+                        });
+                    } else {
+                        // Для остальных - числа
+                        const fromValue = parseFloat(inputs[0].value) || 0;
+                        const toValue = inputs[1].value.trim();
+                        
                 steps.push({
-                    from: inputs[0].value,
-                    to: inputs[1].value,
-                    unit: inputs[2].value,
-                    price: inputs[3].value
+                            from_value: fromValue,
+                            to_value: toValue === '' || toValue === '∞' ? null : parseFloat(toValue),
+                            price: price
+                        });
+                    }
                 });
-            });
+            } catch (stepError) {
+                if (typeof showError === 'function') {
+                    showError(`❌ ${stepError.message}`);
+                } else {
+                    alert(stepError.message);
+                }
+                return;
+            }
+            
+            if (steps.length === 0) {
+                if (typeof showWarning === 'function') {
+                    showWarning('Добавьте хотя бы одну ступень тарифа');
+                } else {
+                    alert('Добавьте хотя бы одну ступень тарифа');
+                }
+                return;
+            }
             
             const tariffData = {
-                name,
-                purpose,
-                type,
-                vat,
-                steps
+                name: name,
+                meter_type: meterTypeMap[purpose] || purpose.toUpperCase(),
+                customer_type: customerTypeMap[type] || type.toUpperCase(),
+                vat_percent: vat,
+                steps: steps
             };
             
-            console.log('Creating tariff:', tariffData);
-            
-            // TODO: Send to backend API
-            // fetch('/api/tariffs', {
-            //     method: 'POST',
-            //     headers: {'Content-Type': 'application/json'},
-            //     body: JSON.stringify(tariffData)
-            // }).then(response => {
-            //     if (response.ok) {
-            //         closeCreateModal();
-            //         // Reload tariffs list
-            //     }
-            // });
-            
-            showSuccess(`Тариф "${name}" успешно создан!`);
-            closeCreateModal();
+            try {
+                let resp;
+                if (editingTariffId) {
+                    // Обновление существующего тарифа
+                    resp = await fetch(`${API_BASE}/api/tariffs/${editingTariffId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(tariffData)
+                    });
+                    if (resp.status === 401) {
+                        console.warn('Not authorized, using public endpoint');
+                        resp = await fetch(`${API_BASE}/api/tariffs/${editingTariffId}/public`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(tariffData)
+                        });
+                    }
+                } else {
+                    // Создание нового тарифа
+                    resp = await fetch(`${API_BASE}/api/tariffs`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(tariffData)
+                    });
+                    if (resp.status === 401) {
+                        console.warn('Not authorized, using public endpoint');
+                        resp = await fetch(`${API_BASE}/api/tariffs/public`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(tariffData)
+                        });
+                    }
+                }
+                
+                if (!resp.ok) {
+                    const errorData = await resp.json().catch(() => ({ detail: 'Ошибка сохранения тарифа' }));
+                    throw new Error(errorData.detail || 'Failed to save tariff');
+                }
+                
+                // Перезагружаем список тарифов
+                await loadTariffs();
+                
+                // Закрываем модальное окно
+                closeCreateModal();
+                
+                // Показываем сообщение об успехе
+                if (typeof showSuccess === 'function') {
+                    showSuccess(`Тариф "${name}" успешно ${editingTariffId ? 'обновлён' : 'создан'}!`);
+                } else {
+                    alert(`Тариф "${name}" успешно ${editingTariffId ? 'обновлён' : 'создан'}!`);
+                }
+            } catch (e) {
+                console.error('Save tariff error:', e);
+                if (typeof showError === 'function') {
+                    showError(`❌ Не удалось сохранить тариф: ${e.message}`);
+                } else {
+                    alert(`Не удалось сохранить тариф: ${e.message}`);
+                }
+            }
         }
+        
+        window.deleteTariff = async function(tariffId) {
+            const tariff = tariffsData.find(t => t.id === tariffId);
+            if (!tariff) return;
+            
+            const confirmed = typeof showConfirm === 'function' 
+                ? await new Promise(resolve => {
+                    showConfirm(`Вы уверены, что хотите удалить тариф "${tariff.name}"?`, () => resolve(true), () => resolve(false));
+                })
+                : confirm(`Вы уверены, что хотите удалить тариф "${tariff.name}"?`);
+            
+            if (!confirmed) return;
+            
+            try {
+                let resp = await fetch(`${API_BASE}/api/tariffs/${tariffId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                if (resp.status === 401) {
+                    console.warn('Not authorized, using public endpoint');
+                    resp = await fetch(`${API_BASE}/api/tariffs/${tariffId}/public`, {
+                        method: 'DELETE'
+                    });
+                }
+                if (!resp.ok) throw new Error('Failed to delete tariff');
+                
+                await loadTariffs();
+                
+                if (typeof showSuccess === 'function') {
+                    showSuccess('Тариф успешно удален!');
+                } else {
+                    alert('Тариф успешно удален!');
+                }
+            } catch (e) {
+                console.error('Delete tariff error:', e);
+                if (typeof showError === 'function') {
+                    showError('❌ Не удалось удалить тариф');
+                } else {
+                    alert('Не удалось удалить тариф');
+                }
+            }
+        }
+        
+        let editingTariffId = null;
+        
+        window.editTariff = async function(tariffId) {
+            editingTariffId = tariffId;
+            const tariff = tariffsData.find(t => t.id === tariffId);
+            if (!tariff) return;
+            
+            // Загружаем полные данные тарифа из API
+            try {
+                let resp = await fetch(`${API_BASE}/api/tariffs/${tariffId}`, { credentials: 'include' });
+                if (resp.status === 401) {
+                    resp = await fetch(`${API_BASE}/api/tariffs/${tariffId}/public`);
+                }
+                if (!resp.ok) throw new Error('Failed to load tariff');
+                const fullTariff = await resp.json();
+                
+                // Заполняем форму данными тарифа
+                document.getElementById('tariffName').value = fullTariff.name;
+                
+                // Маппинг обратный для select
+                const purposeMap = {
+                    'ELECTRIC': 'electricity',
+                    'GAS': 'gas',
+                    'WATER': 'water',
+                    'SEWERAGE': 'sewerage',
+                    'SERVICE': 'service',
+                    'RENT': 'rent',
+                    'CONSTRUCTION': 'construction'
+                };
+                
+                const clientTypeMap = {
+                    'INDIVIDUAL': 'individual',
+                    'LEGAL': 'legal'
+                };
+                
+                const purposeValue = purposeMap[fullTariff.meter_type] || fullTariff.meter_type.toLowerCase();
+                document.getElementById('tariffPurpose').value = purposeValue;
+                document.getElementById('tariffType').value = clientTypeMap[fullTariff.customer_type] || fullTariff.customer_type.toLowerCase();
+                document.getElementById('tariffVAT').value = fullTariff.vat_percent;
+                
+                // Очищаем контейнер ступеней
+                const stepsContainer = document.getElementById('tariffStepsContainer');
+                stepsContainer.innerHTML = '';
+                
+                // Добавляем ступени
+                const isConstruction = fullTariff.meter_type === 'CONSTRUCTION';
+                fullTariff.steps.forEach(step => {
+                    const stepRow = document.createElement('div');
+                    stepRow.className = 'step-row';
+                    const unit = getUnitForPurpose(purposeMap[fullTariff.meter_type] || '');
+                    
+                    if (isConstruction) {
+                        // Для строительства - даты
+                        const fromDate = step.from_date ? step.from_date.split('T')[0] : '';
+                        const toDate = step.to_date ? step.to_date.split('T')[0] : '';
+                        stepRow.innerHTML = `
+                            <div class="step-input-group">
+                                <label>Дата от</label>
+                                <input type="date" value="${fromDate}" required>
+                            </div>
+                            <div class="step-input-group">
+                                <label>Дата до</label>
+                                <input type="date" value="${toDate}" required>
+                            </div>
+                            <div class="step-input-group" style="display: none;">
+                                <label>Ед. изм.</label>
+                                <input type="text" value="${unit}" class="unit-chip" readonly>
+                            </div>
+                            <div class="step-input-group">
+                                <label>Цена</label>
+                                <input type="number" value="${step.price || 0}" step="0.01" min="0" required>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
+                                <i class="bi bi-trash"></i> Удалить
+                            </button>
+                        `;
+                    } else {
+                        // Для остальных - числа
+                        stepRow.innerHTML = `
+                            <div class="step-input-group">
+                                <label>ОТ (вкл.)</label>
+                                <input type="number" value="${step.from_value || 0}" min="0" step="0.01">
+                            </div>
+                            <div class="step-input-group">
+                                <label>ДО (искл.)</label>
+                                <input type="text" value="${step.to_value === null ? '∞' : step.to_value}" placeholder="∞ для бесконечности">
+                            </div>
+                            <div class="step-input-group">
+                                <label>Ед. изм.</label>
+                                <input type="text" value="${unit}" class="unit-chip" readonly>
+                            </div>
+                            <div class="step-input-group">
+                                <label>Цена</label>
+                                <input type="number" value="${step.price || 0}" step="0.01" min="0" required>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
+                                <i class="bi bi-trash"></i> Удалить
+                            </button>
+                        `;
+                    }
+                    stepsContainer.appendChild(stepRow);
+                });
+                
+                // Обновляем единицы измерения и тип полей ПОСЛЕ добавления всех ступеней
+                // (с небольшой задержкой, чтобы DOM успел обновиться)
+                setTimeout(() => {
+                    updateUnitsForPurpose();
+                    updateStepFieldsType();
+                }, 100);
+                
+                // Меняем заголовок модального окна
+                const modalTitle = document.querySelector('#createTariffModal .modal-header h2');
+                if (modalTitle) {
+                    modalTitle.textContent = 'Редактировать тариф';
+                }
+                
+                // Меняем текст кнопки
+                const submitBtn = document.querySelector('#createTariffForm button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.textContent = 'Сохранить';
+                }
+                
+                // Открываем модальное окно
+                openCreateModal();
+            } catch (e) {
+                console.error('Load tariff error:', e);
+                if (typeof showError === 'function') {
+                    showError('❌ Не удалось загрузить тариф');
+                } else {
+                    alert('Не удалось загрузить тариф');
+                }
+            }
+        }
+        
+        // Инициализация при загрузке страницы (для SPA роутера)
+        // Вызываем сразу, так как скрипт выполняется после вставки контента в DOM
+        async function initTariffsPage() {
+            // Небольшая задержка, чтобы убедиться, что DOM готов
+            await new Promise(resolve => setTimeout(resolve, 100));
+            console.log('Initializing tariffs page...');
+            if (typeof window.loadTariffs === 'function') {
+                await window.loadTariffs();
+            } else if (typeof loadTariffs === 'function') {
+                await loadTariffs();
+            } else {
+                console.error('loadTariffs function not found!');
+            }
+        }
+        
+        // Вызываем инициализацию
+        initTariffsPage();
+        
+        // Также слушаем событие от роутера (на случай повторной загрузки)
+        // Удаляем старый обработчик, если он существует
+        if (window._tariffsContentLoadedHandler) {
+            window.removeEventListener('spa:contentLoaded', window._tariffsContentLoadedHandler);
+        }
+        
+        window._tariffsContentLoadedHandler = (e) => {
+            console.log('SPA content loaded event:', e.detail);
+            const route = e.detail?.route || window.location.hash.split('?')[0].slice(1);
+            console.log('Current route:', route);
+            if (!route || route === '/tariffs' || route.startsWith('/tariffs')) {
+                console.log('Loading tariffs from spa:contentLoaded');
+                setTimeout(() => {
+                    if (typeof loadTariffs === 'function') {
+                        loadTariffs();
+                    } else if (typeof window.loadTariffs === 'function') {
+                        window.loadTariffs();
+                    } else {
+                        console.error('loadTariffs function not found!');
+                    }
+                }, 100);
+            }
+        };
+        
+        window.addEventListener('spa:contentLoaded', window._tariffsContentLoadedHandler);
 </script>
 
 

@@ -207,13 +207,261 @@
 </div>
 
 <script>
+(function() {
+    'use strict';
+    
+    const API_BASE = 'http://localhost:8000';
+    
+    // Загрузка статистики
+    async function loadDashboardStats() {
+        try {
+            const response = await fetch(`${API_BASE}/api/dashboard/stats`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const stats = await response.json();
+            console.log('Dashboard stats loaded:', stats);
+            
+            // Обновляем карточки статистики
+            updateStatsCards(stats);
+        } catch (error) {
+            console.error('Error loading dashboard stats:', error);
+            // Используем значения по умолчанию
+            updateStatsCards({
+                totalUsers: 1245,
+                totalBuildings: 48,
+                monthlyPayments: 2400000,
+                activeRequests: 23
+            });
+        }
+    }
+    
+    function updateStatsCards(stats) {
+        // Обновляем карточки
+        const userCard = document.querySelector('.stat-card.solid-blue .stat-value');
+        if (userCard) {
+            animateValue(userCard, parseInt(userCard.textContent.replace(/,/g, '')) || 0, stats.totalUsers || 0, 1000);
+        }
+        
+        const buildingCard = document.querySelector('.stat-card.solid-green .stat-value');
+        if (buildingCard) {
+            animateValue(buildingCard, parseInt(buildingCard.textContent) || 0, stats.totalBuildings || 0, 1000);
+        }
+        
+        const paymentCard = document.querySelector('.stat-card.solid-orange .stat-value');
+        if (paymentCard) {
+            const currentValue = parseFloat(paymentCard.textContent.replace(/[₼,M]/g, '')) * 1000000 || 0;
+            const newValue = stats.monthlyPayments || 0;
+            animateValue(paymentCard, currentValue, newValue, 1000, true);
+        }
+        
+        const requestCard = document.querySelector('.stat-card.solid-red .stat-value');
+        if (requestCard) {
+            animateValue(requestCard, parseInt(requestCard.textContent) || 0, stats.activeRequests || 0, 1000);
+        }
+    }
+    
+    function animateValue(element, start, end, duration, isCurrency = false) {
+        if (!element) return;
+        
+        const startTime = performance.now();
+        const range = end - start;
+        
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Easing function
+            const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+            const current = Math.floor(start + range * easeOutQuart);
+            
+            if (isCurrency) {
+                if (current >= 1000000) {
+                    element.textContent = `₼${(current / 1000000).toFixed(1)}M`;
+                } else if (current >= 1000) {
+                    element.textContent = `₼${(current / 1000).toFixed(0)}K`;
+                } else {
+                    element.textContent = `₼${current.toLocaleString()}`;
+                }
+            } else {
+                element.textContent = current.toLocaleString();
+            }
+            
+            if (progress < 1) {
+                requestAnimationFrame(update);
+            } else {
+                if (isCurrency) {
+                    if (end >= 1000000) {
+                        element.textContent = `₼${(end / 1000000).toFixed(1)}M`;
+                    } else if (end >= 1000) {
+                        element.textContent = `₼${(end / 1000).toFixed(0)}K`;
+                    } else {
+                        element.textContent = `₼${end.toLocaleString()}`;
+                    }
+                } else {
+                    element.textContent = end.toLocaleString();
+                }
+            }
+        }
+        
+        requestAnimationFrame(update);
+    }
+    
+    // Загрузка последних платежей
+    async function loadRecentPayments() {
+        try {
+            const response = await fetch(`${API_BASE}/api/dashboard/recent-payments?limit=4`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Recent payments loaded:', data);
+            
+            renderRecentPayments(data.payments || []);
+        } catch (error) {
+            console.error('Error loading recent payments:', error);
+            // Оставляем моковые данные или показываем пустую таблицу
+        }
+    }
+    
+    function renderRecentPayments(payments) {
+        const tbody = document.querySelector('.table.mobile-table tbody');
+        if (!tbody) return;
+        
+        if (!payments.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Нет платежей</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = payments.map(payment => {
+            const statusClass = payment.status === 'Оплачено' ? 'badge-success' : 'badge-warning';
+            const statusText = payment.status === 'Оплачено' ? 'Оплачено' : 'В обработке';
+            const date = new Date(payment.received_at).toLocaleDateString('ru-RU');
+            
+            return `
+                <tr>
+                    <td>#${payment.id}</td>
+                    <td>${payment.resident_info.split(',')[0] || '—'}</td>
+                    <td>${payment.resident_code || '—'}</td>
+                    <td>₼${payment.amount_total.toFixed(2)}</td>
+                    <td>${date}</td>
+                    <td><span class="badge ${statusClass}">${statusText}</span></td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    // Загрузка последней активности
+    async function loadRecentActivity() {
+        try {
+            const response = await fetch(`${API_BASE}/api/dashboard/recent-activity?limit=6`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Recent activity loaded:', data);
+            
+            renderRecentActivity(data.activities || []);
+        } catch (error) {
+            console.error('Error loading recent activity:', error);
+            // Оставляем моковые данные
+        }
+    }
+    
+    function renderRecentActivity(activities) {
+        const activityCard = document.querySelector('.activity-card');
+        if (!activityCard) return;
+        
+        // Удаляем существующие элементы активности (кроме заголовка)
+        const existingItems = activityCard.querySelectorAll('.activity-item');
+        existingItems.forEach(item => item.remove());
+        
+        if (!activities.length) {
+            activityCard.innerHTML += '<div class="activity-item"><div class="activity-details"><div class="activity-title">Нет активности</div></div></div>';
+            return;
+        }
+        
+        const iconMap = {
+            success: `<svg width="20" height="20" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`,
+            warning: `<svg width="20" height="20" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>`,
+            info: `<svg width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>`
+        };
+        
+        activities.forEach(activity => {
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            item.innerHTML = `
+                <div class="activity-icon ${activity.icon}">
+                    ${iconMap[activity.icon] || iconMap.info}
+                </div>
+                <div class="activity-details">
+                    <div class="activity-title">${activity.title}</div>
+                    <div class="activity-time">${activity.description} - ${activity.time}</div>
+                </div>
+            `;
+            activityCard.appendChild(item);
+        });
+    }
+    
+    // Загрузка данных для графика
+    async function loadChartData(period = 'week') {
+        try {
+            const response = await fetch(`${API_BASE}/api/dashboard/payment-chart?period=${period}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const chartData = await response.json();
+            console.log('Chart data loaded:', chartData);
+            
+            return {
+                labels: chartData.labels || [],
+                data: chartData.data || []
+            };
+        } catch (error) {
+            console.error('Error loading chart data:', error);
+            // Возвращаем пустые данные
+            return { labels: [], data: [] };
+        }
+    }
+    
     // Initialize Payment Statistics Chart
-    document.addEventListener('DOMContentLoaded', initializeChart);
+    document.addEventListener('DOMContentLoaded', function() {
+        initDashboard();
+    });
     
     // Also initialize when SPA loads content
-    window.addEventListener('spa:contentLoaded', initializeChart);
+    // Удаляем старый обработчик, если он существует
+    if (window._dashboardContentLoadedHandler) {
+        window.removeEventListener('spa:contentLoaded', window._dashboardContentLoadedHandler);
+    }
     
-    function initializeChart() {
+    window._dashboardContentLoadedHandler = function(e) {
+        if (e.detail && e.detail.route === '/dashboard') {
+            initDashboard();
+        }
+    };
+    
+    window.addEventListener('spa:contentLoaded', window._dashboardContentLoadedHandler);
+    
+    async function initDashboard() {
+        console.log('Initializing dashboard...');
+        
+        // Загружаем все данные параллельно
+        await Promise.all([
+            loadDashboardStats(),
+            loadRecentPayments(),
+            loadRecentActivity()
+        ]);
+        
+        // Инициализируем график
+        initializeChart();
+    }
+    
+    async function initializeChart() {
         const canvas = document.getElementById('paymentChart');
         if (!canvas) return;
         
@@ -224,12 +472,19 @@
         
         const ctx = canvas.getContext('2d');
         
-        // Sample data for the week
+        // Загружаем данные для всех периодов
+        const [weekChartData, monthChartData, yearChartData] = await Promise.all([
+            loadChartData('week'),
+            loadChartData('month'),
+            loadChartData('year')
+        ]);
+        
+        // Формируем данные для графика
         const weekData = {
-            labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+            labels: weekChartData.labels.length > 0 ? weekChartData.labels : ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
             datasets: [{
                 label: 'Платежи (₼)',
-                data: [12500, 15300, 18200, 14800, 22100, 19500, 16800],
+                data: weekChartData.data.length > 0 ? weekChartData.data : [0, 0, 0, 0, 0, 0, 0],
                 borderColor: 'rgba(102, 126, 234, 1)',
                 backgroundColor: 'rgba(102, 126, 234, 0.1)',
                 tension: 0.4,
@@ -243,10 +498,10 @@
         };
         
         const monthData = {
-            labels: ['Нед 1', 'Нед 2', 'Нед 3', 'Нед 4'],
+            labels: monthChartData.labels.length > 0 ? monthChartData.labels : ['Нед 1', 'Нед 2', 'Нед 3', 'Нед 4'],
             datasets: [{
                 label: 'Платежи (₼)',
-                data: [85000, 92000, 78000, 105000],
+                data: monthChartData.data.length > 0 ? monthChartData.data : [0, 0, 0, 0],
                 borderColor: 'rgba(102, 126, 234, 1)',
                 backgroundColor: 'rgba(102, 126, 234, 0.1)',
                 tension: 0.4,
@@ -260,10 +515,10 @@
         };
         
         const yearData = {
-            labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+            labels: yearChartData.labels.length > 0 ? yearChartData.labels : ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
             datasets: [{
                 label: 'Платежи (₼)',
-                data: [280000, 320000, 310000, 350000, 380000, 420000, 390000, 410000, 450000, 480000, 470000, 520000],
+                data: yearChartData.data.length > 0 ? yearChartData.data : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 borderColor: 'rgba(102, 126, 234, 1)',
                 backgroundColor: 'rgba(102, 126, 234, 0.1)',
                 tension: 0.4,
@@ -312,7 +567,12 @@
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return '₼' + (value / 1000) + 'K';
+                                if (value >= 1000000) {
+                                    return '₼' + (value / 1000000).toFixed(1) + 'M';
+                                } else if (value >= 1000) {
+                                    return '₼' + (value / 1000).toFixed(0) + 'K';
+                                }
+                                return '₼' + value;
                             },
                             font: {
                                 size: 12
@@ -346,20 +606,31 @@
         // Chart period buttons
         const chartButtons = document.querySelectorAll('.chart-btn');
         chartButtons.forEach((btn, index) => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', async function() {
                 // Remove active class from all buttons
                 chartButtons.forEach(b => b.classList.remove('active'));
                 
                 // Add active class to clicked button
                 this.classList.add('active');
                 
-                // Update chart data based on period
+                // Load and update chart data based on period
+                let period = 'week';
                 if (index === 0) {
+                    period = 'week';
                     currentData = weekData;
                 } else if (index === 1) {
+                    period = 'month';
                     currentData = monthData;
                 } else if (index === 2) {
+                    period = 'year';
                     currentData = yearData;
+                }
+                
+                // Загружаем свежие данные для выбранного периода
+                const freshData = await loadChartData(period);
+                if (freshData.labels.length > 0 && freshData.data.length > 0) {
+                    currentData.labels = freshData.labels;
+                    currentData.datasets[0].data = freshData.data;
                 }
                 
                 // Update chart
@@ -368,4 +639,6 @@
             });
         });
     }
+    
+})();
 </script>

@@ -43,7 +43,7 @@
         <div class="invoices-filters-row">
             <div class="invoices-filters-group">
                 <label>Год</label>
-                <input type="number" id="filterYear" min="2000" max="2100" step="1" value="2024">
+                <input type="number" id="filterYear" min="2000" max="2100" step="1" placeholder="Все годы">
             </div>
             
             <div class="invoices-filters-group">
@@ -258,24 +258,25 @@
     });
     
     const statuses = {
-        paid: {text: 'Оплачен', cls: 'success'}, 
-        unpaid: {text: 'Не оплачен', cls: 'warning'}, 
+        draft: {text: 'Черновик', cls: 'secondary'},
+        issued: {text: 'Выставлен', cls: 'info'},
+        partial: {text: 'Частично оплачен', cls: 'warning'},
+        paid: {text: 'Оплачен', cls: 'success'},
+        overpaid: {text: 'Переплата', cls: 'info'},
+        canceled: {text: 'Отменён', cls: 'danger'},
+        // Legacy mappings
+        unpaid: {text: 'Не оплачен', cls: 'warning'},
         overdue: {text: 'Просрочен', cls: 'danger'},
-        draft: {text: 'DRAFT', cls: 'secondary'},
-        issued: {text: 'Выставлен', cls: 'info'}
     };
     
     // Store original data
+    const API_BASE = 'http://localhost:8000';
     let allInvoices = [];
     let filteredInvoices = [];
+    let blocks = [];
+    let residents = [];
     
-    // Initialize data
-    if (typeof TestData !== 'undefined' && TestData.invoices) {
-        allInvoices = [...TestData.invoices];
-        filteredInvoices = [...TestData.invoices];
-    }
-    
-    // Pagination state
+    // Pagination state - MUST be declared before loadInvoices
     let paginationState = {
         currentPage: 1,
         itemsPerPage: 25,
@@ -283,34 +284,221 @@
         totalPages: 1
     };
     
-    // Render table function
-    function renderTable(invoices) {
-    const tbody = document.getElementById('invoicesTable');
-        if (!tbody) return;
-        
-        // Update pagination state
-        paginationState.totalItems = invoices.length;
-        paginationState.totalPages = Math.max(1, Math.ceil(paginationState.totalItems / paginationState.itemsPerPage));
-        
-        if (paginationState.currentPage > paginationState.totalPages) {
-            paginationState.currentPage = paginationState.totalPages || 1;
+    // Load invoices from API
+    window.loadInvoices = async function loadInvoices() {
+        console.log('=== loadInvoices() called ===');
+        try {
+            const year = document.getElementById('filterYear')?.value;
+            const month = document.getElementById('filterMonth')?.value;
+            const residentId = document.getElementById('filterResident')?.value;
+            const status = document.getElementById('filterStatus')?.value;
+            const search = document.getElementById('filterSearch')?.value;
+            const page = paginationState.currentPage;
+            const perPage = paginationState.itemsPerPage;
+            
+            console.log('Filters:', { year, month, residentId, status, search, page, perPage });
+            
+            let url = `${API_BASE}/api/invoices?page=${page}&per_page=${perPage}`;
+            const params = new URLSearchParams();
+            if (year && year.trim() !== '') params.append('year', year);
+            if (month && month.trim() !== '') params.append('month', month);
+            if (residentId && residentId !== 'all') params.append('resident_id', residentId);
+            if (status && status !== 'all') params.append('status', status.toUpperCase());
+            if (search && search.trim() !== '') params.append('q', search);
+            if (params.toString()) url += '&' + params.toString();
+            
+            console.log('Loading invoices from:', url);
+            
+            let response = await fetch(url);
+            console.log('Response status:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    url = url.replace('/api/invoices?', '/api/invoices/public?');
+                    console.log('Trying public endpoint:', url);
+                    response = await fetch(url);
+                    console.log('Public response status:', response.status, response.statusText);
+                }
+                if (!response.ok) {
+                    let errorMessage = `HTTP ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || JSON.stringify(errorData);
+                    } catch (e) {
+                        const errorText = await response.text().catch(() => '');
+                        if (errorText) {
+                            try {
+                                const errorJson = JSON.parse(errorText);
+                                errorMessage = errorJson.detail || errorText;
+                            } catch {
+                                errorMessage = errorText || errorMessage;
+                            }
+                        }
+                    }
+                    throw new Error(errorMessage);
+                }
+            }
+            
+            const data = await response.json();
+            console.log('Invoices data received:', { invoices: data.invoices?.length || 0, blocks: data.blocks?.length || 0, residents: data.residents?.length || 0, pagination: data.pagination });
+            
+            allInvoices = (data.invoices || []).map(inv => ({
+                id: inv.id,
+                residentId: inv.resident_id,
+                residentCode: inv.resident_code,
+                residentInfo: inv.resident_info,
+                blockName: inv.block_name,
+                unitNumber: inv.unit_number,
+                invoiceNumber: inv.number || `INV-${String(inv.id).padStart(4, '0')}`,
+                number: inv.number,
+                status: inv.status.toLowerCase(),
+                dueDate: inv.due_date ? new Date(inv.due_date).toLocaleDateString('ru-RU') : '—',
+                notes: inv.notes || '',
+                period: `${inv.period_year}-${String(inv.period_month).padStart(2, '0')}`,
+                periodYear: inv.period_year,
+                periodMonth: inv.period_month,
+                amount: inv.amount_total,
+                amountNet: inv.amount_net,
+                amountVat: inv.amount_vat,
+                paid: inv.paid_amount || 0,
+                remaining: inv.amount_total - (inv.paid_amount || 0),
+                created_at: inv.created_at,
+                lines: inv.lines || [],
+            }));
+            
+            blocks = data.blocks || [];
+            residents = data.residents || [];
+            
+            // Update pagination from API
+            if (data.pagination) {
+                paginationState.currentPage = data.pagination.page;
+                paginationState.totalItems = data.pagination.total;
+                paginationState.totalPages = data.pagination.last_page;
+            }
+            
+            filteredInvoices = [...allInvoices];
+            console.log('Calling renderTable with', filteredInvoices.length, 'invoices');
+            if (filteredInvoices.length > 0) {
+                console.log('First invoice sample:', filteredInvoices[0]);
+            }
+            
+            // Убеждаемся, что DOM готов перед рендерингом
+            if (document.getElementById('invoicesTable')) {
+                renderTable(filteredInvoices);
+            } else {
+                console.log('Waiting for DOM to be ready...');
+                setTimeout(() => {
+                    renderTable(filteredInvoices);
+                }, 150);
+            }
+            
+            updateFilterDropdowns();
+            console.log('✅ loadInvoices completed successfully');
+            
+        } catch (error) {
+            console.error('Error loading invoices:', error);
+            if (typeof showError === 'function') {
+                showError(`Ошибка загрузки счетов: ${error.message}`);
+            }
+            allInvoices = [];
+            filteredInvoices = [];
+            renderTable([]);
+        }
+    };
+    
+    function updateFilterDropdowns() {
+        // Update blocks dropdown
+        const blockSelect = document.getElementById('invoiceBlock');
+        if (blockSelect && blocks.length > 0) {
+            const currentValue = blockSelect.value;
+            blockSelect.innerHTML = '<option value="">— выберите блок —</option>';
+            blocks.forEach(block => {
+                const option = document.createElement('option');
+                option.value = block.id;
+                option.textContent = block.name;
+                if (block.id.toString() === currentValue) option.selected = true;
+                blockSelect.appendChild(option);
+            });
         }
         
-        // Get paginated data
-        const startIndex = (paginationState.currentPage - 1) * paginationState.itemsPerPage;
-        const endIndex = startIndex + paginationState.itemsPerPage;
-        const pageInvoices = invoices.slice(startIndex, endIndex);
+        // Update residents dropdown
+        const residentSelect = document.getElementById('filterResident');
+        if (residentSelect && residents.length > 0) {
+            const currentValue = residentSelect.value;
+            residentSelect.innerHTML = '<option value="all">Все</option>';
+            residents.forEach(resident => {
+                const option = document.createElement('option');
+                option.value = resident.id;
+                option.textContent = `${resident.block_name} / ${resident.unit_number}`;
+                if (resident.id.toString() === currentValue) option.selected = true;
+                residentSelect.appendChild(option);
+            });
+        }
+    }
+    
+    // Render table function
+    function renderTable(invoices) {
+        console.log('=== renderTable() called ===');
+        console.log('Rendering invoices table:', { invoicesCount: invoices.length, tbody: !!document.getElementById('invoicesTable') });
         
-        if (pageInvoices.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Нет данных по текущим фильтрам</td></tr>';
-        } else {
-            tbody.innerHTML = pageInvoices.map(i => {
+        // Функция для поиска tbody с несколькими попытками
+        function findTbodyWithRetry(attempts = 0, maxAttempts = 10) {
+            return new Promise((resolve) => {
+                const tbody = document.getElementById('invoicesTable');
+                if (tbody) {
+                    resolve(tbody);
+                    return;
+                }
+                
+                if (attempts < maxAttempts) {
+                    console.log(`⏳ invoicesTable tbody not found, retry ${attempts + 1}/${maxAttempts}...`);
+                    setTimeout(() => {
+                        findTbodyWithRetry(attempts + 1, maxAttempts).then(resolve);
+                    }, 100);
+                    return;
+                }
+                
+                console.error('❌ invoicesTable tbody not found after all retries!');
+                // Попробуем создать tbody, если его нет
+                const table = document.querySelector('.table.table-hover');
+                if (table) {
+                    console.log('⚠️ Creating tbody element manually...');
+                    const newTbody = document.createElement('tbody');
+                    newTbody.id = 'invoicesTable';
+                    table.appendChild(newTbody);
+                    resolve(newTbody);
+                } else {
+                    resolve(null);
+                }
+            });
+        }
+        
+        // Используем async/await для ожидания
+        (async () => {
+            const tbody = await findTbodyWithRetry();
+            if (!tbody) {
+                console.error('❌ Could not find or create invoicesTable tbody!');
+                return;
+            }
+            
+            console.log('✅ tbody found, rendering', invoices.length, 'invoices');
+            
+            // Data is already paginated from API, so just render it directly
+            const pageInvoices = invoices;
+            
+            if (pageInvoices.length === 0) {
+                console.log('⚠️ No invoices to render, showing empty message');
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Нет данных по текущим фильтрам</td></tr>';
+            } else {
+                console.log('📝 Rendering', pageInvoices.length, 'invoice rows');
+                tbody.innerHTML = pageInvoices.map(i => {
                 const invoiceNumber = i.invoiceNumber || i.number || `INV-${String(i.id).padStart(4, '0')}`;
-                const resident = i.userName || i.residentName || '—';
+                const resident = i.residentCode || i.residentInfo || '—';
                 const period = i.period || '—';
                 const amount = typeof i.amount === 'number' ? i.amount.toFixed(2) : (i.amount || '0.00');
                 const dueDate = i.dueDate || '—';
-                const statusConfig = statuses[i.status] || { text: i.status || 'Неизвестно', cls: 'secondary' };
+                const statusKey = i.status ? i.status.toLowerCase() : 'draft';
+                const statusConfig = statuses[statusKey] || { text: i.status || 'Неизвестно', cls: 'secondary' };
                 
                 // Данные об оплате
                 const paid = typeof i.paid === 'number' ? i.paid.toFixed(2) : '0.00';
@@ -338,10 +526,11 @@
                         </button>
                     </td>
                 </tr>`;
-            }).join('');
-        }
-        
-        updatePaginationUI();
+                }).join('');
+            }
+            
+            updatePaginationUI();
+        })();
     }
     
     // Update pagination UI
@@ -366,16 +555,16 @@
         if (page === 'prev') {
             if (paginationState.currentPage > 1) {
                 paginationState.currentPage--;
-                renderTable(filteredInvoices);
+                loadInvoices();
             }
         } else if (page === 'next') {
             if (paginationState.currentPage < paginationState.totalPages) {
                 paginationState.currentPage++;
-                renderTable(filteredInvoices);
+                loadInvoices();
             }
         } else if (typeof page === 'number') {
             paginationState.currentPage = page;
-            renderTable(filteredInvoices);
+            loadInvoices();
         }
     };
     
@@ -384,7 +573,7 @@
         if (select) {
             paginationState.itemsPerPage = parseInt(select.value);
             paginationState.currentPage = 1;
-            renderTable(filteredInvoices);
+            loadInvoices();
         }
     };
     
@@ -417,6 +606,9 @@
                 // Вставить контент
                 contentContainer.innerHTML = html;
                 
+                // Установить invoice ID в глобальную переменную ПЕРЕД выполнением скриптов
+                window.__currentInvoiceId = id;
+                
                 // Выполнить скрипты из загруженного контента
                 const scripts = contentContainer.querySelectorAll('script');
                 scripts.forEach(oldScript => {
@@ -431,10 +623,14 @@
                 // Обновить заголовок страницы и breadcrumb
                 updatePageHeaderForInvoiceView(id);
                 
-                // Обновить URL в браузере
-                if (window.history && window.history.pushState) {
-                    window.history.pushState({ route: 'invoice-view', id: id }, '', `#/invoice-view?id=${id}`);
-                }
+                // Обновить URL в браузере через hash (для SPA роутера)
+                window.location.hash = `#/invoice-view?id=${id}`;
+                
+                // Вызвать событие для инициализации после загрузки
+                setTimeout(() => {
+                    const event = new CustomEvent('spa:contentLoaded', { detail: { invoiceId: id } });
+                    document.dispatchEvent(event);
+                }, 100);
                 
                 // Скроллить наверх
                 contentContainer.scrollTop = 0;
@@ -542,101 +738,288 @@
         }
     }
     
-    // Initial render
-    renderTable(filteredInvoices);
-    setTimeout(() => {
-        initCustomInvoicePaginationDropdown();
-    }, 500);
+    // Initial load
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOMContentLoaded - calling loadInvoices()');
+        setTimeout(() => {
+            loadInvoices();
+            setTimeout(() => {
+                initCustomInvoicePaginationDropdown();
+            }, 500);
+        }, 100);
+    });
+    
+    // Also load on SPA content loaded
+    // Удаляем старый обработчик, если он существует
+    if (window._invoicesContentLoadedHandler) {
+        document.removeEventListener('spa:contentLoaded', window._invoicesContentLoadedHandler);
+    }
+    
+    window._invoicesContentLoadedHandler = function() {
+        console.log('spa:contentLoaded - calling loadInvoices()');
+        setTimeout(() => {
+            loadInvoices();
+            setTimeout(() => {
+                initCustomInvoicePaginationDropdown();
+            }, 100);
+        }, 100);
+    };
+    
+    document.addEventListener('spa:contentLoaded', window._invoicesContentLoadedHandler);
+    
+    // Also try to load immediately if page is already loaded
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        console.log('Page already loaded, calling loadInvoices()');
+        setTimeout(() => {
+            loadInvoices();
+        }, 200);
+    }
 
     // Invoice Actions Functions
-    window.issueInvoiceByBlock = function() {
-        const block = document.getElementById('invoiceBlock').value;
-        const dueDate = document.getElementById('invoiceDueDate').value;
+    window.issueInvoiceByBlock = async function() {
+        const blockSelect = document.getElementById('invoiceBlock');
+        const blockValue = blockSelect?.value;
+        const dueDateInput = document.getElementById('invoiceDueDate');
+        const dueDate = dueDateInput?.value;
         
-        if (!block) {
+        if (!blockValue || blockValue === '') {
             if (typeof showWarning === 'function') {
                 showWarning('Пожалуйста, выберите блок!');
+            } else {
+                alert('Пожалуйста, выберите блок!');
             }
             return;
         }
         
-        console.log('Issue invoice by block:', { block, dueDate });
-        // TODO: Implement API call
-        if (typeof showSuccess === 'function') {
-            showSuccess(`Счета по блоку ${block} успешно выставлены!`);
+        // Check if blockValue is a number (ID) or a string (name)
+        let blockId = null;
+        if (!isNaN(blockValue) && blockValue !== '') {
+            // It's a number (ID)
+            blockId = parseInt(blockValue);
+        } else {
+            // It's a name (A, B, K, etc.) - need to find ID from blocks array
+            const block = blocks.find(b => b.name === blockValue);
+            if (!block) {
+                if (typeof showError === 'function') {
+                    showError(`Блок "${blockValue}" не найден. Пожалуйста, обновите страницу.`);
+                } else {
+                    alert(`Блок "${blockValue}" не найден. Пожалуйста, обновите страницу.`);
+                }
+                return;
+            }
+            blockId = block.id;
+        }
+        
+        console.log('Issue invoice by block:', { blockValue, blockId, dueDate, blocks: blocks.length });
+        
+        try {
+            // Convert date from DD.MM.YYYY to YYYY-MM-DD if needed
+            let formattedDueDate = null;
+            if (dueDate) {
+                console.log('📅 Original dueDate:', dueDate, 'type:', typeof dueDate);
+                // Check if date is in DD.MM.YYYY format
+                if (dueDate.includes('.')) {
+                    const parts = dueDate.split('.');
+                    if (parts.length === 3) {
+                        formattedDueDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                        console.log('📅 Converted from DD.MM.YYYY to YYYY-MM-DD:', formattedDueDate);
+                    } else {
+                        formattedDueDate = dueDate;
+                    }
+                } else {
+                    // If it's already in YYYY-MM-DD format (from date input), use as is
+                    formattedDueDate = dueDate;
+                    console.log('📅 Using date as is (YYYY-MM-DD):', formattedDueDate);
+                }
+            } else {
+                console.log('⚠️ No due date provided');
+            }
+            
+            const payload = {
+                action: 'by_block',
+                block_id: parseInt(blockId),
+                due_date: formattedDueDate
+            };
+            
+            console.log('📤 Sending bulk issue request:', JSON.stringify(payload, null, 2));
+            
+            let url = `${API_BASE}/api/invoices/bulk-issue`;
+            let response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    url = `${API_BASE}/api/invoices/bulk-issue/public`;
+                    response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                }
+                if (!response.ok) {
+                    let errorMessage = `HTTP ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || JSON.stringify(errorData);
+                    } catch (e) {
+                        const errorText = await response.text().catch(() => '');
+                        if (errorText) {
+                            try {
+                                const errorJson = JSON.parse(errorText);
+                                errorMessage = errorJson.detail || errorText;
+                            } catch {
+                                errorMessage = errorText || errorMessage;
+                            }
+                        }
+                    }
+                    throw new Error(errorMessage);
+                }
+            }
+            
+            const data = await response.json();
+            console.log('📥 Bulk issue response:', JSON.stringify(data, null, 2));
+            
+            if (typeof showSuccess === 'function') {
+                showSuccess(data.message || `Счета по блоку успешно выставлены! Выставлено: ${data.count}`);
+            } else {
+                alert(data.message || `Счета по блоку успешно выставлены! Выставлено: ${data.count}`);
+            }
+            
+            // Reload invoices to show updated status
+            loadInvoices();
+            
+        } catch (error) {
+            console.error('Error issuing invoices by block:', error);
+            if (typeof showError === 'function') {
+                showError(`Ошибка выставления счетов: ${error.message}`);
+            } else {
+                alert(`Ошибка выставления счетов: ${error.message}`);
+            }
         }
     };
 
-    window.issueAllInvoices = function() {
-        const dueDate = document.getElementById('invoiceDueDate').value;
+    window.issueAllInvoices = async function() {
+        const dueDateInput = document.getElementById('invoiceDueDate');
+        const dueDate = dueDateInput?.value;
+        
         console.log('Issue all invoices:', { dueDate });
-        // TODO: Implement API call
-        if (typeof showSuccess === 'function') {
-            showSuccess('Все счета успешно выставлены!');
+        
+        if (typeof showConfirm === 'function') {
+            showConfirm('Вы уверены, что хотите выставить все счета?', async (confirmed) => {
+                if (!confirmed) return;
+                await performIssueAll(dueDate);
+            });
+        } else {
+            if (confirm('Вы уверены, что хотите выставить все счета?')) {
+                await performIssueAll(dueDate);
+            }
         }
     };
+    
+    async function performIssueAll(dueDate) {
+        try {
+            // Convert date from DD.MM.YYYY to YYYY-MM-DD if needed
+            let formattedDueDate = null;
+            if (dueDate) {
+                console.log('📅 Original dueDate:', dueDate, 'type:', typeof dueDate);
+                // Check if date is in DD.MM.YYYY format
+                if (dueDate.includes('.')) {
+                    const parts = dueDate.split('.');
+                    if (parts.length === 3) {
+                        formattedDueDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                        console.log('📅 Converted from DD.MM.YYYY to YYYY-MM-DD:', formattedDueDate);
+                    } else {
+                        formattedDueDate = dueDate;
+                    }
+                } else {
+                    // If it's already in YYYY-MM-DD format (from date input), use as is
+                    formattedDueDate = dueDate;
+                    console.log('📅 Using date as is (YYYY-MM-DD):', formattedDueDate);
+                }
+            } else {
+                console.log('⚠️ No due date provided');
+            }
+            
+            const payload = {
+                action: 'all',
+                block_id: null,
+                due_date: formattedDueDate
+            };
+            
+            let url = `${API_BASE}/api/invoices/bulk-issue`;
+            let response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    url = `${API_BASE}/api/invoices/bulk-issue/public`;
+                    response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                }
+                if (!response.ok) {
+                    let errorMessage = `HTTP ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || JSON.stringify(errorData);
+                    } catch (e) {
+                        const errorText = await response.text().catch(() => '');
+                        if (errorText) {
+                            try {
+                                const errorJson = JSON.parse(errorText);
+                                errorMessage = errorJson.detail || errorText;
+                            } catch {
+                                errorMessage = errorText || errorMessage;
+                            }
+                        }
+                    }
+                    throw new Error(errorMessage);
+                }
+            }
+            
+            const data = await response.json();
+            console.log('Bulk issue response:', data);
+            
+            if (typeof showSuccess === 'function') {
+                showSuccess(data.message || `Все счета успешно выставлены! Выставлено: ${data.count}`);
+            } else {
+                alert(data.message || `Все счета успешно выставлены! Выставлено: ${data.count}`);
+            }
+            
+            // Reload invoices to show updated status
+            loadInvoices();
+            
+        } catch (error) {
+            console.error('Error issuing all invoices:', error);
+            if (typeof showError === 'function') {
+                showError(`Ошибка выставления счетов: ${error.message}`);
+            } else {
+                alert(`Ошибка выставления счетов: ${error.message}`);
+            }
+        }
+    }
 
     window.applyInvoiceFilters = function() {
-        const year = document.getElementById('filterYear').value;
-        const month = document.getElementById('filterMonth').value;
-        const resident = document.getElementById('filterResident').value;
-        const status = document.getElementById('filterStatus').value;
-        const search = document.getElementById('filterSearch').value.toLowerCase();
-        
-        // Filter invoices
-        filteredInvoices = allInvoices.filter(invoice => {
-            // Filter by year
-            if (year) {
-                const invoiceYear = extractYear(invoice.period || invoice.issueDate || '');
-                if (invoiceYear && invoiceYear.toString() !== year.toString()) {
-                    return false;
-                }
-            }
-            
-            // Filter by month
-            if (month) {
-                const invoiceMonth = extractMonth(invoice.period || invoice.issueDate || '');
-                if (invoiceMonth && invoiceMonth.toString() !== month.toString()) {
-                    return false;
-                }
-            }
-            
-            // Filter by resident (if you have resident field in invoice data)
-            if (resident && resident !== 'all') {
-                // Adjust this based on your invoice data structure
-                // For now, skip if no resident field
-                if (invoice.residentId && invoice.residentId.toString() !== resident) {
-                    return false;
-                }
-            }
-            
-            // Filter by status
-            if (status && status !== 'all') {
-                if (invoice.status !== status) {
-                    return false;
-                }
-            }
-            
-            // Filter by search (ID or note)
-            if (search) {
-                const searchText = `${invoice.id} ${invoice.userName || ''} ${invoice.apartment || ''} ${invoice.note || ''}`.toLowerCase();
-                if (!searchText.includes(search)) {
-                    return false;
-                }
-            }
-            
-            return true;
-        });
-        
         // Reset to first page on filter
         paginationState.currentPage = 1;
-        
-        // Re-render table with filtered data
-        renderTable(filteredInvoices);
-        
-        if (typeof showSuccess === 'function') {
-            showSuccess(`Найдено записей: ${filteredInvoices.length}`);
-        }
+        // Reload invoices with filters from API
+        loadInvoices();
     };
     
     // Helper functions to extract year and month
@@ -680,10 +1063,8 @@
         document.getElementById('filterStatus').value = 'all';
         document.getElementById('filterSearch').value = '';
         
-        // Reset to all invoices
-        filteredInvoices = [...allInvoices];
         paginationState.currentPage = 1;
-        renderTable(filteredInvoices);
+        loadInvoices();
         
         if (typeof showSuccess === 'function') {
             showSuccess('Фильтры очищены!');

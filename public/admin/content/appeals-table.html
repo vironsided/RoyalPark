@@ -95,7 +95,7 @@
 </style>
 
 <div class="dashboard-content">
-        <div class="card">
+    <div class="card">
         <div class="card-body">
             <div class="appeals-header">
                 <h4 class="card-title mb-0">Обращения жителей</h4>
@@ -103,10 +103,8 @@
                     <span>Статус:</span>
                     <select id="appealsStatusFilter" class="appeals-filter-select">
                         <option value="all">Все</option>
-                        <option value="unread">Не прочитано</option>
-                        <option value="read">Прочитано</option>
-                        <option value="in_progress">В процессе</option>
-                        <option value="escalated">На доп. проверке</option>
+                        <option value="UNREAD">Не прочитано</option>
+                        <option value="READ">Прочитано</option>
                     </select>
                 </div>
             </div>
@@ -125,7 +123,11 @@
                             <th class="text-end">Действия</th>
                         </tr>
                     </thead>
-                    <tbody id="appealsTableBody"></tbody>
+                    <tbody id="appealsTableBody">
+                        <tr>
+                            <td colspan="8" class="text-center">Загрузка данных...</td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
 
@@ -168,86 +170,27 @@
 </div>
 
 <script>
-// Appeals table variant: compact list of resident complaints
 (function() {
     'use strict';
 
-    const statusStyles = {
-        read: { text: 'прочитано', className: 'bg-success' },
-        unread: { text: 'не прочитано', className: 'bg-warning text-dark' },
-        in_progress: { text: 'в процессе', className: 'bg-primary' },
-        escalated: { text: 'на доп. проверке', className: 'bg-danger' }
-    };
-
+    const API_BASE = 'http://localhost:8000';
     const state = {
-        appeals: []
+        notifications: [],
+        currentNotification: null
     };
 
-    function init() {
-        const users = ((window.TestData && window.TestData.users) || []).reduce((acc, user) => {
-            acc[user.id] = user;
-            return acc;
-        }, {});
+    const statusStyles = {
+        READ: { text: 'прочитано', className: 'bg-success' },
+        UNREAD: { text: 'не прочитано', className: 'bg-warning text-dark' }
+    };
 
-        state.appeals = ((window.TestData && window.TestData.debts) || []).map((entry) => {
-            const resident = users[entry.userId] || {};
-            const submitted = entry.submittedAt || `${entry.dueDate || '2024-01-01'}T09:00:00`;
-            const [block, apt] = splitApartment(entry.apartment);
-            return {
-                id: entry.id,
-                createdAt: submitted,
-                block: block || resident.building || '—',
-                home: apt || resident.apartment || '—',
-                resident: resident.name || entry.userName || '—',
-                phone: resident.phone || '—',
-                email: resident.email || '—',
-                status: deriveStatus(entry),
-                raw: entry,
-                residentData: resident
-            };
-        });
-
-        // Если из TestData ничего не пришло, покажем несколько статических обращений
-        if (!state.appeals.length) {
-            state.appeals = [
-                {
-                    id: 1,
-                    createdAt: '2025-11-25T09:58:00',
-                    block: 'A',
-                    home: '50',
-                    resident: 'resident',
-                    phone: '—',
-                    email: '—',
-                    status: 'unread',
-                    raw: { residentComment: '—' }
-                },
-                {
-                    id: 2,
-                    createdAt: '2025-11-25T09:57:00',
-                    block: 'A',
-                    home: '50',
-                    resident: 'resident',
-                    phone: '—',
-                    email: '—',
-                    status: 'unread',
-                    raw: { residentComment: '—' }
-                }
-            ];
-        }
-
-        cacheDom();
-        applyFilters();
-        bindEvents();
-    }
-
-    let tableBody, emptyState, statusSelect, searchInput, modalOverlay;
+    let tableBody, emptyState, statusSelect, modalOverlay;
     let modalResident, modalApartment, modalContacts, modalDescription;
 
     function cacheDom() {
         tableBody = document.getElementById('appealsTableBody');
         emptyState = document.getElementById('appealsEmptyState');
-        statusSelect = document.getElementById('appealsStatusFilter') || null;
-        searchInput = null;
+        statusSelect = document.getElementById('appealsStatusFilter');
         modalOverlay = document.getElementById('appealModal');
         modalResident = document.getElementById('modalResident');
         modalApartment = document.getElementById('modalApartment');
@@ -255,12 +198,175 @@
         modalDescription = document.getElementById('modalDescription');
     }
 
+    async function loadNotifications() {
+        try {
+            const statusValue = statusSelect?.value || 'all';
+            const statusParam = statusValue !== 'all' ? `&status=${statusValue}` : '';
+            const url = `${API_BASE}/api/notifications/public?page=1&per_page=200${statusParam}`;
+            
+            console.log('Loading notifications from:', url);
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    console.log('Not authorized, using public endpoint');
+                    // Уже используем публичный endpoint
+                    throw new Error('Unauthorized');
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Notifications data received:', data);
+            
+            state.notifications = data.notifications || [];
+            renderTable();
+        } catch (error) {
+            console.error('Error loading notifications:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка загрузки обращений: ' + error.message);
+            }
+            state.notifications = [];
+            renderTable();
+        }
+    }
+
+    function renderTable() {
+        if (!tableBody) {
+            console.error('Table body not found!');
+            return;
+        }
+
+        const items = state.notifications;
+
+        if (!items.length) {
+            tableBody.innerHTML = '';
+            if (emptyState) emptyState.style.display = 'block';
+            return;
+        }
+
+        if (emptyState) emptyState.style.display = 'none';
+        
+        tableBody.innerHTML = items.map(notif => {
+            const status = statusStyles[notif.status] || statusStyles.UNREAD;
+            const block = notif.block_name || '—';
+            const home = notif.unit_number || '—';
+            const resident = notif.user_full_name || '—';
+            const phone = notif.user_phone || '—';
+            const email = notif.user_email || '—';
+            
+            return `
+                <tr>
+                    <td>${formatDateTime(notif.created_at)}</td>
+                    <td>${block}</td>
+                    <td>${home}</td>
+                    <td>${resident}</td>
+                    <td>${phone}</td>
+                    <td>${email}</td>
+                    <td>
+                        <span class="appeals-status-badge ${status.className}">${status.text}</span>
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-outline-primary btn-sm" data-action="view" data-id="${notif.id}">
+                            Просмотр
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm ms-2" data-action="delete" data-id="${notif.id}">
+                            Удалить
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function viewNotification(id) {
+        try {
+            const url = `${API_BASE}/api/notifications/${id}/public`;
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const notif = await response.json();
+            state.currentNotification = notif;
+            
+            if (modalApartment) {
+                const block = notif.block_name || '—';
+                const home = notif.unit_number || '—';
+                modalApartment.textContent = `${block} / ${home}`;
+            }
+            if (modalResident) {
+                modalResident.textContent = notif.user_full_name || '—';
+            }
+            if (modalContacts) {
+                const phone = notif.user_phone || '—';
+                const email = notif.user_email || '—';
+                modalContacts.textContent = `${phone} / ${email}`;
+            }
+            if (modalDescription) {
+                modalDescription.textContent = notif.message || '—';
+            }
+            
+            if (modalOverlay) modalOverlay.classList.add('show');
+            
+            // Перезагружаем список, чтобы обновить статус
+            await loadNotifications();
+        } catch (error) {
+            console.error('Error loading notification:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка загрузки обращения: ' + error.message);
+            }
+        }
+    }
+
+    async function deleteNotification(id) {
+        if (!confirm('Вы уверены, что хотите удалить это обращение?')) {
+            return;
+        }
+
+        try {
+            const url = `${API_BASE}/api/notifications/${id}/public`;
+            const response = await fetch(url, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            if (typeof showSuccess === 'function') {
+                showSuccess('Обращение успешно удалено!');
+            }
+            
+            await loadNotifications();
+        } catch (error) {
+            console.error('Error deleting notification:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка удаления обращения: ' + error.message);
+            }
+        }
+    }
+
+    function closeModal() {
+        if (modalOverlay) modalOverlay.classList.remove('show');
+    }
+
+    function formatDateTime(value) {
+        if (!value) return '—';
+        const date = new Date(value);
+        return date.toLocaleString('ru-RU', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
     function bindEvents() {
         if (statusSelect) {
-            statusSelect.addEventListener('change', applyFilters);
-        }
-        if (searchInput) {
-            searchInput.addEventListener('input', debounce(applyFilters, 200));
+            statusSelect.addEventListener('change', loadNotifications);
         }
 
         if (tableBody) {
@@ -268,11 +374,11 @@
                 const viewBtn = event.target.closest('[data-action="view"]');
                 const deleteBtn = event.target.closest('[data-action="delete"]');
                 if (viewBtn) {
-                    const appeal = findAppeal(viewBtn.dataset.id);
-                    if (appeal) openModal(appeal);
+                    const id = parseInt(viewBtn.dataset.id);
+                    viewNotification(id);
                 } else if (deleteBtn) {
-                    const appeal = findAppeal(deleteBtn.dataset.id);
-                    if (appeal) deleteAppeal(appeal.id);
+                    const id = parseInt(deleteBtn.dataset.id);
+                    deleteNotification(id);
                 }
             });
         }
@@ -288,129 +394,38 @@
         }
     }
 
-    function applyFilters() {
-        const items = getFilteredAppeals();
-        renderTable(items);
+    function initAppealsPage() {
+        console.log('Initializing appeals page...');
+        cacheDom();
+        bindEvents();
+        loadNotifications();
     }
 
-    function getFilteredAppeals() {
-        let items = [...state.appeals];
-
-        const statusValue = statusSelect?.value || 'all';
-        if (statusValue !== 'all') {
-            items = items.filter(a => a.status === statusValue);
+    // Удаляем старый обработчик, если он существует
+    if (window._appealsContentLoadedHandler) {
+        window.removeEventListener('spa:contentLoaded', window._appealsContentLoadedHandler);
+    }
+    
+    window._appealsContentLoadedHandler = function(e) {
+        console.log('SPA content loaded event:', e.detail);
+        const route = e.detail?.route || window.location.hash.split('?')[0].slice(1);
+        console.log('Current route:', route);
+        if (!route || route === '/appeals' || route.startsWith('/appeals')) {
+            console.log('Loading appeals from spa:contentLoaded');
+            setTimeout(() => {
+                initAppealsPage();
+            }, 100);
         }
+    };
+    
+    window.addEventListener('spa:contentLoaded', window._appealsContentLoadedHandler);
 
-        return items;
-    }
-
-    function renderTable(items = state.appeals) {
-        if (!tableBody) {
-            console.error('Table body not found!');
-            return;
-        }
-        if (!items.length) {
-            tableBody.innerHTML = '';
-            if (emptyState) emptyState.style.display = 'block';
-            return;
-        }
-
-        if (emptyState) emptyState.style.display = 'none';
-        tableBody.innerHTML = items.map(appeal => {
-            const status = statusStyles[appeal.status] || statusStyles.unread;
-            return `
-                <tr>
-                    <td>${formatDateTime(appeal.createdAt)}</td>
-                    <td>${appeal.block}</td>
-                    <td>${appeal.home}</td>
-                    <td>${appeal.resident}</td>
-                    <td>${appeal.phone}</td>
-                    <td>${appeal.email}</td>
-                    <td>
-                        <span class="appeals-status-badge ${status.className}">${status.text}</span>
-                    </td>
-                    <td class="text-end">
-                        <button class="btn btn-outline-primary btn-sm" data-action="view" data-id="${appeal.id}">
-                            Просмотр
-                        </button>
-                        <button class="btn btn-outline-danger btn-sm ms-2" data-action="delete" data-id="${appeal.id}">
-                            Удалить
-                        </button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-    }
-
-    function openModal(appeal) {
-        if (modalApartment) modalApartment.textContent = `${appeal.block} / ${appeal.home}`;
-        if (modalResident) modalResident.textContent = appeal.resident;
-        if (modalContacts) modalContacts.textContent = `${appeal.phone} / ${appeal.email}`;
-        if (modalDescription) modalDescription.textContent = appeal.raw?.residentComment || appeal.raw?.complaintReason || '—';
-
-        appeal.status = 'read';
-        if (appeal.raw) appeal.raw.viewed = true;
-        if (modalOverlay) modalOverlay.classList.add('show');
-        applyFilters();
-    }
-
-    function closeModal() {
-        if (modalOverlay) modalOverlay.classList.remove('show');
-    }
-
-    function deleteAppeal(id) {
-        const index = state.appeals.findIndex(a => String(a.id) === String(id));
-        if (index >= 0) {
-            state.appeals.splice(index, 1);
-            applyFilters();
-        }
-    }
-
-    function findAppeal(id) {
-        return state.appeals.find(a => String(a.id) === String(id));
-    }
-
-    function deriveStatus(entry) {
-        if (!entry.viewed) return 'unread';
-        if (entry.stage === 'in_progress') return 'in_progress';
-        if (entry.stage === 'escalated') return 'escalated';
-        return 'read';
-    }
-
-    function splitApartment(apartment = '') {
-        if (!apartment) return ['—', '—'];
-        const parts = apartment.split('-');
-        return [parts[0] || '—', parts[1] || '—'];
-    }
-
-    function formatDateTime(value) {
-        if (!value) return '—';
-        const date = new Date(value);
-        return date.toLocaleString('ru-RU', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
-
-    function debounce(fn, delay = 200) {
-        let timeout;
-        return (...args) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => fn.apply(null, args), delay);
-        };
-    }
-
-    // Запускаем инициализацию после загрузки DOM
+    // Загрузка при первой загрузке (если не через SPA)
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init, { once: true });
+        document.addEventListener('DOMContentLoaded', initAppealsPage);
     } else {
-        // Если DOM уже загружен, запускаем сразу
-        setTimeout(init, 100);
+        initAppealsPage();
     }
 
 })();
 </script>
-

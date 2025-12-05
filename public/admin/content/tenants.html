@@ -104,7 +104,6 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h3>Список жителей (проживающих)</h3>
-                        <button class="btn btn-sm btn-outline-primary">Экспорт</button>
                     </div>
                     <table class="table table-hover tenants-table">
                         <thead>
@@ -197,59 +196,7 @@
                                 </thead>
                                 <tbody id="residentsListBody">
                                     <tr>
-                                        <td>1</td>
-                                        <td>A</td>
-                                        <td>205</td>
-                                        <td>
-                                            <label class="resident-checkbox">
-                                                <input type="checkbox" onchange="toggleResidentSelection(1, 'A', '205', this)" hidden>
-                                                <span>Выбрать</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>2</td>
-                                        <td>B</td>
-                                        <td>101</td>
-                                        <td>
-                                            <label class="resident-checkbox">
-                                                <input type="checkbox" onchange="toggleResidentSelection(2, 'B', '101', this)" hidden>
-                                                <span>Выбрать</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>3</td>
-                                        <td>K</td>
-                                        <td>305</td>
-                                        <td>
-                                            <label class="resident-checkbox">
-                                                <input type="checkbox" onchange="toggleResidentSelection(3, 'K', '305', this)" hidden>
-                                                <span>Выбрать</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>4</td>
-                                        <td>X</td>
-                                        <td>102</td>
-                                        <td>
-                                            <label class="resident-checkbox">
-                                                <input type="checkbox" onchange="toggleResidentSelection(4, 'X', '102', this)" hidden>
-                                                <span>Выбрать</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>5</td>
-                                        <td>Z</td>
-                                        <td>50</td>
-                                        <td>
-                                            <label class="resident-checkbox">
-                                                <input type="checkbox" onchange="toggleResidentSelection(5, 'Z', '50', this)" hidden>
-                                                <span>Выбрать</span>
-                                            </label>
-                                        </td>
+                                        <td colspan="4" class="text-center text-muted">Загрузка...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -279,28 +226,197 @@
 (function() {
     'use strict';
     
-    const tenantsSeedData = [
-        {
-            id: 2,
-            login: 'X2',
-            name: 'Vusal Guleli Teymurov',
-            phone: '+994 51 385 78 46',
-            email: 'vusal.teymurov520@gmail.com',
-            lastLogin: '2025-11-27 06:54:54',
-            passwordStatus: 'установлен',
-            comment: '',
-            residentIds: [2],
-            homes: [{ block: 'X', number: '2', count: 1 }]
-        }
-    ];
-    
-    let tenantsData = [...tenantsSeedData];
-    let filteredTenants = [...tenantsData];
+    const API_BASE = 'http://localhost:8000';
+    let tenantsData = [];
+    let blocks = [];
+    let residents = [];
     let selectedResidentIds = new Set();
     let isEditMode = false;
     let editingTenantId = null;
     let pendingAction = { type: null, tenantId: null };
-    populateTenantsTable(filteredTenants);
+    
+    // Load tenants on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadTenants();
+        loadBlocksAndResidents();
+    });
+    
+    // Also load on SPA content loaded
+    document.addEventListener('spa:contentLoaded', function() {
+        setTimeout(() => {
+            loadTenants();
+            loadBlocksAndResidents();
+        }, 100);
+    });
+    
+    // Load tenants from API
+    window.loadTenants = async function loadTenants() {
+        try {
+            const searchTerm = document.getElementById('filterSearch')?.value.trim();
+            const blockId = document.getElementById('filterBlock')?.value;
+            const unitNumber = document.getElementById('filterHouse')?.value.trim();
+            
+            let url = `${API_BASE}/api/tenants?page=1&per_page=200`;
+            const params = new URLSearchParams();
+            if (searchTerm) params.append('q', searchTerm);
+            if (blockId && blockId !== 'all') {
+                // Try to find block in current blocks array
+                let block = blocks.find(b => b.name === blockId);
+                // If blocks array is empty, we'll get blocks from API response
+                // and then apply filter on next load
+                if (block) {
+                    params.append('block_id', block.id);
+                }
+            }
+            if (unitNumber) params.append('unit_number', unitNumber);
+            if (params.toString()) url += '&' + params.toString();
+            
+            console.log('Loading tenants from:', url);
+            
+            let response = await fetch(url);
+            console.log('Response status:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    url = url.replace('/api/tenants?', '/api/tenants/public?');
+                    console.log('Trying public endpoint:', url);
+                    try {
+                        response = await fetch(url);
+                        console.log('Public response status:', response.status, response.statusText);
+                        if (!response.ok) {
+                            let errorMessage = `HTTP ${response.status}`;
+                            try {
+                                const errorData = await response.json();
+                                errorMessage = errorData.detail || JSON.stringify(errorData);
+                            } catch (e) {
+                                const errorText = await response.text().catch(() => '');
+                                if (errorText) {
+                                    try {
+                                        const errorJson = JSON.parse(errorText);
+                                        errorMessage = errorJson.detail || errorText;
+                                    } catch {
+                                        errorMessage = errorText;
+                                    }
+                                }
+                            }
+                            throw new Error(errorMessage);
+                        }
+                    } catch (fetchError) {
+                        if (fetchError.message && !fetchError.message.includes('HTTP') && !fetchError.message.includes('CORS')) {
+                            throw fetchError;
+                        }
+                        console.error('CORS or network error:', fetchError);
+                        throw new Error('Ошибка подключения к серверу. Убедитесь, что backend запущен на порту 8000 и перезапущен после изменений.');
+                    }
+                } else {
+                    let errorMessage = `HTTP ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || JSON.stringify(errorData);
+                    } catch (e) {
+                        const errorText = await response.text().catch(() => '');
+                        if (errorText) {
+                            try {
+                                const errorJson = JSON.parse(errorText);
+                                errorMessage = errorJson.detail || errorText;
+                            } catch {
+                                errorMessage = errorText;
+                            }
+                        }
+                    }
+                    throw new Error(errorMessage);
+                }
+            }
+            
+            const data = await response.json();
+            console.log('Tenants data received:', data);
+            console.log('Tenants count:', data.tenants?.length || 0);
+            
+            tenantsData = (data.tenants || []).map(t => ({
+                id: t.id,
+                login: t.username,
+                name: t.full_name || '',
+                phone: t.phone || '',
+                email: t.email || '',
+                lastLogin: t.last_login ? new Date(t.last_login).toLocaleString('ru-RU') : '—',
+                passwordStatus: t.require_password_change && t.temp_password ? `временный: ${t.temp_password}` : (t.require_password_change ? 'сброшен' : 'установлен'),
+                comment: t.comment || '',
+                residentIds: t.resident_ids || [],
+                homes: (t.homes || []).map(h => ({
+                    block: h.block_name,
+                    number: h.unit_number,
+                    count: 1
+                }))
+            }));
+            
+            blocks = data.blocks || [];
+            residents = data.residents || [];
+            
+            console.log('Processed tenants:', tenantsData.length);
+            console.log('Processed blocks:', blocks.length);
+            console.log('Processed residents:', residents.length);
+            
+            populateTenantsTable(tenantsData);
+            updateBlocksFilter();
+        } catch (error) {
+            console.error('Error loading tenants:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка загрузки жителей: ' + error.message);
+            }
+        }
+    };
+    
+    // Load blocks and residents for modal
+    window.loadBlocksAndResidents = async function loadBlocksAndResidents() {
+        try {
+            let url = `${API_BASE}/api/blocks`;
+            let response = await fetch(url);
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    url = `${API_BASE}/api/blocks/public`;
+                    response = await fetch(url);
+                }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            }
+            const blocksData = await response.json();
+            blocks = Array.isArray(blocksData) ? blocksData : (blocksData.blocks || []);
+            
+            url = `${API_BASE}/api/residents`;
+            response = await fetch(url);
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    url = `${API_BASE}/api/residents/public`;
+                    response = await fetch(url);
+                }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            }
+            const residentsData = await response.json();
+            residents = Array.isArray(residentsData) ? residentsData : (residentsData.residents || []);
+            
+            console.log('Loaded blocks for modal:', blocks.length);
+            console.log('Loaded residents for modal:', residents.length);
+            
+            populateResidentsList();
+        } catch (error) {
+            console.error('Error loading blocks/residents:', error);
+        }
+    };
+    
+    // Update blocks filter dropdown
+    function updateBlocksFilter() {
+        const filterBlock = document.getElementById('filterBlock');
+        if (!filterBlock) return;
+        
+        const currentValue = filterBlock.value;
+        filterBlock.innerHTML = '<option value="all">Все блоки</option>';
+        blocks.forEach(block => {
+            const option = document.createElement('option');
+            option.value = block.name;
+            option.textContent = `Блок ${block.name}`;
+            filterBlock.appendChild(option);
+        });
+        if (currentValue) filterBlock.value = currentValue;
+    }
     
     function populateTenantsTable(rows) {
         const tbody = document.getElementById('tenantsTableBody');
@@ -312,22 +428,30 @@
         }
         
         tbody.innerHTML = rows.map(tenant => {
-            const homes = tenant.homes?.map(home => `
-                <div class="tenant-home-pill" title="${home.block} / ${home.number}">
-                    ${home.count}
-                </div>
-            `).join('') || '<span class="tenant-home-pill">—</span>';
+            // Формируем список домов для tooltip
+            const homesList = tenant.homes && tenant.homes.length > 0 
+                ? tenant.homes.map(home => `${home.block} / ${home.number}`).join(', ')
+                : 'Нет домов';
+            const homesCount = tenant.homes ? tenant.homes.length : 0;
+            const homesDisplay = homesCount > 0 
+                ? `<span class="tenant-homes-count" title="${homesList}">${homesCount}</span>`
+                : '<span class="text-muted">—</span>';
+            
+            // Формируем badge для пароля
+            const passwordBadge = tenant.passwordStatus.includes('временный:') 
+                ? `<span class="tenant-password-badge temp-password">${tenant.passwordStatus}</span>`
+                : `<span class="tenant-password-badge">${tenant.passwordStatus}</span>`;
             
             return `
                 <tr data-tenant-id="${tenant.id}">
                     <td>${tenant.id}</td>
                     <td>${tenant.login}</td>
-                    <td>${tenant.name}</td>
-                    <td>${tenant.phone}</td>
-                    <td><a class="tenant-email" href="mailto:${tenant.email}">${tenant.email}</a></td>
+                    <td>${tenant.name || '—'}</td>
+                    <td>${tenant.phone || '—'}</td>
+                    <td>${tenant.email ? `<a class="tenant-email" href="mailto:${tenant.email}">${tenant.email}</a>` : '—'}</td>
                     <td><div class="tenant-last-login">${tenant.lastLogin || '—'}</div></td>
-                    <td><span class="tenant-password-badge">${tenant.passwordStatus}</span></td>
-                    <td><div class="tenant-homes">${homes}</div></td>
+                    <td>${passwordBadge}</td>
+                    <td><div class="tenant-homes">${homesDisplay}</div></td>
                     <td>
                         <div class="tenant-actions">
                             <button class="action-btn edit" onclick="openEditTenant(${tenant.id})">Редактировать</button>
@@ -342,48 +466,7 @@
     
     // Filter Functions
     window.applyFilters = function(options = {}) {
-        const searchTerm = document.getElementById('filterSearch').value.toLowerCase();
-        const blockFilter = document.getElementById('filterBlock')?.value || 'all';
-        const houseFilter = document.getElementById('filterHouse')?.value.trim().toLowerCase() || '';
-        
-        console.log('Applying filters:', { searchTerm, blockFilter, houseFilter });
-        
-        // Get all table rows
-        const rows = document.querySelectorAll('#tenantsTableBody tr');
-        
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            
-            if (cells.length <= 1) return; // Skip empty rows
-            
-            let shouldShow = true;
-            const housesCell = cells[7]?.textContent.toLowerCase() || '';
-            
-            if (blockFilter !== 'all' && shouldShow) {
-                const blockToken = blockFilter.toLowerCase();
-                if (!housesCell.includes(blockToken)) {
-                    shouldShow = false;
-                }
-            }
-            
-            if (houseFilter && shouldShow) {
-                if (!housesCell.includes(houseFilter)) {
-                    shouldShow = false;
-                }
-            }
-            
-            // Filter by search term
-            if (searchTerm && shouldShow) {
-                const rowText = row.textContent.toLowerCase();
-                if (!rowText.includes(searchTerm)) {
-                    shouldShow = false;
-                }
-            }
-            
-            // Show/hide row
-            row.style.display = shouldShow ? '' : 'none';
-        });
-        
+        loadTenants();
         if (!options.silent && typeof showSuccess === 'function') {
             showSuccess('Фильтры применены!');
         }
@@ -393,8 +476,7 @@
         document.getElementById('filterSearch').value = '';
         document.getElementById('filterBlock').value = 'all';
         document.getElementById('filterHouse').value = '';
-        filteredTenants = [...tenantsData];
-        populateTenantsTable(tenantsData);
+        loadTenants();
         if (typeof showSuccess === 'function') {
             showSuccess('Фильтры очищены!');
         }
@@ -408,6 +490,13 @@
             document.body.style.overflow = 'hidden';
         }
         setTenantModalMode(mode);
+        
+        // Load residents list if not loaded
+        if (residents.length === 0) {
+            loadBlocksAndResidents();
+        } else {
+            populateResidentsList();
+        }
     };
     
     window.closeCreateModal = function() {
@@ -421,6 +510,8 @@
         if (form) form.reset();
         
         selectedResidentIds.clear();
+        editingTenantId = null;
+        isEditMode = false;
         
         const selectedInfo = document.getElementById('selectedResidentInfo');
         if (selectedInfo) {
@@ -431,6 +522,8 @@
         // Remove selected class from all rows
         document.querySelectorAll('#residentsListBody tr').forEach(row => {
             row.classList.remove('selected');
+            const checkbox = row.querySelector('input[type="checkbox"]');
+            if (checkbox) checkbox.checked = false;
         });
         
         // Reset block filter
@@ -491,87 +584,45 @@
         selectedText.textContent = `${selectedResidentIds.size} шт. (ID: ${Array.from(selectedResidentIds).join(', ')})`;
     }
     
-    // Create Tenant Function
-    window.createTenant = function(event) {
-        event.preventDefault();
+    // Populate residents list in modal
+    function populateResidentsList() {
+        const tbody = document.getElementById('residentsListBody');
+        if (!tbody) return;
         
-        const isEditing = isEditMode && editingTenantId !== null;
-        const existingTenant = tenantsData.find(t => t.id === editingTenantId);
-        const residentIds = isEditing 
-            ? (existingTenant?.residentIds || [])
-            : Array.from(selectedResidentIds);
-        
-        if (!isEditing && residentIds.length === 0) {
-            if (typeof showWarning === 'function') {
-                showWarning('Пожалуйста, выберите хотя бы одного резидента!');
-            }
+        if (!residents || residents.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Нет резидентов</td></tr>';
             return;
         }
         
-        const formData = {
-            login: document.getElementById('tenantLogin').value,
-            name: document.getElementById('tenantName').value,
-            phone: document.getElementById('tenantPhone').value,
-            email: document.getElementById('tenantEmail').value,
-            comment: document.getElementById('tenantComment').value,
-            residentIds
-        };
+        tbody.innerHTML = residents.map(resident => `
+            <tr>
+                <td>${resident.id}</td>
+                <td>${resident.block_name || '—'}</td>
+                <td>${resident.unit_number || '—'}</td>
+                <td>
+                    <label class="resident-checkbox">
+                        <input type="checkbox" 
+                               onchange="toggleResidentSelection(${resident.id}, '${resident.block_name || ''}', '${resident.unit_number || ''}', this)" 
+                               hidden>
+                        <span>Выбрать</span>
+                    </label>
+                </td>
+            </tr>
+        `).join('');
         
-        console.log('Creating tenant:', formData);
-        
-        if (isEditing && existingTenant) {
-            existingTenant.login = formData.login;
-            existingTenant.name = formData.name;
-            existingTenant.phone = formData.phone;
-            existingTenant.email = formData.email;
-            existingTenant.comment = formData.comment;
-            existingTenant.residentIds = residentIds;
-            
-            refreshTenantsTable();
-            
-            if (typeof showSuccess === 'function') {
-                showSuccess(`Житель "${formData.name}" обновлён`);
-            }
-        } else {
-            const newId = tenantsData.length ? Math.max(...tenantsData.map(t => t.id)) + 1 : 1;
-            tenantsData.push({
-                id: newId,
-                ...formData,
-                lastLogin: '—',
-                passwordStatus: 'установлен',
-                homes: formData.residentIds.map(residentId => ({
-                    block: '—',
-                    number: residentId,
-                    count: 1
-                }))
+        // Update checkboxes if editing
+        if (isEditMode && editingTenantId) {
+            document.querySelectorAll('#residentsListBody tr').forEach(row => {
+                const checkbox = row.querySelector('input[type="checkbox"]');
+                if (!checkbox) return;
+                const residentId = parseInt(row.cells[0]?.textContent, 10);
+                const isSelected = selectedResidentIds.has(residentId);
+                checkbox.checked = isSelected;
+                if (isSelected) {
+                    row.classList.add('selected');
+                }
             });
-            refreshTenantsTable();
-            
-            if (typeof showSuccess === 'function') {
-                showSuccess(`Житель "${formData.name}" успешно создан! Логин: ${formData.login}`);
-            }
         }
-        
-        window.closeCreateModal();
-    };
-    
-    function refreshTenantsTable() {
-        filteredTenants = [...tenantsData];
-        populateTenantsTable(tenantsData);
-        if (hasActiveFilters()) {
-            window.applyFilters({ silent: true });
-        }
-    }
-    
-    function hasActiveFilters() {
-        const searchTerm = document.getElementById('filterSearch')?.value.trim();
-        const blockFilter = document.getElementById('filterBlock')?.value;
-        const houseFilter = document.getElementById('filterHouse')?.value.trim();
-        return Boolean(
-            (searchTerm && searchTerm.length) ||
-            (houseFilter && houseFilter.length) ||
-            (blockFilter && blockFilter !== 'all')
-        );
     }
     
     function setTenantModalMode(mode) {
@@ -591,36 +642,210 @@
         }
     }
     
-    window.openEditTenant = function(id) {
-        const tenant = tenantsData.find(t => t.id === id);
-        if (!tenant) return;
+    // Create Tenant Function
+    window.createTenant = async function(event) {
+        event.preventDefault();
         
-        editingTenantId = id;
-        setTenantModalMode('edit');
+        const isEditing = isEditMode && editingTenantId !== null;
+        const residentIds = Array.from(selectedResidentIds);
         
-        document.getElementById('tenantLogin').value = tenant.login || '';
-        document.getElementById('tenantName').value = tenant.name || '';
-        document.getElementById('tenantPhone').value = tenant.phone || '';
-        document.getElementById('tenantEmail').value = tenant.email || '';
-        document.getElementById('tenantComment').value = tenant.comment || '';
-        
-        selectedResidentIds = new Set(tenant.residentIds || []);
-        updateSelectedResidentsInfo();
-        
-        // Sync checkboxes
-        document.querySelectorAll('#residentsListBody tr').forEach(row => {
-            row.classList.remove('selected');
-            const checkbox = row.querySelector('input[type="checkbox"]');
-            if (!checkbox) return;
-            const residentId = parseInt(row.cells[0]?.textContent, 10);
-            const isSelected = selectedResidentIds.has(residentId);
-            checkbox.checked = isSelected;
-            if (isSelected) {
-                row.classList.add('selected');
+        if (!isEditing && residentIds.length === 0) {
+            if (typeof showError === 'function') {
+                showError('Выберите хотя бы один дом для жителя');
             }
-        });
+            return;
+        }
         
-        window.openCreateModal('edit');
+        const formData = {
+            username: document.getElementById('tenantLogin').value.trim(),
+            full_name: document.getElementById('tenantName').value.trim() || null,
+            phone: document.getElementById('tenantPhone').value.trim() || null,
+            email: document.getElementById('tenantEmail').value.trim() || null,
+            comment: document.getElementById('tenantComment').value.trim() || null,
+            resident_ids: residentIds
+        };
+        
+        if (!formData.username) {
+            if (typeof showError === 'function') {
+                showError('Логин обязателен');
+            }
+            return;
+        }
+        
+        try {
+            let url, method;
+            if (isEditing) {
+                url = `${API_BASE}/api/tenants/${editingTenantId}`;
+                method = 'PUT';
+            } else {
+                url = `${API_BASE}/api/tenants`;
+                method = 'POST';
+            }
+            
+            let response = await fetch(url, {
+                method: method,
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(formData)
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    url = isEditing 
+                        ? `${API_BASE}/api/tenants/${editingTenantId}/public`
+                        : `${API_BASE}/api/tenants/public`;
+                    response = await fetch(url, {
+                        method: method,
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(formData)
+                    });
+                    if (!response.ok) {
+                        let errorMessage = `HTTP ${response.status}`;
+                        try {
+                            const errorData = await response.json();
+                            if (errorData.detail) {
+                                if (typeof errorData.detail === 'string') {
+                                    errorMessage = errorData.detail;
+                                } else {
+                                    errorMessage = JSON.stringify(errorData.detail);
+                                }
+                            } else {
+                                errorMessage = JSON.stringify(errorData);
+                            }
+                        } catch (e) {
+                            const errorText = await response.text();
+                            if (errorText) {
+                                try {
+                                    const errorJson = JSON.parse(errorText);
+                                    errorMessage = errorJson.detail || errorText;
+                                } catch {
+                                    errorMessage = errorText || errorMessage;
+                                }
+                            }
+                        }
+                        throw new Error(errorMessage);
+                    }
+                } else {
+                    let errorMessage = `HTTP ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.detail) {
+                            if (typeof errorData.detail === 'string') {
+                                errorMessage = errorData.detail;
+                            } else {
+                                errorMessage = JSON.stringify(errorData.detail);
+                            }
+                        } else {
+                            errorMessage = JSON.stringify(errorData);
+                        }
+                    } catch (e) {
+                        const errorText = await response.text();
+                        if (errorText) {
+                            try {
+                                const errorJson = JSON.parse(errorText);
+                                errorMessage = errorJson.detail || errorText;
+                            } catch {
+                                errorMessage = errorText || errorMessage;
+                            }
+                        }
+                    }
+                    throw new Error(errorMessage);
+                }
+            }
+            
+            const result = await response.json();
+            
+            if (typeof showSuccess === 'function') {
+                showSuccess(isEditing 
+                    ? `Житель "${formData.full_name || formData.username}" успешно обновлён!`
+                    : `Житель "${formData.full_name || formData.username}" успешно создан! Логин: ${formData.username}`);
+            }
+            
+            window.closeCreateModal();
+            await loadTenants();
+        } catch (error) {
+            console.error('Error saving tenant:', error);
+            if (typeof showError === 'function') {
+                let errorMsg = error.message || 'Неизвестная ошибка';
+                // Если ошибка содержит JSON, попробуем распарсить
+                if (errorMsg.includes('{') && errorMsg.includes('}')) {
+                    try {
+                        const errorJson = JSON.parse(errorMsg);
+                        errorMsg = errorJson.detail || errorMsg;
+                    } catch (e) {
+                        // Оставляем как есть
+                    }
+                }
+                // Переводим известные ошибки на русский
+                if (errorMsg.includes('Username already exists')) {
+                    errorMsg = 'Пользователь с таким логином уже существует';
+                } else if (errorMsg.includes('Username is required')) {
+                    errorMsg = 'Логин обязателен для заполнения';
+                } else if (errorMsg.includes('CORS') || errorMsg.includes('Failed to fetch')) {
+                    errorMsg = 'Ошибка подключения к серверу. Убедитесь, что backend запущен и перезапущен после изменений.';
+                }
+                showError('Ошибка сохранения: ' + errorMsg);
+            }
+        }
+    };
+    
+    window.openEditTenant = async function(id) {
+        try {
+            let url = `${API_BASE}/api/tenants/${id}`;
+            let response = await fetch(url);
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    url = `${API_BASE}/api/tenants/${id}/public`;
+                    response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            }
+            
+            const tenant = await response.json();
+            
+            editingTenantId = id;
+            setTenantModalMode('edit');
+            
+            document.getElementById('tenantLogin').value = tenant.username || '';
+            document.getElementById('tenantName').value = tenant.full_name || '';
+            document.getElementById('tenantPhone').value = tenant.phone || '';
+            document.getElementById('tenantEmail').value = tenant.email || '';
+            document.getElementById('tenantComment').value = tenant.comment || '';
+            
+            selectedResidentIds = new Set(tenant.resident_ids || []);
+            updateSelectedResidentsInfo();
+            
+            // Ensure residents list is populated
+            if (residents.length === 0) {
+                await loadBlocksAndResidents();
+            }
+            
+            // Sync checkboxes
+            setTimeout(() => {
+                document.querySelectorAll('#residentsListBody tr').forEach(row => {
+                    row.classList.remove('selected');
+                    const checkbox = row.querySelector('input[type="checkbox"]');
+                    if (!checkbox) return;
+                    const residentId = parseInt(row.cells[0]?.textContent, 10);
+                    const isSelected = selectedResidentIds.has(residentId);
+                    checkbox.checked = isSelected;
+                    if (isSelected) {
+                        row.classList.add('selected');
+                    }
+                });
+            }, 100);
+            
+            window.openCreateModal('edit');
+        } catch (error) {
+            console.error('Error loading tenant:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка загрузки данных жителя: ' + error.message);
+            }
+        }
     };
     
     window.openTenantActionModal = function(type, tenantId) {
@@ -661,7 +886,7 @@
         pendingAction = { type: null, tenantId: null };
     };
     
-    window.confirmTenantAction = function() {
+    window.confirmTenantAction = async function() {
         const { type, tenantId } = pendingAction;
         if (!type || !tenantId) {
             window.closeTenantActionModal();
@@ -674,22 +899,53 @@
             return;
         }
         
-        if (type === 'reset') {
-            tenant.passwordStatus = 'сброшен';
-            if (typeof showSuccess === 'function') {
-                showSuccess(`Пароль для "${tenant.name}" будет сброшен`);
+        try {
+            let url, method;
+            if (type === 'reset') {
+                url = `${API_BASE}/api/tenants/${tenantId}/reset`;
+                method = 'POST';
+            } else if (type === 'delete') {
+                url = `${API_BASE}/api/tenants/${tenantId}`;
+                method = 'DELETE';
+            } else {
+                window.closeTenantActionModal();
+                return;
             }
-        } else if (type === 'delete') {
-            tenantsData = tenantsData.filter(t => t.id !== tenantId);
-            selectedResidentIds.clear();
-            refreshTenantsTable();
-            if (typeof showSuccess === 'function') {
-                showSuccess(`Житель "${tenant.name}" удалён`);
+            
+            let response = await fetch(url, { method });
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    url = type === 'reset'
+                        ? `${API_BASE}/api/tenants/${tenantId}/reset/public`
+                        : `${API_BASE}/api/tenants/${tenantId}/public`;
+                    response = await fetch(url, { method });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            }
+            
+            if (type === 'reset') {
+                if (typeof showSuccess === 'function') {
+                    showSuccess(`Пароль для "${tenant.name}" успешно сброшен`);
+                }
+            } else if (type === 'delete') {
+                if (typeof showSuccess === 'function') {
+                    showSuccess(`Житель "${tenant.name}" успешно удалён`);
+                }
+            }
+            
+            await loadTenants();
+            window.closeTenantActionModal();
+        } catch (error) {
+            console.error('Error performing tenant action:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка: ' + error.message);
             }
         }
-        
-        refreshTenantsTable();
-        window.closeTenantActionModal();
     };
     
     // Setup event listeners
@@ -719,12 +975,19 @@
     setupEventListeners();
     
     // Re-initialize when SPA content loads
-    window.addEventListener('spa:contentLoaded', function(e) {
-        if (e.detail.route === '/tenants') {
-            populateTenantsTable(tenantsSeedData);
-            setupEventListeners();
+    // Удаляем старый обработчик, если он существует
+    if (window._tenantsContentLoadedHandler) {
+        window.removeEventListener('spa:contentLoaded', window._tenantsContentLoadedHandler);
+    }
+    
+    window._tenantsContentLoadedHandler = function(e) {
+        if (e.detail && e.detail.route === '/tenants') {
+            loadTenants();
+            loadBlocksAndResidents();
         }
-    });
+    };
+    
+    window.addEventListener('spa:contentLoaded', window._tenantsContentLoadedHandler);
     
 })();
 </script>

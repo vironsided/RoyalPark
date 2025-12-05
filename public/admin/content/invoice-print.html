@@ -82,28 +82,80 @@
 
     <script>
         (function() {
+            const API_BASE = 'http://localhost:8000';
+            
             // Get invoice ID from URL
-            const pathParts = window.location.pathname.split('/');
-            const invoiceId = pathParts[pathParts.length - 2] || pathParts[pathParts.length - 1];
+            const urlParams = new URLSearchParams(window.location.search);
+            let invoiceId = urlParams.get('id');
+            
+            // If not in query params, try to extract from path
+            if (!invoiceId) {
+                const pathParts = window.location.pathname.split('/');
+                invoiceId = pathParts[pathParts.length - 1] || pathParts[pathParts.length - 2];
+            }
+            
+            // Clean up invoiceId
+            if (invoiceId) {
+                invoiceId = invoiceId.toString().trim();
+                if (isNaN(invoiceId) || invoiceId === '') {
+                    invoiceId = null;
+                }
+            }
+            
+            console.log('📄 Print page - invoice ID:', invoiceId);
             
             // Load invoice data
-            function loadInvoice(id) {
-                // TODO: Load from API
-                // For now, use mock data
-                const invoice = {
-                    id: id || 1,
-                    invoiceNumber: '2025-11/000001',
-                    resident: 'Х / 2',
-                    period: '2025-11',
-                    status: 'DRAFT',
-                    dueDate: null,
-                    total: 10.00,
-                    lineItems: [
-                        { description: 'Газ 20.0 м³', amount: 10.00, vat: 0.00, total: 10.00 }
-                    ]
-                };
+            async function loadInvoice(id) {
+                if (!id) {
+                    console.error('No invoice ID provided for print');
+                    document.body.innerHTML = '<div style="padding: 40px; text-align: center;"><h2>Ошибка</h2><p>Не указан ID счета</p></div>';
+                    return;
+                }
                 
-                renderInvoice(invoice);
+                try {
+                    let url = `${API_BASE}/api/invoices/${id}`;
+                    let response = await fetch(url);
+                    
+                    if (!response.ok) {
+                        if (response.status === 401 || response.status === 403) {
+                            url = `${API_BASE}/api/invoices/${id}/public`;
+                            response = await fetch(url);
+                        }
+                    }
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    console.log('📄 API response for print:', {
+                        amount_total: data.amount_total,
+                        paid_amount: data.paid_amount,
+                        remaining_amount: data.remaining_amount,
+                        lines_count: data.lines?.length || 0,
+                        lines_sum: data.lines?.reduce((sum, line) => sum + (line.amount_total || 0), 0) || 0
+                    });
+                    
+                    // Transform API data to frontend format
+                    const invoice = {
+                        id: data.id,
+                        invoiceNumber: data.number || `${data.period_year}-${String(data.period_month).padStart(2, '0')}/000000`,
+                        resident: data.resident_code,
+                        period: `${data.period_year}-${String(data.period_month).padStart(2, '0')}`,
+                        status: data.status,
+                        dueDate: data.due_date || null,
+                        total: data.amount_total, // Полная сумма счета (как в backend шаблоне)
+                        paidAmount: data.paid_amount || 0, // Оплаченная сумма
+                        remainingAmount: data.remaining_amount || data.amount_total, // Остаток к оплате
+                        lineItems: data.lines || []
+                    };
+                    
+                    renderInvoice(invoice);
+                } catch (error) {
+                    console.error('Error loading invoice for print:', error);
+                    document.body.innerHTML = `<div style="padding: 40px; text-align: center;"><h2>Ошибка</h2><p>Не удалось загрузить данные счета: ${error.message}</p></div>`;
+                }
             }
             
             function renderInvoice(invoice) {
@@ -111,22 +163,39 @@
                 document.getElementById('invoiceResident').textContent = invoice.resident;
                 document.getElementById('invoicePeriod').textContent = invoice.period;
                 document.getElementById('invoiceStatus').textContent = invoice.status;
-                document.getElementById('invoiceDueDate').textContent = invoice.dueDate || '—';
+                
+                // Format due date for display
+                let dueDateDisplay = '—';
+                if (invoice.dueDate) {
+                    const date = new Date(invoice.dueDate);
+                    dueDateDisplay = date.toLocaleDateString('ru-RU');
+                }
+                document.getElementById('invoiceDueDate').textContent = dueDateDisplay;
+                // Показываем полную сумму счета (amount_total), как в backend шаблоне
                 document.getElementById('invoiceTotal').textContent = invoice.total.toFixed(2);
+                
+                console.log('📄 Print invoice data:', {
+                    total: invoice.total,
+                    paidAmount: invoice.paidAmount,
+                    remainingAmount: invoice.remainingAmount,
+                    lineItemsCount: invoice.lineItems.length
+                });
                 
                 // Render line items
                 const tbody = document.getElementById('lineItemsTable');
                 if (invoice.lineItems && invoice.lineItems.length > 0) {
                     let html = invoice.lineItems.map(item => `
                         <tr>
-                            <td>${item.description}</td>
-                            <td>${item.amount.toFixed(2)}</td>
-                            <td>${item.vat.toFixed(2)}</td>
-                            <td>${item.total.toFixed(2)}</td>
+                            <td>${item.description || '—'}</td>
+                            <td>${(item.amount_net || 0).toFixed(2)}</td>
+                            <td>${(item.amount_vat || 0).toFixed(2)}</td>
+                            <td>${(item.amount_total || 0).toFixed(2)}</td>
                         </tr>
                     `).join('');
                     
-                    const total = invoice.lineItems.reduce((sum, item) => sum + item.total, 0);
+                    // Используем полную сумму счета (invoice.total), а не сумму строк
+                    // Это соответствует логике backend шаблона invoice_pdf.html
+                    const total = invoice.total; // amount_total из API
                     html += `
                         <tr class="total-row">
                             <td colspan="3">Итого к оплате</td>
@@ -135,6 +204,8 @@
                     `;
                     
                     tbody.innerHTML = html;
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4">Нет данных</td></tr>';
                 }
                 
                 // Set generated date
