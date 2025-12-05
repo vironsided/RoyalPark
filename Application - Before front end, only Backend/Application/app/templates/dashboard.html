@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Панель{% endblock %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-12">
+    <div class="alert alert-secondary d-flex justify-content-between align-items-center">
+      <div>Здравствуйте, <strong>{{ user.username }}</strong> — роль: <span class="badge bg-info">{{ user.role }}</span></div>
+      {% if user.require_password_change %}
+        <a class="btn btn-warning btn-sm" href="/force-change-password">Нужно сменить пароль</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-8">
+    <div class="card shadow">
+      <div class="card-body">
+        <h5 class="card-title mb-2">Ваш доступ</h5>
+        <p class="mb-0">{{ card_text }}</p>
+      </div>
+    </div>
+  </div>
+
+  {% if user.role == "ROOT" or user.role == "ADMIN" %}
+  <div class="col-12 col-lg-4">
+    <div class="card shadow">
+      <div class="card-body">
+        <h6 class="card-title">Быстрые действия</h6>
+        <a class="btn btn-outline-primary w-100" href="/users">Управление пользователями</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

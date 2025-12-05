@@ -1,0 +1,251 @@
+{#-----------------------------------------------------------------------------
+  Template: app/templates/invoice_detail.html
+  Author: Mamedli Ayaz
+  Purpose: Карточка счёта (админ) + отмена/повторное выставление + блок «Оплаты по счёту»
+-----------------------------------------------------------------------------#}
+{% extends "base.html" %}
+{% block title %}Счёт {{ inv.number or inv.id }}{% endblock %}
+{% block content %}
+
+{% set err = request.query_params.get('error') %}
+{% set ok  = request.query_params.get('ok') %}
+{% if err %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    Ошибка: {{ err }}
+    <button type="button" class="btn btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif ok == 'issued' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Счёт выставлен/обновлён.
+    <button type="button" class="btn btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif ok == 'canceled' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Счёт отменён.
+    <button type="button" class="btn btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif ok == 'reissued' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Счёт выставлен заново.
+    <button type="button" class="btn btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% endif %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <a class="btn btn-outline-secondary" href="{{ request.url_for('invoices_list') }}">← Назад</a>
+  <h4 class="mb-0">Счёт: {{ inv.number or (inv.period_year ~ '-' ~ '%02d'|format(inv.period_month) ~ '/' ~ inv.id) }}</h4>
+  <div></div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="text-secondary small">Резидент</div>
+        <div class="fw-semibold">{{ resident.block.name }} / {{ resident.unit_number }}</div>
+      </div>
+      <div class="col-md-2">
+        <div class="text-secondary small">Период</div>
+        <div class="fw-semibold">{{ inv.period_year }}-{{ "%02d"|format(inv.period_month) }}</div>
+      </div>
+      <div class="col-md-2">
+        <div class="text-secondary small">Статус</div>
+        <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ inv.status.value }}</span>
+      </div>
+      <div class="col-md-2">
+        <div class="text-secondary small">Срок оплаты</div>
+        <div class="fw-semibold">{{ inv.due_date or '—' }}</div>
+      </div>
+      <div class="col-md-2 text-end">
+        <div class="text-secondary small">Итого</div>
+        <div class="fw-semibold text-danger">{{ '%.2f'|format(inv.amount_total) }}</div>
+      </div>
+      <div class="col-12">
+        <div class="text-secondary small">Примечание</div>
+        <pre class="mb-0" style="white-space:pre-wrap;">{{ inv.notes or '—' }}</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Действия #}
+<div class="card mb-3">
+  <div class="card-body d-flex flex-wrap gap-2">
+    <a class="btn btn-outline-secondary" target="_blank" href="{{ request.url_for('invoice_print', invoice_id=inv.id) }}">Печать</a>
+
+    {# Форма «Выставить / Обновить» — только для DRAFT/ISSUED #}
+    {% if inv.status in ['DRAFT','ISSUED'] %}
+    <form method="post" action="{{ request.url_for('invoice_issue', invoice_id=inv.id) }}" class="d-flex flex-wrap gap-2 align-items-end">
+      <div>
+        <label class="form-label">№ счета</label>
+        <input name="number" class="form-control" value="{{ inv.number or '' }}" placeholder="напр. 2025-10/000123">
+      </div>
+      <div>
+        <label class="form-label">Срок оплаты</label>
+        <input type="date" name="due_date" class="form-control" value="{{ inv.due_date or '' }}">
+      </div>
+      <div style="min-width:260px;">
+        <label class="form-label">Примечание</label>
+        <input name="notes" class="form-control" value="{{ inv.notes or '' }}">
+      </div>
+      <button class="btn btn-primary">Выставить / Обновить</button>
+    </form>
+    {% endif %}
+
+    {% if inv.status in ['DRAFT','ISSUED'] %}
+      <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+        Отменить
+      </button>
+    {% endif %}
+
+    {% if inv.status == 'CANCELED' %}
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reissueModal">
+        Выставить заново
+      </button>
+    {% endif %}
+  </div>
+</div>
+
+{# Блок «Оплаты по счёту» #}
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <h6 class="mb-0">Оплаты по счёту</h6>
+      <div class="small text-secondary">
+        Оплачено: <span class="fw-semibold">{{ '%.2f'|format(paid_total) }}</span>
+        · Остаток: <span class="fw-semibold">{{ '%.2f'|format(left_total) }}</span>
+        из <span class="fw-semibold">{{ '%.2f'|format(inv.amount_total) }}</span>
+      </div>
+    </div>
+
+    {% if apps %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th style="width: 140px;">Дата</th>
+              <th style="width: 120px;">Метод</th>
+              <th class="text-end" style="width: 140px;">Сумма</th>
+              <th>Платёж</th>
+              <th>Комментарий</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in apps %}
+              <tr>
+                <td>{{ a.payment.received_at }}</td>
+                <td>{{ a.payment.method.value }}</td>
+                <td class="text-end">{{ '%.2f'|format(a.amount_applied) }}</td>
+                <td>
+                  <a href="{{ url_for('payment_detail', payment_id=a.payment.id) if url_for is defined else ('/payments/' ~ a.payment.id) }}" target="_blank">
+                    #{{ a.payment.id }}{% if a.payment.reference %} / {{ a.payment.reference }}{% endif %}
+                  </a>
+                </td>
+                <td class="text-secondary">{{ a.payment.comment or '—' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-secondary">Оплаты по этому счёту отсутствуют.</div>
+    {% endif %}
+  </div>
+</div>
+
+{# Таблица строк счёта #}
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-dark table-striped align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Описание</th>
+            <th class="text-end">Начислено</th>
+            <th class="text-end">НДС</th>
+            <th class="text-end">Итого</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ln in inv.lines %}
+            <tr>
+              <td>{{ ln.description }}</td>
+              <td class="text-end">{{ '%.2f'|format(ln.amount_net) }}</td>
+              <td class="text-end">{{ '%.2f'|format(ln.amount_vat) }}</td>
+              <td class="text-end text-danger">{{ '%.2f'|format(ln.amount_total) }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="text-secondary">Строк нет</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{# Модалка отмены #}
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalTitle" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{{ request.url_for('invoice_cancel', invoice_id=inv.id) }}">
+        <div class="modal-header">
+          <h5 class="modal-title" id="cancelModalTitle">Отменить счёт</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2 text-secondary">
+            Укажите причину отмены. Счёт перейдёт в статус <span class="badge bg-secondary">CANCELED</span>.
+          </div>
+          <label class="form-label">Причина</label>
+          <textarea name="reason" class="form-control" rows="3" required placeholder="Например: неверное показание по воде за октябрь"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-danger" onclick="return confirm('Подтвердите отмену счёта')">Отменить счёт</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# Модалка «Выставить заново» #}
+<div class="modal fade" id="reissueModal" tabindex="-1" aria-labelledby="reissueModalTitle" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{{ request.url_for('invoice_reissue', invoice_id=inv.id) }}">
+        <div class="modal-header">
+          <h5 class="modal-title" id="reissueModalTitle">Выставить заново</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2 text-secondary">
+            Счёт имеет статус <span class="badge bg-secondary">CANCELED</span>. Выставить заново?
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Новый срок оплаты (необязательно)</label>
+            <input type="date" name="due_date" class="form-control">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Комментарий (внесётся в примечание)</label>
+            <input name="comment" class="form-control" placeholder="Напр.: исправили тариф">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary">Выставить заново</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.addEventListener('DOMContentLoaded', function(){
+    const alerts = document.querySelectorAll('.alert');
+    setTimeout(()=>alerts.forEach(a=>{
+      if(a.classList.contains('show')) bootstrap.Alert.getOrCreateInstance(a).close();
+    }), 5000);
+  });
+</script>
+
+{% endblock %}

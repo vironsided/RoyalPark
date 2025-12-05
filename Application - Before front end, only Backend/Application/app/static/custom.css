@@ -1,0 +1,7 @@
+/* прижать кнопку "Выход" к низу меню и чутка стильнуть */
+.sidebar-footer { background: transparent; }
+.nav-pills .nav-link { border-radius: .5rem; }
+.nav-pills .nav-link.active { color: #fff; }
+
+/* на всякий случай — подложка берётся из темных переменных Bootstrap */
+body { background-color: var(--bs-body-bg); color: var(--bs-body-color); }

@@ -1,0 +1,57 @@
+{#-----------------------------------------------------------------------------
+  Template: app/templates/payment_form.html
+  Author: Mamedli Ayaz
+  Purpose: Создание платежа
+-----------------------------------------------------------------------------#}
+{% extends "base.html" %}
+{% block title %}Принять платеж{% endblock %}
+{% block content %}
+
+<h4 class="mb-3">Принять платеж</h4>
+
+<div class="card">
+  <div class="card-body">
+    <form method="post" action="{{ request.url_for('payment_create') }}" class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Резидент</label>
+        <select name="resident_id" class="form-select" required>
+          {% for r in residents %}
+            <option value="{{ r.id }}">{{ r.block.name }} / {{ r.unit_number }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Дата поступления</label>
+        <input type="date" name="received_at" class="form-control" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Сумма</label>
+        <input type="number" name="amount_total" step="0.01" min="0.01" class="form-control" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Метод</label>
+        <select name="method" class="form-select" required>
+          {% for m in PaymentMethod %}
+            <option value="{{ m.value }}">{{ m.value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">№/Референс</label>
+        <input name="reference" class="form-control" placeholder="номер чека/платёжки">
+      </div>
+      <div class="col-md-8">
+        <label class="form-label">Комментарий</label>
+        <input name="comment" class="form-control">
+      </div>
+
+      <div class="col-12 d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="{{ request.url_for('payments_list') }}">Отмена</a>
+        <button class="btn btn-primary">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

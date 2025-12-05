@@ -1,0 +1,179 @@
+{#-----------------------------------------------------------------------------
+  Template: app/templates/blocks.html
+  Author: Mamedli Ayaz
+  Created: 2025-10-25
+
+  Purpose:
+    - Страница управления "Блоками" (улицами) жилого комплекса.
+    - Отображает список, позволяет создать, переименовать, удалить.
+
+  Conventions:
+    - PRG-паттерн: POST → Redirect → GET; флеш-сообщения через query (?ok=..., ?error=...).
+    - Генерация ссылок через request.url_for(...) — надёжнее, чем хардкод путей.
+    - Валидация на клиенте: required/minlength/maxlength/pattern (минимальная санитария).
+    - Лёгкая UX-помощь: автофокус на поле создания, авто-скрытие алертов.
+
+  Notes:
+    - Если будет внедрён CSRF, сюда добавим hidden-токен.
+-----------------------------------------------------------------------------#}
+
+{% extends "base.html" %}
+{% block title %}Блоки{% endblock %}
+
+{% block content %}
+
+{# Упакуем query-параметры в локальные переменные, чтобы не дёргать их много раз #}
+{% set ok = request.query_params.get('ok') %}
+{% set error = request.query_params.get('error') %}
+
+<h4 class="mb-3">Блоки</h4>
+
+{#--------------------------- Флеш-сообщения ---------------------------------#}
+{# Порядок if-elif: сначала ошибки, затем успехи. Тексты — короткие и понятные. #}
+{% if error == 'exists' %}
+  <div class="alert alert-warning alert-dismissible fade show" role="alert">
+    Блок с таким именем уже существует.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif error == 'empty' %}
+  <div class="alert alert-warning alert-dismissible fade show" role="alert">
+    Имя блока не может быть пустым.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif error == 'notfound' %}
+  <div class="alert alert-warning alert-dismissible fade show" role="alert">
+    Блок не найден.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif error == 'server' %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    Внутренняя ошибка сервера. Повторите попытку позже.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif ok == 'created' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Блок создан.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif ok == 'renamed' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Имя блока изменено.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif ok == 'deleted' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Блок удалён.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% endif %}
+
+{#--------------------------- Форма создания ---------------------------------#}
+<div class="card mb-4">
+  <div class="card-body">
+    {# action: используем url_for по имени эндпойнта (функция create_block в blocks.py) #}
+    <form class="row g-2" method="post" action="{{ request.url_for('create_block') }}" autocomplete="off" novalidate>
+      <div class="col-md-8 col-lg-6">
+        <input
+          name="name"
+          class="form-control"
+          placeholder="Название нового блока"
+          aria-label="Название нового блока"
+          minlength="1"
+          maxlength="64"
+          pattern=".*\S.*"  {# запрещаем исключительно пробельные строки #}
+          required
+          autofocus
+        >
+      </div>
+      <div class="col-md-4 col-lg-3">
+        <button class="btn btn-primary w-100" type="submit">Создать</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{#--------------------------- Таблица списка ---------------------------------#}
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-dark table-striped align-middle mb-0">
+        <thead>
+          <tr>
+            <th style="width: 80px;">ID</th>
+            <th>Название</th>
+            <th class="text-end" style="width: 420px;">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {# Если блоков нет — выводим одну строку-заглушку #}
+          {% if not blocks %}
+            <tr>
+              <td colspan="3" class="text-secondary">Пока нет блоков</td>
+            </tr>
+          {% else %}
+            {% for b in blocks %}
+              <tr>
+                <td>{{ b.id }}</td>
+                <td>{{ b.name }}</td>
+                <td>
+                  {# Группа действий: переименование + удаление #}
+                  <div class="d-flex flex-wrap gap-2 justify-content-end">
+                    {# --- Переименование --- #}
+                    <form
+                      method="post"
+                      class="d-flex gap-2"
+                      action="{{ request.url_for('rename_block', block_id=b.id) }}"
+                      autocomplete="off"
+                      novalidate
+                    >
+                      <input
+                        name="new_name"
+                        class="form-control form-control-sm"
+                        placeholder="Новое имя"
+                        aria-label="Новое имя для блока {{ b.name }}"
+                        minlength="1"
+                        maxlength="64"
+                        pattern=".*\S.*"
+                        required
+                      >
+                      <button class="btn btn-sm btn-outline-info" type="submit">
+                        Переименовать
+                      </button>
+                    </form>
+
+                    {# --- Удаление --- #}
+                    <form
+                      method="post"
+                      action="{{ request.url_for('delete_block', block_id=b.id) }}"
+                      onsubmit="return confirm('Удалить блок «{{ b.name }}»?')"
+                    >
+                      <button class="btn btn-sm btn-outline-danger" type="submit">
+                        Удалить
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{#------------------------ Небольшие UX-улучшения ----------------------------#}
+<script>
+  // Авто-скрытие алертов через 5 секунд (не мешает, если пользователь сам закроет)
+  window.addEventListener('DOMContentLoaded', function () {
+    const alerts = document.querySelectorAll('.alert');
+    setTimeout(() => alerts.forEach(a => {
+      if (a.classList.contains('show')) {
+        const bsAlert = bootstrap.Alert.getOrCreateInstance(a);
+        bsAlert.close();
+      }
+    }), 2000);
+  });
+</script>
+
+{% endblock %}

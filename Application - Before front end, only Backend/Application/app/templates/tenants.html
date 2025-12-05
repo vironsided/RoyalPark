@@ -1,0 +1,379 @@
+{#-----------------------------------------------------------------------------
+  Template: app/templates/tenants.html
+  Author: Mamedli Ayaz
+  Purpose: Управление Жителями (учётные записи роли RESIDENT)
+-----------------------------------------------------------------------------#}
+{% extends "base.html" %}
+{% block title %}Жители{% endblock %}
+{% block content %}
+
+{# -------- Флеш-сообщения -------- #}
+{% set err = request.query_params.get('error') %}
+{% set ok  = request.query_params.get('ok') %}
+{% if err %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    Ошибка: {{ err }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif ok == 'created' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Житель создан.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif ok == 'updated' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Житель обновлён.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif ok == 'deleted' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Житель удалён.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif ok == 'reset' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Пароль сброшен.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% endif %}
+
+<h4 class="mb-3">Жители</h4>
+
+{# --------------------------- Фильтр + Создать --------------------------- #}
+<div class="card mb-3">
+  <div class="card-body">
+    <form class="row g-2 align-items-end" method="get" action="{{ request.url_for('tenants_list') }}">
+      <div class="col-lg-4">
+        <label class="form-label" for="q">Поиск</label>
+        <input name="q" id="q" value="{{ q or '' }}" class="form-control"
+               placeholder="Логин, ФИО, телефон, e-mail">
+      </div>
+      <div class="col-lg-3">
+        <label class="form-label" for="filter_block_id">Блок</label>
+        <select name="block_id" id="filter_block_id" class="form-select">
+          <option value="">Все блоки</option>
+          {% for b in blocks %}
+            <option value="{{ b.id }}" {% if block_id and block_id == b.id %}selected{% endif %}>
+              {{ b.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-lg-2">
+        <label class="form-label" for="filter_unit_number">Номер дома</label>
+        <input name="unit_number" id="filter_unit_number" class="form-control"
+               value="{{ unit_number or '' }}"
+               placeholder="">
+      </div>
+      <div class="col-lg-3 d-flex gap-2 justify-content-end flex-wrap">
+        <button class="btn btn-outline-secondary flex-fill" type="submit">Фильтр</button>
+        {% if q or block_id or unit_number %}
+          <a class="btn btn-outline-warning flex-fill" href="{{ request.url_for('tenants_list') }}">Очистить</a>
+        {% endif %}
+        <button type="button" class="btn btn-primary flex-fill"
+                data-bs-toggle="modal" data-bs-target="#tenantModal"
+                onclick="TenantModal.openCreate()">Создать жителя</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# ------------------------------ Таблица ------------------------------ #}
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-dark table-striped align-middle mb-0">
+        <thead>
+          <tr>
+            <th style="width:70px;">ID</th>
+            <th>Логин</th>
+            <th>ФИО</th>
+            <th>Телефон</th>
+            <th>E-mail</th>
+            <th>Последний вход</th>
+            <th>Пароль</th>
+            <th>Дома</th>
+            <th class="text-end" style="width:320px;">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in tenants %}
+            {% set linked = t.resident_links or [] %}
+            {% set tooltip = [] %}
+            {% for r in linked %}
+              {% set _ = tooltip.append(r.block.name ~ '/' ~ r.unit_number) %}
+            {% endfor %}
+            <tr>
+              <td>{{ t.id }}</td>
+              <td class="fw-semibold">{{ t.username }}</td>
+              <td>{{ t.full_name or '—' }}</td>
+              <td class="text-secondary">{{ t.phone or '—' }}</td>
+              <td class="text-secondary">{{ t.email or '—' }}</td>
+              <td class="text-secondary">{{ t.last_login_at or '—' }}</td>
+              <td>
+                {% if t.require_password_change %}
+                  {% if t.temp_password_plain %}
+                    <span class="badge bg-warning text-dark">временный: {{ t.temp_password_plain }}</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark">требуется смена</span>
+                  {% endif %}
+                {% else %}
+                  <span class="badge bg-success">установлен</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge bg-secondary-subtle text-secondary-emphasis"
+                      data-bs-toggle="tooltip"
+                      data-bs-placement="top"
+                      title="{{ tooltip|join(', ') if tooltip|length else 'нет привязанных домов' }}">
+                  {{ (linked|length) or 0 }}
+                </span>
+              </td>
+              <td class="text-end">
+                <div class="d-inline-flex flex-wrap gap-2">
+                  <button class="btn btn-sm btn-outline-info"
+                          data-bs-toggle="modal" data-bs-target="#tenantModal"
+                          onclick="TenantModal.openEdit({{ t.id }})">Редактировать</button>
+
+                  <form method="post"
+                        action="{{ request.url_for('tenant_reset', tenant_id=t.id) }}">
+                    <button class="btn btn-sm btn-outline-warning" type="submit">Сброс пароля</button>
+                  </form>
+
+                  <form method="post"
+                        action="{{ request.url_for('tenant_delete', tenant_id=t.id) }}"
+                        onsubmit="return confirm('Удалить жителя {{ t.username }}?')">
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Удалить</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="9" class="text-secondary">Пока нет жителей</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {# ------------------------------ Пагинация + "на странице" ------------------------------ #}
+    <div class="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
+      <nav aria-label="Навигация по страницам">
+        <ul class="pagination pagination-sm mb-0">
+          {% macro page_url(p) -%}
+            {{ request.url_for('tenants_list') }}?page={{ p }}&per_page={{ per_page }}{% if q %}&q={{ q|urlencode }}{% endif %}{% if block_id %}&block_id={{ block_id }}{% endif %}{% if unit_number %}&unit_number={{ unit_number|urlencode }}{% endif %}
+          {%- endmacro %}
+
+          <li class="page-item {{ 'disabled' if page<=1 }}">
+            <a class="page-link" href="{{ page_url(page-1) }}" tabindex="-1">«</a>
+          </li>
+
+          {% if pages and pages[0] > 1 %}
+            <li class="page-item"><a class="page-link" href="{{ page_url(1) }}">1</a></li>
+            {% if pages[0] > 2 %}
+              <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+          {% endif %}
+
+          {% for p in pages %}
+            <li class="page-item {{ 'active' if p==page }}">
+              <a class="page-link" href="{{ page_url(p) }}">{{ p }}</a>
+            </li>
+          {% endfor %}
+
+          {% if pages and pages[-1] < last_page %}
+            {% if pages[-1] < last_page - 1 %}
+              <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+            <li class="page-item"><a class="page-link" href="{{ page_url(last_page) }}">{{ last_page }}</a></li>
+          {% endif %}
+
+          <li class="page-item {{ 'disabled' if page>=last_page }}">
+            <a class="page-link" href="{{ page_url(page+1) }}">»</a>
+          </li>
+
+          <li class="page-item disabled ms-2">
+            <span class="page-link bg-transparent border-0 text-secondary">
+              Стр. {{ page }} из {{ last_page }} · всего {{ total }}
+            </span>
+          </li>
+        </ul>
+      </nav>
+
+      {# Дефолтный набор опций, если per_page_options не пришёл из бэка #}
+      {% set PPO = per_page_options if per_page_options is defined and per_page_options else [25, 50, 100] %}
+
+      <form class="d-flex align-items-center gap-2" method="get" action="{{ request.url_for('tenants_list') }}">
+        <input type="hidden" name="q" value="{{ q }}">
+        <input type="hidden" name="block_id" value="{{ block_id or '' }}">
+        <input type="hidden" name="unit_number" value="{{ unit_number or '' }}">
+        <input type="hidden" name="page" value="1"> {# при смене размера — на первую страницу #}
+        <label class="text-secondary small mb-0" for="pp">На странице:</label>
+        <select id="pp" name="per_page" class="form-select form-select-sm" onchange="this.form.submit()">
+          {% for opt in PPO %}
+            <option value="{{ opt }}" {{ 'selected' if per_page|int == opt }}>{{ opt }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# ----------------------- Модалка Создать/Редактировать ----------------------- #}
+<div class="modal fade" id="tenantModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <form method="post" id="tenantForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="tenantModalTitle">Создать жителя</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          <div id="tenantAlert" class="alert alert-danger d-none" role="alert"></div>
+
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label" for="t_username">Логин</label>
+              <input name="username" id="t_username" class="form-control" required maxlength="64" autocomplete="off">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="t_fullname">ФИО</label>
+              <input name="full_name" id="t_fullname" class="form-control">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="t_phone">Телефон</label>
+              <input name="phone" id="t_phone" class="form-control">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="t_email">E-mail</label>
+              <input name="email" id="t_email" type="email" class="form-control">
+            </div>
+
+            <div class="col-12">
+              <label class="form-label" for="t_comment">Комментарий</label>
+              <input name="comment" id="t_comment" class="form-control">
+            </div>
+          </div>
+
+          <hr class="my-3">
+
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label class="form-label" for="t_block_filter">Фильтр по блоку</label>
+              <select id="t_block_filter" class="form-select">
+                <option value="">Все</option>
+                {% for b in blocks %}
+                  <option value="{{ b.id }}">{{ b.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="table-responsive mt-2">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th style="width:80px;">ID</th>
+                  <th>Блок</th>
+                  <th>№</th>
+                  <th style="width:120px;">Выбрать</th>
+                </tr>
+              </thead>
+              <tbody id="t_residents_table">
+                {% for r in residents %}
+                  <tr data-block="{{ r.block_id }}">
+                    <td>{{ r.id }}</td>
+                    <td>{{ r.block.name }}</td>
+                    <td>{{ r.unit_number }}</td>
+                    <td>
+                      <input class="form-check-input" type="checkbox" name="resident_ids" value="{{ r.id }}">
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary" id="tenantSubmitBtn">Создать</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# --------------------------- Скрипт модалки + подсказки --------------------------- #}
+<script>
+  // Автозакрытие флеш-алертов + Bootstrap tooltips
+  window.addEventListener('DOMContentLoaded', function () {
+    const alerts = document.querySelectorAll('.alert');
+    setTimeout(() => alerts.forEach(a => {
+      if (a.classList.contains('show')) bootstrap.Alert.getOrCreateInstance(a).close();
+    }), 5000);
+
+    const ttList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    ttList.forEach(el => new bootstrap.Tooltip(el));
+  });
+
+  const TenantModal = (function(){
+    const form = document.getElementById('tenantForm');
+    const title = document.getElementById('tenantModalTitle');
+    const submitBtn = document.getElementById('tenantSubmitBtn');
+    const alertBox = document.getElementById('tenantAlert');
+
+    function reset() {
+      alertBox.classList.add('d-none');
+      alertBox.textContent = '';
+      form.reset();
+      // сброс фильтра блоков
+      document.getElementById('t_block_filter').value = '';
+      document.querySelectorAll('#t_residents_table tr').forEach(tr => tr.style.display = '');
+    }
+
+    document.getElementById('t_block_filter').addEventListener('change', function(){
+      const bid = this.value;
+      document.querySelectorAll('#t_residents_table tr').forEach(tr => {
+        const ok = !bid || String(tr.dataset.block) === String(bid);
+        tr.style.display = ok ? '' : 'none';
+      });
+    });
+
+    return {
+      openCreate(){
+        reset();
+        title.textContent = 'Создать жителя';
+        form.setAttribute('action', "{{ request.url_for('tenant_create') }}");
+        submitBtn.textContent = 'Создать';
+      },
+      async openEdit(id){
+        reset();
+        title.textContent = 'Редактировать жителя';
+        const updateUrl = "{{ request.url_for('tenant_update', tenant_id='__ID__') }}".replace('__ID__', String(id));
+        form.setAttribute('action', updateUrl);
+        submitBtn.textContent = 'Сохранить';
+
+        const jsonUrl = "{{ request.url_for('tenant_json', tenant_id='__ID__') }}".replace('__ID__', String(id));
+        const resp = await fetch(jsonUrl, { headers: { 'Accept': 'application/json' } });
+        if (!resp.ok){
+          alertBox.textContent = 'Не удалось загрузить данные';
+          alertBox.classList.remove('d-none');
+          return;
+        }
+        const data = await resp.json();
+        document.getElementById('t_username').value = data.username;
+        document.getElementById('t_fullname').value = data.full_name || '';
+        document.getElementById('t_phone').value = data.phone || '';
+        document.getElementById('t_email').value = data.email || '';
+        document.getElementById('t_comment').value = data.comment || '';
+
+        const setIds = new Set((data.resident_ids || []).map(Number));
+        document.querySelectorAll('#t_residents_table input[type=checkbox]').forEach(cb => {
+          cb.checked = setIds.has(Number(cb.value));
+        });
+      }
+    }
+  })();
+</script>
+
+{% endblock %}

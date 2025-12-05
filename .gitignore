@@ -40,3 +40,21 @@ temp/
 COLOR_PALETTE_TEMPLATE.md
 PROJECT_STRUCTURE.txt
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Uploads and user data
+uploads/
+*.db
+*.sqlite
+
+# Dummy/test files
+dummy/
+

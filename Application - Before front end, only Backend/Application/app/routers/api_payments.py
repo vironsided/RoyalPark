@@ -1,0 +1,791 @@
+from typing import List, Optional
+from datetime import datetime, date
+from decimal import Decimal
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Form
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from sqlalchemy import func, or_
+
+from ..database import get_db
+from ..models import (
+    User, RoleEnum, Block, Resident,
+    Payment, PaymentApplication, PaymentMethod,
+    Invoice, InvoiceStatus
+)
+from ..deps import get_current_user
+from .payments import auto_apply_advance, _recompute_invoice_status, _to_int
+
+
+router = APIRouter(prefix="/api/payments", tags=["payments-api"])
+
+
+# Pydantic models
+class PaymentApplicationOut(BaseModel):
+    id: int
+    invoice_id: int
+    invoice_number: Optional[str] = None
+    invoice_period: Optional[str] = None
+    amount_applied: float
+
+    class Config:
+        from_attributes = True
+
+
+class PaymentOut(BaseModel):
+    id: int
+    resident_id: int
+    resident_code: str  # "A / 205"
+    resident_info: str  # "Блок A, №205"
+    block_name: str
+    unit_number: str
+    received_at: date
+    amount_total: float
+    method: str
+    reference: Optional[str] = None
+    comment: Optional[str] = None
+    created_at: datetime
+    applied_total: float = 0.0
+    leftover: float = 0.0
+    applications: List[PaymentApplicationOut] = []
+
+    class Config:
+        from_attributes = True
+
+
+class PaymentCreate(BaseModel):
+    resident_id: int
+    received_at: date
+    amount_total: float
+    method: str
+    reference: Optional[str] = None
+    comment: Optional[str] = None
+
+
+class InvoiceForDistribution(BaseModel):
+    id: int
+    number: Optional[str] = None
+    period: str  # "YYYY-MM"
+    amount_total: float
+    paid_amount: float
+    left_to_pay: float
+
+
+def _list_payments_internal(
+    db: Session,
+    resident_id: Optional[int] = None,
+    method: Optional[str] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    q: Optional[str] = None,
+    page: int = 1,
+    per_page: int = 25,
+):
+    """Внутренняя функция для получения списка платежей (без авторизации)."""
+    query = db.query(Payment).join(Resident, Resident.id == Payment.resident_id)
+    
+    if resident_id:
+        query = query.filter(Payment.resident_id == resident_id)
+    if method and method in {m.value for m in PaymentMethod}:
+        query = query.filter(Payment.method == PaymentMethod(method))
+    if date_from:
+        query = query.filter(Payment.received_at >= date_from)
+    if date_to:
+        query = query.filter(Payment.received_at <= date_to)
+    if q:
+        like = f"%{q.strip()}%"
+        query = query.filter(or_(Payment.reference.ilike(like), Payment.comment.ilike(like)))
+    
+    total = query.count()
+    last_page = max(1, (total + per_page - 1) // per_page)
+    if page > last_page:
+        page = last_page
+    
+    items = (
+        query
+        .order_by(Payment.received_at.desc(), Payment.id.desc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .all()
+    )
+    
+    # Получаем блоки для формирования данных
+    blocks = {b.id: b for b in db.query(Block).all()}
+    
+    result = []
+    for p in items:
+        resident = p.resident
+        block = blocks.get(resident.block_id)
+        
+        applied_total = float(p.applied_total)
+        leftover = float(p.leftover)
+        
+        result.append({
+            "id": p.id,
+            "resident_id": p.resident_id,
+            "resident_code": f"{block.name if block else ''} / {resident.unit_number}" if block else resident.unit_number,
+            "resident_info": f"Блок {block.name if block else ''}, №{resident.unit_number}" if block else f"№{resident.unit_number}",
+            "block_name": block.name if block else "",
+            "unit_number": resident.unit_number,
+            "received_at": p.received_at,
+            "amount_total": float(p.amount_total),
+            "method": p.method.value,
+            "reference": p.reference,
+            "comment": p.comment,
+            "created_at": p.created_at,
+            "applied_total": applied_total,
+            "leftover": leftover,
+            "applications": [
+                {
+                    "id": app.id,
+                    "invoice_id": app.invoice_id,
+                    "invoice_number": app.invoice.number if app.invoice else None,
+                    "invoice_period": f"{app.invoice.period_year}-{app.invoice.period_month:02d}" if app.invoice else None,
+                    "amount_applied": float(app.amount_applied),
+                }
+                for app in p.applications
+            ]
+        })
+    
+    return {
+        "items": result,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "last_page": last_page,
+    }
+
+
+@router.get("/")
+def list_payments_api(
+    resident_id: Optional[str] = Query(None),
+    method: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    q: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(25, ge=1, le=100),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Получить список платежей."""
+    resident_id_i = _to_int(resident_id)
+    
+    date_from_d = None
+    if date_from:
+        try:
+            date_from_d = datetime.strptime(date_from, "%Y-%m-%d").date()
+        except Exception:
+            pass
+    
+    date_to_d = None
+    if date_to:
+        try:
+            date_to_d = datetime.strptime(date_to, "%Y-%m-%d").date()
+        except Exception:
+            pass
+    
+    return _list_payments_internal(
+        db=db,
+        resident_id=resident_id_i,
+        method=method,
+        date_from=date_from_d,
+        date_to=date_to_d,
+        q=q,
+        page=page,
+        per_page=per_page,
+    )
+
+
+@router.get("/public")
+def list_payments_public(
+    resident_id: Optional[str] = Query(None),
+    method: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    q: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(25, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    """Получить список платежей (публичный endpoint)."""
+    resident_id_i = _to_int(resident_id)
+    
+    date_from_d = None
+    if date_from:
+        try:
+            date_from_d = datetime.strptime(date_from, "%Y-%m-%d").date()
+        except Exception:
+            pass
+    
+    date_to_d = None
+    if date_to:
+        try:
+            date_to_d = datetime.strptime(date_to, "%Y-%m-%d").date()
+        except Exception:
+            pass
+    
+    return _list_payments_internal(
+        db=db,
+        resident_id=resident_id_i,
+        method=method,
+        date_from=date_from_d,
+        date_to=date_to_d,
+        q=q,
+        page=page,
+        per_page=per_page,
+    )
+
+
+@router.get("/{payment_id}")
+def get_payment_api(
+    payment_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Получить детали платежа."""
+    p = db.get(Payment, payment_id)
+    if not p:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    resident = p.resident
+    block = db.get(Block, resident.block_id) if resident else None
+    
+    applied_total = float(p.applied_total)
+    leftover = float(p.leftover)
+    
+    return {
+        "id": p.id,
+        "resident_id": p.resident_id,
+        "resident_code": f"{block.name if block else ''} / {resident.unit_number}" if block else resident.unit_number,
+        "resident_info": f"Блок {block.name if block else ''}, №{resident.unit_number}" if block else f"№{resident.unit_number}",
+        "block_name": block.name if block else "",
+        "unit_number": resident.unit_number,
+        "received_at": p.received_at,
+        "amount_total": float(p.amount_total),
+        "method": p.method.value,
+        "reference": p.reference,
+        "comment": p.comment,
+        "created_at": p.created_at,
+        "applied_total": applied_total,
+        "leftover": leftover,
+        "applications": [
+            {
+                "id": app.id,
+                "invoice_id": app.invoice_id,
+                "invoice_number": app.invoice.number if app.invoice else None,
+                "invoice_period": f"{app.invoice.period_year}-{app.invoice.period_month:02d}" if app.invoice else None,
+                "amount_applied": float(app.amount_applied),
+            }
+            for app in p.applications
+        ]
+    }
+
+
+@router.get("/{payment_id}/public")
+def get_payment_public(
+    payment_id: int,
+    db: Session = Depends(get_db),
+):
+    """Получить детали платежа (публичный endpoint)."""
+    p = db.get(Payment, payment_id)
+    if not p:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    resident = p.resident
+    block = db.get(Block, resident.block_id) if resident else None
+    
+    applied_total = float(p.applied_total)
+    leftover = float(p.leftover)
+    
+    return {
+        "id": p.id,
+        "resident_id": p.resident_id,
+        "resident_code": f"{block.name if block else ''} / {resident.unit_number}" if block else resident.unit_number,
+        "resident_info": f"Блок {block.name if block else ''}, №{resident.unit_number}" if block else f"№{resident.unit_number}",
+        "block_name": block.name if block else "",
+        "unit_number": resident.unit_number,
+        "received_at": p.received_at,
+        "amount_total": float(p.amount_total),
+        "method": p.method.value,
+        "reference": p.reference,
+        "comment": p.comment,
+        "created_at": p.created_at,
+        "applied_total": applied_total,
+        "leftover": leftover,
+        "applications": [
+            {
+                "id": app.id,
+                "invoice_id": app.invoice_id,
+                "invoice_number": app.invoice.number if app.invoice else None,
+                "invoice_period": f"{app.invoice.period_year}-{app.invoice.period_month:02d}" if app.invoice else None,
+                "amount_applied": float(app.amount_applied),
+            }
+            for app in p.applications
+        ]
+    }
+
+
+@router.post("/")
+def create_payment_api(
+    payment: PaymentCreate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Создать платеж."""
+    if payment.method not in {m.value for m in PaymentMethod}:
+        raise HTTPException(status_code=400, detail="Invalid payment method")
+    
+    resident = db.get(Resident, payment.resident_id)
+    if not resident:
+        raise HTTPException(status_code=404, detail="Resident not found")
+    
+    p = Payment(
+        resident_id=payment.resident_id,
+        received_at=payment.received_at,
+        amount_total=Decimal(str(payment.amount_total)),
+        method=PaymentMethod(payment.method),
+        reference=payment.reference or None,
+        comment=payment.comment or None,
+        created_by_id=user.id,
+    )
+    db.add(p)
+    db.commit()
+    db.refresh(p)
+    
+    # Автоматически применить аванс к открытым счетам
+    auto_apply_advance(db, payment.resident_id)
+    db.commit()
+    db.refresh(p)
+    
+    return {"id": p.id, "ok": True}
+
+
+@router.post("/public")
+def create_payment_public(
+    payment: PaymentCreate,
+    db: Session = Depends(get_db),
+):
+    """Создать платеж (публичный endpoint)."""
+    if payment.method not in {m.value for m in PaymentMethod}:
+        raise HTTPException(status_code=400, detail="Invalid payment method")
+    
+    resident = db.get(Resident, payment.resident_id)
+    if not resident:
+        raise HTTPException(status_code=404, detail="Resident not found")
+    
+    p = Payment(
+        resident_id=payment.resident_id,
+        received_at=payment.received_at,
+        amount_total=Decimal(str(payment.amount_total)),
+        method=PaymentMethod(payment.method),
+        reference=payment.reference or None,
+        comment=payment.comment or None,
+        created_by_id=None,
+    )
+    db.add(p)
+    db.commit()
+    db.refresh(p)
+    
+    # Автоматически применить аванс к открытым счетам
+    auto_apply_advance(db, payment.resident_id)
+    db.commit()
+    db.refresh(p)
+    
+    return {"id": p.id, "ok": True}
+
+
+@router.get("/{payment_id}/open-invoices")
+def get_open_invoices_for_payment(
+    payment_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Получить открытые счета для распределения платежа."""
+    p = db.get(Payment, payment_id)
+    if not p:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    # Открытые счета резидента (ISSUED/PARTIAL), FIFO по периоду
+    open_invoices = (
+        db.query(Invoice)
+        .filter(
+            Invoice.resident_id == p.resident_id,
+            Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
+        )
+        .order_by(Invoice.period_year.asc(), Invoice.period_month.asc(), Invoice.id.asc())
+        .all()
+    )
+    
+    # Остаток к оплате по счету = total - paid
+    def invoice_left(inv: Invoice) -> Decimal:
+        paid = (
+            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+            .filter(PaymentApplication.invoice_id == inv.id)
+            .scalar() or Decimal("0")
+        )
+        return Decimal(inv.amount_total or 0) - paid
+    
+    result = []
+    print(f"DEBUG: Found {len(open_invoices)} open invoices for payment {payment_id}, resident_id={p.resident_id}")
+    for inv in open_invoices:
+        left = invoice_left(inv)
+        paid = (
+            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+            .filter(PaymentApplication.invoice_id == inv.id)
+            .scalar() or Decimal("0")
+        )
+        print(f"DEBUG: Invoice {inv.id} ({inv.number or 'no number'}): total={inv.amount_total}, paid={paid}, left={left}, status={inv.status.value}")
+        # Исключаем счета с остатком <= 0 (полностью оплаченные или переплаченные)
+        if left > Decimal("0"):
+            result.append({
+                "id": inv.id,
+                "number": inv.number,
+                "period": f"{inv.period_year}-{inv.period_month:02d}",
+                "amount_total": float(inv.amount_total),
+                "paid_amount": float(Decimal(inv.amount_total or 0) - left),
+                "left_to_pay": float(left),
+            })
+            print(f"DEBUG: Added invoice {inv.id} to result (left={left})")
+        else:
+            print(f"DEBUG: Skipped invoice {inv.id} (left={left} <= 0) - invoice is fully paid or overpaid")
+    
+    print(f"DEBUG: Returning {len(result)} invoices with left > 0 out of {len(open_invoices)} total")
+    return {"invoices": result}
+
+
+@router.get("/{payment_id}/open-invoices/public")
+def get_open_invoices_for_payment_public(
+    payment_id: int,
+    db: Session = Depends(get_db),
+):
+    """Получить открытые счета для распределения платежа (публичный endpoint)."""
+    p = db.get(Payment, payment_id)
+    if not p:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    # Открытые счета резидента (ISSUED/PARTIAL), FIFO по периоду
+    open_invoices = (
+        db.query(Invoice)
+        .filter(
+            Invoice.resident_id == p.resident_id,
+            Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
+        )
+        .order_by(Invoice.period_year.asc(), Invoice.period_month.asc(), Invoice.id.asc())
+        .all()
+    )
+    
+    # Остаток к оплате по счету = total - paid
+    def invoice_left(inv: Invoice) -> Decimal:
+        paid = (
+            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+            .filter(PaymentApplication.invoice_id == inv.id)
+            .scalar() or Decimal("0")
+        )
+        return Decimal(inv.amount_total or 0) - paid
+    
+    result = []
+    print(f"DEBUG PUBLIC: Found {len(open_invoices)} open invoices for payment {payment_id}, resident_id={p.resident_id}")
+    for inv in open_invoices:
+        left = invoice_left(inv)
+        paid = (
+            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+            .filter(PaymentApplication.invoice_id == inv.id)
+            .scalar() or Decimal("0")
+        )
+        print(f"DEBUG PUBLIC: Invoice {inv.id} ({inv.number or 'no number'}): total={inv.amount_total}, paid={paid}, left={left}, status={inv.status.value}")
+        # Исключаем счета с остатком <= 0 (полностью оплаченные или переплаченные)
+        if left > Decimal("0"):
+            result.append({
+                "id": inv.id,
+                "number": inv.number,
+                "period": f"{inv.period_year}-{inv.period_month:02d}",
+                "amount_total": float(inv.amount_total),
+                "paid_amount": float(Decimal(inv.amount_total or 0) - left),
+                "left_to_pay": float(left),
+            })
+            print(f"DEBUG PUBLIC: Added invoice {inv.id} to result (left={left})")
+        else:
+            print(f"DEBUG PUBLIC: Skipped invoice {inv.id} (left={left} <= 0) - invoice is fully paid or overpaid")
+    
+    print(f"DEBUG PUBLIC: Returning {len(result)} invoices with left > 0 out of {len(open_invoices)} total")
+    return {"invoices": result}
+
+
+@router.post("/{payment_id}/auto-apply")
+def auto_apply_payment(
+    payment_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Автоматически распределить остаток платежа по открытым счетам."""
+    p = db.get(Payment, payment_id)
+    if not p:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    # Вычисляем остаток платежа
+    leftover = Decimal(p.amount_total or 0) - (
+        db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+          .filter(PaymentApplication.payment_id == p.id).scalar() or Decimal("0")
+    )
+    plan: list[dict] = []
+    if leftover <= 0:
+        return {"ok": True, "plan": plan, "left_after": float(leftover)}
+    
+    # Получаем открытые счета резидента
+    open_invoices = (
+        db.query(Invoice)
+        .filter(
+            Invoice.resident_id == p.resident_id,
+            Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
+        )
+        .order_by(Invoice.period_year.asc(), Invoice.period_month.asc(), Invoice.id.asc())
+        .all()
+    )
+    
+    for inv in open_invoices:
+        paid = (
+            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+            .filter(PaymentApplication.invoice_id == inv.id)
+            .scalar() or Decimal("0")
+        )
+        left = Decimal(inv.amount_total or 0) - paid
+        if left <= 0:
+            continue
+        apply_amt = min(leftover, left)
+        if apply_amt > 0:
+            plan.append({"invoice_id": inv.id, "amount": float(apply_amt)})
+            leftover -= apply_amt
+            if leftover <= 0:
+                break
+    
+    return {"ok": True, "plan": plan, "left_after": float(leftover)}
+
+
+@router.post("/{payment_id}/auto-apply/public")
+def auto_apply_payment_public(
+    payment_id: int,
+    db: Session = Depends(get_db),
+):
+    """Автоматически распределить остаток платежа по открытым счетам (публичный endpoint)."""
+    p = db.get(Payment, payment_id)
+    if not p:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    # Вычисляем остаток платежа
+    leftover = Decimal(p.amount_total or 0) - (
+        db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+          .filter(PaymentApplication.payment_id == p.id).scalar() or Decimal("0")
+    )
+    plan: list[dict] = []
+    if leftover <= 0:
+        return {"ok": True, "plan": plan, "left_after": float(leftover)}
+    
+    # Получаем открытые счета резидента
+    open_invoices = (
+        db.query(Invoice)
+        .filter(
+            Invoice.resident_id == p.resident_id,
+            Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
+        )
+        .order_by(Invoice.period_year.asc(), Invoice.period_month.asc(), Invoice.id.asc())
+        .all()
+    )
+    
+    for inv in open_invoices:
+        paid = (
+            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+            .filter(PaymentApplication.invoice_id == inv.id)
+            .scalar() or Decimal("0")
+        )
+        left = Decimal(inv.amount_total or 0) - paid
+        if left <= 0:
+            continue
+        apply_amt = min(leftover, left)
+        if apply_amt > 0:
+            plan.append({"invoice_id": inv.id, "amount": float(apply_amt)})
+            leftover -= apply_amt
+            if leftover <= 0:
+                break
+    
+    return {"ok": True, "plan": plan, "left_after": float(leftover)}
+
+
+@router.post("/{payment_id}/applications")
+def save_payment_applications(
+    payment_id: int,
+    data_json: str = Form(...),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Сохранить распределение платежа по счетам."""
+    from .payments import payment_save_applications as backend_save_applications
+    from fastapi.responses import RedirectResponse
+    
+    # Вызываем backend функцию, но возвращаем JSON вместо редиректа
+    try:
+        import json
+        items = json.loads(data_json)
+        assert isinstance(items, list)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+    
+    p = db.get(Payment, payment_id)
+    if not p:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    # Текущие применения этого платежа
+    cur_apps = {
+        a.invoice_id: Decimal(a.amount_applied or 0)
+        for a in db.query(PaymentApplication).filter(PaymentApplication.payment_id == p.id).all()
+    }
+    
+    # Построим целевые значения после сохранения
+    target_apps = dict(cur_apps)
+    
+    # Валидации по каждому переданному элементу
+    for it in items:
+        inv_id = int(it["invoice_id"])
+        amt_new = Decimal(str(it["amount"]))
+        if amt_new <= 0:
+            continue
+        
+        inv = db.get(Invoice, inv_id)
+        if not inv or inv.resident_id != p.resident_id:
+            raise HTTPException(status_code=400, detail=f"Invalid invoice {inv_id}")
+        
+        # Остаток по счёту на сейчас
+        paid_all = (
+            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+            .filter(PaymentApplication.invoice_id == inv.id)
+            .scalar() or Decimal("0")
+        )
+        left_now = Decimal(inv.amount_total or 0) - Decimal(paid_all)
+        if left_now < 0:
+            left_now = Decimal("0")
+        
+        # Сколько уже применено ИМЕННО этим платежом
+        cur_amt_this = cur_apps.get(inv_id, Decimal("0"))
+        
+        # Разрешённый верхний предел
+        allowed_max = left_now + cur_amt_this
+        if amt_new > allowed_max:
+            raise HTTPException(status_code=400, detail=f"Amount too much for invoice {inv_id}")
+        
+        target_apps[inv_id] = amt_new
+    
+    # Проверка лимита по сумме платежа
+    total_target = sum(target_apps.values(), Decimal("0"))
+    if total_target > Decimal(p.amount_total or 0):
+        raise HTTPException(status_code=400, detail="Total amount exceeds payment amount")
+    
+    # Применяем изменения
+    for inv_id, tgt in target_apps.items():
+        app = (
+            db.query(PaymentApplication)
+            .filter(PaymentApplication.payment_id == p.id, PaymentApplication.invoice_id == inv_id)
+            .first()
+        )
+        if app:
+            app.amount_applied = tgt
+        else:
+            db.add(PaymentApplication(payment_id=p.id, invoice_id=inv_id, amount_applied=tgt))
+    
+    db.flush()
+    
+    # Пересчитать статусы вовлечённых счетов
+    inv_ids = list(target_apps.keys())
+    invs = db.query(Invoice).filter(Invoice.id.in_(inv_ids)).all()
+    for inv in invs:
+        _recompute_invoice_status(db, inv)
+    
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/{payment_id}/applications/public")
+def save_payment_applications_public(
+    payment_id: int,
+    data_json: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    """Сохранить распределение платежа по счетам (публичный endpoint)."""
+    try:
+        import json
+        items = json.loads(data_json)
+        assert isinstance(items, list)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+    
+    p = db.get(Payment, payment_id)
+    if not p:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    # Текущие применения этого платежа
+    cur_apps = {
+        a.invoice_id: Decimal(a.amount_applied or 0)
+        for a in db.query(PaymentApplication).filter(PaymentApplication.payment_id == p.id).all()
+    }
+    
+    # Построим целевые значения после сохранения
+    target_apps = dict(cur_apps)
+    
+    # Валидации по каждому переданному элементу
+    for it in items:
+        inv_id = int(it["invoice_id"])
+        amt_new = Decimal(str(it["amount"]))
+        if amt_new <= 0:
+            continue
+        
+        inv = db.get(Invoice, inv_id)
+        if not inv or inv.resident_id != p.resident_id:
+            raise HTTPException(status_code=400, detail=f"Invalid invoice {inv_id}")
+        
+        # Остаток по счёту на сейчас
+        paid_all = (
+            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+            .filter(PaymentApplication.invoice_id == inv.id)
+            .scalar() or Decimal("0")
+        )
+        left_now = Decimal(inv.amount_total or 0) - Decimal(paid_all)
+        if left_now < 0:
+            left_now = Decimal("0")
+        
+        # Сколько уже применено ИМЕННО этим платежом
+        cur_amt_this = cur_apps.get(inv_id, Decimal("0"))
+        
+        # Разрешённый верхний предел
+        allowed_max = left_now + cur_amt_this
+        if amt_new > allowed_max:
+            raise HTTPException(status_code=400, detail=f"Amount too much for invoice {inv_id}")
+        
+        target_apps[inv_id] = amt_new
+    
+    # Проверка лимита по сумме платежа
+    total_target = sum(target_apps.values(), Decimal("0"))
+    if total_target > Decimal(p.amount_total or 0):
+        raise HTTPException(status_code=400, detail="Total amount exceeds payment amount")
+    
+    # Применяем изменения
+    for inv_id, tgt in target_apps.items():
+        app = (
+            db.query(PaymentApplication)
+            .filter(PaymentApplication.payment_id == p.id, PaymentApplication.invoice_id == inv_id)
+            .first()
+        )
+        if app:
+            app.amount_applied = tgt
+        else:
+            db.add(PaymentApplication(payment_id=p.id, invoice_id=inv_id, amount_applied=tgt))
+    
+    db.flush()
+    
+    # Пересчитать статусы вовлечённых счетов
+    inv_ids = list(target_apps.keys())
+    invs = db.query(Invoice).filter(Invoice.id.in_(inv_ids)).all()
+    for inv in invs:
+        _recompute_invoice_status(db, inv)
+    
+    db.commit()
+    return {"ok": True}
+
