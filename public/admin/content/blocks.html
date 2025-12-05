@@ -245,10 +245,10 @@
         document.getElementById('blockResidents').textContent = '-';
         document.getElementById('blockOccupancy').textContent = '-';
         
-        // Smooth scroll to details
-        setTimeout(() => {
-            document.getElementById('blockDetails').scrollIntoView({behavior: 'smooth'});
-        }, 100);
+        // Убрана автоматическая прокрутка - информация показывается во всплывающем окне
+        // setTimeout(() => {
+        //     document.getElementById('blockDetails').scrollIntoView({behavior: 'smooth'});
+        // }, 100);
     }
     
     window.selectBlockById = function(blockId) {
@@ -504,6 +504,45 @@
         // window.location.href = `/admin/meters.html?block=${selectedBlock}`;
     }
     
+    // Функция создания и управления tooltip
+    let tooltip = null;
+    
+    function createTooltip() {
+        if (tooltip) return tooltip;
+        tooltip = document.createElement('div');
+        tooltip.className = 'plan-tooltip hidden';
+        document.body.appendChild(tooltip);
+        return tooltip;
+    }
+    
+    function showTooltip(e, blockLabel, blockInfo) {
+        const tooltipEl = createTooltip();
+        tooltipEl.innerHTML = `
+            <div class="tooltip-title-row">
+                <div class="tooltip-dot"></div>
+                <div class="tooltip-title">${blockLabel}</div>
+            </div>
+            <div class="tooltip-desc">${blockInfo}</div>
+        `;
+        tooltipEl.classList.remove('hidden');
+        tooltipEl.classList.add('visible');
+        updateTooltipPosition(e, tooltipEl);
+    }
+    
+    function hideTooltip() {
+        if (tooltip) {
+            tooltip.classList.remove('visible');
+            tooltip.classList.add('hidden');
+        }
+    }
+    
+    function updateTooltipPosition(e, tooltipEl) {
+        const x = e.clientX;
+        const y = e.clientY;
+        tooltipEl.style.left = x + 'px';
+        tooltipEl.style.top = y + 'px';
+    }
+    
     // Функция инициализации страницы
     async function initBlocksPage() {
         await loadBlocks();
@@ -514,13 +553,29 @@
             const blockCode = area.getAttribute('data-block-code');
             if (!blockCode) return;
 
-            area.addEventListener('mouseenter', () => {
-                // Ищем блок по имени
+            // Показываем tooltip при наведении, но НЕ прокручиваем страницу
+            area.addEventListener('mouseenter', (e) => {
+                const blockLabel = area.getAttribute('data-block-label') || `Block ${blockCode}`;
+                const blockInfo = area.getAttribute('data-block-info') || '';
+                showTooltip(e, blockLabel, blockInfo);
+            });
+            
+            area.addEventListener('mousemove', (e) => {
+                if (tooltip && tooltip.classList.contains('visible')) {
+                    updateTooltipPosition(e, tooltip);
+                }
+            });
+            
+            area.addEventListener('mouseleave', () => {
+                hideTooltip();
+            });
+            
+            // При клике - показываем детали (но без прокрутки, так как scrollIntoView уже убран)
+            area.addEventListener('click', () => {
                 const block = blocks.find(b => b.name === blockCode);
                 if (block) {
                     selectBlockById(block.id);
                 } else {
-                    // Если блока нет в базе, используем старый способ
                     selectBlock(blockCode);
                 }
             });
