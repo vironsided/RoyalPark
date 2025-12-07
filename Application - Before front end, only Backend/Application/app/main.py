@@ -8,7 +8,7 @@ from .config import settings
 from .database import Base, engine, SessionLocal
 from .models import User, RoleEnum
 from .security import hash_password
-from .routers import auth_routes, dashboard, users, blocks, tariffs, residents, readings, tenants, resident_portal, invoices, payments, notifications, api_users, api_blocks, api_tariffs, api_residents, api_readings, api_tenants, api_invoices, api_payments, api_notifications, api_dashboard, api_logs
+from .routers import auth_routes, dashboard, users, blocks, tariffs, residents, readings, tenants, resident_portal, invoices, payments, notifications, api_users, api_blocks, api_tariffs, api_residents, api_readings, api_tenants, api_invoices, api_payments, api_notifications, api_dashboard, api_logs, api_qr
 from fastapi.responses import RedirectResponse
 from sqlalchemy import text
 from fastapi.staticfiles import StaticFiles
@@ -74,6 +74,17 @@ def run_bootstrap_schema():
         "ALTER TABLE tariff_steps ADD COLUMN IF NOT EXISTS to_date DATE;",
         "ALTER TABLE tariff_steps ALTER COLUMN from_value DROP NOT NULL;",
         "ALTER TABLE tariff_steps ALTER COLUMN to_value DROP NOT NULL;",
+        # QR Tokens table
+        """
+        CREATE TABLE IF NOT EXISTS qr_tokens (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          token VARCHAR(128) NOT NULL UNIQUE,
+          is_used BOOLEAN NOT NULL DEFAULT FALSE,
+          created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+          used_at TIMESTAMP WITHOUT TIME ZONE NULL
+        );
+        """,
 
     ]
     from .database import engine
@@ -117,6 +128,7 @@ def create_app() -> FastAPI:
     app.include_router(api_notifications.router)
     app.include_router(api_dashboard.router)
     app.include_router(api_logs.router)
+    app.include_router(api_qr.router)
     app.include_router(blocks.router)
     app.include_router(tariffs.router)
     app.include_router(residents.router)

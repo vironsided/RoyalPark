@@ -437,3 +437,20 @@ class Notification(Base):
 
     user: Mapped["User"] = relationship("User", lazy="joined")
     resident: Mapped["Resident"] = relationship("Resident", lazy="joined")
+
+
+class QRToken(Base):
+    """
+    Одноразовые QR-токены для установки пароля новыми пользователями.
+    """
+    __tablename__ = "qr_tokens"
+    __table_args__ = (UniqueConstraint("token", name="uq_qr_tokens_token"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    token: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
+    is_used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow, nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+
+    user: Mapped["User"] = relationship("User", lazy="joined")

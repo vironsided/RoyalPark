@@ -52,6 +52,11 @@ app.get('/accountant', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'accountant', 'dashboard.html'));
 });
 
+// QR Password Setup Page
+app.get('/qr-password-setup', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'qr-password-setup.html'));
+});
+
 // API Routes (будут подключаться к FastAPI backend)
 app.post('/api/login', (req, res) => {
     // Временная заглушка - будет подключено к FastAPI

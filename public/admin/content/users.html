@@ -43,6 +43,29 @@
     </div>
 </div>
 
+<!-- QR Code Modal -->
+<div class="modal-overlay" id="qrModal">
+    <div class="modal-content qr-modal-content">
+        <div class="modal-header">
+            <h2>QR-код для пользователя</h2>
+            <button class="modal-close" onclick="closeQRModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body qr-modal-body">
+            <div id="qrCodeContainer" style="text-align: center; padding: 20px;">
+                <canvas id="qrCanvas" style="max-width: 100%; height: auto;"></canvas>
+            </div>
+            <p style="text-align: center; color: #666; margin-top: 15px;">
+                Пользователь должен отсканировать этот QR-код для установки пароля
+            </p>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeQRModal()">Закрыть</button>
+        </div>
+    </div>
+</div>
+
 <script>
 (function() {
     // Текущий список пользователей из backend
@@ -113,6 +136,11 @@
                         <button class="btn-user-action btn-delete-user" onclick="deleteUser(${user.id})">
                             Удалить
                         </button>
+                        ${user.require_password_change && user.temp_password_plain ? `
+                        <button class="btn-user-action btn-qr-user" onclick="showQRCode(${user.id}, '${user.username}', '${user.temp_password_plain}')">
+                            QR
+                        </button>
+                        ` : ''}
                     </div>
                 `;
             }
@@ -301,6 +329,121 @@
         }
     };
     
+    // Функция генерации QR-кода через Google Charts API (работает без внешних библиотек)
+    function generateQRCodeImage(qrUrl, canvas) {
+        // Используем Google Charts API для генерации QR-кода
+        const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl)}`;
+        
+        // Создаем изображение
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        
+        img.onload = function() {
+            const ctx = canvas.getContext('2d');
+            canvas.width = 300;
+            canvas.height = 300;
+            ctx.drawImage(img, 0, 0);
+            
+            // Показываем модальное окно после успешной генерации
+            const modal = document.getElementById('qrModal');
+            if (modal) {
+                modal.classList.add('active');
+            }
+        };
+        
+        img.onerror = function() {
+            // Резервный вариант - показываем URL напрямую
+            const ctx = canvas.getContext('2d');
+            canvas.width = 300;
+            canvas.height = 300;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 300, 300);
+            ctx.fillStyle = '#000000';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('QR Code URL:', 150, 140);
+            ctx.fillText(qrUrl, 150, 160, 280);
+            
+            const modal = document.getElementById('qrModal');
+            if (modal) {
+                modal.classList.add('active');
+            }
+        };
+        
+        img.src = apiUrl;
+    }
+    
+    // Show QR Code
+    window.showQRCode = async function(userId, username, tempPassword) {
+        try {
+            // Создаем QR токен через API (используем публичный endpoint)
+            let resp = await fetch(`${API_BASE}/api/qr/users/${userId}/qr-token/public`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!resp.ok) {
+                const errorText = await resp.text();
+                throw new Error(`Failed to generate QR token: ${resp.status} - ${errorText}`);
+            }
+            
+            const data = await resp.json();
+            const qrToken = data.token;
+            
+            // Формируем URL для QR-кода
+            const frontendUrl = window.location.origin || 'http://localhost:3000';
+            const qrUrl = `${frontendUrl}/qr-password-setup?token=${qrToken}`;
+            
+            // Получаем canvas для QR-кода
+            const canvas = document.getElementById('qrCanvas');
+            if (!canvas) {
+                console.error('QR canvas not found');
+                if (window.showError) {
+                    showError('❌ Элемент для QR-кода не найден');
+                } else {
+                    alert('Элемент для QR-кода не найден');
+                }
+                return;
+            }
+            
+            // Генерируем QR-код через API
+            generateQRCodeImage(qrUrl, canvas);
+        } catch (e) {
+            console.error('Show QR error:', e);
+            if (window.showError) {
+                showError('❌ Не удалось создать QR-код');
+            } else {
+                alert('Не удалось создать QR-код');
+            }
+        }
+    };
+    
+    // Close QR Modal
+    window.closeQRModal = function() {
+        const modal = document.getElementById('qrModal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    };
+    
+    // Close modal on overlay click
+    document.addEventListener('DOMContentLoaded', function() {
+        const qrModal = document.getElementById('qrModal');
+        if (qrModal) {
+            qrModal.addEventListener('click', function(e) {
+                if (e.target === qrModal) {
+                    closeQRModal();
+                }
+            });
+        }
+        
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeQRModal();
+            }
+        });
+    });
+    
     // Delete user
     window.deleteUser = async function(userId) {
         const user = users.find(u => u.id === userId);
@@ -313,7 +456,7 @@
             return;
         }
         
-        const confirmDelete = confirm(`Вы уверены, что хотите удалить пользователя "${user.login}"?`);
+        const confirmDelete = confirm(`Вы уверены, что хотите удалить пользователя "${user.username}"?`);
         
         if (confirmDelete) {
             try {

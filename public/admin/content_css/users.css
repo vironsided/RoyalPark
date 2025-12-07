@@ -209,6 +209,17 @@
         color: white;
     }
     
+    .btn-qr-user {
+        background: transparent;
+        border: 1px solid #667eea;
+        color: #667eea;
+    }
+    
+    .btn-qr-user:hover {
+        background: #667eea;
+        color: white;
+    }
+    
     .input-new-name {
         padding: 0.5rem 0.75rem;
         background: #ffffff;
@@ -276,4 +287,139 @@
     
     [data-theme="dark"] .input-new-name::placeholder {
         color: rgba(255, 255, 255, 0.5);
+    }
+    
+    /* QR Modal Styles */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-overlay.active {
+        display: flex;
+    }
+    
+    .qr-modal-content {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+        animation: modalSlideIn 0.3s ease-out;
+    }
+    
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .modal-header h2 {
+        margin: 0;
+        font-size: 1.75rem;
+        color: #1a1d2e;
+    }
+    
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #999;
+        transition: color 0.3s;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-close:hover {
+        color: #333;
+    }
+    
+    .qr-modal-body {
+        text-align: center;
+    }
+    
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 25px;
+        padding-top: 15px;
+        border-top: 2px solid #f0f0f0;
+    }
+    
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+    
+    /* Dark theme for QR modal */
+    [data-theme="dark"] .qr-modal-content {
+        background: linear-gradient(135deg, #1f2432 0%, #181c27 100%);
+        color: #f6f7ff;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    [data-theme="dark"] .modal-header {
+        border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    [data-theme="dark"] .modal-header h2 {
+        color: #f6f7ff;
+    }
+    
+    [data-theme="dark"] .modal-close {
+        color: rgba(255, 255, 255, 0.6);
+    }
+    
+    [data-theme="dark"] .modal-close:hover {
+        color: #f6f7ff;
+    }
+    
+    [data-theme="dark"] .modal-actions {
+        border-top: 2px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    [data-theme="dark"] .qr-modal-body p {
+        color: rgba(255, 255, 255, 0.7);
     }
