@@ -517,6 +517,29 @@ html[data-theme="dark"] .filter-group select:focus {
             background: rgba(255, 255, 255, 0.04);
             color: rgba(255, 255, 255, 0.85);
         }
+        
+        /* QR Button in tenant actions (identical to users.css) */
+        .tenant-actions .btn-user-action {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            white-space: nowrap;
+        }
+        
+        .tenant-actions .btn-qr-user {
+            background: transparent;
+            border: 1px solid #667eea;
+            color: #667eea;
+        }
+        
+        .tenant-actions .btn-qr-user:hover {
+            background: #667eea;
+            color: white;
+        }
 
         .tenant-actions .action-btn.edit {
             border-color: rgba(64, 174, 255, 0.4);
@@ -536,6 +559,29 @@ html[data-theme="dark"] .filter-group select:focus {
         .tenant-actions .action-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+        }
+        
+        /* QR Button Styles (identical to users.css) */
+        .btn-user-action {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            white-space: nowrap;
+        }
+        
+        .btn-qr-user {
+            background: transparent;
+            border: 1px solid #667eea;
+            color: #667eea;
+        }
+        
+        .btn-qr-user:hover {
+            background: #667eea;
+            color: white;
         }
         
         .selected-info {

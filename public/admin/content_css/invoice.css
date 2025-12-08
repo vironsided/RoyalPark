@@ -389,27 +389,36 @@
     }
 
     /* Number input styling with spinners */
-    .invoices-filters-group input[type="number"] {
+    .invoices-filters-group input[type="number"],
+    .invoices-actions-group input[type="number"] {
         -webkit-appearance: none;
         -moz-appearance: textfield;
         appearance: textfield;
-        padding-right: 35px;
+        padding-right: 12.5px !important;
     }
 
     .invoices-filters-group input[type="number"]::-webkit-inner-spin-button,
-    .invoices-filters-group input[type="number"]::-webkit-outer-spin-button {
-        opacity: 1;
+    .invoices-filters-group input[type="number"]::-webkit-outer-spin-button,
+    .invoices-actions-group input[type="number"]::-webkit-inner-spin-button,
+    .invoices-actions-group input[type="number"]::-webkit-outer-spin-button {
+        opacity: 1 !important;
         height: 30px;
         cursor: pointer;
-        margin-right: 5px;
+        margin: 0 !important;
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+        width: 15px !important;
     }
 
-    /* Style for number input spinners in dark theme */
-    .invoices-filters-group input[type="number"]::-webkit-inner-spin-button {
+    /* Style for number input spinners in dark theme*/
+    .invoices-filters-group input[type="number"]::-webkit-inner-spin-button,
+    .invoices-actions-group input[type="number"]::-webkit-inner-spin-button {
         background: rgba(255, 255, 255, 0.1);
         border-left: 1px solid rgba(255, 255, 255, 0.12);
-        width: 25px;
+        width: 15px !important;
         border-radius: 0 8px 8px 0;
+        margin: 0 !important;
+        margin-right: 0 !important;
     }
 
     /* Gray spinner icons in dark theme */

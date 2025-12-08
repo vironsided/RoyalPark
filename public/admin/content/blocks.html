@@ -23,7 +23,7 @@
             </div>
             <div class="stat-details">
                 <div class="stat-value">420</div>
-                <div class="stat-label">Всего квартир</div>
+                <div class="stat-label">Активные дома</div>
                 <div class="stat-change positive">↑ 25 новых</div>
             </div>
         </div>
@@ -41,7 +41,7 @@
             </div>
         </div>
 
-        <div class="stat-card solid-red">
+        <!-- <div class="stat-card solid-red">
             <div class="stat-icon purple">
                 <svg width="40" height="40" fill="white">
                     <use href="/images/icons.svg#icon-users"></use>
@@ -52,7 +52,7 @@
                 <div class="stat-label">Жителей</div>
                 <div class="stat-change positive">↑ 12% за месяц</div>
             </div>
-        </div>
+        </div> -->
     </div>
 
     <!-- Complex Map -->
@@ -118,24 +118,24 @@
                     <div class="col-md-6">
                         <h5>Основная информация</h5>
                         <ul class="list-unstyled">
-                            <li><strong>Этажей:</strong> <span id="blockFloors">-</span></li>
-                            <li><strong>Квартир:</strong> <span id="blockApartments">-</span></li>
-                            <li><strong>Жителей:</strong> <span id="blockResidents">-</span></li>
+                            <!-- <li><strong>Этажей:</strong> <span id="blockFloors">-</span></li> -->
+                            <li><strong>Домов:</strong> <span id="blockApartments">-</span></li>
+                            <!-- <li><strong>Жителей:</strong> <span id="blockResidents">-</span></li> -->
                             <li><strong>Заселенность:</strong> <span id="blockOccupancy">-</span></li>
                         </ul>
                     </div>
                     <div class="col-md-6">
                         <h5>Быстрые действия</h5>
                         <div class="d-flex flex-column gap-2">
-                            <button class="btn btn-success btn-sm" onclick="viewApartments()">
+                            <!-- <button class="btn btn-success btn-sm" onclick="viewApartments()">
                                 <i class="bi bi-list"></i> Список квартир
-                            </button>
+                            </button> -->
                             <button class="btn btn-outline-primary btn-sm" onclick="viewResidents()">
                                 <i class="bi bi-people"></i> Список жителей
                             </button>
-                            <button class="btn btn-outline-secondary btn-sm" onclick="viewMeters()">
+                            <!-- <button class="btn btn-outline-secondary btn-sm" onclick="viewMeters()">
                                 <i class="bi bi-speedometer"></i> Показатели счетчиков
-                            </button>
+                            </button> -->
                             <hr>
                             <button class="btn btn-warning btn-sm" onclick="renameBlock()">
                                 <i class="bi bi-pencil"></i> Переименовать
@@ -154,6 +154,7 @@
 <script>
     const API_BASE = 'http://localhost:8000';
     let blocks = [];
+    let residents = [];
     let selectedBlock = null;
     let selectedBlockId = null;
     
@@ -168,10 +169,103 @@
             if (!resp.ok) throw new Error('Failed to load blocks');
             blocks = await resp.json();
             renderBlocks();
+            updateBlocksCount();
         } catch (e) {
             console.error('Load blocks error:', e);
             blocks = [];
+            updateBlocksCount();
         }
+    }
+    
+    // Загрузка резидентов (домов) из API
+    async function loadResidents() {
+        try {
+            let resp = await fetch(`${API_BASE}/api/residents`, { credentials: 'include' });
+            if (resp.status === 401) {
+                console.warn('Not authorized, using public endpoint');
+                resp = await fetch(`${API_BASE}/api/residents/public`);
+            }
+            if (!resp.ok) throw new Error('Failed to load residents');
+            residents = await resp.json();
+            updateActiveResidentsCount();
+            updateOccupancyPercentage();
+            // Обновляем карточки блоков с новыми данными о резидентах
+            renderBlocks();
+            // Если блок уже выбран, обновляем его детали
+            if (selectedBlockId) {
+                const block = blocks.find(b => b.id === selectedBlockId);
+                if (block) {
+                    selectBlock(block.name);
+                }
+            }
+        } catch (e) {
+            console.error('Load residents error:', e);
+            residents = [];
+            updateActiveResidentsCount();
+            updateOccupancyPercentage();
+            // Обновляем карточки блоков даже при ошибке
+            renderBlocks();
+        }
+    }
+    
+    // Обновление счетчика блоков в карточке статистики
+    function updateBlocksCount() {
+        const statValue = document.querySelector('.stat-card.solid-blue .stat-value');
+        if (statValue) {
+            // Подсчитываем только активные блоки
+            const activeBlocksCount = blocks.filter(b => b.is_active !== false).length;
+            statValue.textContent = activeBlocksCount;
+        }
+    }
+    
+    // Обновление счетчика активных домов (резидентов) в карточке статистики
+    function updateActiveResidentsCount() {
+        const statValue = document.querySelector('.stat-card.solid-green .stat-value');
+        if (statValue) {
+            // Подсчитываем только активные резиденты (дома)
+            const activeResidentsCount = residents.filter(r => r.status === 'ACTIVE').length;
+            statValue.textContent = activeResidentsCount;
+        }
+    }
+    
+    // Обновление процента заселенности в карточке статистики
+    function updateOccupancyPercentage() {
+        const statValue = document.querySelector('.stat-card.solid-orange .stat-value');
+        if (statValue && residents.length > 0) {
+            // Подсчитываем активные и неактивные резиденты
+            const activeResidents = residents.filter(r => r.status === 'ACTIVE').length;
+            const inactiveResidents = residents.filter(r => r.status === 'INACTIVE').length;
+            const totalResidents = activeResidents + inactiveResidents;
+            
+            if (totalResidents > 0) {
+                // Вычисляем процент заселенности: (активные / всего) * 100
+                const occupancyPercentage = Math.round((activeResidents / totalResidents) * 100);
+                statValue.textContent = `${occupancyPercentage}%`;
+            } else {
+                statValue.textContent = '0%';
+            }
+        } else if (statValue) {
+            statValue.textContent = '0%';
+        }
+    }
+    
+    // Получение статистики блока (количество домов и процент заселённости)
+    function getBlockStats(blockId) {
+        // Фильтруем резидентов по block_id
+        const blockResidents = residents.filter(r => r.block_id === blockId);
+        const totalResidents = blockResidents.length;
+        const activeResidents = blockResidents.filter(r => r.status === 'ACTIVE').length;
+        
+        // Вычисляем процент заселённости
+        const occupancyPercentage = totalResidents > 0 
+            ? Math.round((activeResidents / totalResidents) * 100) 
+            : 0;
+        
+        return {
+            total: totalResidents,
+            active: activeResidents,
+            occupancy: occupancyPercentage
+        };
     }
     
     // Отрисовка блоков на странице
@@ -197,6 +291,9 @@
         blocks.forEach(block => {
             if (!block.is_active) return; // Пропускаем неактивные
             
+            // Получаем статистику для блока
+            const stats = getBlockStats(block.id);
+            
             const blockCard = document.createElement('div');
             blockCard.className = 'block-card';
             blockCard.setAttribute('data-block', block.name);
@@ -205,9 +302,8 @@
             blockCard.innerHTML = `
                 <div class="block-name">Блок ${block.name}</div>
                 <div class="block-info">
-                    <div>0 этажей</div>
-                    <div>0 квартир</div>
-                    <div>0 жителей</div>
+                    <div>${stats.total} ${stats.total === 1 ? 'дом' : stats.total < 5 ? 'дома' : 'домов'}</div>
+                    <div>${stats.occupancy}% заселённость</div>
                 </div>
             `;
             complexMap.appendChild(blockCard);
@@ -238,17 +334,20 @@
         document.getElementById('blockDetails').style.display = 'block';
         document.getElementById('selectedBlockName').textContent = `Блок ${blockName}`;
         
-        // TODO: Загрузить реальные данные (этажи, квартиры, жители) из API
-        // Пока используем заглушки
-        document.getElementById('blockFloors').textContent = '-';
-        document.getElementById('blockApartments').textContent = '-';
-        document.getElementById('blockResidents').textContent = '-';
-        document.getElementById('blockOccupancy').textContent = '-';
+        // Загружаем реальные данные для выбранного блока
+        if (selectedBlockId) {
+            const stats = getBlockStats(selectedBlockId);
+            document.getElementById('blockApartments').textContent = stats.total;
+            document.getElementById('blockOccupancy').textContent = `${stats.occupancy}%`;
+        } else {
+            document.getElementById('blockApartments').textContent = '-';
+            document.getElementById('blockOccupancy').textContent = '-';
+        }
         
-        // Убрана автоматическая прокрутка - информация показывается во всплывающем окне
-        // setTimeout(() => {
-        //     document.getElementById('blockDetails').scrollIntoView({behavior: 'smooth'});
-        // }, 100);
+        // Прокручиваем к карточке с деталями блока
+        setTimeout(() => {
+            document.getElementById('blockDetails').scrollIntoView({behavior: 'smooth', block: 'start'});
+        }, 100);
     }
     
     window.selectBlockById = function(blockId) {
@@ -298,6 +397,10 @@
             
             await loadBlocks();
             document.getElementById('newBlockName').value = '';
+            updateBlocksCount();
+            // Резиденты не меняются при создании блока, но можно перезагрузить для актуальности
+            await loadResidents();
+            updateOccupancyPercentage();
             
             if (window.showSuccess) {
                 showSuccess(`Блок "${blockName}" успешно создан!`);
@@ -388,6 +491,7 @@
             
             // Перезагружаем список блоков из базы
             await loadBlocks();
+            updateBlocksCount();
             
             // После перезагрузки снова выбираем блок, чтобы обновить все данные
             if (selectedBlockId) {
@@ -453,6 +557,7 @@
             }
             
             await loadBlocks();
+            updateBlocksCount();
             
             // Hide block details
             document.getElementById('blockDetails').style.display = 'none';
@@ -485,13 +590,24 @@
     }
     
     window.viewResidents = function() {
-        if (!selectedBlock) {
-            showWarning('Пожалуйста, выберите блок');
+        if (!selectedBlock || !selectedBlockId) {
+            if (typeof showWarning === 'function') {
+                showWarning('Пожалуйста, выберите блок');
+            } else {
+                alert('Пожалуйста, выберите блок');
+            }
             return;
         }
-        showInfo(`Переход к списку жителей блока ${selectedBlock}...`);
-        // TODO: Navigate to residents page with block filter
-        // window.location.href = `/admin/residents.html?block=${selectedBlock}`;
+        
+        // Сохраняем имя блока в sessionStorage для применения фильтра на странице tenants
+        sessionStorage.setItem('filterBlockByName', selectedBlock);
+        
+        // Переходим на страницу tenants
+        if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+            window.spaRouter.navigate('/tenants');
+        } else {
+            window.location.hash = '#/tenants';
+        }
     }
     
     window.viewMeters = function() {
@@ -545,7 +661,10 @@
     
     // Функция инициализации страницы
     async function initBlocksPage() {
-        await loadBlocks();
+        await Promise.all([
+            loadBlocks(),
+            loadResidents()
+        ]);
         
         // Настройка обработчиков для полигонов плана
         const areas = document.querySelectorAll('.plan-overlay .plan-area');
@@ -596,6 +715,10 @@
             initBlocksPage();
         }
     };
+    
+    // Обновляем счетчики при изменении данных
+    // Можно добавить периодическое обновление, если нужно
+    // setInterval(() => { loadResidents(); }, 60000); // каждую минуту
     
     window.addEventListener('spa:contentLoaded', window._blocksContentLoadedHandler);
     

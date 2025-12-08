@@ -336,6 +336,11 @@
     color: #8d9199;
 }
 
+/* Dashboard Content */
+[data-theme="dark"] .dashboard-content {
+    background: transparent!important;
+}
+
 
 
 

@@ -41,6 +41,9 @@
                         <div class="filter-group">
                             <label>Год</label>
                             <select id="filterYear">
+                                <option value="2028">2028</option>
+                                <option value="2027">2027</option>
+                                <option value="2026">2026</option>
                                 <option value="2025">2025</option>
                                 <option value="2024">2024</option>
                                 <option value="2023">2023</option>
@@ -213,6 +216,14 @@
                 console.error('loadReadings is not defined in DOMContentLoaded!');
             }
         });
+
+        const currentYear = new Date().getFullYear();
+        const select = document.getElementById("filterYear");
+
+        
+        if (select.querySelector(`option[value="${currentYear}"]`)) {
+            select.value = currentYear;
+        }
 
         // Load readings from API
         window.loadReadings = async function loadReadings() {
@@ -394,6 +405,10 @@
                             <div class="amount-stack">
                                 ${amountsHtml || '<div class="text-muted">0.00 ₼</div>'}
                             </div>
+                            <div class="reading-total reading-total-resident">
+                                <span>Итого:</span>
+                                <span class="reading-total-value">${residentTotal.toFixed(2)} ₼</span>
+                            </div>
                         </div>
                         <div class="reading-col reading-col-actions">
                             <div class="reading-actions">
@@ -408,10 +423,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="reading-total reading-total-resident">
-                        <span>Итого:</span>
-                        <span class="reading-total-value">${residentTotal.toFixed(2)} ₼</span>
-                    </div>
+                    
                 `;
             });
 
