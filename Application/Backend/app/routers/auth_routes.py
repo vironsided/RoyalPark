@@ -1,16 +1,29 @@
 from datetime import datetime
-from fastapi import APIRouter, Depends, Request, Form
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi import APIRouter, Depends, Request, Form, HTTPException
+from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 from starlette import status
+from pydantic import BaseModel
 from ..database import get_db
-from ..models import User
+from ..models import User, RoleEnum
 from ..security import verify_password, set_session, clear_session
 from ..deps import get_current_user
 from fastapi.templating import Jinja2Templates
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    success: bool
+    role: str
+    username: str
+    message: str
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -35,6 +48,28 @@ def login(request: Request, db: Session = Depends(get_db),
         resp = RedirectResponse(url="/force-change-password", status_code=status.HTTP_302_FOUND)
         set_session(resp, user.id)
     return resp
+
+
+@router.post("/api/auth/login", response_model=LoginResponse)
+async def api_login(login_data: LoginRequest, db: Session = Depends(get_db)):
+    """API endpoint для логина, возвращает роль пользователя"""
+    user = db.query(User).filter(User.username == login_data.username).first()
+    
+    if not user or not verify_password(login_data.password, user.password_hash) or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Неверное имя пользователя или пароль"
+        )
+    
+    user.last_login_at = datetime.utcnow()
+    db.commit()
+    
+    return LoginResponse(
+        success=True,
+        role=user.role.value,
+        username=user.username,
+        message="Вход выполнен успешно"
+    )
 
 
 @router.get("/logout")

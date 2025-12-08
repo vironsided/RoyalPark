@@ -1,8 +1,10 @@
 // User Dashboard JavaScript
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Check authentication
-    checkAuth();
+    // Check authentication with small delay to ensure localStorage is updated
+    setTimeout(() => {
+        checkAuth();
+    }, 100);
 
     // Initialize sidebar toggle
     initSidebarToggle();
@@ -15,12 +17,12 @@ document.addEventListener('DOMContentLoaded', function() {
     addRippleEffect();
 });
 
-// Check if user is authenticated and has user role
+// Check if user is authenticated and has RESIDENT role
 function checkAuth() {
     const authToken = localStorage.getItem('authToken');
     const userRole = localStorage.getItem('userRole');
 
-    if (!authToken || userRole !== 'user') {
+    if (!authToken || userRole !== 'RESIDENT') {
         window.location.href = '/login.html';
         return;
     }

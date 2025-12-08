@@ -1,4 +1,4 @@
-// 🔥 ОФИГЕННЫЙ LOGIN PAGE JAVASCRIPT 🔥
+// 🔥 LOGIN PAGE JAVASCRIPT - Backend Integration 🔥
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize animations
@@ -8,37 +8,52 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const loginForm = document.getElementById('loginForm');
     const alertBox = document.getElementById('alert');
-    const userLoginBtn = document.getElementById('userLoginBtn');
-    const staffToggleBtn = document.getElementById('staffToggleBtn');
-    const staffPanel = document.getElementById('staffPanel');
-    const staffLoginBtn = document.getElementById('staffLoginBtn');
-    const staffRoles = document.querySelectorAll('input[name="staffRole"]');
-    let activeButton = null;
-    let currentRole = 'user';
+    const loginSubmitBtn = document.getElementById('loginSubmitBtn');
 
     // Handle form submission
     loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
 
-        const username = document.getElementById('username').value;
+        const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
-        const role = currentRole || 'user';
-        const targetButton = activeButton || userLoginBtn;
-        const btnText = targetButton.querySelector('.btn-text');
-        const btnIcon = targetButton.querySelector('.btn-icon');
+        const btnText = loginSubmitBtn.querySelector('.btn-text');
+        const btnIcon = loginSubmitBtn.querySelector('.btn-icon');
 
-        targetButton.classList.add('loading');
+        // Validation
+        if (!username || !password) {
+            showAlert('Пожалуйста, заполните все поля', 'error');
+            return;
+        }
+
+        loginSubmitBtn.classList.add('loading');
+        loginSubmitBtn.disabled = true;
         if (btnText) btnText.style.opacity = '0';
         if (btnIcon) btnIcon.style.opacity = '0';
 
         try {
-            // Simulate API call (replace with actual backend)
-            await simulateLogin(username, password, role);
+            // API call to backend
+            const response = await fetch('http://localhost:8000/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: 'Ошибка входа в систему' }));
+                throw new Error(errorData.detail || 'Неверное имя пользователя или пароль');
+            }
+
+            const data = await response.json();
             
-            // Save token to localStorage
-            localStorage.setItem('authToken', 'demo-token-' + Date.now());
-            localStorage.setItem('userRole', role);
-            localStorage.setItem('username', username);
+            // Save user data to localStorage
+            localStorage.setItem('authToken', 'authenticated');
+            localStorage.setItem('userRole', data.role);
+            localStorage.setItem('username', data.username);
 
             showAlert('Вход выполнен успешно! Перенаправление...', 'success');
             
@@ -47,67 +62,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Redirect based on role
             setTimeout(() => {
-                switch(role) {
-                    case 'user':
-                        window.location.href = '/user/dashboard.html';
-                        break;
-                    case 'admin':
-                    case 'maintenance':
-                    case 'accountant':
-                        window.location.href = '/admin/#/dashboard';
-                        break;
-                    default:
-                        window.location.href = '/';
+                if (data.role === 'RESIDENT') {
+                    // Redirect to user panel for residents
+                    window.location.href = '/user/dashboard.html';
+                } else {
+                    // Redirect to admin panel for all other roles (ADMIN, OPERATOR, ROOT)
+                    window.location.href = '/admin/#/dashboard';
                 }
-            }, 2000);
+            }, 1500);
         } catch (error) {
             console.error('Login error:', error);
             showAlert(error.message || 'Ошибка входа в систему', 'error');
-            shakeElement(submitBtn);
+            shakeElement(loginSubmitBtn);
         } finally {
-            targetButton.classList.remove('loading');
+            loginSubmitBtn.classList.remove('loading');
+            loginSubmitBtn.disabled = false;
             if (btnText) btnText.style.opacity = '1';
             if (btnIcon) btnIcon.style.opacity = '1';
-            activeButton = null;
-            currentRole = 'user';
         }
     });
-
-    userLoginBtn?.addEventListener('click', () => {
-        currentRole = 'user';
-        activeButton = userLoginBtn;
-        loginForm.requestSubmit();
-    });
-
-    staffToggleBtn?.addEventListener('click', () => {
-        staffPanel?.classList.toggle('show');
-    });
-
-    staffLoginBtn?.addEventListener('click', () => {
-        const selected = Array.from(staffRoles).find(role => role.checked);
-        if (!selected) {
-            showAlert('Выберите роль сотрудника', 'error');
-            shakeElement(staffPanel);
-            return;
-        }
-        currentRole = selected.value;
-        activeButton = staffLoginBtn;
-        loginForm.requestSubmit();
-    });
-
-    // Simulate login (replace with actual API call)
-    async function simulateLogin(username, password, role) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                // Simple validation for demo
-                if (username && password) {
-                    resolve({ success: true, role: role });
-                } else {
-                    reject(new Error('Неверное имя пользователя или пароль'));
-                }
-            }, 1500);
-        });
-    }
 
     // Show alert message
     function showAlert(message, type) {
@@ -118,17 +91,6 @@ document.addEventListener('DOMContentLoaded', function() {
             alertBox.classList.remove('show');
         }, 5000);
     }
-
-    // Add role selection animations
-    document.querySelectorAll('.role-label').forEach(label => {
-        label.addEventListener('click', function() {
-            // Add pulse animation
-            this.style.animation = 'none';
-            setTimeout(() => {
-                this.style.animation = '';
-            }, 10);
-        });
-    });
 });
 
 // 🎨 PARTICLES EFFECT
@@ -218,7 +180,7 @@ function initParticles() {
 
 // 💫 RIPPLE EFFECT
 function addRippleEffect() {
-    document.querySelectorAll('.login-btn, .role-label').forEach(element => {
+    document.querySelectorAll('.login-btn').forEach(element => {
         element.addEventListener('click', function(e) {
             const ripple = document.createElement('span');
             const rect = this.getBoundingClientRect();
@@ -395,4 +357,4 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-console.log('🔥 ОФИГЕННАЯ страница login загружена! 🔥');
+console.log('🔥 Login page загружена с backend интеграцией! 🔥');
