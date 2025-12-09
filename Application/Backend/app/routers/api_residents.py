@@ -2,7 +2,7 @@ from typing import List, Optional
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
@@ -106,18 +106,16 @@ def _parse_meters(meters_data: List[MeterIn]) -> List[dict]:
     return result
 
 
-@router.get("/", response_model=List[ResidentOut])
-def list_residents_api(
-    db: Session = Depends(get_db),
+def _list_residents_internal(
+    db: Session,
     block_id: Optional[int] = None,
     status: Optional[str] = None,
     rtype: Optional[str] = None,
     q: Optional[str] = None,
-    actor: User = Depends(get_current_user),
+    page: int = 1,
+    per_page: int = 25,
 ):
-    """
-    JSON-список резидентов с фильтрами.
-    """
+    """Внутренняя функция для получения списка резидентов (без авторизации)."""
     stmt = select(Resident)
     
     if block_id:
@@ -135,7 +133,34 @@ def list_residents_api(
             func.lower(Resident.owner_email).like(needle)
         )
     
-    residents = db.execute(stmt.order_by(Resident.id.asc())).scalars().all()
+    # Подсчет общего количества
+    count_stmt = select(func.count(Resident.id))
+    if block_id:
+        count_stmt = count_stmt.where(Resident.block_id == block_id)
+    if status and status in {s.value for s in ResidentStatus}:
+        count_stmt = count_stmt.where(Resident.status == ResidentStatus(status))
+    if rtype and rtype in {t.value for t in ResidentType}:
+        count_stmt = count_stmt.where(Resident.resident_type == ResidentType(rtype))
+    if q:
+        needle = f"%{q.strip().lower()}%"
+        count_stmt = count_stmt.where(
+            func.lower(Resident.unit_number).like(needle) |
+            func.lower(Resident.owner_full_name).like(needle) |
+            func.lower(Resident.owner_phone).like(needle) |
+            func.lower(Resident.owner_email).like(needle)
+        )
+    
+    total = db.execute(count_stmt).scalar() or 0
+    last_page = max(1, (total + per_page - 1) // per_page)
+    if page > last_page:
+        page = last_page
+    
+    # Применяем пагинацию
+    residents = db.execute(
+        stmt.order_by(Resident.id.asc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+    ).scalars().all()
     
     result = []
     for r in residents:
@@ -169,74 +194,64 @@ def list_residents_api(
             "created_at": r.created_at,
         })
     
-    return result
+    return {
+        "items": result,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "last_page": last_page,
+    }
+
+
+@router.get("/")
+def list_residents_api(
+    db: Session = Depends(get_db),
+    block_id: Optional[int] = Query(None),
+    status: Optional[str] = Query(None),
+    rtype: Optional[str] = Query(None),
+    q: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(25, ge=1, le=100),
+    actor: User = Depends(get_current_user),
+):
+    """
+    JSON-список резидентов с фильтрами и пагинацией.
+    """
+    return _list_residents_internal(
+        db=db,
+        block_id=block_id,
+        status=status,
+        rtype=rtype,
+        q=q,
+        page=page,
+        per_page=per_page,
+    )
 
 
 # ВРЕМЕННО: endpoint без авторизации для теста
-@router.get("/public", response_model=List[ResidentOut])
+@router.get("/public")
 def list_residents_public(
     db: Session = Depends(get_db),
-    block_id: Optional[int] = None,
-    status: Optional[str] = None,
-    rtype: Optional[str] = None,
-    q: Optional[str] = None,
+    block_id: Optional[int] = Query(None),
+    status: Optional[str] = Query(None),
+    rtype: Optional[str] = Query(None),
+    q: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(25, ge=1, le=100),
 ):
     """
     ВРЕМЕННЫЙ endpoint без авторизации для теста SPA.
     TODO: удалить после настройки нормальной авторизации.
     """
-    stmt = select(Resident)
-    
-    if block_id:
-        stmt = stmt.where(Resident.block_id == block_id)
-    if status and status in {s.value for s in ResidentStatus}:
-        stmt = stmt.where(Resident.status == ResidentStatus(status))
-    if rtype and rtype in {t.value for t in ResidentType}:
-        stmt = stmt.where(Resident.resident_type == ResidentType(rtype))
-    if q:
-        needle = f"%{q.strip().lower()}%"
-        stmt = stmt.where(
-            func.lower(Resident.unit_number).like(needle) |
-            func.lower(Resident.owner_full_name).like(needle) |
-            func.lower(Resident.owner_phone).like(needle) |
-            func.lower(Resident.owner_email).like(needle)
-        )
-    
-    residents = db.execute(stmt.order_by(Resident.id.asc())).scalars().all()
-    
-    result = []
-    for r in residents:
-        meters_data = []
-        for m in r.meters:
-            # В списке резидентов показываем только активные счётчики
-            if m.is_active:
-                meters_data.append({
-                    "id": m.id,
-                    "meter_type": m.meter_type.value,
-                    "serial_number": m.serial_number,
-                    "initial_reading": float(m.initial_reading),
-                    "tariff_id": m.tariff_id,
-                    "tariff_name": m.tariff.name if m.tariff else None,
-                    "is_active": m.is_active,
-                })
-        
-        result.append({
-            "id": r.id,
-            "block_id": r.block_id,
-            "block_name": r.block.name if r.block else None,
-            "unit_number": r.unit_number,
-            "resident_type": r.resident_type.value,
-            "customer_type": r.customer_type.value,
-            "status": r.status.value,
-            "owner_full_name": r.owner_full_name,
-            "owner_phone": r.owner_phone,
-            "owner_email": r.owner_email,
-            "comment": r.comment,
-            "meters": meters_data,
-            "created_at": r.created_at,
-        })
-    
-    return result
+    return _list_residents_internal(
+        db=db,
+        block_id=block_id,
+        status=status,
+        rtype=rtype,
+        q=q,
+        page=page,
+        per_page=per_page,
+    )
 
 
 @router.post("/", response_model=ResidentOut, status_code=status.HTTP_201_CREATED)

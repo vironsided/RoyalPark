@@ -74,6 +74,8 @@ def list_readings(
     year: Optional[int] = Query(None),
     month: Optional[int] = Query(None),
     q: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(25, ge=1, le=100),
 ):
     """
     Список показаний за выбранный месяц (агрегировано по резидентам).
@@ -225,13 +227,29 @@ def list_readings(
             "reading_date": reading_date.strftime("%Y-%m-%d") if reading_date else None,
         })
 
+    # Apply pagination
+    total = len(result_rows)
+    last_page = max(1, (total + per_page - 1) // per_page)
+    if page > last_page:
+        page = last_page
+    
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
+    paginated_rows = result_rows[start_idx:end_idx]
+
     return {
         "blocks": [{"id": b.id, "name": b.name} for b in blocks],
         "residents": [{"id": r.id, "unit_number": r.unit_number, "block_name": r.block.name if r.block else ""} for r in residents],
-        "rows": result_rows,
+        "rows": paginated_rows,
         "year": year,
         "month": month,
         "total_amount": float(sum(r["total_amount"] for r in result_rows)),
+        "pagination": {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "last_page": last_page,
+        },
     }
 
 
@@ -786,9 +804,11 @@ def list_readings_public(
     year: Optional[int] = Query(None),
     month: Optional[int] = Query(None),
     q: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(25, ge=1, le=100),
 ):
     """Public endpoint for testing."""
-    return list_readings(db, block_id, resident_id, meter_type, year, month, q)
+    return list_readings(db, block_id, resident_id, meter_type, year, month, q, page, per_page)
 
 
 @router.get("/resident/{resident_id}/meters/public")

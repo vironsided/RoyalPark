@@ -296,6 +296,136 @@
         border-color: rgba(255, 255, 255, 0.5);
     }
 
+    /* Pagination styles */
+    .table-pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        background: rgba(255, 255, 255, 0.05);
+        border-top: none !important;
+        border-radius: 0 0 15px 15px;
+    }
+
+    .pagination-controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .btn-pagination {
+        min-width: 36px;
+        height: 36px;
+        padding: 0 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        color: rgba(255, 255, 255, 0.7);
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+
+    .btn-pagination:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+    }
+
+    .btn-pagination:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .btn-pagination.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
+        color: #ffffff;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+
+    .pagination-info {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+    }
+
+    .pagination-per-page {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+    }
+
+    /* Custom dropdown for pagination */
+    .custom-pag-select {
+        position: relative;
+        display: inline-block;
+        min-width: 60px;
+    }
+
+    .custom-pag-select .select-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 6px;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        min-width: 60px;
+        user-select: none;
+    }
+
+    .custom-pag-select .select-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .custom-pag-select .select-options {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        background: #1f2432 !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+        overflow: hidden;
+        display: none;
+        z-index: 10000;
+        min-width: 100%;
+    }
+
+    .custom-pag-select.open .select-options {
+        display: block;
+    }
+
+    .custom-pag-select .select-option {
+        padding: 8px 12px;
+        cursor: pointer;
+        color: #f6f7ff !important;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        background: #1f2432 !important;
+    }
+
+    .custom-pag-select .select-option:hover {
+        background: #3b4261 !important;
+        color: #ffffff !important;
+    }
+
+    .custom-pag-select .select-option.selected {
+        background: #667eea !important;
+        color: #ffffff !important;
+        font-weight: 600;
+    }
     
 </style>
 
@@ -334,6 +464,44 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="table-pagination">
+                <div class="pagination-controls">
+                    <button class="btn-pagination" onclick="goToAppealPage('prev')" disabled id="appealPrevBtn">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </button>
+                    <button class="btn-pagination active" onclick="goToAppealPage(1)" id="appealCurrentPageBtn">1</button>
+                    <button class="btn-pagination" onclick="goToAppealPage('next')" disabled id="appealNextBtn">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </button>
+                </div>
+                <div class="pagination-info">
+                    <span>Стр. <span id="appealCurrentPage">1</span> из <span id="appealTotalPages">1</span> · всего <span id="appealTotalItems">0</span></span>
+                </div>
+                <div class="pagination-per-page">
+                    <span>На</span>
+                    <span>странице:</span>
+                    <div class="custom-pag-select" id="customAppealItemsPerPage">
+                        <select id="appealItemsPerPage" onchange="changeAppealItemsPerPage()" style="display: none;">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <div class="select-btn">
+                            <span class="select-text">25</span>
+                            <span class="arrow">▾</span>
+                        </div>
+                        <div class="select-options">
+                            <div class="select-option" data-value="10">10</div>
+                            <div class="select-option selected" data-value="25">25</div>
+                            <div class="select-option" data-value="50">50</div>
+                            <div class="select-option" data-value="100">100</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="appeals-empty" id="appealsEmptyState" style="display: none;">
@@ -401,6 +569,14 @@
         currentNotification: null,
         notificationOpenedFromUrl: false // Флаг, что модальное окно уже было открыто из URL
     };
+    
+    // Pagination state
+    let paginationState = {
+        currentPage: 1,
+        itemsPerPage: 25,
+        totalItems: 0,
+        totalPages: 1
+    };
 
     const statusStyles = {
         READ: { text: 'прочитано', className: 'bg-success' },
@@ -434,8 +610,8 @@
         try {
             const statusValue = statusSelect?.value || 'all';
             const statusParam = statusValue !== 'all' ? `&status=${statusValue}` : '';
-            // Используем /notifications/json вместо /api/notifications/public
-            const url = `${API_BASE}/notifications/json?page=1&per_page=200${statusParam}`;
+            // Используем /notifications/json с пагинацией
+            const url = `${API_BASE}/notifications/json?page=${paginationState.currentPage}&per_page=${paginationState.itemsPerPage}${statusParam}`;
             
             console.log('Loading notifications from:', url);
             const response = await fetch(url);
@@ -452,8 +628,24 @@
             const data = await response.json();
             console.log('Notifications data received:', data);
             
-            state.notifications = data.notifications || [];
+            // Handle paginated response
+            if (data.notifications && data.pagination) {
+                state.notifications = data.notifications || [];
+                
+                // Update pagination state
+                paginationState.totalItems = data.pagination.total || 0;
+                paginationState.totalPages = data.pagination.last_page || 1;
+                paginationState.currentPage = data.pagination.page || 1;
+            } else {
+                // Fallback for non-paginated response (backward compatibility)
+                state.notifications = data.notifications || [];
+                paginationState.totalItems = state.notifications.length;
+                paginationState.totalPages = 1;
+                paginationState.currentPage = 1;
+            }
+            
             renderTable();
+            updatePaginationUI();
             
             // Возвращаем промис для возможности ожидания
             return Promise.resolve();
@@ -463,7 +655,11 @@
                 showError('Ошибка загрузки обращений: ' + error.message);
             }
             state.notifications = [];
+            paginationState.totalItems = 0;
+            paginationState.totalPages = 1;
+            paginationState.currentPage = 1;
             renderTable();
+            updatePaginationUI();
             return Promise.reject(error);
         }
     }
@@ -647,7 +843,14 @@
             }
             
             hideDeleteConfirm();
+            // Reload current page to see updated list
             await loadNotifications();
+            
+            // If current page is now empty (beyond last page), go to last page
+            if (paginationState.currentPage > paginationState.totalPages && paginationState.totalPages > 0) {
+                paginationState.currentPage = paginationState.totalPages;
+                await loadNotifications();
+            }
         } catch (error) {
             console.error('Error deleting notification:', error);
             if (typeof showError === 'function') {
@@ -830,6 +1033,104 @@
         state.notificationOpenedFromUrl = true;
     }
 
+    // Pagination Functions
+    function updatePaginationUI() {
+        const currentPageEl = document.getElementById('appealCurrentPage');
+        const totalPagesEl = document.getElementById('appealTotalPages');
+        const totalItemsEl = document.getElementById('appealTotalItems');
+        const currentPageBtn = document.getElementById('appealCurrentPageBtn');
+        const prevBtn = document.getElementById('appealPrevBtn');
+        const nextBtn = document.getElementById('appealNextBtn');
+        
+        if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
+        if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
+        if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
+        if (currentPageBtn) currentPageBtn.textContent = paginationState.currentPage;
+        if (prevBtn) prevBtn.disabled = paginationState.currentPage === 1;
+        if (nextBtn) nextBtn.disabled = paginationState.currentPage === paginationState.totalPages;
+    }
+    
+    window.goToAppealPage = function(page) {
+        if (page === 'prev') {
+            if (paginationState.currentPage > 1) {
+                paginationState.currentPage--;
+                loadNotifications();
+            }
+        } else if (page === 'next') {
+            if (paginationState.currentPage < paginationState.totalPages) {
+                paginationState.currentPage++;
+                loadNotifications();
+            }
+        } else if (typeof page === 'number') {
+            paginationState.currentPage = page;
+            loadNotifications();
+        }
+    };
+    
+    window.changeAppealItemsPerPage = function() {
+        const select = document.getElementById('appealItemsPerPage');
+        if (select) {
+            paginationState.itemsPerPage = parseInt(select.value);
+            paginationState.currentPage = 1;
+            loadNotifications();
+            updateCustomAppealPaginationDropdown();
+        }
+    };
+    
+    function updateCustomAppealPaginationDropdown() {
+        const select = document.getElementById('appealItemsPerPage');
+        const customSelect = document.getElementById('customAppealItemsPerPage');
+        if (!select || !customSelect) return;
+        
+        const value = select.value;
+        const selectText = customSelect.querySelector('.select-text');
+        const options = customSelect.querySelectorAll('.select-option');
+        
+        if (selectText) selectText.textContent = value;
+        options.forEach(opt => {
+            opt.classList.remove('selected');
+            if (opt.getAttribute('data-value') === value) {
+                opt.classList.add('selected');
+            }
+        });
+    }
+    
+    function initCustomAppealPaginationDropdown() {
+        const customSelect = document.getElementById('customAppealItemsPerPage');
+        if (!customSelect) return;
+        
+        const selectBtn = customSelect.querySelector('.select-btn');
+        const selectOptions = customSelect.querySelector('.select-options');
+        const options = selectOptions.querySelectorAll('.select-option');
+        
+        if (selectBtn) {
+            selectBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                customSelect.classList.toggle('open');
+            });
+        }
+        
+        options.forEach(opt => {
+            opt.addEventListener('click', function() {
+                const value = this.getAttribute('data-value');
+                const select = document.getElementById('appealItemsPerPage');
+                if (select) {
+                    select.value = value;
+                    changeAppealItemsPerPage();
+                }
+                customSelect.classList.remove('open');
+            });
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!customSelect.contains(e.target)) {
+                customSelect.classList.remove('open');
+            }
+        });
+        
+        updateCustomAppealPaginationDropdown();
+    }
+
     function initAppealsPage() {
         console.log('Initializing appeals2 page...');
         
@@ -839,6 +1140,7 @@
         
         cacheDom();
         bindEvents();
+        initCustomAppealPaginationDropdown();
         
         // Применить темные стили к выпадающему списку
         applyDarkThemeToSelect();
@@ -853,6 +1155,8 @@
             });
             statusSelect.addEventListener('change', function() {
                 setTimeout(applyDarkThemeToSelect, 10);
+                // Reset to first page when filter changes
+                paginationState.currentPage = 1;
                 loadNotifications();
             });
         }

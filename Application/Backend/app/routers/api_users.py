@@ -2,7 +2,7 @@ from typing import List, Optional
 import pathlib
 
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request, Query
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
@@ -50,29 +50,67 @@ class UserUpdate(BaseModel):
     role: Optional[RoleEnum] = None
 
 
-@router.get("/", response_model=List[UserOut])
+class UserListOut(BaseModel):
+    items: List[UserOut]
+    total: int
+    page: int
+    per_page: int
+    last_page: int
+
+
+@router.get("/", response_model=UserListOut)
 def list_users_api(
     db: Session = Depends(get_db),
     actor: User = Depends(get_current_user),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(25, ge=1, le=100),
 ):
     """
-    JSON-список пользователей для SPA-админки.
+    JSON-список пользователей для SPA-админки с пагинацией.
     """
-    users = db.query(User).order_by(User.id.asc()).all()
-    return users
+    query = db.query(User)
+    total = query.count()
+    last_page = max(1, (total + per_page - 1) // per_page)
+    if page > last_page:
+        page = last_page
+    
+    users = query.order_by(User.id.asc()).offset((page - 1) * per_page).limit(per_page).all()
+    
+    return {
+        "items": users,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "last_page": last_page,
+    }
 
 
 # ВРЕМЕННО: endpoint без авторизации для теста (удалить после настройки авторизации)
-@router.get("/public", response_model=List[UserOut])
+@router.get("/public", response_model=UserListOut)
 def list_users_public(
     db: Session = Depends(get_db),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(25, ge=1, le=100),
 ):
     """
     ВРЕМЕННЫЙ endpoint без авторизации для теста SPA.
     TODO: удалить после настройки нормальной авторизации между SPA и backend.
     """
-    users = db.query(User).order_by(User.id.asc()).all()
-    return users
+    query = db.query(User)
+    total = query.count()
+    last_page = max(1, (total + per_page - 1) // per_page)
+    if page > last_page:
+        page = last_page
+    
+    users = query.order_by(User.id.asc()).offset((page - 1) * per_page).limit(per_page).all()
+    
+    return {
+        "items": users,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "last_page": last_page,
+    }
 
 
 @router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)

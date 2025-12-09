@@ -30,14 +30,6 @@
                             <option value="">Все</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">На странице</label>
-                        <select id="filterPerPage" class="form-select">
-                            <option value="25">25</option>
-                            <option value="50" selected>50</option>
-                            <option value="100">100</option>
-                        </select>
-                    </div>
                 </div>
                 <div class="row g-3 mt-2">
                     <div class="col-md-12">
@@ -74,14 +66,38 @@
             </div>
             
             <!-- Pagination -->
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <div>
-                    <span id="logsInfo">Загрузка...</span>
+            <div class="table-pagination">
+                <div class="pagination-controls">
+                    <button class="btn-pagination" onclick="goToLogPage('prev')" disabled id="logPrevBtn">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </button>
+                    <button class="btn-pagination active" onclick="goToLogPage(1)" id="logCurrentPageBtn">1</button>
+                    <button class="btn-pagination" onclick="goToLogPage('next')" disabled id="logNextBtn">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </button>
                 </div>
-                <div>
-                    <button class="btn btn-sm btn-outline-primary" id="prevPageBtn" onclick="changePage(-1)" disabled>← Назад</button>
-                    <span class="mx-2" id="pageInfo">Страница 1 из 1</span>
-                    <button class="btn btn-sm btn-outline-primary" id="nextPageBtn" onclick="changePage(1)" disabled>Вперёд →</button>
+                <div class="pagination-info">
+                    <span>Стр. <span id="logCurrentPage">1</span> из <span id="logTotalPages">1</span> · всего <span id="logTotalItems">0</span></span>
+                </div>
+                <div class="pagination-per-page">
+                    <span>На</span>
+                    <span>странице:</span>
+                    <div class="custom-pag-select" id="customLogItemsPerPage">
+                        <select id="logItemsPerPage" onchange="changeLogItemsPerPage()" style="display: none;">
+                            <option value="25">25</option>
+                            <option value="50" selected>50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <div class="select-btn">
+                            <span class="select-text">50</span>
+                            <span class="arrow">▾</span>
+                        </div>
+                        <div class="select-options">
+                            <div class="select-option" data-value="25">25</div>
+                            <div class="select-option selected" data-value="50">50</div>
+                            <div class="select-option" data-value="100">100</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -94,10 +110,14 @@
     
     const API_BASE = 'http://localhost:8000';
     
-    let currentPage = 1;
-    let perPage = 50;
-    let lastPage = 1;
-    let total = 0;
+    // Pagination state
+    let paginationState = {
+        currentPage: 1,
+        itemsPerPage: 50,
+        totalItems: 0,
+        totalPages: 1
+    };
+    
     let residents = [];
     let users = [];
     
@@ -148,24 +168,26 @@
     
     // Загрузка логов
     async function loadLogs() {
+        const tbody = document.getElementById('logsTableBody');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Загрузка...</td></tr>';
+        }
+        
         try {
             const action = document.getElementById('filterAction')?.value || '';
             const residentId = document.getElementById('filterResident')?.value || '';
             const userId = document.getElementById('filterUser')?.value || '';
-            const perPageSelect = document.getElementById('filterPerPage');
-            if (perPageSelect) {
-                perPage = parseInt(perPageSelect.value) || 50;
-            }
             
             const params = new URLSearchParams();
-            params.append('page', currentPage);
-            params.append('per_page', perPage);
+            params.append('page', paginationState.currentPage);
+            params.append('per_page', paginationState.itemsPerPage);
             if (action) params.append('action', action);
             if (residentId) params.append('resident_id', residentId);
             if (userId) params.append('user_id', userId);
             
             const url = `${API_BASE}/api/logs/reading-logs?${params.toString()}`;
             console.log('Loading logs from:', url);
+            console.log('Pagination state:', paginationState);
             
             const response = await fetch(url, { credentials: 'include' }).catch(() => 
                 fetch(url)
@@ -176,23 +198,47 @@
             
             const data = await response.json();
             console.log('Logs loaded:', data);
+            console.log('Data structure:', {
+                hasLogs: !!data.logs,
+                hasTotal: !!data.total,
+                hasPage: !!data.page,
+                hasLastPage: !!data.last_page,
+                logsCount: data.logs?.length || 0
+            });
             
             if (data.error) {
                 throw new Error(data.error);
             }
             
-            total = data.total || 0;
-            lastPage = data.last_page || 1;
-            currentPage = data.page || 1;
-            
-            renderLogs(data.logs || []);
-            updatePaginationUI();
+            // Handle paginated response
+            if (data.logs && Array.isArray(data.logs)) {
+                // Update pagination state
+                paginationState.totalItems = data.total || 0;
+                paginationState.totalPages = data.last_page || 1;
+                paginationState.currentPage = data.page || 1;
+                
+                renderLogs(data.logs);
+                updatePaginationUI();
+            } else {
+                // Fallback for non-paginated response
+                console.warn('Unexpected data format:', data);
+                paginationState.totalItems = 0;
+                paginationState.totalPages = 1;
+                paginationState.currentPage = 1;
+                renderLogs([]);
+                updatePaginationUI();
+            }
         } catch (error) {
             console.error('Error loading logs:', error);
             const tbody = document.getElementById('logsTableBody');
             if (tbody) {
                 tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Ошибка загрузки логов: ' + error.message + '</td></tr>';
             }
+            // Reset pagination state on error
+            paginationState.totalItems = 0;
+            paginationState.totalPages = 1;
+            paginationState.currentPage = 1;
+            updatePaginationUI();
         }
     }
     
@@ -230,41 +276,142 @@
         }).join('');
     }
     
+    // Pagination Functions
     function updatePaginationUI() {
-        const infoEl = document.getElementById('logsInfo');
-        const pageInfoEl = document.getElementById('pageInfo');
-        const prevBtn = document.getElementById('prevPageBtn');
-        const nextBtn = document.getElementById('nextPageBtn');
+        const currentPageEl = document.getElementById('logCurrentPage');
+        const totalPagesEl = document.getElementById('logTotalPages');
+        const totalItemsEl = document.getElementById('logTotalItems');
+        const currentPageBtn = document.getElementById('logCurrentPageBtn');
+        const prevBtn = document.getElementById('logPrevBtn');
+        const nextBtn = document.getElementById('logNextBtn');
         
-        if (infoEl) {
-            const start = (currentPage - 1) * perPage + 1;
-            const end = Math.min(currentPage * perPage, total);
-            infoEl.textContent = `Показано ${start}-${end} из ${total}`;
-        }
-        
-        if (pageInfoEl) {
-            pageInfoEl.textContent = `Страница ${currentPage} из ${lastPage}`;
-        }
-        
-        if (prevBtn) {
-            prevBtn.disabled = currentPage <= 1;
-        }
-        
-        if (nextBtn) {
-            nextBtn.disabled = currentPage >= lastPage;
-        }
+        if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
+        if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
+        if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
+        if (currentPageBtn) currentPageBtn.textContent = paginationState.currentPage;
+        if (prevBtn) prevBtn.disabled = paginationState.currentPage === 1;
+        if (nextBtn) nextBtn.disabled = paginationState.currentPage === paginationState.totalPages;
     }
     
-    function changePage(delta) {
-        const newPage = currentPage + delta;
-        if (newPage >= 1 && newPage <= lastPage) {
-            currentPage = newPage;
+    window.goToLogPage = function(page) {
+        console.log('goToLogPage called with:', page, 'Current state:', paginationState);
+        if (page === 'prev') {
+            if (paginationState.currentPage > 1) {
+                paginationState.currentPage--;
+                console.log('Going to previous page:', paginationState.currentPage);
+                loadLogs();
+            }
+        } else if (page === 'next') {
+            if (paginationState.currentPage < paginationState.totalPages) {
+                paginationState.currentPage++;
+                console.log('Going to next page:', paginationState.currentPage);
+                loadLogs();
+            }
+        } else if (typeof page === 'number' && page >= 1 && page <= paginationState.totalPages) {
+            paginationState.currentPage = page;
+            console.log('Going to page:', paginationState.currentPage);
             loadLogs();
+        } else {
+            console.warn('Invalid page number:', page);
         }
+    };
+    
+    window.changeLogItemsPerPage = function() {
+        const select = document.getElementById('logItemsPerPage');
+        if (select) {
+            const newValue = parseInt(select.value);
+            console.log('changeLogItemsPerPage called, new value:', newValue);
+            paginationState.itemsPerPage = newValue;
+            paginationState.currentPage = 1;
+            loadLogs();
+            updateCustomLogPaginationDropdown();
+        } else {
+            console.error('logItemsPerPage select not found');
+        }
+    };
+    
+    function updateCustomLogPaginationDropdown() {
+        const select = document.getElementById('logItemsPerPage');
+        const customSelect = document.getElementById('customLogItemsPerPage');
+        if (!select || !customSelect) {
+            console.warn('updateCustomLogPaginationDropdown: select or customSelect not found');
+            return;
+        }
+        
+        // Sync select value with paginationState
+        const currentValue = paginationState.itemsPerPage.toString();
+        if (select.value !== currentValue) {
+            select.value = currentValue;
+        }
+        
+        const selectText = customSelect.querySelector('.select-text');
+        const options = customSelect.querySelectorAll('.select-option');
+        
+        if (selectText) {
+            selectText.textContent = currentValue;
+            console.log('Updated select text to:', currentValue);
+        }
+        
+        options.forEach(opt => {
+            opt.classList.remove('selected');
+            if (opt.getAttribute('data-value') === currentValue) {
+                opt.classList.add('selected');
+            }
+        });
+    }
+    
+    function initCustomLogPaginationDropdown() {
+        const customSelect = document.getElementById('customLogItemsPerPage');
+        if (!customSelect || customSelect.dataset.initialized === 'true') return;
+        customSelect.dataset.initialized = 'true';
+        
+        const nativeSelect = document.getElementById('logItemsPerPage');
+        const selectBtn = customSelect.querySelector('.select-btn');
+        const selectText = customSelect.querySelector('.select-text');
+        const options = customSelect.querySelectorAll('.select-option');
+        
+        if (nativeSelect) {
+            const selectedValue = nativeSelect.value;
+            if (selectText) selectText.textContent = selectedValue;
+            options.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.value === selectedValue) {
+                    opt.classList.add('selected');
+                }
+            });
+        }
+        
+        if (selectBtn) {
+            selectBtn.onclick = function(e) {
+                e.stopPropagation();
+                customSelect.classList.toggle('open');
+            };
+        }
+        
+        options.forEach(option => {
+            option.onclick = function(e) {
+                e.stopPropagation();
+                const value = option.dataset.value;
+                if (nativeSelect) {
+                    nativeSelect.value = value;
+                    nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                if (selectText) selectText.textContent = value;
+                options.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                customSelect.classList.remove('open');
+            };
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!customSelect.contains(e.target)) {
+                customSelect.classList.remove('open');
+            }
+        });
     }
     
     window.applyFilters = function() {
-        currentPage = 1;
+        paginationState.currentPage = 1;
         loadLogs();
     };
     
@@ -272,14 +419,20 @@
         document.getElementById('filterAction').value = '';
         document.getElementById('filterResident').value = '';
         document.getElementById('filterUser').value = '';
-        document.getElementById('filterPerPage').value = '50';
-        currentPage = 1;
-        perPage = 50;
+        paginationState.currentPage = 1;
+        paginationState.itemsPerPage = 50;
+        // Update the custom dropdown to match
+        const select = document.getElementById('logItemsPerPage');
+        if (select) {
+            select.value = '50';
+            updateCustomLogPaginationDropdown();
+        }
         loadLogs();
     };
     
     // Инициализация
     async function initLogsPage() {
+        initCustomLogPaginationDropdown();
         await loadFilterData();
         await loadLogs();
     }
@@ -384,9 +537,188 @@
     color: var(--text-primary);
 }
 
+/* Улучшенные стили для select в темной теме */
+[data-theme="dark"] .logs-filters .form-select {
+    background-color: #2d3139 !important;
+    border: 1px solid #3a3f4a !important;
+    color: #e4e6eb !important;
+}
+
+/* Улучшенные стили для select в светлой теме */
+[data-theme="light"] .logs-filters .form-select,
+body:not([data-theme]) .logs-filters .form-select {
+    background-color: #ffffff !important;
+    border: 1px solid #d4e0d4 !important;
+    color: #5a6b4d !important;
+}
+
 .logs-filters .form-select:focus {
     background-color: rgba(255, 255, 255, 0.08);
     border-color: rgba(102, 126, 234, 0.5);
     color: var(--text-primary);
+}
+
+/* Стили для опций в выпадающих списках */
+.logs-filters .form-select option {
+    background-color: #2d3139;
+    color: #e4e6eb;
+    padding: 8px 12px;
+}
+
+/* Для светлой темы */
+[data-theme="light"] .logs-filters .form-select option,
+body:not([data-theme]) .logs-filters .form-select option {
+    background-color: #ffffff;
+    color: #5a6b4d;
+}
+
+/* Для темной темы */
+[data-theme="dark"] .logs-filters .form-select option {
+    background-color: #2d3139;
+    color: #e4e6eb;
+}
+
+/* Стили для выбранной опции при наведении */
+.logs-filters .form-select option:hover,
+.logs-filters .form-select option:checked {
+    background-color: rgba(102, 126, 234, 0.3);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .logs-filters .form-select option:hover,
+[data-theme="dark"] .logs-filters .form-select option:checked {
+    background-color: rgba(102, 126, 234, 0.5);
+    color: #ffffff;
+}
+
+/* Pagination styles */
+.table-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-top: none !important;
+    border-radius: 0 0 15px 15px;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-pagination {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.btn-pagination:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.btn-pagination:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-pagination.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.pagination-info {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+.pagination-per-page {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+/* Custom dropdown for pagination */
+.custom-pag-select {
+    position: relative;
+    display: inline-block;
+    min-width: 60px;
+}
+
+.custom-pag-select .select-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    min-width: 60px;
+    user-select: none;
+}
+
+.custom-pag-select .select-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.custom-pag-select .select-options {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    background: #1f2432 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+    overflow: hidden;
+    display: none;
+    z-index: 10000;
+    min-width: 100%;
+}
+
+.custom-pag-select.open .select-options {
+    display: block;
+}
+
+.custom-pag-select .select-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: #f6f7ff !important;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    background: #1f2432 !important;
+}
+
+.custom-pag-select .select-option:hover {
+    background: #3b4261 !important;
+    color: #ffffff !important;
+}
+
+.custom-pag-select .select-option.selected {
+    background: #667eea !important;
+    color: #ffffff !important;
+    font-weight: 600;
 }
 </style>

@@ -98,6 +98,44 @@
                             Загрузка данных...
                         </div>
                     </div>
+
+                    <!-- Pagination -->
+                    <div class="table-pagination">
+                        <div class="pagination-controls">
+                            <button class="btn-pagination" onclick="goToReadingPage('prev')" disabled id="readingPrevBtn">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </button>
+                            <button class="btn-pagination active" onclick="goToReadingPage(1)" id="readingCurrentPageBtn">1</button>
+                            <button class="btn-pagination" onclick="goToReadingPage('next')" disabled id="readingNextBtn">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </button>
+                        </div>
+                        <div class="pagination-info">
+                            <span>Стр. <span id="readingCurrentPage">1</span> из <span id="readingTotalPages">1</span> · всего <span id="readingTotalItems">0</span></span>
+                        </div>
+                        <div class="pagination-per-page">
+                            <span>На</span>
+                            <span>странице:</span>
+                            <div class="custom-pag-select" id="customReadingItemsPerPage">
+                                <select id="readingItemsPerPage" onchange="changeReadingItemsPerPage()" style="display: none;">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                <div class="select-btn">
+                                    <span class="select-text">25</span>
+                                    <span class="arrow">▾</span>
+                                </div>
+                                <div class="select-options">
+                                    <div class="select-option" data-value="10">10</div>
+                                    <div class="select-option selected" data-value="25">25</div>
+                                    <div class="select-option" data-value="50">50</div>
+                                    <div class="select-option" data-value="100">100</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -200,6 +238,14 @@
         let readingsData = null;
         let blocks = [];
         let residents = [];
+        
+        // Pagination state
+        let paginationState = {
+            currentPage: 1,
+            itemsPerPage: 25,
+            totalItems: 0,
+            totalPages: 1
+        };
 
 // Set today's date as default
         document.addEventListener('DOMContentLoaded', function() {
@@ -209,6 +255,7 @@
             if (modalDate) {
                 modalDate.value = today;
             }
+            initCustomReadingPaginationDropdown();
             console.log('Calling loadReadings from DOMContentLoaded');
             if (typeof window.loadReadings === 'function') {
                 window.loadReadings();
@@ -241,8 +288,10 @@
 
                 console.log('Filters:', { blockId, residentId, meterType, year, month, searchTerm });
 
-                let url = `${API_BASE}/api/readings?`;
                 const params = new URLSearchParams();
+                // Pagination parameters
+                params.append('page', paginationState.currentPage);
+                params.append('per_page', paginationState.itemsPerPage);
                 // Всегда передаем год и месяц
                 params.append('year', year);
                 params.append('month', month);
@@ -270,7 +319,8 @@
                     if (meterTypeMap[meterType]) params.append('meter_type', meterTypeMap[meterType]);
                 }
                 if (searchTerm) params.append('q', searchTerm);
-                url += params.toString();
+                
+                let url = `${API_BASE}/api/readings?${params.toString()}`;
 
                 console.log('Loading readings from:', url);
 
@@ -303,6 +353,13 @@
                 console.log('Residents:', readingsData.residents);
                 blocks = readingsData.blocks || [];
                 residents = readingsData.residents || [];
+                
+                // Update pagination state
+                const pagination = readingsData.pagination || {};
+                paginationState.totalItems = pagination.total || 0;
+                paginationState.totalPages = pagination.last_page || 1;
+                paginationState.currentPage = pagination.page || 1;
+                
                 console.log('Calling renderReadingsTable...');
                 if (typeof window.renderReadingsTable === 'function') {
                     window.renderReadingsTable();
@@ -315,6 +372,7 @@
                 } else {
                     console.error('updateFilterDropdowns is not a function!', typeof updateFilterDropdowns);
                 }
+                updatePaginationUI();
             } catch (error) {
                 console.error('Error loading readings:', error);
                 if (typeof showError === 'function') {
@@ -491,11 +549,110 @@
             }
         }
         
+        // Pagination Functions
+        function updatePaginationUI() {
+            const currentPageEl = document.getElementById('readingCurrentPage');
+            const totalPagesEl = document.getElementById('readingTotalPages');
+            const totalItemsEl = document.getElementById('readingTotalItems');
+            const currentPageBtn = document.getElementById('readingCurrentPageBtn');
+            const prevBtn = document.getElementById('readingPrevBtn');
+            const nextBtn = document.getElementById('readingNextBtn');
+            
+            if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
+            if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
+            if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
+            if (currentPageBtn) currentPageBtn.textContent = paginationState.currentPage;
+            if (prevBtn) prevBtn.disabled = paginationState.currentPage === 1;
+            if (nextBtn) nextBtn.disabled = paginationState.currentPage === paginationState.totalPages;
+        }
+        
+        window.goToReadingPage = function(page) {
+            if (page === 'prev') {
+                if (paginationState.currentPage > 1) {
+                    paginationState.currentPage--;
+                    loadReadings();
+                }
+            } else if (page === 'next') {
+                if (paginationState.currentPage < paginationState.totalPages) {
+                    paginationState.currentPage++;
+                    loadReadings();
+                }
+            } else if (typeof page === 'number') {
+                paginationState.currentPage = page;
+                loadReadings();
+            }
+        };
+        
+        window.changeReadingItemsPerPage = function() {
+            const select = document.getElementById('readingItemsPerPage');
+            if (select) {
+                paginationState.itemsPerPage = parseInt(select.value);
+                paginationState.currentPage = 1;
+                loadReadings();
+                updateCustomReadingPaginationDropdown();
+            }
+        };
+        
+        function updateCustomReadingPaginationDropdown() {
+            const select = document.getElementById('readingItemsPerPage');
+            const customSelect = document.getElementById('customReadingItemsPerPage');
+            if (!select || !customSelect) return;
+            
+            const value = select.value;
+            const selectText = customSelect.querySelector('.select-text');
+            const options = customSelect.querySelectorAll('.select-option');
+            
+            if (selectText) selectText.textContent = value;
+            options.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.getAttribute('data-value') === value) {
+                    opt.classList.add('selected');
+                }
+            });
+        }
+        
+        function initCustomReadingPaginationDropdown() {
+            const customSelect = document.getElementById('customReadingItemsPerPage');
+            if (!customSelect) return;
+            
+            const selectBtn = customSelect.querySelector('.select-btn');
+            const selectOptions = customSelect.querySelector('.select-options');
+            const options = selectOptions.querySelectorAll('.select-option');
+            
+            if (selectBtn) {
+                selectBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    customSelect.classList.toggle('open');
+                });
+            }
+            
+            options.forEach(opt => {
+                opt.addEventListener('click', function() {
+                    const value = this.getAttribute('data-value');
+                    const select = document.getElementById('readingItemsPerPage');
+                    if (select) {
+                        select.value = value;
+                        changeReadingItemsPerPage();
+                    }
+                    customSelect.classList.remove('open');
+                });
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!customSelect.contains(e.target)) {
+                    customSelect.classList.remove('open');
+                }
+            });
+            
+            updateCustomReadingPaginationDropdown();
+        }
+        
         // Filter Functions
         window.applyFilters = async function applyFilters() {
+            paginationState.currentPage = 1; // Reset to first page on filter apply
             await loadReadings();
             if (typeof showSuccess === 'function') {
-            showSuccess('Фильтры применены!');
+                showSuccess('Фильтры применены!');
             }
         }
         
@@ -704,7 +861,7 @@
                             }
                             if (response.ok) {
                                 const blocksData = await response.json();
-                                blocks = blocksData;
+                                blocks = Array.isArray(blocksData) ? blocksData : (blocksData.items || []);
                                 block = blocks.find(b => b.name === blockName);
                                 console.log('Blocks loaded from API:', blocks);
                                 console.log('Found block:', block);
@@ -742,8 +899,16 @@
                     console.log('Residents data received:', data);
                     console.log('Data type:', Array.isArray(data) ? 'Array' : 'Object');
                     
-                    // API returns array directly, not object with residents field
-                    const residentsList = Array.isArray(data) ? data : (data.residents || []);
+                    // Handle paginated response (with items) or direct array
+                    let residentsList = [];
+                    if (Array.isArray(data)) {
+                        residentsList = data;
+                    } else if (data.items) {
+                        residentsList = data.items;
+                    } else if (data.residents) {
+                        residentsList = data.residents;
+                    }
+                    
                     console.log('Residents count:', residentsList.length);
                     console.log('Residents list:', residentsList);
                     populateResidentsSelect(residentsList);
@@ -1537,6 +1702,7 @@
         function initReadingsPage() {
             console.log('=== Initializing readings page ===');
             setTimeout(() => {
+                initCustomReadingPaginationDropdown();
                 if (typeof window.loadReadings === 'function') {
                     console.log('Calling loadReadings');
                     window.loadReadings();

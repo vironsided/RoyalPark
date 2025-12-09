@@ -1,7 +1,7 @@
 from typing import List, Optional
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
@@ -26,7 +26,15 @@ class ReadingLogOut(BaseModel):
         from_attributes = True
 
 
-@router.get("/reading-logs")
+class ReadingLogListOut(BaseModel):
+    logs: List[ReadingLogOut]
+    total: int
+    page: int
+    per_page: int
+    last_page: int
+
+
+@router.get("/reading-logs", response_model=ReadingLogListOut)
 def get_reading_logs(
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=1, le=100),
@@ -138,20 +146,23 @@ def get_reading_logs(
                 details=details
             ))
         
-        return {
-            "logs": result,
-            "total": total,
-            "page": page,
-            "per_page": per_page,
-            "last_page": last_page
-        }
+        return ReadingLogListOut(
+            logs=result,
+            total=total,
+            page=page,
+            per_page=per_page,
+            last_page=last_page
+        )
     except Exception as e:
-        return {
-            "error": str(e),
-            "logs": [],
-            "total": 0,
-            "page": 1,
-            "per_page": per_page,
-            "last_page": 1
-        }
+        # Логируем ошибку и возвращаем пустой список с корректной структурой
+        # В production можно использовать logger
+        import traceback
+        traceback.print_exc()
+        return ReadingLogListOut(
+            logs=[],
+            total=0,
+            page=1,
+            per_page=per_page,
+            last_page=1
+        )
 

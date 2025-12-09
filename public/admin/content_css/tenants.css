@@ -683,20 +683,270 @@ html[data-theme="dark"] .filter-group select:focus {
             line-height: 1.55;
         }
 
-        /* Pagination styles removed */
+        /* Pagination styles */
+        .table-pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-top: none !important;
+            border-radius: 0 0 15px 15px;
+        }
 
-        /* removed pagination controls */
+        .pagination-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
 
-        /* removed pagination buttons */
+        .btn-pagination {
+            min-width: 36px;
+            height: 36px;
+            padding: 0 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
 
-        /* pagination button states removed */
+        .btn-pagination:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
 
+        .btn-pagination:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
 
-        /* itemsPerPage styles removed */
+        .btn-pagination.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: #ffffff;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
 
-        /* pagination select overrides removed */
+        .pagination-info {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
 
-        /* pagination dropdown removed */
+        .pagination-per-page {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        /* Custom dropdown for pagination */
+        .custom-pag-select {
+            position: relative;
+            display: inline-block;
+            min-width: 60px;
+        }
+
+        .custom-pag-select .select-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 60px;
+            user-select: none;
+        }
+
+        .custom-pag-select .select-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .custom-pag-select .select-options {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            background: #1f2432 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+            overflow: hidden;
+            display: none;
+            z-index: 10000;
+            min-width: 100%;
+        }
+
+        .custom-pag-select.open .select-options {
+            display: block;
+        }
+
+        .custom-pag-select .select-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            color: #f6f7ff !important;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            background: #1f2432 !important;
+        }
+
+        .custom-pag-select .select-option:hover {
+            background: #3b4261 !important;
+            color: #ffffff !important;
+        }
+
+        .custom-pag-select .select-option.selected {
+            background: #667eea !important;
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+        
+        /* Light theme pagination */
+        body:not([data-theme="dark"]) .table-pagination {
+            background: rgba(255, 255, 255, 0.9) !important;
+        }
+        
+        body:not([data-theme="dark"]) .btn-pagination {
+            background: rgba(0, 0, 0, 0.05) !important;
+            border: 1px solid rgba(0, 0, 0, 0.1) !important;
+            color: #495057 !important;
+        }
+        
+        body:not([data-theme="dark"]) .btn-pagination:hover:not(:disabled) {
+            background: rgba(0, 0, 0, 0.1) !important;
+            border-color: rgba(0, 0, 0, 0.2) !important;
+            color: #212529 !important;
+        }
+        
+        body:not([data-theme="dark"]) .pagination-info,
+        body:not([data-theme="dark"]) .pagination-per-page {
+            color: #495057 !important;
+        }
+        
+        body:not([data-theme="dark"]) .custom-pag-select .select-btn {
+            background: rgba(0, 0, 0, 0.05) !important;
+            border: 1px solid rgba(0, 0, 0, 0.1) !important;
+            color: #495057 !important;
+        }
+        
+        body:not([data-theme="dark"]) .custom-pag-select .select-options {
+            background: #ffffff !important;
+            border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        body:not([data-theme="dark"]) .custom-pag-select .select-option {
+            background: #ffffff !important;
+            color: #495057 !important;
+        }
+        
+        body:not([data-theme="dark"]) .custom-pag-select .select-option:hover {
+            background: rgba(0, 0, 0, 0.05) !important;
+            color: #212529 !important;
+        }
+        
+        /* Dark theme pagination - same as payments */
+        [data-theme="dark"] .table-pagination,
+        body[data-theme="dark"] .table-pagination,
+        html[data-theme="dark"] .table-pagination,
+        [data-theme="dark"] #spa-content .table-pagination,
+        body[data-theme="dark"] #spa-content .table-pagination,
+        html[data-theme="dark"] #spa-content .table-pagination {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border-top: none !important;
+        }
+        
+        [data-theme="dark"] .btn-pagination,
+        body[data-theme="dark"] .btn-pagination,
+        html[data-theme="dark"] .btn-pagination {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            color: rgba(255, 255, 255, 0.7) !important;
+        }
+        
+        [data-theme="dark"] .btn-pagination:hover:not(:disabled),
+        body[data-theme="dark"] .btn-pagination:hover:not(:disabled),
+        html[data-theme="dark"] .btn-pagination:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .btn-pagination.active,
+        body[data-theme="dark"] .btn-pagination.active,
+        html[data-theme="dark"] .btn-pagination.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border-color: #667eea !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
+        }
+        
+        [data-theme="dark"] .pagination-info,
+        [data-theme="dark"] .pagination-per-page,
+        body[data-theme="dark"] .pagination-info,
+        body[data-theme="dark"] .pagination-per-page,
+        html[data-theme="dark"] .pagination-info,
+        html[data-theme="dark"] .pagination-per-page {
+            color: rgba(255, 255, 255, 0.7) !important;
+        }
+        
+        [data-theme="dark"] .custom-pag-select .select-btn,
+        body[data-theme="dark"] .custom-pag-select .select-btn,
+        html[data-theme="dark"] .custom-pag-select .select-btn {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+        
+        [data-theme="dark"] .custom-pag-select .select-btn:hover,
+        body[data-theme="dark"] .custom-pag-select .select-btn:hover,
+        html[data-theme="dark"] .custom-pag-select .select-btn:hover {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+        }
+        
+        [data-theme="dark"] .custom-pag-select .select-options,
+        body[data-theme="dark"] .custom-pag-select .select-options,
+        html[data-theme="dark"] .custom-pag-select .select-options {
+            background: #1f2432 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+        }
+        
+        [data-theme="dark"] .custom-pag-select .select-option,
+        body[data-theme="dark"] .custom-pag-select .select-option,
+        html[data-theme="dark"] .custom-pag-select .select-option {
+            background: #1f2432 !important;
+            color: #f6f7ff !important;
+        }
+        
+        [data-theme="dark"] .custom-pag-select .select-option:hover,
+        body[data-theme="dark"] .custom-pag-select .select-option:hover,
+        html[data-theme="dark"] .custom-pag-select .select-option:hover {
+            background: #3b4261 !important;
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .custom-pag-select .select-option.selected,
+        body[data-theme="dark"] .custom-pag-select .select-option.selected,
+        html[data-theme="dark"] .custom-pag-select .select-option.selected {
+            background: #667eea !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+        }
         
         /* Light theme (default) - ensure text is visible */
         .content-wrapper h2 {
