@@ -93,28 +93,117 @@
     <script src="/js/i18n.js"></script>
     <script src="/js/i18n-auto.js"></script>
     <script>
-        // Шаблон рендера для бэкенда: сейчас используем моковые данные,
-        // позже loadInvoice можно заменить загрузкой из API.
         (function () {
-            function loadInvoice() {
-                // MOCK-ДАННЫЕ: структура, которой сможет пользоваться бэкенд
-                const invoice = {
-                    number: '2025-11/000001',
-                    resident: 'X / 2',
-                    period: '2025-11',
-                    status: 'PAID',
-                    dueDate: null,
-                    total: 30000.0,
-                    payments: [
-                        { date: '2025-11-21', method: 'CARD', amount: 10.0, comment: '—' }
-                    ],
-                    items: [
-                        { description: 'Электричество 200.0 кВт·ч', amount: 15000.0, vat: 0.0, total: 15000.0 },
-                        { description: 'Вода 300.0 м³',             amount: 15000.0, vat: 0.0, total: 15000.0 }
-                    ]
-                };
+            const API_BASE_URL = 'http://localhost:8000';
+            
+            // Get invoice ID from sessionStorage or URL
+            let invoiceId = null;
+            
+            // First try sessionStorage (set when clicking PDF button)
+            const storedId = sessionStorage.getItem('printInvoiceId');
+            if (storedId) {
+                invoiceId = parseInt(storedId);
+                console.log('Got invoice ID from sessionStorage:', invoiceId);
+            }
+            
+            // If not in sessionStorage, try currentInvoiceId (from invoice-view page)
+            if (!invoiceId && window.currentInvoiceId) {
+                invoiceId = window.currentInvoiceId;
+                console.log('Got invoice ID from window.currentInvoiceId:', invoiceId);
+            }
+            
+            // Last resort: try URL params
+            if (!invoiceId) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const id = urlParams.get('id') || urlParams.get('invoice_id');
+                if (id) {
+                    invoiceId = parseInt(id);
+                    console.log('Got invoice ID from URL params:', invoiceId);
+                }
+            }
+            
+            // If still no ID, try to get from parent window (if opened from invoice-view)
+            if (!invoiceId && window.opener) {
+                try {
+                    const parentInvoiceId = window.opener.currentInvoiceId;
+                    if (parentInvoiceId) {
+                        invoiceId = parentInvoiceId;
+                        console.log('Got invoice ID from parent window:', invoiceId);
+                    }
+                } catch (e) {
+                    // Cross-origin or other error, ignore
+                }
+            }
+            
+            async function loadInvoice() {
+                if (!invoiceId) {
+                    console.error('Invoice ID not found');
+                    document.querySelector('.print-container').innerHTML = 
+                        '<div class="text-center text-danger p-4">Ошибка: не найден ID счета</div>';
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/resident/invoice/${invoiceId}`, {
+                        method: 'GET',
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
 
-                renderInvoice(invoice);
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            window.location.href = '/login.html';
+                            return;
+                        }
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const invoiceData = await response.json();
+                    
+                    // Transform API data to print format
+                    const invoice = {
+                        number: invoiceData.number || `#${invoiceData.id}`,
+                        resident: invoiceData.resident_code || '—',
+                        period: formatPeriod(invoiceData),
+                        status: invoiceData.status,
+                        dueDate: invoiceData.due_date,
+                        total: invoiceData.amount_total,
+                        paid: invoiceData.paid_amount,
+                        remaining: invoiceData.remaining_amount,
+                        payments: (invoiceData.payments || []).map(p => ({
+                            date: p.date,
+                            method: p.method,
+                            amount: p.amount,
+                            comment: p.comment || '—'
+                        })),
+                        items: (invoiceData.lines || []).map(line => ({
+                            description: line.description,
+                            amount: line.amount_net,
+                            vat: line.amount_vat,
+                            total: line.amount_total
+                        }))
+                    };
+
+                    renderInvoice(invoice);
+                } catch (error) {
+                    console.error('Error loading invoice:', error);
+                    document.querySelector('.print-container').innerHTML = 
+                        `<div class="text-center text-danger p-4">Не удалось загрузить данные: ${error.message}</div>`;
+                }
+            }
+            
+            function formatPeriod(invoiceData) {
+                const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+                    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+                let periodText = `${monthNames[invoiceData.period_month - 1]} ${invoiceData.period_year}`;
+                if (invoiceData.period_dates && invoiceData.period_dates.from && invoiceData.period_dates.to) {
+                    periodText = `${invoiceData.period_dates.from} - ${invoiceData.period_dates.to}`;
+                } else if (invoiceData.period_dates && invoiceData.period_dates.to) {
+                    periodText = invoiceData.period_dates.to;
+                }
+                return periodText;
             }
 
             function renderInvoice(invoice) {
@@ -128,15 +217,31 @@
 
                 // Таблица оплат
                 const paymentsTbody = document.getElementById('paymentsTable');
-                if (paymentsTbody && invoice.payments && invoice.payments.length) {
-                    paymentsTbody.innerHTML = invoice.payments.map(p => `
-                        <tr>
-                            <td>${p.date}</td>
-                            <td>${p.method}</td>
-                            <td>${p.amount.toFixed(2)}</td>
-                            <td>${p.comment || '—'}</td>
-                        </tr>
-                    `).join('');
+                if (paymentsTbody) {
+                    if (invoice.payments && invoice.payments.length > 0) {
+                        paymentsTbody.innerHTML = invoice.payments.map(p => `
+                            <tr>
+                                <td>${p.date ? new Date(p.date).toLocaleDateString('ru-RU') : '—'}</td>
+                                <td>${p.method || '—'}</td>
+                                <td>${p.amount.toFixed(2)}</td>
+                                <td>${p.comment || '—'}</td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        paymentsTbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Оплаты отсутствуют</td></tr>';
+                    }
+                }
+                
+                // Update payments summary
+                const summaryEl = document.querySelector('p[data-i18n="user_invoice_print_payments_summary"]');
+                if (summaryEl && invoice.paid !== undefined && invoice.remaining !== undefined) {
+                    summaryEl.innerHTML = `
+                        <span data-i18n="user_invoice_print_payments_summary">
+                            Оплачено: <strong>${invoice.paid.toFixed(2)}</strong>, 
+                            Остаток: <strong>${invoice.remaining.toFixed(2)}</strong> из 
+                            <strong>${invoice.total.toFixed(2)}</strong>
+                        </span>
+                    `;
                 }
 
                 // Таблица позиций
@@ -188,8 +293,12 @@
                 }
             }
 
-            // Сейчас сразу рендерим мок, позже backend может дернуть renderInvoice(...) со своими данными.
-            loadInvoice();
+            // Load invoice data when page is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', loadInvoice);
+            } else {
+                loadInvoice();
+            }
         })();
     </script>
 </body>

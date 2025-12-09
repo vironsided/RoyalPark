@@ -84,6 +84,31 @@
                 if (!target) return;
                 event.preventDefault();
                 const route = target.getAttribute('data-user-route-target');
+                
+                // If navigating to resident detail, store resident ID
+                if (route === 'resident') {
+                    // Try to get resident ID from button attribute or dashboard data
+                    let residentId = target.getAttribute('data-resident-id');
+                    
+                    if (!residentId && window.dashboardData && window.dashboardData.residents && window.dashboardData.residents.length > 0) {
+                        residentId = window.dashboardData.residents[0].id;
+                    }
+                    
+                    if (residentId) {
+                        sessionStorage.setItem('currentResidentId', residentId.toString());
+                    } else {
+                        console.warn('Resident ID not found, will try to load from backend');
+                    }
+                }
+                
+                // If navigating to invoice detail, store invoice ID
+                if (route === 'invoice') {
+                    const invoiceId = target.getAttribute('data-invoice-id');
+                    if (invoiceId) {
+                        sessionStorage.setItem('currentInvoiceId', invoiceId.toString());
+                    }
+                }
+                
                 this.navigate(route, true);
             });
         }
@@ -116,6 +141,12 @@
                 this.contentContainer.innerHTML = config.content;
                 this.afterContentRender(route);
                 this.currentRoute = route;
+                // Reload dashboard data if navigating to dashboard
+                if (route === 'dashboard' && typeof loadDashboardData === 'function') {
+                    setTimeout(() => {
+                        loadDashboardData();
+                    }, 100);
+                }
                 return;
             }
 
@@ -208,6 +239,22 @@
 
             if (window.addCardAnimations) {
                 window.addCardAnimations();
+            }
+
+            // Reload dashboard data if navigating to dashboard
+            if (route === 'dashboard' && typeof loadDashboardData === 'function') {
+                setTimeout(() => {
+                    loadDashboardData();
+                }, 150);
+            }
+
+            // Reload bills data if navigating to bills page
+            if (route === 'bills') {
+                // Reset any initialization flags if needed
+                // The inline scripts will be executed automatically by executeInlineScripts()
+                setTimeout(() => {
+                    // Scripts in bills.html will auto-execute when loaded
+                }, 100);
             }
         }
 

@@ -7,9 +7,9 @@
         </button>
         <h1>
             <span data-i18n="user_invoice_title_prefix">Счёт:</span>
-            2025-11/000001
+            <span id="invoiceNumber">—</span>
         </h1>
-        <button class="btn-outline-secondary invoice-pdf-btn" type="button">
+        <button class="btn-outline-secondary invoice-pdf-btn" type="button" id="pdfBtn">
             PDF
         </button>
     </div>
@@ -18,25 +18,25 @@
     <div class="invoice-summary user-invoice-summary">
         <div class="invoice-summary-item">
             <label data-i18n="user_invoice_house_label">Дом</label>
-            <div class="value">X / 2</div>
+            <div class="value" id="invoiceHouse">—</div>
         </div>
         <div class="invoice-summary-item">
             <label data-i18n="user_invoice_period_label">Период</label>
-            <div class="value">2025-11</div>
+            <div class="value" id="invoicePeriod">—</div>
         </div>
         <div class="invoice-summary-item">
             <label data-i18n="user_invoice_status_label">Статус</label>
-            <div class="value">
-                <span class="user-bill-status paid">PAID</span>
+            <div class="value" id="invoiceStatus">
+                <span class="user-bill-status">—</span>
             </div>
         </div>
         <div class="invoice-summary-item">
             <label data-i18n="user_invoice_due_date_label">Срок оплаты</label>
-            <div class="value">—</div>
+            <div class="value" id="invoiceDueDate">—</div>
         </div>
         <div class="invoice-summary-item">
             <label data-i18n="user_invoice_total_label">Итого</label>
-            <div class="value total">30000.00</div>
+            <div class="value total" id="invoiceTotal">0.00</div>
         </div>
     </div>
 
@@ -52,17 +52,12 @@
                     <th data-i18n="user_invoice_payments_th_comment">Комментарий</th>
                 </tr>
             </thead>
-            <tbody>
-                <tr>
-                    <td>2025-11-21</td>
-                    <td>CARD</td>
-                    <td>10.00</td>
-                    <td>—</td>
-                </tr>
+            <tbody id="paymentsTableBody">
+                <tr><td colspan="4" class="text-center text-muted">Загрузка...</td></tr>
             </tbody>
         </table>
-        <div class="payments-summary">
-            <span data-i18n="user_invoice_payments_summary">Оплачено: <strong>10.00</strong> · Остаток: <strong>29990.00</strong> из <strong>30000.00</strong></span>
+        <div class="payments-summary" id="paymentsSummary">
+            <span>Оплачено: <strong>0.00</strong> · Остаток: <strong>0.00</strong> из <strong>0.00</strong></span>
         </div>
     </div>
 
@@ -79,23 +74,8 @@
                         <th data-i18n="user_invoice_items_th_total">Итого</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr>
-                        <td data-i18n="user_invoice_item_electricity_sample">Электричество 200.0 кВт·ч</td>
-                        <td>15000.00</td>
-                        <td>0.00</td>
-                        <td class="total-value">15000.00</td>
-                    </tr>
-                    <tr>
-                        <td data-i18n="user_invoice_item_water_sample">Вода 300.0 м³</td>
-                        <td>15000.00</td>
-                        <td>0.00</td>
-                        <td class="total-value">15000.00</td>
-                    </tr>
-                    <tr class="total-row">
-                        <td colspan="3" data-i18n="user_invoice_items_total_row">Итого к оплате</td>
-                        <td class="total-value">30000.00</td>
-                    </tr>
+                <tbody id="invoiceItemsBody">
+                    <tr><td colspan="4" class="text-center text-muted">Загрузка...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -103,15 +83,208 @@
 </div>
 
 <script>
-    // Обработчик кнопки PDF в пользовательском просмотре счёта
-    (function () {
-        const pdfBtn = document.querySelector('.invoice-pdf-btn');
-        if (!pdfBtn) return;
+    (function() {
+        'use strict';
+        const API_BASE_URL = 'http://localhost:8000';
+        
+        // Get invoice ID from sessionStorage or URL
+        let currentInvoiceId = null;
+        const storedId = sessionStorage.getItem('currentInvoiceId');
+        if (storedId) {
+            currentInvoiceId = parseInt(storedId);
+        }
+        
+        if (!currentInvoiceId) {
+            // Try to get from URL params
+            const urlParams = new URLSearchParams(window.location.search);
+            const invoiceId = urlParams.get('id') || urlParams.get('invoice_id');
+            if (invoiceId) {
+                currentInvoiceId = parseInt(invoiceId);
+            }
+        }
+        
+        if (!currentInvoiceId) {
+            document.querySelector('.content-wrapper').innerHTML = 
+                '<div class="text-center text-danger p-4">Ошибка: не найден ID счета. Пожалуйста, вернитесь к списку счетов.</div>';
+            return;
+        }
+        
+        // Store invoice ID globally for print page access
+        window.currentInvoiceId = currentInvoiceId;
+        
+        // Load invoice data from backend
+        async function loadInvoiceData() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/resident/invoice/${currentInvoiceId}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
 
-        pdfBtn.addEventListener('click', () => {
-            // Открываем пользовательский печатный шаблон с теми же таблицами, что и на этой странице
-            const url = '/user/invoice-print.html';
-            window.open(url, '_blank', 'noopener');
-        });
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    if (response.status === 403 || response.status === 404) {
+                        throw new Error('Счёт не найден или у вас нет доступа');
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                renderInvoice(data);
+            } catch (error) {
+                console.error('Error loading invoice:', error);
+                document.querySelector('.content-wrapper').innerHTML = 
+                    `<div class="text-center text-danger p-4">Не удалось загрузить данные: ${error.message}</div>`;
+            }
+        }
+
+        // Render invoice data
+        function renderInvoice(invoice) {
+            // Update header
+            const invoiceNumberEl = document.getElementById('invoiceNumber');
+            if (invoiceNumberEl) {
+                invoiceNumberEl.textContent = invoice.number || `#${invoice.id}`;
+            }
+            
+            // Update PDF button
+            const pdfBtn = document.getElementById('pdfBtn');
+            if (pdfBtn) {
+                pdfBtn.onclick = () => {
+                    // Store invoice ID in multiple ways for print page
+                    sessionStorage.setItem('printInvoiceId', invoice.id.toString());
+                    sessionStorage.setItem('currentInvoiceId', invoice.id.toString());
+                    // Also pass as URL parameter for reliability
+                    window.open(`/user/invoice-print.html?id=${invoice.id}`, '_blank', 'noopener');
+                };
+            }
+            
+            // Update summary
+            const houseEl = document.getElementById('invoiceHouse');
+            if (houseEl) houseEl.textContent = invoice.resident_code || '—';
+            
+            const periodEl = document.getElementById('invoicePeriod');
+            if (periodEl) {
+                const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+                    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+                let periodText = `${monthNames[invoice.period_month - 1]} ${invoice.period_year}`;
+                if (invoice.period_dates && invoice.period_dates.from && invoice.period_dates.to) {
+                    periodText = `${invoice.period_dates.from} - ${invoice.period_dates.to}`;
+                } else if (invoice.period_dates && invoice.period_dates.to) {
+                    periodText = invoice.period_dates.to;
+                }
+                periodEl.textContent = periodText;
+            }
+            
+            const statusEl = document.getElementById('invoiceStatus');
+            if (statusEl) {
+                const statusClass = getStatusClass(invoice.status);
+                statusEl.innerHTML = `<span class="user-bill-status ${statusClass}">${invoice.status}</span>`;
+            }
+            
+            const dueDateEl = document.getElementById('invoiceDueDate');
+            if (dueDateEl) {
+                dueDateEl.textContent = invoice.due_date 
+                    ? new Date(invoice.due_date).toLocaleDateString('ru-RU')
+                    : '—';
+            }
+            
+            const totalEl = document.getElementById('invoiceTotal');
+            if (totalEl) {
+                totalEl.textContent = formatCurrency(invoice.amount_total);
+            }
+            
+            // Render payments
+            renderPayments(invoice.payments || [], invoice);
+            
+            // Render invoice lines
+            renderInvoiceLines(invoice.lines || [], invoice.amount_total);
+        }
+
+        // Render payments table
+        function renderPayments(payments, invoice) {
+            const tbody = document.getElementById('paymentsTableBody');
+            if (!tbody) return;
+            
+            if (payments.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Оплаты по этому счёту отсутствуют.</td></tr>';
+            } else {
+                tbody.innerHTML = payments.map(p => `
+                    <tr>
+                        <td>${p.date ? new Date(p.date).toLocaleDateString('ru-RU') : '—'}</td>
+                        <td>${p.method || '—'}</td>
+                        <td>${formatCurrency(p.amount)}</td>
+                        <td>${p.comment || '—'}</td>
+                    </tr>
+                `).join('');
+            }
+            
+            // Update payments summary
+            const summaryEl = document.getElementById('paymentsSummary');
+            if (summaryEl) {
+                summaryEl.innerHTML = `
+                    <span>Оплачено: <strong>${formatCurrency(invoice.paid_amount)}</strong> · 
+                    Остаток: <strong>${formatCurrency(invoice.remaining_amount)}</strong> из 
+                    <strong>${formatCurrency(invoice.amount_total)}</strong></span>
+                `;
+            }
+        }
+
+        // Render invoice lines
+        function renderInvoiceLines(lines, total) {
+            const tbody = document.getElementById('invoiceItemsBody');
+            if (!tbody) return;
+            
+            if (lines.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Позиции отсутствуют</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = lines.map(line => `
+                <tr>
+                    <td>${line.description || '—'}</td>
+                    <td>${formatCurrency(line.amount_net)}</td>
+                    <td>${formatCurrency(line.amount_vat)}</td>
+                    <td class="total-value">${formatCurrency(line.amount_total)}</td>
+                </tr>
+            `).join('') + `
+                <tr class="total-row">
+                    <td colspan="3" data-i18n="user_invoice_items_total_row">Итого к оплате</td>
+                    <td class="total-value">${formatCurrency(total)}</td>
+                </tr>
+            `;
+        }
+
+        // Get CSS class for status
+        function getStatusClass(status) {
+            const statusMap = {
+                'PAID': 'paid',
+                'ISSUED': 'issued',
+                'PARTIAL': 'partial',
+                'DRAFT': 'draft',
+                'OVERPAID': 'overpaid',
+                'CANCELED': 'canceled'
+            };
+            return statusMap[status] || '';
+        }
+
+        // Format currency
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('ru-RU', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        // Load data when page is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadInvoiceData);
+        } else {
+            setTimeout(loadInvoiceData, 100);
+        }
     })();
 </script>

@@ -246,7 +246,7 @@ const translations = {
         user_invoice_print_print_button: "Печать",
         user_nav_user_home: "Главная",
         user_nav_user_bills: "Мои счета",
-        user_nav_user_report: "Сообщить об оплате",
+        user_nav_user_report: "Оплатить счета",
         user_nav_user_requests: "Заявки",
         user_nav_user_documents: "Документы",
         user_nav_user_news: "Новости",
@@ -343,7 +343,7 @@ const translations = {
         user_appeal_status_unread: "Oxunmayıb",
 
         // User report payment
-        user_report_title: "Сообщить об оплате",
+        user_report_title: "Оплатить счета",
         user_report_subtitle: "Укажите данные платежа, чтобы мы могли связать его с вашими счетами.",
         user_report_house_label: "Дом",
         user_report_date_label: "Дата оплаты",
@@ -635,7 +635,7 @@ const translations = {
         user_invoice_print_print_button: "Çap et",
         user_nav_user_home: "Əsas səhifə",
         user_nav_user_bills: "Hesablarım",
-        user_nav_user_report: "Ödəniş barədə məlumat ver",
+        user_nav_user_report: "Hesabları ödəmək",
         user_nav_user_requests: "Müraciətlər",
         user_nav_user_documents: "Sənədlər",
         user_nav_user_news: "Xəbərlər",
@@ -666,11 +666,11 @@ const translations = {
         user_to_pay_now: "İndi ödəniləcək",
         user_btn_details: "Ətraflı",
         user_btn_my_bills: "Hesablarım",
-        user_btn_report_payment: "Ödənişi bildirin",
+        user_btn_report_payment: "Hesabları ödəmək",
         user_btn_pay_from_advance: "Avansdan ödə",
         
         // User report payment
-        user_report_title: "Ödəniş barədə məlumat verin",
+        user_report_title: "Hesabları ödəmək",
         user_report_subtitle: "Ödəniş məlumatlarını daxil edin ki, biz onu hesablarınızla əlaqələndirə bilək.",
         user_report_house_label: "Bina",
         user_report_date_label: "Ödəniş tarixi",
@@ -962,7 +962,7 @@ const translations = {
         user_invoice_print_print_button: "Print",
         user_nav_user_home: "Home",
         user_nav_user_bills: "My bills",
-        user_nav_user_report: "Report a payment",
+        user_nav_user_report: "Pay bills",
         user_nav_user_requests: "Requests",
         user_nav_user_documents: "Documents",
         user_nav_user_news: "News",
@@ -993,7 +993,7 @@ const translations = {
         user_to_pay_now: "Due now",
         user_btn_details: "Details",
         user_btn_my_bills: "My bills",
-        user_btn_report_payment: "Report a payment",
+        user_btn_report_payment: "Pay bills",
         user_btn_pay_from_advance: "Pay from advance",
         user_balance: "Balance",
         user_unpaid_bills: "Unpaid bills",
@@ -1028,7 +1028,7 @@ const translations = {
         user_news_3_date: "05.10.2024",
 
         // User report payment
-        user_report_title: "Report a payment",
+        user_report_title: "Pay bills",
         user_report_subtitle: "Enter payment details so we can match it with your bills.",
         user_report_house_label: "Building",
         user_report_date_label: "Payment date",

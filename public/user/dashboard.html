@@ -52,7 +52,7 @@
                     </a>
                     <a href="/user/dashboard.html#report" class="nav-item" data-user-route="report">
                         <span class="nav-icon"><i class="bi bi-cash-coin"></i></span>
-                        <span class="nav-text" data-i18n="user_nav_user_report">Оплаить счета</span>
+                        <span class="nav-text" data-i18n="user_nav_user_report">Оплатить счета</span>
                     </a>
                     <a href="#payments" class="nav-item">
                         <span class="nav-icon"><i class="bi bi-credit-card"></i></span>
@@ -112,13 +112,6 @@
                 </div>
 
                 <div class="top-bar-actions">
-                    <div class="search-box">
-                        <span class="search-icon">
-                            <i class="bi bi-search"></i>
-                        </span>
-                        <input type="text" data-i18n-placeholder="search" placeholder="Поиск...">
-                    </div>
-
                     <button class="notification-btn">
                         <i class="bi bi-bell-fill"></i>
                         <span class="notification-badge">2</span>
@@ -182,11 +175,11 @@
 
                         <div class="resident-actions">
                             <div class="resident-actions-left">
-                                <button class="resident-btn subtle" data-user-route-target="resident" data-i18n="user_btn_details">Подробнее</button>
+                                <button class="resident-btn subtle" data-user-route-target="resident" data-resident-id data-i18n="user_btn_details">Подробнее</button>
                                 <button class="resident-btn subtle" data-user-route-target="bills" data-i18n="user_btn_my_bills">Мои счета</button>
                                 <button class="resident-btn primary" data-user-route-target="report" data-i18n="user_btn_report_payment">Оплатить счета</button>
                             </div>
-                            <button class="resident-btn success" data-i18n="user_btn_pay_from_advance">Погасить из аванса</button>
+                            <button class="resident-btn success" data-action="pay-from-advance" data-i18n="user_btn_pay_from_advance">Погасить из аванса</button>
                         </div>
                     </div>
 
@@ -563,6 +556,64 @@
                 }
             }
             
+            // Load user profile from backend
+            async function loadUserProfile() {
+                try {
+                    const response = await fetch('http://localhost:8000/api/users/me/public', {
+                        method: 'GET',
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            window.location.href = '/login.html';
+                            return;
+                        }
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const user = await response.json();
+                    
+                    // Fill form fields
+                    const fullNameInput = document.getElementById('accountFullName');
+                    const phoneInput = document.getElementById('accountPhoneInput');
+                    const emailInput = document.getElementById('accountEmailInput');
+                    const avatarPreview = document.getElementById('accountModalAvatar');
+                    
+                    if (fullNameInput) fullNameInput.value = user.full_name || '';
+                    if (phoneInput) phoneInput.value = user.phone || '';
+                    if (emailInput) emailInput.value = user.email || '';
+                    
+                    // Update avatar
+                    if (avatarPreview) {
+                        if (user.avatar_path) {
+                            avatarPreview.style.backgroundImage = `url('http://localhost:8000${user.avatar_path}')`;
+                            avatarPreview.style.backgroundSize = 'cover';
+                            avatarPreview.style.backgroundPosition = 'center';
+                            avatarPreview.textContent = '';
+                        } else {
+                            // Show initials
+                            const initials = (user.full_name || user.username || 'ПО')
+                                .split(' ')
+                                .map(n => n[0])
+                                .join('')
+                                .toUpperCase()
+                                .substring(0, 2);
+                            avatarPreview.style.backgroundImage = '';
+                            avatarPreview.textContent = initials;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading user profile:', error);
+                    if (window.showError) {
+                        showError('Не удалось загрузить данные профиля');
+                    }
+                }
+            }
+
             function openAccountModal() {
                 if (accountModal) {
                     accountModal.classList.add('show');
@@ -574,8 +625,13 @@
                     if (langSelect) langSelect.value = savedLang;
                     if (themeSelect) themeSelect.value = savedTheme;
                     
+                    // Load user profile from backend
+                    loadUserProfile();
+                    
                     // Сохраняем начальное состояние полей, чтобы отследить изменения
-                    initialAccountState = getAccountState();
+                    setTimeout(() => {
+                        initialAccountState = getAccountState();
+                    }, 300);
                 }
             }
             
@@ -636,10 +692,39 @@
                 });
             }
 
+            // Change password function
+            async function changePassword(currentPassword, newPassword, confirmPassword) {
+                try {
+                    const response = await fetch('http://localhost:8000/api/users/me/change-password/public', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            current_password: currentPassword,
+                            new_password: newPassword,
+                            confirm_password: confirmPassword
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ detail: 'Ошибка при изменении пароля' }));
+                        throw new Error(errorData.detail || 'Ошибка при изменении пароля');
+                    }
+
+                    const result = await response.json();
+                    return result;
+                } catch (error) {
+                    console.error('Error changing password:', error);
+                    throw error;
+                }
+            }
+
             const changePasswordBtn = document.getElementById('changePasswordBtn');
             
             if (changePasswordBtn) {
-                changePasswordBtn.addEventListener('click', function() {
+                changePasswordBtn.addEventListener('click', async function() {
                     const currentPassword = document.getElementById('currentPassword')?.value || '';
                     const newPassword = document.getElementById('newPassword')?.value || '';
                     const confirmPassword = document.getElementById('confirmPassword')?.value || '';
@@ -671,77 +756,134 @@
                         return;
                     }
                     
-                    // Здесь должен быть реальный запрос к серверу для смены пароля.
-                    // Пока просто показываем уведомление об успехе.
-                    if (window.showSuccess) {
-                        showSuccess('Пароль успешно изменён!');
-                    } else {
-                        alert('Пароль успешно изменён!');
-                    }
+                    // Disable button during request
+                    changePasswordBtn.disabled = true;
+                    changePasswordBtn.textContent = 'Изменение...';
                     
-                    document.getElementById('currentPassword').value = '';
-                    document.getElementById('newPassword').value = '';
-                    document.getElementById('confirmPassword').value = '';
+                    try {
+                        await changePassword(currentPassword, newPassword, confirmPassword);
+                        
+                        if (window.showSuccess) {
+                            showSuccess('Пароль успешно изменён!');
+                        } else {
+                            alert('Пароль успешно изменён!');
+                        }
+                        
+                        document.getElementById('currentPassword').value = '';
+                        document.getElementById('newPassword').value = '';
+                        document.getElementById('confirmPassword').value = '';
+                    } catch (error) {
+                        if (window.showError) {
+                            showError(error.message || 'Ошибка при изменении пароля');
+                        } else {
+                            alert(error.message || 'Ошибка при изменении пароля');
+                        }
+                    } finally {
+                        changePasswordBtn.disabled = false;
+                        changePasswordBtn.textContent = 'Изменить пароль';
+                    }
                 });
             }
             
+            // Save profile function
+            async function saveUserProfile() {
+                try {
+                    const fullName = document.getElementById('accountFullName')?.value || '';
+                    const phone = document.getElementById('accountPhoneInput')?.value || '';
+                    const email = document.getElementById('accountEmailInput')?.value || '';
+                    const avatarInput = document.getElementById('accountAvatarInput');
+                    
+                    const formData = new FormData();
+                    formData.append('full_name', fullName);
+                    formData.append('phone', phone);
+                    formData.append('email', email);
+                    
+                    if (avatarInput && avatarInput.files && avatarInput.files[0]) {
+                        formData.append('avatar', avatarInput.files[0]);
+                    }
+                    
+                    const response = await fetch('http://localhost:8000/api/users/me/public', {
+                        method: 'PUT',
+                        credentials: 'include',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            window.location.href = '/login.html';
+                            return;
+                        }
+                        const errorData = await response.json().catch(() => ({ detail: 'Ошибка при сохранении профиля' }));
+                        throw new Error(errorData.detail || 'Ошибка при сохранении профиля');
+                    }
+
+                    const user = await response.json();
+                    return user;
+                } catch (error) {
+                    console.error('Error saving profile:', error);
+                    throw error;
+                }
+            }
+
             if (accountModalSave) {
-                accountModalSave.addEventListener('click', function() {
-                    const newPassword = document.getElementById('newPassword')?.value;
-                    const confirmPassword = document.getElementById('confirmPassword')?.value;
+                accountModalSave.addEventListener('click', async function() {
                     const langSelect = document.getElementById('accountLanguage');
                     const themeSelect = document.getElementById('accountTheme');
                     
-                    if (langSelect) {
-                        const lang = langSelect.value;
-                        localStorage.setItem('language', lang);
-                        if (window.i18n) {
-                            if (typeof window.i18n.changeLanguage === 'function') {
-                                window.i18n.changeLanguage(lang);
-                            } else if (typeof window.i18n.applyLanguage === 'function') {
-                                window.i18n.applyLanguage(lang);
+                    // Disable button during request
+                    accountModalSave.disabled = true;
+                    const originalText = accountModalSave.textContent;
+                    accountModalSave.textContent = 'Сохранение...';
+                    
+                    try {
+                        // Save profile to backend
+                        await saveUserProfile();
+                        
+                        // Save language and theme to localStorage
+                        if (langSelect) {
+                            const lang = langSelect.value;
+                            localStorage.setItem('language', lang);
+                            if (window.i18n) {
+                                if (typeof window.i18n.changeLanguage === 'function') {
+                                    window.i18n.changeLanguage(lang);
+                                } else if (typeof window.i18n.applyLanguage === 'function') {
+                                    window.i18n.applyLanguage(lang);
+                                }
                             }
                         }
-                    }
-                    
-                    if (themeSelect && themeSelect.value !== 'auto') {
-                        localStorage.setItem('theme', themeSelect.value);
-                        document.documentElement.setAttribute('data-theme', themeSelect.value);
-                    }
-                    
-                    if (newPassword && confirmPassword && newPassword !== confirmPassword) {
-                        if (window.showError) {
-                            showError('Пароли не совпадают!');
-                        } else {
-                            alert('Пароли не совпадают!');
+                        
+                        if (themeSelect && themeSelect.value !== 'auto') {
+                            localStorage.setItem('theme', themeSelect.value);
+                            document.documentElement.setAttribute('data-theme', themeSelect.value);
                         }
-                        return;
-                    }
-                    
-                    if (newPassword && newPassword.length < 6) {
-                        if (window.showError) {
-                            showError('Пароль должен быть не менее 6 символов!');
+                        
+                        if (window.showSuccess) {
+                            showSuccess('Настройки сохранены!');
                         } else {
-                            alert('Пароль должен быть не менее 6 символов!');
+                            alert('Настройки сохранены!');
                         }
-                        return;
+                        
+                        // Clear password fields
+                        document.getElementById('currentPassword').value = '';
+                        document.getElementById('newPassword').value = '';
+                        document.getElementById('confirmPassword').value = '';
+                        
+                        closeAccountModal();
+                        
+                        // Reload page to update UI with new settings
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 350);
+                    } catch (error) {
+                        if (window.showError) {
+                            showError(error.message || 'Ошибка при сохранении профиля');
+                        } else {
+                            alert(error.message || 'Ошибка при сохранении профиля');
+                        }
+                    } finally {
+                        accountModalSave.disabled = false;
+                        accountModalSave.textContent = originalText;
                     }
-                    
-                    if (window.showSuccess) {
-                        showSuccess('Настройки сохранены!');
-                    } else {
-                        alert('Настройки сохранены!');
-                    }
-                    document.getElementById('currentPassword').value = '';
-                    document.getElementById('newPassword').value = '';
-                    document.getElementById('confirmPassword').value = '';
-                    closeAccountModal();
-                    
-                    // Обновляем страницу, чтобы язык интерфейса и языковые кнопки
-                    // в верхней панели полностью синхронизировались с выбранными настройками
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 350);
                 });
             }
             

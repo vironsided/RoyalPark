@@ -50,234 +50,313 @@
     </div>
 
     <div class="meters-list">
-        <div class="meter-card">
-            <div class="meter-card-header">
-                <span class="meter-tag meter-gas" data-i18n="user_resident_meter_gas">Газ</span>
-                <div class="meter-meta">
-                    <span>№ 123 &nbsp; Тариф: Qaz</span>
-                    <span class="meter-unit">м³</span>
-                </div>
-            </div>
-            <div class="meter-table" data-meter-key="gasMain">
-                <div class="meter-row meter-head">
-                    <span data-i18n="user_resident_table_date">Дата</span>
-                    <span class="meter-head-label"><span data-i18n="user_resident_table_reading">Показание</span><span class="meter-head-unit">м³</span></span>
-                    <span class="meter-head-label"><span data-i18n="user_resident_table_usage">Расход</span><span class="meter-head-unit">м³</span></span>
-                    <span data-i18n="user_resident_table_charge">Начислено</span>
-                    <span>НДС, %</span>
-                    <span data-i18n="user_resident_table_comment">Комментарий</span>
-                </div>
-                <div class="meter-body"></div>
-            </div>
-        </div>
-
-        <div class="meter-card">
-            <div class="meter-card-header">
-                <span class="meter-tag meter-electric" data-i18n="user_resident_meter_electricity">Электричество</span>
-                <div class="meter-meta">
-                    <span>№ 1234 &nbsp; Тариф: X2 tok</span>
-                    <span class="meter-unit">кВт⋅ч</span>
-                </div>
-            </div>
-            <div class="meter-table" data-meter-key="electricMain">
-                <div class="meter-row meter-head">
-                    <span data-i18n="user_resident_table_date">Дата</span>
-                    <span class="meter-head-label"><span data-i18n="user_resident_table_reading">Показание</span><span class="meter-head-unit">кВт⋅ч</span></span>
-                    <span class="meter-head-label"><span data-i18n="user_resident_table_usage">Расход</span><span class="meter-head-unit">кВт⋅ч</span></span>
-                    <span data-i18n="user_resident_table_charge">Начислено</span>
-                    <span>НДС, %</span>
-                    <span data-i18n="user_resident_table_comment">Комментарий</span>
-                </div>
-                <div class="meter-body"></div>
-            </div>
-        </div>
-
-        <div class="meter-card">
-            <div class="meter-card-header">
-                <span class="meter-tag meter-gas" data-i18n="user_resident_meter_gas">Газ</span>
-                <div class="meter-meta">
-                    <span>№ 13445 &nbsp; Тариф: Qaz</span>
-                    <span class="meter-unit">м³</span>
-                </div>
-            </div>
-            <div class="meter-table" data-meter-key="gasSecond">
-                <div class="meter-row meter-head">
-                    <span data-i18n="user_resident_table_date">Дата</span>
-                    <span class="meter-head-label"><span data-i18n="user_resident_table_reading">Показание</span><span class="meter-head-unit">м³</span></span>
-                    <span class="meter-head-label"><span data-i18n="user_resident_table_usage">Расход</span><span class="meter-head-unit">м³</span></span>
-                    <span data-i18n="user_resident_table_charge">Начислено</span>
-                    <span data-i18n="user_resident_table_vat">НДС, %</span>
-                    <span data-i18n="user_resident_table_comment">Комментарий</span>
-                </div>
-                <div class="meter-body"></div>
-            </div>
-        </div>
-
-        <div class="meter-card">
-            <div class="meter-card-header">
-                <span class="meter-tag meter-water" data-i18n="user_resident_meter_water">Вода</span>
-                <div class="meter-meta">
-                    <span>№ 58585 &nbsp; Тариф: X2 su</span>
-                    <span class="meter-unit">м³</span>
-                </div>
-            </div>
-            <div class="meter-table" data-meter-key="waterMain">
-                <div class="meter-row meter-head">
-                    <span data-i18n="user_resident_table_date">Дата</span>
-                    <span class="meter-head-label"><span data-i18n="user_resident_table_reading">Показание</span><span class="meter-head-unit">м³</span></span>
-                    <span class="meter-head-label"><span data-i18n="user_resident_table_usage">Расход</span><span class="meter-head-unit">м³</span></span>
-                    <span data-i18n="user_resident_table_charge">Начислено</span>
-                    <span data-i18n="user_resident_table_vat">НДС, %</span>
-                    <span data-i18n="user_resident_table_comment">Комментарий</span>
-                </div>
-                <div class="meter-body"></div>
-            </div>
-        </div>
+        <!-- Meter cards will be dynamically generated from backend data -->
     </div>
 </div>
 
 <script>
     (function() {
-        const mockMeterData = {
-            gasMain: [
-                { date: '28.11.2025', reading: '312.40', usage: '12.60', charge: '₼18.90', vat: '18%', comment: 'Передано автоматически' },
-                { date: '15.11.2025', reading: '299.80', usage: '10.15', charge: '₼15.22', vat: '18%', comment: 'Ручной ввод' },
-                { date: '01.11.2025', reading: '289.65', usage: '9.80', charge: '₼14.70', vat: '18%', comment: 'Снято оператором' }
-            ],
-            electricMain: [
-                { date: '29.11.2025', reading: '4 820', usage: '145', charge: '₼42.05', vat: '18%', comment: 'Ночной тариф учтён' },
-                { date: '14.11.2025', reading: '4 675', usage: '138', charge: '₼39.96', vat: '18%', comment: 'Пиковое потребление' },
-                { date: '01.11.2025', reading: '4 537', usage: '129', charge: '₼37.35', vat: '18%', comment: 'Снято автоматически' }
-            ],
-            gasSecond: [
-                { date: '26.11.2025', reading: '88.10', usage: '4.25', charge: '₼6.38', vat: '18%', comment: 'Котельная' },
-                { date: '11.11.2025', reading: '83.85', usage: '3.90', charge: '₼5.85', vat: '18%', comment: '' }
-            ],
-            waterMain: [
-                { date: '27.11.2025', reading: '152.30', usage: '5.40', charge: '₼7.56', vat: '18%', comment: 'Горячая вода' },
-                { date: '12.11.2025', reading: '146.90', usage: '5.05', charge: '₼7.07', vat: '18%', comment: 'Норма' },
-                { date: '01.11.2025', reading: '141.85', usage: '4.80', charge: '₼6.72', vat: '18%', comment: '' }
-            ]
-        };
+        'use strict';
+        
+        const API_BASE_URL = 'http://localhost:8000';
+        
+        // Get resident ID from sessionStorage, dashboard data, or URL
+        let currentResidentId = null;
+        
+        // First try sessionStorage (set when clicking "Подробнее")
+        const storedId = sessionStorage.getItem('currentResidentId');
+        if (storedId) {
+            currentResidentId = parseInt(storedId);
+        }
+        
+        // If not in sessionStorage, try dashboard data
+        if (!currentResidentId && window.dashboardData && window.dashboardData.residents && window.dashboardData.residents.length > 0) {
+            currentResidentId = window.dashboardData.residents[0].id;
+        }
+        
+        // If still no ID, try to load dashboard data
+        if (!currentResidentId) {
+            loadDashboardDataForResidentId().then(id => {
+                if (id) {
+                    currentResidentId = id;
+                    initializePage();
+                } else {
+                    showResidentIdError();
+                }
+            });
+            return; // Exit early, will continue after data loads
+        }
+        
+        // Last resort: try URL params
+        if (!currentResidentId) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const residentId = urlParams.get('id') || urlParams.get('resident_id');
+            if (residentId) {
+                currentResidentId = parseInt(residentId);
+            }
+        }
+        
+        if (!currentResidentId) {
+            showResidentIdError();
+            return;
+        }
+        
+        // Initialize page if we have resident ID
+        initializePage();
+        
+        function showResidentIdError() {
+            const metersList = document.querySelector('.meters-list');
+            if (metersList) {
+                metersList.innerHTML = '<div class="text-center p-4 text-danger">Ошибка: не найден ID резидента. Пожалуйста, вернитесь на главную страницу.</div>';
+            }
+        }
+        
+        async function loadDashboardDataForResidentId() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/resident/dashboard`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    window.dashboardData = data;
+                    if (data.residents && data.residents.length > 0) {
+                        return data.residents[0].id;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+            return null;
+        }
+        
+        function initializePage() {
+            // Use block scope to avoid variable conflicts
+            {
+                const dateFromInput = document.getElementById('filterDateFrom');
+                const dateToInput = document.getElementById('filterDateTo');
+                const filterApplyBtn = document.getElementById('filterApplyBtn');
+                const filterResetBtn = document.getElementById('filterResetBtn');
+                const quickFilterBtns = document.querySelectorAll('.quick-filter-btn');
+                
+                // Set default date range (current month)
+                const currentDate = new Date();
+                const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+                const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+                const defaultRange = {
+                    from: firstDay.toISOString().split('T')[0],
+                    to: lastDay.toISOString().split('T')[0]
+                };
+                
+                if (dateFromInput) dateFromInput.value = defaultRange.from;
+                if (dateToInput) dateToInput.value = defaultRange.to;
 
-        const dateFromInput = document.getElementById('filterDateFrom');
-        const dateToInput = document.getElementById('filterDateTo');
-        const filterApplyBtn = document.getElementById('filterApplyBtn');
-        const filterResetBtn = document.getElementById('filterResetBtn');
-        const quickFilterBtns = document.querySelectorAll('.quick-filter-btn');
-        const meterTables = document.querySelectorAll('.meter-table');
-        const defaultRange = { from: dateFromInput.value, to: dateToInput.value };
+                const formatForInput = (date) => {
+                    return date.toISOString().split('T')[0];
+                };
 
-        const parseMeterDate = (value) => {
-            const [day, month, year] = value.split('.');
-            return new Date(`${year}-${month}-${day}`);
-        };
+                const formatCurrency = (amount) => {
+                    return new Intl.NumberFormat('ru-RU', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }).format(amount);
+                };
 
-        const formatForInput = (date) => {
-            return date.toISOString().split('T')[0];
-        };
+                // Load resident detail data from backend
+                async function loadResidentDetail(fromDate, toDate, range) {
+            try {
+                let url = `${API_BASE_URL}/api/resident/detail/${currentResidentId}?`;
+                const params = new URLSearchParams();
+                
+                if (fromDate) params.append('from_date', fromDate);
+                if (toDate) params.append('to_date', toDate);
+                if (range) params.append('range_', range);
+                
+                url += params.toString();
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
 
-        const getLatestDataDate = () => {
-            const allDates = Object.values(mockMeterData)
-                .flat()
-                .map(row => parseMeterDate(row.date).getTime());
-            return allDates.length ? new Date(Math.max(...allDates)) : new Date();
-        };
-
-        const renderMeterTables = (dataset) => {
-            meterTables.forEach(table => {
-                const key = table.dataset.meterKey;
-                const body = table.querySelector('.meter-body');
-                const rows = dataset[key] || [];
-
-                if (!rows.length) {
-                    body.innerHTML = `
-                        <div class="meter-row meter-empty">
-                            <span>Записей пока нет</span>
-                        </div>
-                    `;
-                    return;
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                body.innerHTML = rows.map(row => `
-                    <div class="meter-row">
-                        <span>${row.date}</span>
-                        <span>${row.reading}</span>
-                        <span>${row.usage}</span>
-                        <span>${row.charge}</span>
-                        <span>${row.vat}</span>
-                        <span>${row.comment || '—'}</span>
-                    </div>
-                `).join('');
-            });
-        };
+                const data = await response.json();
+                updateResidentInfo(data.resident);
+                renderMeterTables(data.meters);
+            } catch (error) {
+                console.error('Error loading resident detail:', error);
+                showError('Не удалось загрузить данные. Проверьте подключение к серверу.');
+            }
+        }
 
-        const filterDataset = (fromValue, toValue) => {
-            const fromDate = fromValue ? new Date(fromValue) : null;
-            const toDate = toValue ? new Date(toValue) : null;
-            const filtered = {};
+                // Update resident info card
+                function updateResidentInfo(resident) {
+                    const blockEl = document.querySelector('.resident-detail-info > div:nth-child(1) .value');
+                    const apartmentEl = document.querySelector('.resident-detail-info > div:nth-child(2) .value');
+                    
+                    if (blockEl && resident.block_name) {
+                        blockEl.textContent = resident.block_name;
+                    }
+                    if (apartmentEl && resident.unit_number) {
+                        apartmentEl.textContent = `#${resident.unit_number}`;
+                    }
+                }
 
-            Object.entries(mockMeterData).forEach(([key, rows]) => {
-                filtered[key] = rows.filter(row => {
-                    const date = parseMeterDate(row.date);
-                    if (fromDate && date < fromDate) return false;
-                    if (toDate && date > toDate) return false;
-                    return true;
-                });
-            });
+                // Render meter tables from backend data
+                function renderMeterTables(meters) {
+                    // Clear existing meter cards
+                    const metersList = document.querySelector('.meters-list');
+                    if (!metersList) return;
+                    
+                    metersList.innerHTML = '';
 
-            return filtered;
-        };
+                    if (!meters || meters.length === 0) {
+                        metersList.innerHTML = '<div class="text-center p-4 text-muted">Нет счетчиков</div>';
+                        return;
+                    }
 
-        const applyFilter = () => {
-            const dataset = filterDataset(dateFromInput.value, dateToInput.value);
-            renderMeterTables(dataset);
-        };
+                    // Group meters by type for display
+                    meters.forEach((meter, index) => {
+                        const meterCard = createMeterCard(meter, index);
+                        metersList.appendChild(meterCard);
+                    });
+                }
 
-        const resetFilter = () => {
-            dateFromInput.value = defaultRange.from;
-            dateToInput.value = defaultRange.to;
-            renderMeterTables(mockMeterData);
-            quickFilterBtns.forEach(btn => btn.classList.remove('active'));
-            const defaultBtn = document.querySelector('.quick-filter-btn[data-range="month"]');
-            if (defaultBtn) defaultBtn.classList.add('active');
-        };
+                // Create meter card element
+                function createMeterCard(meter, index) {
+                    const card = document.createElement('div');
+                    card.className = 'meter-card';
+                    
+                    // Determine CSS class for meter tag
+                    let tagClass = 'meter-gas';
+                    if (meter.type === 'ELECTRIC') tagClass = 'meter-electric';
+                    else if (meter.type === 'WATER' || meter.type === 'SEWERAGE') tagClass = 'meter-water';
+                    else if (meter.type === 'SERVICE' || meter.type === 'RENT' || meter.type === 'CONSTRUCTION') tagClass = 'meter-service';
 
-        const applyQuickRange = (range) => {
-            const end = getLatestDataDate();
-            const start = new Date(end);
+                    const readings = meter.readings || [];
+                    
+                    card.innerHTML = `
+                        <div class="meter-card-header">
+                            <span class="meter-tag ${tagClass}">${meter.display_type}</span>
+                            <div class="meter-meta">
+                                <span>№ ${meter.serial_number} &nbsp; Тариф: ${meter.tariff_name}</span>
+                                <span class="meter-unit">${meter.unit}</span>
+                            </div>
+                        </div>
+                        <div class="meter-table" data-meter-id="${meter.id}">
+                            <div class="meter-row meter-head">
+                                <span data-i18n="user_resident_table_date">Дата</span>
+                                <span class="meter-head-label"><span data-i18n="user_resident_table_reading">Показание</span><span class="meter-head-unit">${meter.unit}</span></span>
+                                <span class="meter-head-label"><span data-i18n="user_resident_table_usage">Расход</span><span class="meter-head-unit">${meter.unit}</span></span>
+                                <span data-i18n="user_resident_table_charge">Начислено</span>
+                                <span>НДС, %</span>
+                                <span data-i18n="user_resident_table_comment">Комментарий</span>
+                            </div>
+                            <div class="meter-body">
+                                ${readings.length === 0 ? `
+                                    <div class="meter-row meter-empty">
+                                        <span>Записей пока нет</span>
+                                    </div>
+                                ` : readings.map(reading => `
+                                    <div class="meter-row">
+                                        <span>${reading.date}</span>
+                                        <span>${reading.reading}</span>
+                                        <span>${reading.consumption}</span>
+                                        <span>₼${formatCurrency(reading.charge)}</span>
+                                        <span>${formatCurrency(reading.vat)}%</span>
+                                        <span>${reading.comment || '—'}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    
+                    return card;
+                }
+
+                const applyFilter = () => {
+                    loadResidentDetail(dateFromInput.value, dateToInput.value, null);
+                };
+
+                const resetFilter = () => {
+                    dateFromInput.value = defaultRange.from;
+                    dateToInput.value = defaultRange.to;
+                    quickFilterBtns.forEach(btn => btn.classList.remove('active'));
+                    const defaultBtn = document.querySelector('.quick-filter-btn[data-range="month"]');
+                    if (defaultBtn) defaultBtn.classList.add('active');
+                    loadResidentDetail(defaultRange.from, defaultRange.to, 'month');
+                };
+
+                const applyQuickRange = (range) => {
+            const endDate = new Date();
+            const startDate = new Date(endDate);
+            
+            // Map frontend range names to backend range names
+            const rangeMap = {
+                'month': 'month',
+                'quarter': '3m',
+                'half': '6m',
+                'year': 'year'
+            };
+            
+            const backendRange = rangeMap[range] || 'month';
 
             switch (range) {
                 case 'quarter':
-                    start.setMonth(start.getMonth() - 3);
+                    startDate.setMonth(startDate.getMonth() - 3);
                     break;
                 case 'half':
-                    start.setMonth(start.getMonth() - 6);
+                    startDate.setMonth(startDate.getMonth() - 6);
                     break;
                 case 'year':
-                    start.setFullYear(start.getFullYear() - 1);
+                    startDate.setFullYear(startDate.getFullYear() - 1);
                     break;
                 default:
-                    start.setMonth(start.getMonth() - 1);
+                    startDate.setMonth(startDate.getMonth() - 1);
             }
 
-            dateFromInput.value = formatForInput(start);
-            dateToInput.value = formatForInput(end);
-            applyFilter();
+            dateFromInput.value = formatForInput(startDate);
+            dateToInput.value = formatForInput(endDate);
+            loadResidentDetail(formatForInput(startDate), formatForInput(endDate), backendRange);
         };
+        
+                function showError(message) {
+                    console.error(message);
+                    // You can implement a toast notification here
+                }
 
-        if (filterApplyBtn) filterApplyBtn.addEventListener('click', applyFilter);
-        if (filterResetBtn) filterResetBtn.addEventListener('click', resetFilter);
+                if (filterApplyBtn) filterApplyBtn.addEventListener('click', applyFilter);
+                if (filterResetBtn) filterResetBtn.addEventListener('click', resetFilter);
 
-        quickFilterBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                quickFilterBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                applyQuickRange(btn.dataset.range);
-            });
-        });
+                quickFilterBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        quickFilterBtns.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        applyQuickRange(btn.dataset.range);
+                    });
+                });
 
-        renderMeterTables(mockMeterData);
+                // Load initial data with a small delay to ensure DOM is ready
+                setTimeout(() => {
+                    const currentDateForInit = new Date();
+                    const firstDayOfMonth = new Date(currentDateForInit.getFullYear(), currentDateForInit.getMonth(), 1);
+                    const lastDayOfMonth = new Date(currentDateForInit.getFullYear(), currentDateForInit.getMonth() + 1, 0);
+                    const defaultFrom = firstDayOfMonth.toISOString().split('T')[0];
+                    const defaultTo = lastDayOfMonth.toISOString().split('T')[0];
+                    loadResidentDetail(defaultFrom, defaultTo, 'month');
+                }, 50);
+            }
+        }
     })();
 </script>
 

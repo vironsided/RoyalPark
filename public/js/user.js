@@ -1,10 +1,8 @@
 // User Dashboard JavaScript
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Check authentication with small delay to ensure localStorage is updated
-    setTimeout(() => {
-        checkAuth();
-    }, 100);
+    // Check authentication
+    checkAuth();
 
     // Initialize sidebar toggle
     initSidebarToggle();
@@ -15,29 +13,66 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add animations
     addCardAnimations();
     addRippleEffect();
+
+    // Setup action buttons
+    setupActionButtons();
+
+    // Load dashboard data from backend (will be called after auth check)
+    // Small delay to ensure auth check completes
+    setTimeout(() => {
+        loadDashboardData();
+    }, 200);
 });
 
 // Check if user is authenticated and has RESIDENT role
-function checkAuth() {
-    const authToken = localStorage.getItem('authToken');
-    const userRole = localStorage.getItem('userRole');
+async function checkAuth() {
+    // Try to verify session with backend
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/resident/dashboard`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
 
-    if (!authToken || userRole !== 'RESIDENT') {
-        window.location.href = '/login.html';
+        if (!response.ok) {
+            if (response.status === 401) {
+                // Not authenticated - redirect to login
+                window.location.href = '/login.html';
+                return;
+            }
+            // For other errors, continue (might be temporary network issue)
+            console.warn('Auth check returned status:', response.status);
+        }
+
+        // If we get here, user is authenticated (or network issue)
+        // User info will be set by loadDashboardData()
         return;
-    }
+    } catch (error) {
+        console.error('Auth check error:', error);
+        // Don't redirect on network errors, just log
+        // Fallback to localStorage check for compatibility
+        const authToken = localStorage.getItem('authToken');
+        const userRole = localStorage.getItem('userRole');
 
-    // Set user info
-    const username = localStorage.getItem('username') || 'Пользователь';
-    const userNameEl = document.querySelector('.user-name');
-    const userAvatarEl = document.querySelector('.user-avatar');
-    
-    if (userNameEl) {
-        userNameEl.textContent = username;
-    }
-    
-    if (userAvatarEl) {
-        userAvatarEl.textContent = username.substring(0, 2).toUpperCase();
+        if (!authToken || userRole !== 'RESIDENT') {
+            window.location.href = '/resident/login';
+            return;
+        }
+
+        // Set user info from localStorage
+        const username = localStorage.getItem('username') || 'Пользователь';
+        const userNameEl = document.querySelector('.user-name');
+        const userAvatarEl = document.querySelector('.user-avatar');
+        
+        if (userNameEl) {
+            userNameEl.textContent = username;
+        }
+        
+        if (userAvatarEl) {
+            userAvatarEl.textContent = username.substring(0, 2).toUpperCase();
+        }
     }
 }
 
@@ -177,11 +212,23 @@ function addRippleEffect() {
 
 
 // Logout functionality
-function logout() {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('username');
-    window.location.href = '/login.html';
+async function logout() {
+    try {
+        // Call backend logout endpoint to clear session
+        await fetch(`${API_BASE_URL}/resident/logout`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+    } finally {
+        // Clear localStorage
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('username');
+        // Redirect to login
+        window.location.href = '/login.html';
+    }
 }
 
 // Add logout button event listener
@@ -216,5 +263,346 @@ rippleStyle.textContent = `
     }
 `;
 document.head.appendChild(rippleStyle);
+
+// API Configuration
+const API_BASE_URL = 'http://localhost:8000';
+
+// Store dashboard data globally
+window.dashboardData = null;
+
+// Load dashboard data from backend
+window.loadDashboardData = async function loadDashboardData() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/resident/dashboard`, {
+            method: 'GET',
+            credentials: 'include', // Include cookies for session auth
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                // Unauthorized - redirect to login
+                window.location.href = '/login.html';
+                return;
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        window.dashboardData = data; // Store globally for later use
+        updateDashboardUI(data);
+        
+        // Load invoices for user's residents
+        if (data.residents && data.residents.length > 0) {
+            loadInvoices(data.residents.map(r => r.id));
+        }
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        // Don't show error popup on network errors, just log
+        // The page will still be usable with cached data if available
+        if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION')) {
+            console.warn('Network error - backend might be unavailable. Using cached data if available.');
+        } else {
+            showError('Не удалось загрузить данные. Проверьте подключение к серверу.');
+        }
+    }
+}
+
+// Update UI with dashboard data
+function updateDashboardUI(data) {
+    // Update user info
+    if (data.user) {
+        const fullName = data.user.full_name || data.user.username || 'Пользователь';
+        const userNameEl = document.querySelector('.user-name');
+        const userAvatarEl = document.querySelector('.user-avatar');
+        const greetingEl = document.querySelector('.resident-greeting');
+        
+        if (userNameEl) {
+            userNameEl.textContent = fullName;
+        }
+        
+        if (userAvatarEl) {
+            const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+            userAvatarEl.textContent = initials || fullName.substring(0, 2).toUpperCase();
+        }
+
+        if (greetingEl) {
+            greetingEl.innerHTML = `<span data-i18n="user_greeting_prefix">Здравствуйте,</span> ${fullName}`;
+        }
+    }
+
+    // Update summary (first resident or aggregate)
+    if (data.residents && data.residents.length > 0) {
+        const firstResident = data.residents[0];
+        const summary = data.summary;
+
+        // Update resident card
+        const residentTag = document.querySelector('.resident-tag');
+        if (residentTag && firstResident) {
+            residentTag.textContent = firstResident.code;
+        }
+        
+        // Set resident ID on "Подробнее" button
+        const detailsBtn = document.querySelector('[data-user-route-target="resident"]');
+        if (detailsBtn && firstResident) {
+            detailsBtn.setAttribute('data-resident-id', firstResident.id.toString());
+        }
+
+        // Update month due
+        const monthDueEl = document.querySelector('.resident-amount-box strong');
+        if (monthDueEl) {
+            monthDueEl.textContent = formatCurrency(summary.total_month);
+        }
+
+        // Update progress bar
+        const progressFill = document.querySelector('.resident-progress-fill');
+        if (progressFill && firstResident) {
+            const percentage = firstResident.month_total > 0 
+                ? (firstResident.month_paid / firstResident.month_total) * 100 
+                : 0;
+            progressFill.style.width = `${Math.min(percentage, 100)}%`;
+            progressFill.querySelector('span').textContent = 
+                `${formatCurrency(firstResident.month_paid)} / ${formatCurrency(firstResident.month_total)}`;
+        }
+
+        // Update detailed stats in resident card (use first resident's data)
+        updateStatValue('.resident-stats-row > div:nth-child(1) .resident-stat-value', firstResident.debt_total);
+        updateStatValue('.resident-stats-row > div:nth-child(2) .resident-stat-value', firstResident.advance_total, true);
+        updateStatValue('.resident-stats-row > div:nth-child(3) .resident-stat-value', firstResident.pay_now);
+
+        // Update summary cards (use aggregate summary)
+        updateStatValue('.resident-summary-card:first-child .summary-value', summary.total_debt);
+        updateStatValue('.resident-summary-card.accent .summary-value', summary.total_advance);
+        
+        // Update stats grid cards
+        updateStatsGrid(data);
+    }
+}
+
+// Update stats grid cards with real data
+function updateStatsGrid(data) {
+    const summary = data.summary || {};
+    
+    // 1. Баланс (Balance) - используем total_advance
+    const balanceCard = document.querySelector('.stat-card.solid-blue .stat-value');
+    if (balanceCard) {
+        balanceCard.textContent = formatCurrency(summary.total_advance || 0);
+    }
+    
+    // 2. Неоплаченных счета (Unpaid bills) - используем из summary
+    const unpaidCard = document.querySelector('.stat-card.solid-orange .stat-value');
+    if (unpaidCard) {
+        unpaidCard.textContent = (summary.unpaid_invoices_count || 0).toString();
+    }
+    
+    // 3. кВт·ч за месяц - используем из summary
+    const kwhCard = document.querySelector('.stat-card.solid-green .stat-value');
+    if (kwhCard) {
+        kwhCard.textContent = Math.round(summary.monthly_kwh || 0).toString();
+    }
+    
+    // 4. Активная заявка - используем из summary
+    const activeRequestCard = document.querySelector('.stat-card.solid-red .stat-value');
+    if (activeRequestCard) {
+        activeRequestCard.textContent = (summary.active_notifications_count || 0).toString();
+    }
+}
+
+
+// Load invoices from backend for specific residents
+async function loadInvoices(residentIds) {
+    if (!residentIds || residentIds.length === 0) {
+        return;
+    }
+
+    try {
+        // Fetch invoices for each resident and combine
+        const allInvoices = [];
+        
+        for (const residentId of residentIds) {
+            const response = await fetch(
+                `${API_BASE_URL}/api/invoices/public?resident_id=${residentId}&per_page=10`,
+                {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                }
+            );
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.invoices) {
+                    allInvoices.push(...data.invoices);
+                }
+            }
+        }
+
+        // Sort by period (newest first) and take top 5
+        allInvoices.sort((a, b) => {
+            if (a.period_year !== b.period_year) {
+                return b.period_year - a.period_year;
+            }
+            return b.period_month - a.period_month;
+        });
+
+        updateInvoicesUI(allInvoices.slice(0, 5));
+    } catch (error) {
+        console.error('Error loading invoices:', error);
+        // Don't show error for invoices, just log it
+    }
+}
+
+// Update invoices UI
+function updateInvoicesUI(invoices) {
+    const billsList = document.querySelector('.bills-list');
+    if (!billsList) return;
+
+    // Clear existing bills (keep first few as template if needed)
+    billsList.innerHTML = '';
+
+    if (invoices.length === 0) {
+        billsList.innerHTML = '<div class="text-center p-4 text-muted">Нет счетов</div>';
+        return;
+    }
+
+    invoices.forEach(invoice => {
+        const billItem = createBillItem(invoice);
+        billsList.appendChild(billItem);
+    });
+}
+
+// Create bill item element
+function createBillItem(invoice) {
+    const item = document.createElement('div');
+    item.className = 'bill-item';
+
+    const status = invoice.status;
+    const isPaid = status === 'paid' || invoice.paid_amount >= invoice.amount_total;
+    const isPending = status === 'issued' || status === 'partial';
+
+    const iconClass = isPaid ? 'bill-paid' : 'bill-pending';
+    const icon = isPaid ? 'bi-check-circle' : 'bi-receipt';
+    const badgeClass = isPaid ? 'badge-success' : 'badge-warning';
+    const badgeText = isPaid ? 'Оплачено' : 'К оплате';
+
+    const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+        'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    const periodText = `${monthNames[invoice.period_month - 1]} ${invoice.period_year}`;
+
+    item.innerHTML = `
+        <div class="bill-icon ${iconClass}">
+            <i class="bi ${icon}"></i>
+        </div>
+        <div class="bill-details">
+            <div class="bill-title">Счёт #${invoice.number || invoice.id}</div>
+            <div class="bill-date">${periodText}</div>
+        </div>
+        <div class="bill-amount">
+            <div class="bill-sum">${formatCurrency(invoice.amount_total)}</div>
+            <span class="badge ${badgeClass}">${badgeText}</span>
+        </div>
+    `;
+
+    // Make clickable to open invoice print page
+    item.style.cursor = 'pointer';
+    item.addEventListener('click', () => {
+        // Store invoice ID in sessionStorage for print page
+        sessionStorage.setItem('printInvoiceId', invoice.id.toString());
+        sessionStorage.setItem('currentInvoiceId', invoice.id.toString());
+        // Open print page with invoice ID in URL
+        window.open(`/user/invoice-print.html?id=${invoice.id}`, '_blank', 'noopener');
+    });
+
+    return item;
+}
+
+// Helper function to update stat value
+function updateStatValue(selector, value, isPositive = false) {
+    const element = document.querySelector(selector);
+    if (element) {
+        element.textContent = formatCurrency(value);
+        if (isPositive && value > 0) {
+            element.classList.add('positive');
+        } else if (value > 0) {
+            element.classList.remove('positive');
+        }
+    }
+}
+
+// Format currency
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('ru-RU', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(amount);
+}
+
+// Setup action buttons
+function setupActionButtons() {
+    // Handle "Погасить из аванса" (Pay from advance) button
+    document.addEventListener('click', async (e) => {
+        const payFromAdvanceBtn = e.target.closest('[data-action="pay-from-advance"]');
+        if (payFromAdvanceBtn && window.dashboardData && window.dashboardData.residents.length > 0) {
+            e.preventDefault();
+            const residentId = window.dashboardData.residents[0].id; // Use first resident for now
+            await applyAdvance(residentId);
+        }
+    });
+}
+
+// Apply advance payment
+async function applyAdvance(residentId) {
+    if (!confirm('Применить аванс к открытым счетам?')) {
+        return;
+    }
+
+    try {
+        const formData = new FormData();
+        formData.append('resident_id', residentId);
+
+        const response = await fetch(`${API_BASE_URL}/resident/apply-advance`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Reload dashboard data
+        await loadDashboardData();
+        
+        if (window.showSuccess) {
+            showSuccess('Аванс успешно применён к счетам!');
+        } else {
+            alert('Аванс успешно применён к счетам!');
+        }
+    } catch (error) {
+        console.error('Error applying advance:', error);
+        if (window.showError) {
+            showError('Не удалось применить аванс. Попробуйте позже.');
+        } else {
+            alert('Не удалось применить аванс. Попробуйте позже.');
+        }
+    }
+}
+
+// Show error message
+function showError(message) {
+    // You can implement a toast notification here
+    console.error(message);
+    // For now, just log it
+}
+
+// Show success message
+function showSuccess(message) {
+    console.log(message);
+    // You can implement a toast notification here
+}
 
 console.log('📱 User dashboard loaded!');

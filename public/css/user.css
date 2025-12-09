@@ -1,14 +1,65 @@
 /* 🎨 USER DASHBOARD - Яркие сочные цвета 🎨 */
 
 /* Переопределяем цвета sidebar для user */
-.admin-container .sidebar {
+.admin-container .sidebar,
+.user-app .sidebar {
     background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: 100vh;
 }
 
-[data-theme="dark"] .admin-container .sidebar {
+[data-theme="dark"] .admin-container .sidebar,
+[data-theme="dark"] .user-app .sidebar {
     background: linear-gradient(180deg, #12141d 0%, #090b13 100%);
     border-right: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.6);
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: 100vh;
+}
+
+/* Улучшенный скроллбар для sidebar в user-кабинете - копируем стили из admin панели */
+.user-app .sidebar::-webkit-scrollbar,
+[data-theme="dark"] .user-app .sidebar::-webkit-scrollbar,
+.admin-container .sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.user-app .sidebar::-webkit-scrollbar-track,
+[data-theme="dark"] .user-app .sidebar::-webkit-scrollbar-track,
+.admin-container .sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.user-app .sidebar::-webkit-scrollbar-thumb,
+[data-theme="dark"] .user-app .sidebar::-webkit-scrollbar-thumb,
+.admin-container .sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.user-app .sidebar::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .user-app .sidebar::-webkit-scrollbar-thumb:hover,
+.admin-container .sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Улучшенный скроллбар для свернутого сайдбара */
+.user-app .sidebar.collapsed::-webkit-scrollbar,
+[data-theme="dark"] .user-app .sidebar.collapsed::-webkit-scrollbar {
+    width: 4px;
+}
+
+.user-app .sidebar.collapsed::-webkit-scrollbar-thumb,
+[data-theme="dark"] .user-app .sidebar.collapsed::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+
+.user-app .sidebar.collapsed::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .user-app .sidebar.collapsed::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
 }
 
 [data-theme="dark"] .sidebar .nav-item {
