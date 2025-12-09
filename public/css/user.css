@@ -1281,142 +1281,964 @@ body[data-theme="dark"] .user-bills-section select option {
     }
 }
 
-/* Report payment (Сообщить об оплате) */
-.user-report-header h2 {
-    font-size: 1.4rem;
-    margin: 0;
-}
+/* Import Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
 
-.user-report-subtitle {
-    margin: 0 0 12px;
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.65);
-}
-
-.user-report-form {
-    margin-top: 20px;
-}
-
-.user-report-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 16px 20px;
-    align-items: flex-end;
-}
-
-.user-report-grid.full-row {
-    grid-template-columns: 1fr;
-}
-
-.user-report-form .form-group label {
-    font-size: 0.9rem;
-    margin-bottom: 6px;
-    display: block;
-}
-
-.user-report-form .form-group input,
-.user-report-form .form-group select {
-    width: 100%;
-    border-radius: 0.8rem;
-    border: 1px solid var(--border-color);
-    background: rgba(0, 0, 0, 0.35);
-    color: var(--text-primary);
-    padding: 0.55rem 0.8rem;
-    font-size: 0.9rem;
-}
-
-/* Убираем светлые стандартные стрелки у числового поля "Сумма" */
-.user-report-form .form-group input[type="number"]::-webkit-inner-spin-button,
-.user-report-form .form-group input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-.user-report-form .form-group input[type="number"] {
-    -moz-appearance: textfield; /* Firefox */
-}
-
-.user-report-form .form-group input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-}
-
-.user-report-form .date-group .date-input-wrapper {
-    width: 100%;
+/* Payment Page - New Design with Dark Background and Orbs */
+.user-payment-page {
+    padding: 2rem;
+    max-width: 1600px;
+    margin: 0 auto;
     position: relative;
+    min-height: 100vh;
+    background: transparent;
+    overflow: hidden;
 }
 
-/* Hide native calendar icon inside date input for report form
-   (we используем свою кнопку с иконкой справа) */
-.user-report-form .date-group input[type="date"]::-webkit-calendar-picker-indicator {
-    opacity: 0;
+/* Ambient Background Orbs - Removed for transparent background */
+.user-payment-page::before {
     display: none;
 }
 
-.user-report-form .date-group input[type="date"] {
-    -webkit-appearance: none;
-       -moz-appearance: none;
-            appearance: none;
+.user-payment-page::after {
+    display: none;
 }
 
-/* Custom calendar button for report form */
-.user-report-form .btn-calendar {
+@keyframes float {
+    0%, 100% { transform: translateY(0) translateX(0); }
+    50% { transform: translateY(-20px) translateX(10px); }
+}
+
+.payment-container {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 0.9fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.payment-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem 0;
+    color: rgba(255, 255, 255, 0.9);
+    position: relative;
+    z-index: 1;
+}
+
+/* Left Column - Payment Methods */
+.payment-left-column {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Payment tabs removed - only credit card is available */
+
+/* Saved Cards */
+.saved-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* 3D Card Container for Saved Cards */
+.saved-card-wrapper {
+    perspective: 1000px;
+    width: 100%;
+    height: 250px;
+    cursor: pointer;
+    position: relative;
+}
+
+.saved-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform-style: preserve-3d;
+}
+
+.saved-card-wrapper.flipped .saved-card-inner {
+    transform: rotateY(180deg);
+}
+
+/* Используем card-preview стили внутри saved-card-wrapper */
+.saved-card-wrapper .card-preview,
+.saved-card-wrapper .card-preview-back {
     position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: transparent;
-    border: none;
-    padding: 0;
-    margin: 0;
-    display: inline-flex;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.saved-card-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    border-radius: 20px;
+    color: white;
+    transform: rotateY(180deg);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow: visible;
+    
+    /* True Glassmorphism Effect */
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px) saturate(180%);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 
+        0 25px 45px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+        0 1px 2px rgba(255, 255, 255, 0.1) inset;
+}
+
+.saved-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: visible;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    
+    /* True Glassmorphism Effect */
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px) saturate(180%);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 
+        0 25px 45px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+        0 1px 2px rgba(255, 255, 255, 0.1) inset;
+}
+
+.saved-card-wrapper:hover .card-preview,
+.saved-card-wrapper:hover .card-preview-back,
+.saved-card-wrapper:hover .saved-card,
+.saved-card-wrapper:hover .saved-card-back {
+    box-shadow: 
+        0 30px 60px rgba(0, 0, 0, 0.4),
+        0 0 30px rgba(102, 126, 234, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.card-purple {
+    position: relative;
+}
+
+.card-purple::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.4) 100%);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 20px;
+}
+
+.card-purple::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -30%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    animation: pulse 8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.1); }
+}
+
+.card-red {
+    position: relative;
+}
+
+.card-red::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(240, 147, 251, 0.4) 0%, rgba(245, 87, 108, 0.4) 100%);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 20px;
+}
+
+.card-red::after {
+    content: '';
+    position: absolute;
+    top: -40%;
+    right: -25%;
+    width: 380px;
+    height: 380px;
+    background: radial-gradient(circle, rgba(240, 147, 251, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    animation: pulse 8s ease-in-out infinite;
+    animation-delay: -2s;
+}
+
+/* Card Header */
+.saved-card header,
+.card-preview header,
+.saved-card-back header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    position: relative;
+    z-index: 2;
+    margin-bottom: 20px;
+}
+
+.card-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.saved-card .logo,
+.card-preview .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Network Logo (VISA, Mastercard в правом верхнем углу) */
+.card-network-logo {
+    position: relative;
+    z-index: 2;
+}
+
+.visa-logo-small {
+    width: 50px;
+    height: 32px;
+    background: #1434cb;
+    border-radius: 4px;
+    display: flex;
     align-items: center;
     justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mastercard-logo-small {
+    width: 50px;
+    height: 32px;
+    position: relative;
+}
+
+.mastercard-logo-small .mastercard-circle {
+    width: 22px;
+    height: 22px;
+    position: absolute;
+}
+
+.mastercard-logo-small .circle-red {
+    left: 0;
+    z-index: 1;
+}
+
+.mastercard-logo-small .circle-orange {
+    right: 0;
+    z-index: 2;
+}
+
+.mir-logo-small {
+    width: 50px;
+    height: 32px;
+    background: #00a651;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Mastercard Logo */
+.mastercard-logo {
+    position: relative;
+    width: 48px;
+    height: 30px;
+    flex-shrink: 0;
+}
+
+.mastercard-circle {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+}
+
+.mastercard-circle.circle-red {
+    background: #eb001b;
+    left: 0;
+    z-index: 1;
+}
+
+.mastercard-circle.circle-orange {
+    background: #f79e1b;
+    right: 0;
+    z-index: 2;
+    mix-blend-mode: normal;
+}
+
+/* Visa Logo */
+.visa-logo {
+    width: 48px;
+    height: 20px;
+    background: #1434cb;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+/* Mir Logo */
+.mir-logo {
+    width: 48px;
+    height: 24px;
+    background: #00a651;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+
+.saved-card header h5,
+.card-preview header h5 {
+    font-size: 16px;
+    font-weight: 500;
+    color: #fff;
+    margin: 0;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Chip */
+.saved-card .chip,
+.card-preview .chip {
+    width: 50px;
+    height: 40px;
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 30%, #ffd700 70%, #ffed4e 100%);
+    border-radius: 6px;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.saved-card .chip::before,
+.card-preview .chip::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    bottom: 6px;
+    border: 2px solid rgba(0, 0, 0, 0.25);
+    border-radius: 3px;
+}
+
+.saved-card .chip::after,
+.card-preview .chip::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+    border-radius: 1px;
+}
+
+/* Card Details */
+.saved-card .card-details,
+.card-preview .card-details,
+.saved-card-back .card-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    position: relative;
+    z-index: 2;
+    margin-top: auto;
+}
+
+.saved-card > *,
+.card-preview > * {
+    position: relative;
+    z-index: 2;
+}
+
+.saved-card .name-number,
+.card-preview .name-number {
+    flex: 1;
+}
+
+.saved-card h6,
+.card-preview h6 {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 11px;
+    font-weight: 400;
+    margin: 0 0 6px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.saved-card .name-number h5.number,
+.card-preview .name-number h5.number {
+    margin-top: 8px;
+    font-size: 20px;
+    letter-spacing: 3px;
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 15px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    font-family: 'Space Mono', monospace;
+}
+
+.card-holder-section {
+    margin-top: 10px;
+}
+
+.saved-card .name-number h5.name,
+.card-preview .name-number h5.name {
+    margin-top: 4px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #fff;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.saved-card .valid-date,
+.card-preview .valid-date {
+    text-align: right;
+}
+
+.saved-card .valid-date h5,
+.card-preview .valid-date h5 {
+    font-size: 16px;
+    font-weight: 400;
+    color: #fff;
+    margin: 0;
+}
+
+.add-card-btn {
+    padding: 1rem;
+    border: 2px dashed var(--border-color);
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.add-card-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--primary-color);
+}
+
+.add-card-btn i {
+    font-size: 1.2rem;
+}
+
+.payment-method-content {
+    padding: 1rem 0;
+}
+
+/* Middle Column - Credit Card Form */
+.payment-middle-column {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Card Preview */
+.card-preview-container {
+    margin-bottom: 1.5rem;
+    perspective: 1000px;
+    height: 250px;
+    position: relative;
+}
+
+.card-preview-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform-style: preserve-3d;
+}
+
+.card-preview-container.flipped .card-preview-wrapper {
+    transform: rotateY(180deg);
+}
+
+.card-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    border-radius: 20px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: visible;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    
+    /* True Glassmorphism Effect */
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px) saturate(180%);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 
+        0 25px 45px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+        0 1px 2px rgba(255, 255, 255, 0.1) inset;
+}
+
+.card-preview::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.4) 100%);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 20px;
+}
+
+.card-preview-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    border-radius: 20px;
+    color: white;
+    transform: rotateY(180deg);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow: visible;
+    
+    /* True Glassmorphism Effect */
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px) saturate(180%);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 
+        0 25px 45px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+        0 1px 2px rgba(255, 255, 255, 0.1) inset;
+}
+
+.card-preview-back::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.4) 100%);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 20px;
+}
+
+.card-preview::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -30%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    animation: pulse 8s ease-in-out infinite;
+}
+
+/* Card Back Styles */
+.saved-card-back.card-purple::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.4) 100%);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 20px;
+}
+
+.saved-card-back.card-red::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(240, 147, 251, 0.4) 0%, rgba(245, 87, 108, 0.4) 100%);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 20px;
+}
+
+.magnetic-strip {
+    height: 50px;
+    background: #000;
+    width: 100%;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    position: relative;
+    z-index: 2;
+}
+
+.signature-area {
+    background: rgba(255, 255, 255, 0.9);
+    height: 40px;
+    width: 85%;
+    margin: 0 auto 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 15px;
+    position: relative;
+    z-index: 2;
+}
+
+.cvv-display {
+    color: #333;
+    font-family: 'Space Mono', monospace;
+    font-weight: bold;
+    font-size: 1rem;
+    letter-spacing: 2px;
+}
+
+/* Card preview uses same styles as saved-card */
+
+.card-bank-info {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
     color: rgba(255, 255, 255, 0.7);
+    min-height: 1.2rem;
+}
+
+.card-type-logos {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    align-items: center;
+}
+
+.card-type-logo-text {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.payment-card-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.payment-card-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.payment-card-form label {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.card-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.card-number-input,
+.card-name-input,
+.card-exp-input,
+.card-cvv-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.card-number-input {
+    padding-right: 3rem;
+}
+
+.card-input-icon {
+    position: absolute;
+    right: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    opacity: 0.7;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.checkbox-group {
+    margin-top: 0.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: normal;
+}
+
+.save-card-checkbox {
+    width: 18px;
+    height: 18px;
     cursor: pointer;
 }
 
-.user-report-form .btn-calendar i {
+.pay-button {
+    margin-top: 1rem;
+    padding: 0.9rem 2rem;
+    background: #2c2c2c;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
     font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
-.user-report-form .btn-calendar:focus {
-    outline: none;
+.pay-button:hover {
+    background: #3a3a3a;
 }
 
-.user-report-footer {
-    margin-top: 18px;
+/* Right Column - Order Summary */
+.payment-right-column {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.order-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.order-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.order-logo {
+    width: 48px;
+    height: 48px;
+    background: var(--primary-color);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.order-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.order-subtitle {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.order-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.order-detail-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 16px;
+}
+
+.detail-label {
     font-size: 0.9rem;
     color: rgba(255, 255, 255, 0.7);
 }
 
-.user-report-actions {
-    display: flex;
-    gap: 10px;
+.detail-value {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
 }
 
-.user-report-actions .btn {
-    border-radius: 999px;
-    padding-inline: 1.2rem;
+.detail-value.discount {
+    color: #4ade80;
+}
+
+.order-totals {
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.order-total-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.order-total-item.final {
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.total-label {
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.total-value {
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.order-total-item.final .total-label,
+.order-total-item.final .total-value {
+    font-size: 1.1rem;
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+    .payment-container {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .payment-right-column {
+        grid-column: 1 / -1;
+    }
 }
 
 @media (max-width: 992px) {
-    .user-report-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 600px) {
-    .user-report-grid {
+    .payment-container {
         grid-template-columns: 1fr;
     }
-
-    .user-report-footer {
-        flex-direction: column;
-        align-items: flex-start;
+    
+    .payment-right-column {
+        grid-column: 1;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
     }
 }
 

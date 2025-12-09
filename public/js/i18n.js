@@ -277,7 +277,7 @@ const translations = {
         user_to_pay_now: "К оплате сейчас",
         user_btn_details: "Подробнее",
         user_btn_my_bills: "Мои счета",
-        user_btn_report_payment: "Сообщить об оплате",
+        user_btn_report_payment: "Оплатить счета",
         user_btn_pay_from_advance: "Погасить из аванса",
         user_balance: "Баланс",
         user_unpaid_bills: "Неоплаченных счета",
