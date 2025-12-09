@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 import json
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
@@ -386,16 +386,31 @@ def get_resident_meters(
 @router.post("/public")
 def create_readings_public(
     data: ReadingCreate,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     """Public endpoint for testing."""
     try:
-        # Create a dummy user for public endpoint
+        # Получаем пользователя из сессии
         from ..models import User
-        dummy_user = db.query(User).first()
-        if not dummy_user:
-            raise HTTPException(status_code=500, detail="No user found in database")
-        return create_readings_internal(data, dummy_user, db)
+        from ..security import get_user_id_from_session
+        
+        user_id = get_user_id_from_session(request)
+        user = None
+        if user_id:
+            user = db.get(User, user_id)
+            if user and user.is_active:
+                pass  # Используем пользователя из сессии
+            else:
+                user = None
+        
+        # Fallback: если нет сессии, используем первого пользователя для теста
+        if not user:
+            user = db.query(User).first()
+            if not user:
+                raise HTTPException(status_code=500, detail="No user found in database")
+        
+        return create_readings_internal(data, user, db)
     except Exception as e:
         import traceback
         print(f"Error in create_readings_public: {e}")
@@ -544,6 +559,16 @@ def create_readings_internal(
             existing.amount_vat = amount_vat
             existing.amount_total = amount_total
             existing.note = data.note or existing.note
+            db.flush()
+            
+            # Создаём лог для обновления
+            db.add(ReadingLog(
+                action="UPDATE",
+                reading_id=existing.id,
+                resident_meter_id=m.id,
+                user_id=user.id,
+                details=f"edit month={period_year}-{period_month:02d} new={float(new_value)} prev={float(prev_val)} cons={float(consumption)}",
+            ))
             upserted.append(existing)
         else:
             # Создаём новую запись
@@ -558,8 +583,19 @@ def create_readings_internal(
                 amount_vat=amount_vat,
                 amount_total=amount_total,
                 note=data.note,
+                created_by_id=user.id,
             )
             db.add(new_reading)
+            db.flush()
+            
+            # Создаём лог для создания
+            db.add(ReadingLog(
+                action="CREATE",
+                reading_id=new_reading.id,
+                resident_meter_id=m.id,
+                user_id=user.id,
+                details=f"create month={period_year}-{period_month:02d} new={float(new_value)} prev={float(prev_val)} cons={float(consumption)}",
+            ))
             upserted.append(new_reading)
 
         db.flush()
@@ -853,16 +889,29 @@ def get_reading_history_public(
 @router.delete("/meter/{meter_id}/last/public")
 def delete_last_reading_public(
     meter_id: int,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     """Public endpoint for testing."""
-    from ..models import User
-    dummy_user = db.query(User).first()
-    if not dummy_user:
-        raise HTTPException(status_code=500, detail="No user found in database")
-    
-    from ..models import ReadingLog, InvoiceLine, Invoice
+    from ..models import User, ReadingLog, InvoiceLine, Invoice
+    from ..security import get_user_id_from_session
     from sqlalchemy import func
+    
+    # Получаем пользователя из сессии
+    user_id = get_user_id_from_session(request)
+    user = None
+    if user_id:
+        user = db.get(User, user_id)
+        if user and user.is_active:
+            pass  # Используем пользователя из сессии
+        else:
+            user = None
+    
+    # Fallback: если нет сессии, используем первого пользователя для теста
+    if not user:
+        user = db.query(User).first()
+        if not user:
+            raise HTTPException(status_code=500, detail="No user found in database")
     
     m = db.get(ResidentMeter, meter_id)
     if not m:
@@ -883,8 +932,8 @@ def delete_last_reading_public(
         action="DELETE",
         reading_id=last.id,
         resident_meter_id=m.id,
-        user_id=dummy_user.id,
-        details="deleted via public API"
+        user_id=user.id,
+        details="deleted"
     ))
     db.delete(last)
 
@@ -949,7 +998,7 @@ def delete_last_reading(
         reading_id=last.id,
         resident_meter_id=m.id,
         user_id=user.id,
-        details="deleted via API"
+        details="deleted"
     ))
     db.delete(last)
 

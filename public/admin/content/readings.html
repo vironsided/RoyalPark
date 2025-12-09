@@ -274,14 +274,14 @@
 
                 console.log('Loading readings from:', url);
 
-                let response = await fetch(url);
+                let response = await fetch(url, { credentials: 'include' });
                 console.log('Response status:', response.status, response.statusText);
                 if (!response.ok) {
                     if (response.status === 401 || response.status === 403) {
                         // Try public endpoint
                         const publicUrl = url.replace('/api/readings?', '/api/readings/public?');
                         console.log('Trying public endpoint:', publicUrl);
-                        response = await fetch(publicUrl);
+                        response = await fetch(publicUrl, { credentials: 'include' });
                         console.log('Public response status:', response.status, response.statusText);
                         if (!response.ok) {
                             const errorText = await response.text();
@@ -848,11 +848,11 @@
             // Load detailed readings from API
             try {
                 let url = `${API_BASE}/api/readings/resident/${residentId}/history`;
-                let response = await fetch(url);
+                let response = await fetch(url, { credentials: 'include' });
                 if (!response.ok) {
                     if (response.status === 401 || response.status === 403) {
                         url = `${API_BASE}/api/readings/resident/${residentId}/history/public`;
-                        response = await fetch(url);
+                        response = await fetch(url, { credentials: 'include' });
                         if (!response.ok) {
                             throw new Error(`HTTP ${response.status}`);
                         }
@@ -1018,7 +1018,14 @@
             
             console.log('Date string:', dateStr);
 
-            const items = collectMeterData();
+            let items;
+            try {
+                items = collectMeterData();
+            } catch (error) {
+                // Ошибка валидации уже показана в collectMeterData
+                return;
+            }
+            
             if (items.length === 0) {
                 if (typeof showWarning === 'function') {
                     showWarning('Нет данных для сохранения');
@@ -1044,7 +1051,8 @@
                     response = await fetch(url, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(payload)
+                        body: JSON.stringify(payload),
+                        credentials: 'include' // Добавляем credentials для передачи сессии
                     });
                 } catch (fetchError) {
                     console.error('Fetch error:', fetchError);
@@ -1054,7 +1062,8 @@
                     response = await fetch(url, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(payload)
+                        body: JSON.stringify(payload),
+                        credentials: 'include' // Добавляем credentials для передачи сессии
                     });
                 }
 
@@ -1067,7 +1076,8 @@
                         response = await fetch(url, {
                             method: 'POST',
                             headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify(payload)
+                            body: JSON.stringify(payload),
+                            credentials: 'include' // Добавляем credentials для передачи сессии
                         });
                         console.log('Public response status:', response.status, response.statusText);
                         if (!response.ok) {
@@ -1115,25 +1125,44 @@
 
         function collectMeterData() {
             const rows = document.querySelectorAll('#meterTableBody tr[data-meter-id]');
-            return Array.from(rows).map(row => {
+            const items = [];
+            
+            for (const row of rows) {
                 const meterId = parseInt(row.dataset.meterId);
                 const isFixed = row.dataset.isFixed === 'true';
                 
                 if (isFixed) {
                     const checkbox = row.querySelector('.meter-checkbox');
-                    return {
-                        meter_id: meterId,
-                        new_value: checkbox?.checked ? 1 : null
-                    };
+                    if (checkbox?.checked) {
+                        items.push({
+                            meter_id: meterId,
+                            new_value: 1
+                        });
+                    }
                 } else {
                     const input = row.querySelector('.meter-input');
                     const value = input?.value ? parseFloat(input.value) : null;
-                    return {
-                        meter_id: meterId,
-                        new_value: value
-                    };
+                    
+                    if (value !== null) {
+                        // Проверяем значение только при сохранении
+                        const prev = parseFloat(row.dataset.prevValue || '0');
+                        if (value < prev) {
+                            if (typeof showError === 'function') {
+                                const meterType = row.querySelector('.meter-type-pill')?.textContent || 'счётчика';
+                                showError(`Новое значение для ${meterType} (${value.toFixed(3)}) не может быть меньше предыдущего (${prev.toFixed(3)})`);
+                            }
+                            throw new Error(`Value ${value} is less than previous ${prev}`);
+                        }
+                        
+                        items.push({
+                            meter_id: meterId,
+                            new_value: value
+                        });
+                    }
                 }
-            }).filter(item => item.new_value !== null);
+            }
+            
+            return items;
         }
 
         window.hideMeterDetails = function hideMeterDetails() {
@@ -1197,11 +1226,11 @@
                 console.log('🔍 renderMeterDetails - dateStr:', dateStr, 'residentId:', residentId);
                 
                 let url = `${API_BASE}/api/readings/resident/${residentId}/meters?date=${dateStr}`;
-                const response = await fetch(url);
+                const response = await fetch(url, { credentials: 'include' });
                 if (!response.ok) {
                     if (response.status === 401 || response.status === 403) {
                         url = `${API_BASE}/api/readings/resident/${residentId}/meters/public?date=${dateStr}`;
-                        const publicResponse = await fetch(url);
+                        const publicResponse = await fetch(url, { credentials: 'include' });
                         if (publicResponse.ok) {
                             const data = await publicResponse.json();
                             renderMeterTable(data.meters || []);
@@ -1294,7 +1323,8 @@
                     existing_parsed: existing,
                     unit: meter.unit
                 });
-                const minValue = isFixed ? '' : `min="${prev}"`;
+                // Убираем min атрибут, чтобы можно было вводить любое значение
+                // Проверка будет при сохранении
                 const placeholder = isFixed ? '' : `placeholder="≥ ${prev.toFixed(3)}"`;
                 
                 // For fixed services, use checkbox
@@ -1366,6 +1396,19 @@
                 const tariffStepsJson = JSON.stringify(meter.tariff_steps || []);
                 const vatPercent = meter.vat_percent || 0;
                 
+                // Если есть существующее значение, используем его для поля ввода
+                const inputValue = (existing !== null && existing !== undefined) ? existing.toFixed(3) : '';
+                
+                // Рассчитываем consumption и amount для существующего значения
+                let initialConsumption = 0;
+                let initialAmount = 0;
+                if (existing !== null && existing !== undefined) {
+                    initialConsumption = existing - prev;
+                    if (initialConsumption > 0) {
+                        initialAmount = calculateAmount(initialConsumption, meter.tariff_steps || [], vatPercent);
+                    }
+                }
+                
                 return `
                     <tr data-meter-id="${meter.meter_id}" 
                         data-prev-value="${prev}" 
@@ -1380,13 +1423,12 @@
                                    step="0.001"
                                    class="meter-input"
                                    ${placeholder}
-                                   ${minValue}
-                                   value=""
+                                   value="${inputValue}"
                                    autocomplete="off"
                                    oninput="handleMeterInput(this, ${meter.meter_id})">
                         </td>
-                        <td><span class="meter-consumption">0.000</span></td>
-                        <td><span class="meter-amount">0.00</span></td>
+                        <td><span class="meter-consumption">${initialConsumption.toFixed(3)}</span></td>
+                        <td><span class="meter-amount">${initialAmount.toFixed(2)}</span></td>
                         <td>
                             <button class="btn btn-sm btn-danger" 
                                     onclick="deleteLastReading(${meter.meter_id}, this)"
@@ -1406,13 +1448,8 @@
             const prev = parseFloat(row.dataset.prevValue || '0');
             const value = parseFloat(input.value || '0');
             
-            if (value < prev) {
-                if (typeof showWarning === 'function') {
-                    showWarning('Новое значение не может быть меньше предыдущего');
-                }
-                input.value = prev;
-                return;
-            }
+            // Убрали проверку при вводе - позволяем вводить любое значение
+            // Проверка будет при сохранении
             
             const consumption = Math.max(0, value - prev);
             
@@ -1453,6 +1490,7 @@
                 let url = `${API_BASE}/api/readings/meter/${meterId}/last`;
                 let response = await fetch(url, {
                     method: 'DELETE',
+                    credentials: 'include'
                 });
                 
                 if (!response.ok) {
@@ -1460,6 +1498,7 @@
                         url = `${API_BASE}/api/readings/meter/${meterId}/last/public`;
                         response = await fetch(url, {
                             method: 'DELETE',
+                            credentials: 'include'
                         });
                         if (!response.ok) {
                             throw new Error(`HTTP ${response.status}`);

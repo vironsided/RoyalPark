@@ -2671,30 +2671,33 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
 
 .account-modal {
     background: #ffffff;
-    border-radius: 20px;
+    border-radius: 24px;
     width: 90%;
     max-width: 600px;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    transform: scale(0.9);
-    transition: transform 0.3s ease;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    transform: scale(0.95);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .account-modal-overlay.show .account-modal {
     transform: scale(1);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
 .account-modal-header {
-    padding: 2rem;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 2rem 2rem 1.75rem 2rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     display: flex;
     align-items: center;
     justify-content: space-between;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    border-radius: 20px 20px 0 0;
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.2);
 }
 
 .account-modal-header h2 {
@@ -2725,6 +2728,8 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
 
 .account-modal-body {
     padding: 2rem;
+    background: #fafbfc;
+    transition: background 0.3s ease;
 }
 
 .account-info-section {
@@ -2776,30 +2781,38 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
 
 .account-form-group label {
     display: block;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.6rem;
     font-weight: 600;
-    color: #1a1d2e;
+    color: #374151;
     font-size: 0.9rem;
+    letter-spacing: 0.01em;
 }
 
 .account-form-group input,
 .account-form-group select {
     width: 100%;
-    padding: 0.75rem;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
+    padding: 0.85rem 1.2rem;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
     font-size: 0.95rem;
-    transition: all 0.3s ease;
-    /* более мягкий светлый фон вместо чисто белого */
-    background: #f3f5ff;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #ffffff;
     color: #1a1d2e;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.account-form-group input:hover,
+.account-form-group select:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .account-form-group input:focus,
 .account-form-group select:focus {
     outline: none;
     border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.12), 0 2px 8px rgba(102, 126, 234, 0.15);
+    transform: translateY(-1px);
 }
 
 .account-modal-footer {
@@ -2825,6 +2838,23 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.account-btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.account-btn-primary:hover::before {
+    left: 100%;
 }
 
 .account-btn-primary:hover {
@@ -2833,12 +2863,16 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
 }
 
 .account-btn-secondary {
-    background: #f5f5f5;
-    color: #666;
+    background: #f8f9fa;
+    color: #495057;
+    border: 1.5px solid #e9ecef;
 }
 
 .account-btn-secondary:hover {
-    background: #e5e5e5;
+    background: #e9ecef;
+    border-color: #dee2e6;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .account-avatar-large {
@@ -2859,28 +2893,54 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
 /* Tabs inside account modal (Профиль / Пароль) */
 .account-tabs {
     display: flex;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    position: relative;
 }
 
 .account-tab-btn {
     position: relative;
-    padding: 0.6rem 1.4rem;
+    padding: 0.75rem 1.75rem;
     border: none;
     background: transparent;
-    color: #6c7280;
+    color: #9ca3af;
     font-weight: 600;
     font-size: 0.95rem;
     cursor: pointer;
-    border-radius: 999px 999px 0 0;
-    transition: all 0.2s ease;
+    border-radius: 12px 12px 0 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.account-tab-btn::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transform: scaleX(0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 3px 3px 0 0;
+}
+
+.account-tab-btn:hover {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
 }
 
 .account-tab-btn.active {
-    color: #1a1d2e;
-    background: #ffffff;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+
+.account-tab-btn.active::before {
+    transform: scaleX(1);
 }
 
 .account-tab-panel {
@@ -2928,6 +2988,30 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
 [data-theme="dark"] .account-modal {
     background: rgba(36, 40, 49, 0.98);
     backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .account-tabs {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .account-tab-btn {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .account-tab-btn:hover {
+    color: #a78bfa;
+    background: rgba(167, 139, 250, 0.1);
+}
+
+[data-theme="dark"] .account-tab-btn.active {
+    color: #a78bfa;
+    background: rgba(167, 139, 250, 0.15);
+    box-shadow: 0 2px 8px rgba(167, 139, 250, 0.2);
+}
+
+[data-theme="dark"] .account-tab-btn.active::before {
+    background: linear-gradient(135deg, #a78bfa 0%, #c084fc 100%);
 }
 
 [data-theme="dark"] .account-modal-header {
@@ -2974,10 +3058,14 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
 [data-theme="dark"] .account-btn-secondary {
     background: rgba(45, 49, 57, 0.8);
     color: #b8bcc4;
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
 }
 
 [data-theme="dark"] .account-btn-secondary:hover {
     background: rgba(55, 59, 67, 0.9);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 /* User profile clickable */

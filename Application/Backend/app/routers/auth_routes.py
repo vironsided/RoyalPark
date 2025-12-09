@@ -52,7 +52,9 @@ def login(request: Request, db: Session = Depends(get_db),
 
 @router.post("/api/auth/login", response_model=LoginResponse)
 async def api_login(login_data: LoginRequest, db: Session = Depends(get_db)):
-    """API endpoint для логина, возвращает роль пользователя"""
+    """API endpoint для логина, возвращает роль пользователя и устанавливает сессию"""
+    from fastapi.responses import JSONResponse
+    
     user = db.query(User).filter(User.username == login_data.username).first()
     
     if not user or not verify_password(login_data.password, user.password_hash) or not user.is_active:
@@ -64,12 +66,19 @@ async def api_login(login_data: LoginRequest, db: Session = Depends(get_db)):
     user.last_login_at = datetime.utcnow()
     db.commit()
     
-    return LoginResponse(
+    # Создаем JSONResponse с данными
+    response_data = LoginResponse(
         success=True,
         role=user.role.value,
         username=user.username,
         message="Вход выполнен успешно"
     )
+    
+    # Создаем Response и устанавливаем cookie
+    response = JSONResponse(content=response_data.dict())
+    set_session(response, user.id)
+    
+    return response
 
 
 @router.get("/logout")

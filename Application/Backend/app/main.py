@@ -101,10 +101,17 @@ def create_app() -> FastAPI:
     app = FastAPI(title="FastAPI Admin (Dark)")
     app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY, session_cookie=settings.COOKIE_NAME)
 
-    # Разрешаем запросы с фронта на 3000 порту
+    # Разрешаем запросы с фронта (для разработки разрешаем все localhost origins)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3000/", "http://127.0.0.1:3000/"],
+        allow_origins=[
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+            "http://localhost",
+            "http://127.0.0.1",
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

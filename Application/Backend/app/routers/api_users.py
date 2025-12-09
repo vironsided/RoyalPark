@@ -1,14 +1,15 @@
 from typing import List, Optional
+import pathlib
 
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import User, RoleEnum
 from ..deps import get_current_user, can_manage_user
-from ..security import hash_password
+from ..security import hash_password, verify_password, get_user_id_from_session
 from ..utils import generate_temp_password
 
 
@@ -21,6 +22,7 @@ class UserOut(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[EmailStr] = None
+    avatar_path: Optional[str] = None
     role: RoleEnum
     is_active: bool
     require_password_change: bool
@@ -202,6 +204,195 @@ def delete_user_api(
 
 
 # ВРЕМЕННО: публичные endpoints без авторизации (удалить после настройки авторизации)
+# ВАЖНО: маршруты /me/public должны быть ПЕРЕД маршрутами /{user_id}/public
+# чтобы FastAPI правильно обрабатывал "me" как строку, а не пытался преобразовать в int
+
+# Функция для сохранения аватара
+def _save_avatar(file: UploadFile, user_id: int) -> str | None:
+    if not file:
+        return None
+    if file.content_type not in ("image/jpeg", "image/png", "image/webp"):
+        return None
+    ext = ".jpg" if file.content_type == "image/jpeg" else (".png" if file.content_type == "image/png" else ".webp")
+    base_dir = pathlib.Path("uploads/avatars") / str(user_id)
+    base_dir.mkdir(parents=True, exist_ok=True)
+    path = base_dir / f"avatar{ext}"
+    with open(path, "wb") as f:
+        f.write(file.file.read())
+    rel_path = f"/uploads/avatars/{user_id}/avatar{ext}"
+    return rel_path
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+    confirm_password: str
+
+
+@router.get("/me/public", response_model=UserOut)
+def get_current_user_profile_public(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """ВРЕМЕННЫЙ endpoint без авторизации для теста."""
+    # Получаем текущего пользователя из сессии
+    user_id = get_user_id_from_session(request)
+    
+    if user_id:
+        # Если есть сессия, используем её
+        user = db.get(User, user_id)
+        if user and user.is_active:
+            return user
+    
+    # Если нет сессии, используем первого пользователя для теста (fallback)
+    user = db.query(User).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
+    return user
+
+
+@router.put("/me/public", response_model=UserOut)
+async def update_current_user_profile_public(
+    request: Request,
+    full_name: str = Form(""),
+    phone: str = Form(""),
+    email: str = Form(""),
+    avatar: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+):
+    """ВРЕМЕННЫЙ endpoint без авторизации для теста."""
+    # Получаем текущего пользователя из сессии
+    user_id = get_user_id_from_session(request)
+    
+    if user_id:
+        # Если есть сессия, используем её
+        user = db.get(User, user_id)
+        if user and user.is_active:
+            # Обновляем профиль текущего пользователя
+            user.full_name = full_name.strip() if full_name.strip() else None
+            user.phone = phone.strip() if phone.strip() else None
+            
+            # Валидация и обработка email
+            email_clean = email.strip() if email.strip() else None
+            if email_clean and '@' not in email_clean:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Неверный формат email"
+                )
+            user.email = email_clean
+            
+            # Обработка аватара
+            if avatar and avatar.filename:
+                rel = _save_avatar(avatar, user.id)
+                if rel:
+                    user.avatar_path = rel
+            
+            db.commit()
+            db.refresh(user)
+            return user
+    
+    # Если нет сессии, используем первого пользователя для теста (fallback)
+    user = db.query(User).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
+    
+    # Обрабатываем данные как в resident_portal.py
+    user.full_name = full_name.strip() if full_name.strip() else None
+    user.phone = phone.strip() if phone.strip() else None
+    
+    # Валидация и обработка email
+    email_clean = email.strip() if email.strip() else None
+    if email_clean and '@' not in email_clean:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Неверный формат email"
+        )
+    user.email = email_clean
+    
+    # Обработка аватара
+    if avatar and avatar.filename:
+        rel = _save_avatar(avatar, user.id)
+        if rel:
+            user.avatar_path = rel
+    
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.post("/me/change-password/public", response_model=dict)
+def change_current_user_password_public(
+    request: Request,
+    payload: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """ВРЕМЕННЫЙ endpoint без авторизации для теста."""
+    # Получаем текущего пользователя из сессии
+    user_id = get_user_id_from_session(request)
+    
+    if user_id:
+        # Если есть сессия, используем её
+        user = db.get(User, user_id)
+        if user and user.is_active:
+            # Изменяем пароль текущего пользователя
+            if payload.new_password != payload.confirm_password:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Пароли не совпадают"
+                )
+            
+            if not verify_password(payload.current_password, user.password_hash):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Неверный текущий пароль"
+                )
+            
+            if len(payload.new_password) < 6:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Пароль должен быть не менее 6 символов"
+                )
+            
+            user.password_hash = hash_password(payload.new_password)
+            user.require_password_change = False
+            user.temp_password_plain = None
+            user.last_password_change_at = datetime.utcnow()
+            db.commit()
+            
+            return {"success": True, "message": "Пароль успешно изменён"}
+    
+    # Если нет сессии, используем первого пользователя для теста (fallback)
+    user = db.query(User).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
+    
+    if payload.new_password != payload.confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Пароли не совпадают"
+        )
+    
+    if not verify_password(payload.current_password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Неверный текущий пароль"
+        )
+    
+    if len(payload.new_password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Пароль должен быть не менее 6 символов"
+        )
+    
+    user.password_hash = hash_password(payload.new_password)
+    user.require_password_change = False
+    user.temp_password_plain = None
+    user.last_password_change_at = datetime.utcnow()
+    db.commit()
+    
+    return {"success": True, "message": "Пароль успешно изменён"}
+
+
 @router.put("/{user_id}/public", response_model=UserOut)
 def update_user_public(
     user_id: int,
@@ -299,5 +490,81 @@ def reset_password_api(
     db.commit()
     db.refresh(target)
     return target
+
+
+@router.get("/me", response_model=UserOut)
+def get_current_user_profile(
+    user: User = Depends(get_current_user),
+):
+    """Получение профиля текущего пользователя."""
+    return user
+
+
+@router.put("/me", response_model=UserOut)
+async def update_current_user_profile(
+    full_name: str = Form(""),
+    phone: str = Form(""),
+    email: str = Form(""),
+    avatar: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Обновление профиля текущего пользователя."""
+    # Обрабатываем данные как в resident_portal.py
+    user.full_name = full_name.strip() if full_name.strip() else None
+    user.phone = phone.strip() if phone.strip() else None
+    
+    # Валидация и обработка email
+    email_clean = email.strip() if email.strip() else None
+    if email_clean and '@' not in email_clean:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Неверный формат email"
+        )
+    user.email = email_clean
+    
+    # Обработка аватара
+    if avatar and avatar.filename:
+        rel = _save_avatar(avatar, user.id)
+        if rel:
+            user.avatar_path = rel
+    
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.post("/me/change-password", response_model=dict)
+def change_current_user_password(
+    payload: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Изменение пароля текущего пользователя."""
+    if payload.new_password != payload.confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Пароли не совпадают"
+        )
+    
+    if not verify_password(payload.current_password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Неверный текущий пароль"
+        )
+    
+    if len(payload.new_password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Пароль должен быть не менее 6 символов"
+        )
+    
+    user.password_hash = hash_password(payload.new_password)
+    user.require_password_change = False
+    user.temp_password_plain = None
+    user.last_password_change_at = datetime.utcnow()
+    db.commit()
+    
+    return {"success": True, "message": "Пароль успешно изменён"}
 
 

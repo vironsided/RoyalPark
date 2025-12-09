@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_
 
 from ..database import get_db
@@ -183,14 +183,31 @@ def get_recent_activity(
             ))
         
         # Последние уведомления
-        recent_notifications = db.query(Notification).order_by(Notification.created_at.desc()).limit(limit).all()
+        recent_notifications = db.query(Notification)\
+            .options(joinedload(Notification.resident).joinedload(Resident.block))\
+            .order_by(Notification.created_at.desc())\
+            .limit(limit)\
+            .all()
         for notif in recent_notifications:
             time_ago = get_time_ago(notif.created_at)
+            
+            # Формируем описание: блок и номер дома, если есть
+            description = "Новое обращение"
+            if notif.resident:
+                block_name = notif.resident.block.name if notif.resident.block else None
+                unit_number = notif.resident.unit_number
+                if block_name and unit_number:
+                    description = f"Блок {block_name}, №{unit_number}"
+                elif unit_number:
+                    description = f"№{unit_number}"
+                elif block_name:
+                    description = f"Блок {block_name}"
+            
             activities.append(RecentActivityOut(
                 id=notif.id,
                 type="notification",
                 title="Новое обращение",
-                description=notif.message[:50] + "..." if len(notif.message) > 50 else notif.message,
+                description=description,
                 time=time_ago,
                 icon="warning" if notif.status == NotificationStatus.UNREAD else "info"
             ))
