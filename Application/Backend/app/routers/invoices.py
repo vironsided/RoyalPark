@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from datetime import datetime, date
 from typing import Optional
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Request, Form, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -30,7 +31,7 @@ from ..database import get_db
 from ..deps import get_current_user, require_any_role
 from ..models import (
     User, RoleEnum, Block, Resident,
-    Invoice, InvoiceStatus,
+    Invoice, InvoiceStatus, InvoiceLine,
     Payment, PaymentApplication,  # <-- для блока оплат
 )
 
@@ -137,6 +138,25 @@ def invoices_list(
             .all()
         )
         paid_map = {inv_id: float(paid) for inv_id, paid in rows}
+    
+    # Проверяем и исправляем amount_total для каждого счета, если он не совпадает с суммой строк
+    needs_commit = False
+    for inv in items:
+        lines_sum = db.query(
+            func.coalesce(func.sum(InvoiceLine.amount_total), 0)
+        ).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
+        
+        if abs(float(inv.amount_total or 0) - float(lines_sum)) > 0.01:
+            print(f"DEBUG: Invoice {inv.id} amount_total mismatch! invoice={inv.amount_total}, lines_sum={lines_sum}, fixing...")
+            inv.amount_total = Decimal(str(lines_sum))
+            net_sum = db.query(func.coalesce(func.sum(InvoiceLine.amount_net), 0)).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
+            vat_sum = db.query(func.coalesce(func.sum(InvoiceLine.amount_vat), 0)).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
+            inv.amount_net = Decimal(str(net_sum))
+            inv.amount_vat = Decimal(str(vat_sum))
+            needs_commit = True
+    
+    if needs_commit:
+        db.commit()
     # -----------------------------------------------------
 
     residents = db.query(Resident).order_by(Resident.block_id.asc(), Resident.unit_number.asc()).all()
@@ -263,6 +283,20 @@ def invoice_detail(
     if not inv:
         return _see_other("/invoices?error=notfound")
     resident = db.get(Resident, inv.resident_id)
+
+    # Проверяем и исправляем amount_total, если он не совпадает с суммой строк
+    lines_sum = db.query(
+        func.coalesce(func.sum(InvoiceLine.amount_total), 0)
+    ).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
+    
+    if abs(float(inv.amount_total or 0) - float(lines_sum)) > 0.01:
+        print(f"DEBUG: Invoice {inv.id} amount_total mismatch! invoice={inv.amount_total}, lines_sum={lines_sum}, fixing...")
+        inv.amount_total = Decimal(str(lines_sum))
+        net_sum = db.query(func.coalesce(func.sum(InvoiceLine.amount_net), 0)).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
+        vat_sum = db.query(func.coalesce(func.sum(InvoiceLine.amount_vat), 0)).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
+        inv.amount_net = Decimal(str(net_sum))
+        inv.amount_vat = Decimal(str(vat_sum))
+        db.commit()
 
     # ---- Блок «Оплаты по счёту» ----
     apps = (

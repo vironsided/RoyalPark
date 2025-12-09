@@ -398,7 +398,8 @@
     const API_BASE = 'http://localhost:8000';
     const state = {
         notifications: [],
-        currentNotification: null
+        currentNotification: null,
+        notificationOpenedFromUrl: false // Флаг, что модальное окно уже было открыто из URL
     };
 
     const statusStyles = {
@@ -453,6 +454,9 @@
             
             state.notifications = data.notifications || [];
             renderTable();
+            
+            // Возвращаем промис для возможности ожидания
+            return Promise.resolve();
         } catch (error) {
             console.error('Error loading notifications:', error);
             if (typeof showError === 'function') {
@@ -460,6 +464,7 @@
             }
             state.notifications = [];
             renderTable();
+            return Promise.reject(error);
         }
     }
 
@@ -582,9 +587,22 @@
             if (modalOverlay) {
                 console.log('Showing modal overlay');
                 modalOverlay.classList.add('show');
+                // Убеждаемся, что модальное окно видимо
+                modalOverlay.style.display = 'flex';
             } else {
-                console.error('Modal overlay not found!');
+                console.error('Modal overlay not found! Attempting to cache DOM again...');
+                cacheDom();
+                if (modalOverlay) {
+                    console.log('Modal overlay found after re-caching');
+                    modalOverlay.classList.add('show');
+                    modalOverlay.style.display = 'flex';
+                } else {
+                    console.error('Modal overlay still not found!');
+                }
             }
+            
+            // Очищаем параметр id из URL после открытия модального окна
+            clearNotificationIdFromUrl();
             
             // Перезагружаем список, чтобы обновить статус
             await loadNotifications();
@@ -640,7 +658,10 @@
     }
 
     function closeModal() {
-        if (modalOverlay) modalOverlay.classList.remove('show');
+        if (modalOverlay) {
+            modalOverlay.classList.remove('show');
+            modalOverlay.style.display = 'none';
+        }
     }
 
     function formatDateTime(value) {
@@ -749,8 +770,73 @@
         }
     }
 
+    function getNotificationIdFromUrl() {
+        // Если модальное окно уже было открыто из URL, не открываем снова
+        if (state.notificationOpenedFromUrl) {
+            return null;
+        }
+        
+        // Сначала проверяем глобальную переменную, установленную spa-router
+        if (window.__currentNotificationId) {
+            return window.__currentNotificationId;
+        }
+        
+        // Проверяем hash для SPA роутера
+        const hash = window.location.hash;
+        if (hash.includes('?')) {
+            const hashParts = hash.split('?');
+            if (hashParts.length > 1) {
+                const params = new URLSearchParams(hashParts[1]);
+                const id = params.get('id');
+                if (id) return parseInt(id);
+            }
+        }
+        
+        // Проверяем обычный query string
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
+        if (id) return parseInt(id);
+        
+        return null;
+    }
+
+    function clearNotificationIdFromUrl() {
+        // Очищаем глобальную переменную
+        if (window.__currentNotificationId) {
+            delete window.__currentNotificationId;
+        }
+        
+        // Очищаем параметр id из hash
+        const hash = window.location.hash;
+        if (hash.includes('?')) {
+            const hashParts = hash.split('?');
+            const baseRoute = hashParts[0];
+            const params = new URLSearchParams(hashParts[1]);
+            params.delete('id');
+            
+            // Формируем новый hash без параметра id
+            const newHash = params.toString() ? `${baseRoute}?${params.toString()}` : baseRoute;
+            
+            // Обновляем URL без перезагрузки страницы
+            if (window.spaRouter) {
+                // Используем navigate без параметра id
+                window.spaRouter.navigate(baseRoute.slice(1)); // Убираем #
+            } else {
+                window.location.hash = baseRoute;
+            }
+        }
+        
+        // Устанавливаем флаг, что модальное окно было открыто
+        state.notificationOpenedFromUrl = true;
+    }
+
     function initAppealsPage() {
         console.log('Initializing appeals2 page...');
+        
+        // Сбрасываем флаг при каждой инициализации страницы
+        // Это позволяет открывать модальное окно при переходе с параметром id
+        state.notificationOpenedFromUrl = false;
+        
         cacheDom();
         bindEvents();
         
@@ -771,7 +857,35 @@
             });
         }
         
-        loadNotifications();
+        // Проверяем, есть ли id в URL - если есть, значит это переход с уведомления
+        const notificationId = getNotificationIdFromUrl();
+        if (notificationId) {
+            console.log('Found notification ID in URL:', notificationId);
+            // Загружаем список, затем открываем нужное уведомление
+            loadNotifications().then(() => {
+                // Увеличиваем задержку, чтобы DOM точно был готов
+                setTimeout(() => {
+                    console.log('Attempting to open notification:', notificationId);
+                    // Повторно кешируем DOM элементы перед открытием
+                    cacheDom();
+                    if (modalOverlay) {
+                        viewNotification(notificationId);
+                    } else {
+                        console.error('Modal overlay not found, retrying...');
+                        setTimeout(() => {
+                            cacheDom();
+                            if (modalOverlay) {
+                                viewNotification(notificationId);
+                            }
+                        }, 200);
+                    }
+                }, 500);
+            }).catch(err => {
+                console.error('Error loading notifications:', err);
+            });
+        } else {
+            loadNotifications();
+        }
         
         // Повторно применить стили через небольшую задержку
         setTimeout(applyDarkThemeToSelect, 100);
@@ -789,6 +903,7 @@
         console.log('Current route:', route);
         if (!route || route === '/appeals2' || route.startsWith('/appeals2')) {
             console.log('Loading appeals2 from spa:contentLoaded');
+            // Инициализируем страницу - она сама проверит URL на наличие id
             setTimeout(() => {
                 initAppealsPage();
             }, 100);

@@ -633,6 +633,7 @@ def create_readings(
 
     # привести строки инвойса в соответствие (на случай UPDATE)
     if inv:
+        # Сначала обработаем текущие показания из запроса
         for rd in upserted:
             # найти/создать строку под этот reading
             line = db.query(InvoiceLine).filter(InvoiceLine.meter_reading_id == rd.id).first()
@@ -657,19 +658,93 @@ def create_readings(
                     amount_total=rd.amount_total,
                 ))
             else:
-                # убедимся, что invoice_id совпадает (если создавался раньше без id)
+                # обновляем существующую строку
+                m = rd.resident_meter
+                unit = ("кВт·ч" if m.meter_type == MeterType.ELECTRIC else
+                        "м³" if m.meter_type in {MeterType.GAS, MeterType.WATER, MeterType.SEWERAGE} else "мес.")
+                title = ("Электричество" if m.meter_type == MeterType.ELECTRIC else
+                         "Газ" if m.meter_type == MeterType.GAS else
+                         "Вода" if m.meter_type == MeterType.WATER else
+                         "Канализация" if m.meter_type == MeterType.SEWERAGE else
+                         "Сервис" if m.meter_type == MeterType.SERVICE else
+                         "Аренда" if m.meter_type == MeterType.RENT else
+                         "Строительство")
                 line.invoice_id = inv.id
+                line.description = f"{title} {float(rd.consumption)} {unit}"
+                line.amount_net = rd.amount_net
+                line.amount_vat = rd.amount_vat
+                line.amount_total = rd.amount_total
+
+        # ВАЖНО: Найдем ВСЕ показания за этот период для этого резидента
+        # и убедимся, что для каждого есть строка в счете
+        from_dt = datetime(period_year, period_month, 1)
+        to_dt = datetime(period_year + (1 if period_month == 12 else 0), (1 if period_month == 12 else period_month + 1), 1)
+        
+        all_period_readings = (
+            db.query(MeterReading)
+            .join(ResidentMeter, ResidentMeter.id == MeterReading.resident_meter_id)
+            .filter(
+                ResidentMeter.resident_id == r.id,
+                MeterReading.reading_date >= from_dt,
+                MeterReading.reading_date < to_dt,
+            )
+            .all()
+        )
+        
+        # Получим все существующие строки счета
+        existing_lines = {line.meter_reading_id: line for line in db.query(InvoiceLine).filter(InvoiceLine.invoice_id == inv.id).all() if line.meter_reading_id}
+        
+        # Создадим/обновим строки для всех показаний периода
+        for rd in all_period_readings:
+            if rd.id not in existing_lines:
+                # Создаем новую строку для показания, которого еще нет в счете
+                m = rd.resident_meter
+                unit = ("кВт·ч" if m.meter_type == MeterType.ELECTRIC else
+                        "м³" if m.meter_type in {MeterType.GAS, MeterType.WATER, MeterType.SEWERAGE} else "мес.")
+                title = ("Электричество" if m.meter_type == MeterType.ELECTRIC else
+                         "Газ" if m.meter_type == MeterType.GAS else
+                         "Вода" if m.meter_type == MeterType.WATER else
+                         "Канализация" if m.meter_type == MeterType.SEWERAGE else
+                         "Сервис" if m.meter_type == MeterType.SERVICE else
+                         "Аренда" if m.meter_type == MeterType.RENT else
+                         "Строительство")
+                db.add(InvoiceLine(
+                    invoice_id=inv.id,
+                    meter_reading_id=rd.id,
+                    description=f"{title} {float(rd.consumption)} {unit}",
+                    amount_net=rd.amount_net,
+                    amount_vat=rd.amount_vat,
+                    amount_total=rd.amount_total,
+                ))
+            else:
+                # Обновляем существующую строку, если данные изменились
+                line = existing_lines[rd.id]
+                m = rd.resident_meter
+                unit = ("кВт·ч" if m.meter_type == MeterType.ELECTRIC else
+                        "м³" if m.meter_type in {MeterType.GAS, MeterType.WATER, MeterType.SEWERAGE} else "мес.")
+                title = ("Электричество" if m.meter_type == MeterType.ELECTRIC else
+                         "Газ" if m.meter_type == MeterType.GAS else
+                         "Вода" if m.meter_type == MeterType.WATER else
+                         "Канализация" if m.meter_type == MeterType.SEWERAGE else
+                         "Сервис" if m.meter_type == MeterType.SERVICE else
+                         "Аренда" if m.meter_type == MeterType.RENT else
+                         "Строительство")
+                line.description = f"{title} {float(rd.consumption)} {unit}"
+                line.amount_net = rd.amount_net
+                line.amount_vat = rd.amount_vat
+                line.amount_total = rd.amount_total
 
         # --- ПЕРЕСЧЁТ ИТОГОВ СЧЁТА по фактическим строкам в БД ---
-        db.flush()
+        db.flush()  # Важно: сохраняем все изменения перед пересчетом
         sums = db.query(
             func.coalesce(func.sum(InvoiceLine.amount_net), 0),
             func.coalesce(func.sum(InvoiceLine.amount_vat), 0),
             func.coalesce(func.sum(InvoiceLine.amount_total), 0),
         ).filter(InvoiceLine.invoice_id == inv.id).one()
-        inv.amount_net = Decimal(sums[0]);
-        inv.amount_vat = Decimal(sums[1]);
-        inv.amount_total = Decimal(sums[2])
+        inv.amount_net = Decimal(str(sums[0] or 0))
+        inv.amount_vat = Decimal(str(sums[1] or 0))
+        inv.amount_total = Decimal(str(sums[2] or 0))
+        print(f"DEBUG: Recalculated invoice {inv.id} totals: net={inv.amount_net}, vat={inv.amount_vat}, total={inv.amount_total}, lines_count={len(all_period_readings)}")
         
         # Если счёт пустой (все показания удалены) - удаляем его
         if inv.amount_total == 0 and not db.query(InvoiceLine).filter(InvoiceLine.invoice_id == inv.id).first():

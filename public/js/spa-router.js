@@ -345,6 +345,8 @@ class SPARouter {
                     window.__currentInvoiceId = parseInt(params.get('id'));
                 } else if (baseRoute === '/payment-view') {
                     window.__currentPaymentId = parseInt(params.get('id'));
+                } else if (baseRoute === '/appeals2') {
+                    window.__currentNotificationId = parseInt(params.get('id'));
                 }
             }
         }
@@ -541,6 +543,8 @@ class SPARouter {
                     eventDetail.invoiceId = parseInt(params.get('id'));
                 } else if (this.currentRoute === '/payment-view') {
                     eventDetail.paymentId = parseInt(params.get('id'));
+                } else if (this.currentRoute === '/appeals2') {
+                    eventDetail.notificationId = parseInt(params.get('id'));
                 }
             }
         }

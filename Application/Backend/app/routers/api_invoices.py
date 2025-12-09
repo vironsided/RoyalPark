@@ -121,6 +121,25 @@ def _list_invoices_internal(
         )
         paid_map = {inv_id: float(paid) for inv_id, paid in rows}
     
+    # Проверяем и исправляем amount_total для каждого счета, если он не совпадает с суммой строк
+    needs_commit = False
+    for inv in items:
+        lines_sum = db.query(
+            func.coalesce(func.sum(InvoiceLine.amount_total), 0)
+        ).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
+        
+        if abs(float(inv.amount_total or 0) - float(lines_sum)) > 0.01:
+            print(f"DEBUG: Invoice {inv.id} amount_total mismatch! invoice={inv.amount_total}, lines_sum={lines_sum}, fixing...")
+            inv.amount_total = Decimal(str(lines_sum))
+            net_sum = db.query(func.coalesce(func.sum(InvoiceLine.amount_net), 0)).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
+            vat_sum = db.query(func.coalesce(func.sum(InvoiceLine.amount_vat), 0)).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
+            inv.amount_net = Decimal(str(net_sum))
+            inv.amount_vat = Decimal(str(vat_sum))
+            needs_commit = True
+    
+    if needs_commit:
+        db.commit()
+    
     # Получаем блоки и резидентов для формирования данных
     blocks = {b.id: b for b in db.query(Block).all()}
     
@@ -235,6 +254,13 @@ class BulkIssueRequest(BaseModel):
     action: str  # 'by_block' | 'all'
     block_id: Optional[int] = None
     due_date: Optional[str] = None  # YYYY-MM-DD
+    
+    @classmethod
+    def parse_obj(cls, obj):
+        # Ensure block_id is None if it's null in JSON
+        if isinstance(obj, dict) and 'block_id' in obj and obj['block_id'] is None:
+            obj['block_id'] = None
+        return super().parse_obj(obj)
 
 
 class BulkIssueResponse(BaseModel):
@@ -256,11 +282,15 @@ def _bulk_issue_internal(
     if action not in ("by_block", "all"):
         raise HTTPException(status_code=400, detail="Action must be 'by_block' or 'all'")
     
+    print(f"DEBUG bulk_issue: action={action}, block_id={block_id}, due_date={due_date}")
+    
     # Query for DRAFT invoices
     query = db.query(Invoice).join(Resident, Resident.id == Invoice.resident_id)\
                              .filter(Invoice.status == InvoiceStatus.DRAFT)
     
     if action == "by_block":
+        if not block_id:
+            raise HTTPException(status_code=400, detail="Block ID is required for 'by_block' action")
         query = query.filter(Resident.block_id == block_id)
         # Debug: check block name
         block_check = db.query(Block).filter(Block.id == block_id).first()
@@ -273,10 +303,20 @@ def _bulk_issue_internal(
             invoices_for_resident = db.query(Invoice).filter(Invoice.resident_id == r.id).all()
             draft_for_resident = [inv for inv in invoices_for_resident if inv.status == InvoiceStatus.DRAFT]
             print(f"DEBUG:   - Resident ID={r.id}, unit={r.unit_number}, total invoices={len(invoices_for_resident)}, DRAFT={len(draft_for_resident)}")
+    else:
+        # action == "all" - no block filter needed
+        print(f"DEBUG: Processing ALL DRAFT invoices (no block filter)")
     
     # Debug: count before processing
     draft_count = query.count()
     print(f"DEBUG: Found {draft_count} DRAFT invoices for action={action}, block_id={block_id}")
+    
+    if draft_count == 0:
+        return {
+            "success": True,
+            "count": 0,
+            "message": "Нет черновиков для выставления"
+        }
     
     # Debug: show sample of DRAFT invoices found
     sample_drafts = query.limit(5).all()
@@ -324,7 +364,14 @@ def _bulk_issue_internal(
         print(f"DEBUG: Updated invoice ID={inv.id} to ISSUED, due_date={inv.due_date}")
     
     print(f"DEBUG: Total processed: {cnt} invoices")
-    db.commit()
+    try:
+        db.commit()
+        print(f"DEBUG: Commit successful")
+    except Exception as e:
+        print(f"DEBUG: Commit failed: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to commit changes: {str(e)}")
+    
     return {
         "success": True,
         "count": cnt,
@@ -338,14 +385,24 @@ def bulk_issue_public(
     db: Session = Depends(get_db),
 ):
     """Public endpoint for testing."""
+    print(f"=== DEBUG bulk_issue_public START ===")
+    print(f"Received request - action={data.action}, block_id={data.block_id}, due_date={data.due_date}")
     try:
-        return _bulk_issue_internal(db, data.action, data.block_id, data.due_date)
-    except HTTPException:
+        # Normalize block_id: if it's None or 0, set to None
+        block_id = data.block_id if data.block_id else None
+        result = _bulk_issue_internal(db, data.action, block_id, data.due_date)
+        print(f"DEBUG bulk_issue_public: Success - {result}")
+        print(f"=== DEBUG bulk_issue_public END (SUCCESS) ===")
+        return result
+    except HTTPException as he:
+        print(f"DEBUG bulk_issue_public: HTTPException - {he.status_code}: {he.detail}")
+        print(f"=== DEBUG bulk_issue_public END (HTTPException) ===")
         raise
     except Exception as e:
         import traceback
-        print(f"Error in bulk_issue_public: {e}")
+        print(f"ERROR in bulk_issue_public: {e}")
         print(traceback.format_exc())
+        print(f"=== DEBUG bulk_issue_public END (ERROR) ===")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
@@ -356,7 +413,25 @@ def bulk_issue_api(
     user: User = Depends(get_current_user),
 ):
     """Массовое выставление счетов."""
-    return _bulk_issue_internal(db, data.action, data.block_id, data.due_date)
+    print(f"=== DEBUG bulk_issue_api START ===")
+    print(f"Received request - action={data.action}, block_id={data.block_id}, due_date={data.due_date}, user={user.username if user else 'None'}")
+    try:
+        # Normalize block_id: if it's None or 0, set to None
+        block_id = data.block_id if data.block_id else None
+        result = _bulk_issue_internal(db, data.action, block_id, data.due_date)
+        print(f"DEBUG bulk_issue_api: Success - {result}")
+        print(f"=== DEBUG bulk_issue_api END (SUCCESS) ===")
+        return result
+    except HTTPException as he:
+        print(f"DEBUG bulk_issue_api: HTTPException - {he.status_code}: {he.detail}")
+        print(f"=== DEBUG bulk_issue_api END (HTTPException) ===")
+        raise
+    except Exception as e:
+        import traceback
+        print(f"ERROR in bulk_issue_api: {e}")
+        print(traceback.format_exc())
+        print(f"=== DEBUG bulk_issue_api END (ERROR) ===")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 # ====== Get invoice details ======
@@ -418,11 +493,28 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
     
     print(f"DEBUG INVOICE {invoice_id}: Found {len(apps)} payment applications")
     
+    # Пересчитываем amount_total из строк счета на случай, если он устарел
+    lines_sum = db.query(
+        func.coalesce(func.sum(InvoiceLine.amount_total), 0)
+    ).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
+    
+    # Обновляем amount_total в счете, если он отличается от суммы строк
+    if abs(float(inv.amount_total or 0) - float(lines_sum)) > 0.01:
+        print(f"DEBUG INVOICE {invoice_id}: amount_total mismatch! invoice.amount_total={inv.amount_total}, lines_sum={lines_sum}, updating...")
+        inv.amount_total = Decimal(str(lines_sum))
+        # Также пересчитываем net и vat
+        net_sum = db.query(func.coalesce(func.sum(InvoiceLine.amount_net), 0)).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
+        vat_sum = db.query(func.coalesce(func.sum(InvoiceLine.amount_vat), 0)).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
+        inv.amount_net = Decimal(str(net_sum))
+        inv.amount_vat = Decimal(str(vat_sum))
+        db.commit()
+        print(f"DEBUG INVOICE {invoice_id}: Updated invoice totals: net={inv.amount_net}, vat={inv.amount_vat}, total={inv.amount_total}")
+    
     paid_total = db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))\
                    .filter(PaymentApplication.invoice_id == inv.id).scalar() or 0
     remaining = float(inv.amount_total or 0) - float(paid_total)
     
-    print(f"DEBUG INVOICE {invoice_id}: paid_total={paid_total}, amount_total={inv.amount_total}, remaining={remaining}")
+    print(f"DEBUG INVOICE {invoice_id}: paid_total={paid_total}, amount_total={inv.amount_total}, remaining={remaining}, lines_count={len(lines)}")
     
     payments = []
     for app in apps:

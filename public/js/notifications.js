@@ -115,20 +115,22 @@ function showConfirm(message, onConfirm, onCancel) {
     // OK button
     dialog.querySelector('.confirm-ok').addEventListener('click', () => {
         closeConfirm(overlay);
-        if (onConfirm) onConfirm();
+        if (onConfirm) onConfirm(true);  // Pass true when confirmed
     });
     
     // Cancel button
     dialog.querySelector('.confirm-cancel').addEventListener('click', () => {
         closeConfirm(overlay);
-        if (onCancel) onCancel();
+        if (onCancel) onCancel(false);  // Pass false when cancelled
+        else if (onConfirm) onConfirm(false);  // If no onCancel, call onConfirm with false
     });
     
     // Close on overlay click
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
             closeConfirm(overlay);
-            if (onCancel) onCancel();
+            if (onCancel) onCancel(false);
+            else if (onConfirm) onConfirm(false);  // If no onCancel, call onConfirm with false
         }
     });
     
@@ -136,7 +138,8 @@ function showConfirm(message, onConfirm, onCancel) {
     const escHandler = (e) => {
         if (e.key === 'Escape') {
             closeConfirm(overlay);
-            if (onCancel) onCancel();
+            if (onCancel) onCancel(false);
+            else if (onConfirm) onConfirm(false);  // If no onCancel, call onConfirm with false
             document.removeEventListener('keydown', escHandler);
         }
     };
@@ -200,7 +203,8 @@ function showPrompt(message, defaultValue = '', onConfirm, onCancel) {
     // Cancel button
     dialog.querySelector('.confirm-cancel').addEventListener('click', () => {
         closeConfirm(overlay);
-        if (onCancel) onCancel();
+        if (onCancel) onCancel(false);  // Pass false when cancelled
+        else if (onConfirm) onConfirm(false);  // If no onCancel, call onConfirm with false
     });
     
     // Close on overlay click

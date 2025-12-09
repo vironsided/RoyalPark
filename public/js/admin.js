@@ -303,8 +303,8 @@ async function loadDashboardData() {
         
         // Update stats with real data when backend is ready
         updateStats({
-            totalUsers: 1245,
-            totalBuildings: 48,
+            totalUsers: data.totalUsers,
+            totalBuildings: data.totalBuildings,
             monthlyPayments: 2400000,
             activeRequests: 23
         });

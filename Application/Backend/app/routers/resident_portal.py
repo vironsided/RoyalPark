@@ -528,6 +528,25 @@ def resident_invoices(
               .all()
         )
         paid_map = {inv_id: float(paid) for inv_id, paid in rows}
+    
+    # Проверяем и исправляем amount_total для каждого счета, если он не совпадает с суммой строк
+    needs_commit = False
+    for inv in items:
+        lines_sum = db.query(
+            func.coalesce(func.sum(InvoiceLine.amount_total), 0)
+        ).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
+        
+        if abs(float(inv.amount_total or 0) - float(lines_sum)) > 0.01:
+            print(f"DEBUG: Invoice {inv.id} amount_total mismatch! invoice={inv.amount_total}, lines_sum={lines_sum}, fixing...")
+            inv.amount_total = Decimal(str(lines_sum))
+            net_sum = db.query(func.coalesce(func.sum(InvoiceLine.amount_net), 0)).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
+            vat_sum = db.query(func.coalesce(func.sum(InvoiceLine.amount_vat), 0)).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
+            inv.amount_net = Decimal(str(net_sum))
+            inv.amount_vat = Decimal(str(vat_sum))
+            needs_commit = True
+    
+    if needs_commit:
+        db.commit()
 
        # --- диапазон дат "предыдущее показание - текущее" по каждой квитанции ---
     period_map: dict[int, dict[str, str | None]] = {}
