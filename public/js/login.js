@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include', // Важно: отправляем cookies
                 body: JSON.stringify({
                     username: username,
                     password: password

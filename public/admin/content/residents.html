@@ -274,6 +274,7 @@
                 const blockId = document.getElementById('filterBlock')?.value;
                 const status = document.getElementById('filterStatus')?.value;
                 const rtype = document.getElementById('filterType')?.value;
+                const houseNumber = document.getElementById('filterHouse')?.value?.trim();
                 
                 let url = `${API_BASE}/api/residents?`;
                 const params = new URLSearchParams();
@@ -281,6 +282,9 @@
                 if (status && status !== 'all') params.append('status', status);
                 if (rtype && rtype !== 'all') {
                     params.append('rtype', rtype);
+                }
+                if (houseNumber) {
+                    params.append('q', houseNumber);
                 }
                 url += params.toString();
                 

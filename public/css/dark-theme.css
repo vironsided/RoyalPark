@@ -158,14 +158,32 @@
 
 /* Account modal inputs in dark theme */
 [data-theme="dark"] .account-modal-body {
-    background: transparent;
+    background: rgba(30, 33, 40, 0.5);
+}
+
+[data-theme="dark"] .account-form-group label {
+    color: #e4e6eb;
 }
 
 [data-theme="dark"] .account-form-group input,
 [data-theme="dark"] .account-form-group select {
-    background: #232734;
-    border-color: #3a3f4a;
+    background: rgba(45, 49, 57, 0.9);
+    border-color: rgba(255, 255, 255, 0.12);
     color: #e4e6eb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .account-form-group input:hover,
+[data-theme="dark"] .account-form-group select:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .account-form-group input:focus,
+[data-theme="dark"] .account-form-group select:focus {
+    border-color: #a78bfa;
+    box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.2), 0 2px 8px rgba(167, 139, 250, 0.25);
+    transform: translateY(-1px);
 }
 
 [data-theme="dark"] .account-form-group input::placeholder {
@@ -174,9 +192,33 @@
 
 /* Extra guarantee for password tab inputs (делаем ещё темнее, перекрываем любые другие стили) */
 [data-theme="dark"] .account-tab-panel .account-form-group input {
-    background: #1e222d !important;
-    border-color: #3a3f4a !important;
+    background: rgba(45, 49, 57, 0.9) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
     color: #e4e6eb !important;
+}
+
+/* Улучшенные стили для вкладок в темной теме */
+[data-theme="dark"] .account-tabs {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .account-tab-btn {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .account-tab-btn:hover {
+    color: #a78bfa;
+    background: rgba(167, 139, 250, 0.1);
+}
+
+[data-theme="dark"] .account-tab-btn.active {
+    color: #a78bfa;
+    background: rgba(167, 139, 250, 0.15);
+    box-shadow: 0 2px 8px rgba(167, 139, 250, 0.2);
+}
+
+[data-theme="dark"] .account-tab-btn.active::before {
+    background: linear-gradient(135deg, #a78bfa 0%, #c084fc 100%);
 }
 
 /* File input in account modal (Аватар) */

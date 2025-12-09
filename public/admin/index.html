@@ -407,6 +407,7 @@
                                 <input type="file" id="accountAvatarInput" accept="image/*">
                             </div>
                         </div>
+                        <button class="account-btn account-btn-primary" id="accountModalSave">Сохранить изменения</button>
                     </div>
                 </div>
 
@@ -431,7 +432,7 @@
             </div>
             <div class="account-modal-footer">
                 <button class="account-btn account-btn-secondary" id="accountModalCancel">Отмена</button>
-                <button class="account-btn account-btn-primary" id="accountModalSave">Сохранить изменения</button>
+                <!-- <button class="account-btn account-btn-primary" id="accountModalSave">Сохранить изменения</button> -->
             </div>
         </div>
     </div>
@@ -554,6 +555,8 @@
             const savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', 'dark');
             localStorage.setItem('theme', 'dark');
+            
+            // Профиль пользователя загружается в блоке Account Settings Modal
             
             // Загружаем количество непрочитанных обращений
             updateAppealsBadge();
@@ -961,6 +964,9 @@
                 updateCount: updateNotificationCount,
                 getUnreadCount: () => notifications.filter(n => n.unread).length
             };
+            
+            // Делаем loadUserProfile доступной глобально для вызова при загрузке страницы
+            window.loadUserProfile = loadUserProfile;
 
             // Account Settings Modal (copied logic from user dashboard)
             const accountProfileBtn = document.getElementById('accountProfileBtn');
@@ -969,7 +975,94 @@
             const accountModalCancel = document.getElementById('accountModalCancel');
             const accountModalSave = document.getElementById('accountModalSave');
             
+            let currentUserData = null;
             let initialAccountState = null;
+            
+            async function loadUserProfile() {
+                try {
+                    const response = await fetch(`${API_BASE}/api/users/me/public`, {
+                        credentials: 'include' // Отправляем cookies для сессии
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const user = await response.json();
+                    currentUserData = user;
+                    
+                    // Заполняем поля формы
+                    const fullNameInput = document.getElementById('accountFullName');
+                    const phoneInput = document.getElementById('accountPhoneInput');
+                    const emailInput = document.getElementById('accountEmailInput');
+                    const avatarPreview = document.getElementById('accountModalAvatar');
+                    
+                    if (fullNameInput) fullNameInput.value = user.full_name || '';
+                    if (phoneInput) phoneInput.value = user.phone || '';
+                    if (emailInput) emailInput.value = user.email || '';
+                    
+                    // Обновляем аватар
+                    if (avatarPreview) {
+                        if (user.avatar_path) {
+                            avatarPreview.style.backgroundImage = `url('${API_BASE}${user.avatar_path}')`;
+                            avatarPreview.style.backgroundSize = 'cover';
+                            avatarPreview.style.backgroundPosition = 'center';
+                            avatarPreview.textContent = '';
+                        } else {
+                            // Показываем инициалы
+                            const initials = (user.full_name || user.username || 'U').substring(0, 2).toUpperCase();
+                            avatarPreview.textContent = initials;
+                            avatarPreview.style.backgroundImage = '';
+                        }
+                    }
+                    
+                    // Обновляем аватар и имя в шапке
+                    updateHeaderUserInfo(user);
+                    
+                    initialAccountState = getAccountState();
+                } catch (error) {
+                    console.error('Error loading user profile:', error);
+                    if (window.showError) {
+                        showError('Ошибка загрузки профиля: ' + error.message);
+                    }
+                }
+            }
+            
+            function updateHeaderUserInfo(user) {
+                // Обновляем аватар в шапке
+                const headerAvatar = document.querySelector('.user-avatar');
+                if (headerAvatar) {
+                    if (user.avatar_path) {
+                        headerAvatar.style.backgroundImage = `url('${API_BASE}${user.avatar_path}')`;
+                        headerAvatar.style.backgroundSize = 'cover';
+                        headerAvatar.style.backgroundPosition = 'center';
+                        headerAvatar.textContent = '';
+                    } else {
+                        // Показываем инициалы если нет аватара
+                        const initials = (user.full_name || user.username || 'U').substring(0, 2).toUpperCase();
+                        headerAvatar.textContent = initials;
+                        headerAvatar.style.backgroundImage = '';
+                    }
+                }
+                
+                // Обновляем имя в шапке
+                const userNameEl = document.querySelector('.user-name');
+                if (userNameEl) {
+                    userNameEl.textContent = user.full_name || user.username || 'Пользователь';
+                }
+                
+                // Обновляем роль в шапке (опционально)
+                const userRoleEl = document.querySelector('.user-role');
+                if (userRoleEl) {
+                    const roleNames = {
+                        'ROOT': 'Системный администратор',
+                        'ADMIN': 'Администратор',
+                        'OPERATOR': 'Оператор',
+                        'RESIDENT': 'Житель'
+                    };
+                    // Обрабатываем role как строку или объект с value
+                    const roleValue = typeof user.role === 'string' ? user.role : (user.role?.value || user.role);
+                    userRoleEl.textContent = roleNames[roleValue] || 'Пользователь';
+                }
+            }
             
             function getAccountState() {
                 const fullName = document.getElementById('accountFullName')?.value || '';
@@ -979,7 +1072,7 @@
                 const currentPassword = document.getElementById('currentPassword')?.value || '';
                 const newPassword = document.getElementById('newPassword')?.value || '';
                 const confirmPassword = document.getElementById('confirmPassword')?.value || '';
-                const avatar = document.getElementById('accountAvatarInput')?.value ? 'has-file' : '';
+                const avatar = document.getElementById('accountAvatarInput')?.files?.length > 0 ? 'has-file' : '';
                 
                 return {
                     fullName,
@@ -1005,6 +1098,13 @@
                 if (accountModal) {
                     accountModal.classList.remove('show');
                     document.body.style.overflow = '';
+                    // Очищаем поля пароля
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                    // Сбрасываем файл аватара
+                    const avatarInput = document.getElementById('accountAvatarInput');
+                    if (avatarInput) avatarInput.value = '';
                 }
             }
             
@@ -1025,7 +1125,7 @@
                 }
             }
             
-            function openAccountModal() {
+            async function openAccountModal() {
                 if (accountModal) {
                     accountModal.classList.add('show');
                     document.body.style.overflow = 'hidden';
@@ -1033,7 +1133,8 @@
                     const langSelect = document.getElementById('accountLanguage');
                     if (langSelect) langSelect.value = savedLang;
                     
-                    initialAccountState = getAccountState();
+                    // Загружаем профиль пользователя
+                    await loadUserProfile();
                 }
             }
             
@@ -1089,7 +1190,7 @@
             
             const changePasswordBtn = document.getElementById('changePasswordBtn');
             if (changePasswordBtn) {
-                changePasswordBtn.addEventListener('click', function() {
+                changePasswordBtn.addEventListener('click', async function() {
                     const currentPassword = document.getElementById('currentPassword')?.value || '';
                     const newPassword = document.getElementById('newPassword')?.value || '';
                     const confirmPassword = document.getElementById('confirmPassword')?.value || '';
@@ -1121,24 +1222,82 @@
                         return;
                     }
                     
-                    if (window.showSuccess) {
-                        showSuccess('Пароль успешно изменён!');
-                    } else {
-                        alert('Пароль успешно изменён!');
+                    try {
+                        const response = await fetch(`${API_BASE}/api/users/me/change-password/public`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            credentials: 'include', // Отправляем cookies для сессии
+                            body: JSON.stringify({
+                                current_password: currentPassword,
+                                new_password: newPassword,
+                                confirm_password: confirmPassword
+                            })
+                        });
+                        
+                        if (!response.ok) {
+                            let errorMessage = 'Ошибка изменения пароля';
+                            try {
+                                const errorData = await response.json();
+                                // Проверяем разные форматы ошибок
+                                if (errorData.detail) {
+                                    errorMessage = typeof errorData.detail === 'string' 
+                                        ? errorData.detail 
+                                        : JSON.stringify(errorData.detail);
+                                } else if (errorData.message) {
+                                    errorMessage = errorData.message;
+                                } else if (typeof errorData === 'string') {
+                                    errorMessage = errorData;
+                                } else {
+                                    errorMessage = JSON.stringify(errorData);
+                                }
+                            } catch (e) {
+                                // Если не удалось распарсить JSON, используем статус
+                                errorMessage = `Ошибка ${response.status}: ${response.statusText}`;
+                            }
+                            throw new Error(errorMessage);
+                        }
+                        
+                        const result = await response.json();
+                        
+                        if (window.showSuccess) {
+                            showSuccess(result.message || 'Пароль успешно изменён!');
+                        } else {
+                            alert(result.message || 'Пароль успешно изменён!');
+                        }
+                        
+                        document.getElementById('currentPassword').value = '';
+                        document.getElementById('newPassword').value = '';
+                        document.getElementById('confirmPassword').value = '';
+                    } catch (error) {
+                        console.error('Error changing password:', error);
+                        let errorMessage = 'Ошибка изменения пароля';
+                        if (error instanceof Error) {
+                            errorMessage = error.message;
+                        } else if (typeof error === 'string') {
+                            errorMessage = error;
+                        } else {
+                            errorMessage = JSON.stringify(error);
+                        }
+                        if (window.showError) {
+                            showError(errorMessage);
+                        } else {
+                            alert(errorMessage);
+                        }
                     }
-                    
-                    document.getElementById('currentPassword').value = '';
-                    document.getElementById('newPassword').value = '';
-                    document.getElementById('confirmPassword').value = '';
                 });
             }
             
             if (accountModalSave) {
-                accountModalSave.addEventListener('click', function() {
-                    const newPassword = document.getElementById('newPassword')?.value;
-                    const confirmPassword = document.getElementById('confirmPassword')?.value;
+                accountModalSave.addEventListener('click', async function() {
+                    const fullName = document.getElementById('accountFullName')?.value || '';
+                    const phone = document.getElementById('accountPhoneInput')?.value || '';
+                    const email = document.getElementById('accountEmailInput')?.value || '';
+                    const avatarInput = document.getElementById('accountAvatarInput');
                     const langSelect = document.getElementById('accountLanguage');
                     
+                    // Сохраняем язык
                     if (langSelect) {
                         const lang = langSelect.value;
                         const previousLang = localStorage.getItem('language') || (window.i18n && window.i18n.currentLanguage) || 'ru';
@@ -1158,33 +1317,92 @@
                     localStorage.setItem('theme', 'dark');
                     document.documentElement.setAttribute('data-theme', 'dark');
                     
-                    if (newPassword && confirmPassword && newPassword !== confirmPassword) {
-                        if (window.showError) {
-                            showError('Пароли не совпадают!');
-                        } else {
-                            alert('Пароли не совпадают!');
+                    try {
+                        // Формируем FormData для отправки файла аватара
+                        const formData = new FormData();
+                        formData.append('full_name', fullName);
+                        formData.append('phone', phone);
+                        formData.append('email', email);
+                        
+                        if (avatarInput && avatarInput.files && avatarInput.files[0]) {
+                            formData.append('avatar', avatarInput.files[0]);
                         }
-                        return;
-                    }
-                    
-                    if (newPassword && newPassword.length < 6) {
-                        if (window.showError) {
-                            showError('Пароль должен быть не менее 6 символов!');
-                        } else {
-                            alert('Пароль должен быть не менее 6 символов!');
+                        
+                        const response = await fetch(`${API_BASE}/api/users/me/public`, {
+                            method: 'PUT',
+                            credentials: 'include', // Отправляем cookies для сессии
+                            body: formData
+                        });
+                        
+                        if (!response.ok) {
+                            let errorMessage = 'Ошибка сохранения профиля';
+                            try {
+                                const errorData = await response.json();
+                                // Проверяем разные форматы ошибок
+                                if (errorData.detail) {
+                                    errorMessage = typeof errorData.detail === 'string' 
+                                        ? errorData.detail 
+                                        : JSON.stringify(errorData.detail);
+                                } else if (errorData.message) {
+                                    errorMessage = errorData.message;
+                                } else if (typeof errorData === 'string') {
+                                    errorMessage = errorData;
+                                } else {
+                                    errorMessage = JSON.stringify(errorData);
+                                }
+                            } catch (e) {
+                                // Если не удалось распарсить JSON, используем статус
+                                errorMessage = `Ошибка ${response.status}: ${response.statusText}`;
+                            }
+                            throw new Error(errorMessage);
                         }
-                        return;
+                        
+                        const updatedUser = await response.json();
+                        currentUserData = updatedUser;
+                        
+                        // Обновляем аватар в превью
+                        const avatarPreview = document.getElementById('accountModalAvatar');
+                        if (avatarPreview) {
+                            if (updatedUser.avatar_path) {
+                                avatarPreview.style.backgroundImage = `url('${API_BASE}${updatedUser.avatar_path}')`;
+                                avatarPreview.style.backgroundSize = 'cover';
+                                avatarPreview.style.backgroundPosition = 'center';
+                                avatarPreview.textContent = '';
+                            } else {
+                                const initials = (updatedUser.full_name || updatedUser.username || 'U').substring(0, 2).toUpperCase();
+                                avatarPreview.textContent = initials;
+                                avatarPreview.style.backgroundImage = '';
+                            }
+                        }
+                        
+                        // Обновляем данные в шапке
+                        updateHeaderUserInfo(updatedUser);
+                        
+                        if (window.showSuccess) {
+                            showSuccess('Настройки сохранены!');
+                        } else {
+                            alert('Настройки сохранены!');
+                        }
+                        
+                        // Обновляем начальное состояние
+                        initialAccountState = getAccountState();
+                        closeAccountModal();
+                    } catch (error) {
+                        console.error('Error saving profile:', error);
+                        let errorMessage = 'Ошибка сохранения профиля';
+                        if (error instanceof Error) {
+                            errorMessage = error.message;
+                        } else if (typeof error === 'string') {
+                            errorMessage = error;
+                        } else {
+                            errorMessage = JSON.stringify(error);
+                        }
+                        if (window.showError) {
+                            showError(errorMessage);
+                        } else {
+                            alert(errorMessage);
+                        }
                     }
-                    
-                    if (window.showSuccess) {
-                        showSuccess('Настройки сохранены!');
-                    } else {
-                        alert('Настройки сохранены!');
-                    }
-                    document.getElementById('currentPassword').value = '';
-                    document.getElementById('newPassword').value = '';
-                    document.getElementById('confirmPassword').value = '';
-                    closeAccountModal();
                 });
             }
             
@@ -1193,6 +1411,12 @@
                     requestCloseAccountModal();
                 }
             });
+            
+            // Загружаем профиль пользователя при загрузке страницы
+            // Вызываем после небольшой задержки, чтобы DOM был готов
+            setTimeout(() => {
+                loadUserProfile();
+            }, 200);
         });
     </script>
 </body>
