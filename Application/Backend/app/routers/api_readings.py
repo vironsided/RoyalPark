@@ -639,50 +639,6 @@ def create_readings_internal(
             db.add(invoice)
             db.flush()
 
-        # Обновляем/создаём строку инвойса для этого счётчика
-        line = (
-            db.query(InvoiceLine)
-            .filter(
-                InvoiceLine.invoice_id == invoice.id,
-                InvoiceLine.meter_reading_id == (existing.id if existing else None),
-            )
-            .first()
-        )
-
-        # Формируем описание для строки инвойса
-        meter_type_name = {
-            MeterType.ELECTRIC: "Электричество",
-            MeterType.GAS: "Газ",
-            MeterType.WATER: "Вода",
-            MeterType.SEWERAGE: "Канализация",
-            MeterType.SERVICE: "Сервис",
-            MeterType.RENT: "Аренда",
-            MeterType.CONSTRUCTION: "Строительство",
-        }.get(m.meter_type, "Услуга")
-        
-        unit = ("кВт·ч" if m.meter_type == MeterType.ELECTRIC else
-                "м³" if m.meter_type in {MeterType.GAS, MeterType.WATER, MeterType.SEWERAGE} else "мес.")
-        description = f"{meter_type_name} {float(consumption)} {unit}"
-        
-        if line and existing:
-            line.meter_reading_id = existing.id
-            line.description = description
-            line.amount_net = amount_net
-            line.amount_vat = amount_vat
-            line.amount_total = amount_total
-        else:
-            if line:
-                db.delete(line)
-            new_line = InvoiceLine(
-                invoice_id=invoice.id,
-                meter_reading_id=upserted[-1].id,
-                description=description,
-                amount_net=amount_net,
-                amount_vat=amount_vat,
-                amount_total=amount_total,
-            )
-            db.add(new_line)
-
     # ВАЖНО: После обработки всех показаний из запроса, найдем ВСЕ показания за период
     # и убедимся, что для каждого есть строка в счете
     if upserted:

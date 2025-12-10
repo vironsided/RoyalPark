@@ -1151,91 +1151,116 @@
         }
         
         // Record Reading Function
+        let isSubmitting = false; // Флаг для предотвращения двойной отправки
         window.recordReading = async function recordReading(event) {
             event.preventDefault();
             
-            const residentId = parseInt(document.getElementById('modalResident').value);
-            let dateStr = document.getElementById('modalDate').value;
-            const comment = document.getElementById('modalComment').value.trim();
-            
-            if (!residentId) {
-                if (typeof showError === 'function') {
-                    showError('Выберите резидента');
-                }
+            // Предотвращаем двойную отправку
+            if (isSubmitting) {
+                console.log('Already submitting, ignoring duplicate request');
                 return;
             }
             
-            if (!dateStr) {
-                if (typeof showError === 'function') {
-                    showError('Выберите дату показаний');
-                }
-                return;
+            isSubmitting = true;
+            
+            // Отключаем кнопку отправки
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            let originalText = '';
+            if (submitButton) {
+                submitButton.disabled = true;
+                originalText = submitButton.textContent;
+                submitButton.textContent = 'Сохранение...';
             }
             
-            // Ensure date is in YYYY-MM-DD format
-            // If date is in DD.MM.YYYY format, convert it
-            if (dateStr.includes('.')) {
-                const parts = dateStr.split('.');
-                if (parts.length === 3) {
-                    dateStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                }
-            }
-            
-            console.log('Date string:', dateStr);
-
-            let items;
             try {
-                items = collectMeterData();
-            } catch (error) {
-                // Ошибка валидации уже показана в collectMeterData
-                return;
-            }
+                const residentId = parseInt(document.getElementById('modalResident').value);
+                let dateStr = document.getElementById('modalDate').value;
+                const comment = document.getElementById('modalComment').value.trim();
             
-            if (items.length === 0) {
-                if (typeof showWarning === 'function') {
-                    showWarning('Нет данных для сохранения');
+                if (!residentId) {
+                    if (typeof showError === 'function') {
+                        showError('Выберите резидента');
+                    }
+                    isSubmitting = false;
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = originalText || 'Записать';
+                    }
+                    return;
                 }
-                return;
-            }
-
-            const payload = {
-                resident_id: residentId,
-                date_str: dateStr,
-                items: items,
-                note: comment || null
-            };
-
-            console.log('Saving reading with payload:', payload);
-
-            try {
-                let url = `${API_BASE}/api/readings`;
-                console.log('POST to:', url);
                 
-                let response;
+                if (!dateStr) {
+                    if (typeof showError === 'function') {
+                        showError('Выберите дату показаний');
+                    }
+                    isSubmitting = false;
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = originalText || 'Записать';
+                    }
+                    return;
+                }
+                
+                // Ensure date is in YYYY-MM-DD format
+                // If date is in DD.MM.YYYY format, convert it
+                if (dateStr.includes('.')) {
+                    const parts = dateStr.split('.');
+                    if (parts.length === 3) {
+                        dateStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                    }
+                }
+                
+                console.log('Date string:', dateStr);
+
+                let items;
                 try {
-                    response = await fetch(url, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(payload),
-                        credentials: 'include' // Добавляем credentials для передачи сессии
-                    });
-                } catch (fetchError) {
-                    console.error('Fetch error:', fetchError);
-                    // Try public endpoint if main fails
-                    url = `${API_BASE}/api/readings/public`;
-                    console.log('Trying public endpoint:', url);
-                    response = await fetch(url, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(payload),
-                        credentials: 'include' // Добавляем credentials для передачи сессии
-                    });
+                    items = collectMeterData();
+                } catch (error) {
+                    // Ошибка валидации уже показана в collectMeterData
+                    isSubmitting = false;
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = originalText || 'Записать';
+                    }
+                    return;
+                }
+                
+                if (items.length === 0) {
+                    if (typeof showWarning === 'function') {
+                        showWarning('Нет данных для сохранения');
+                    }
+                    isSubmitting = false;
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = originalText || 'Записать';
+                    }
+                    return;
                 }
 
-                console.log('Response status:', response.status, response.statusText);
+                const payload = {
+                    resident_id: residentId,
+                    date_str: dateStr,
+                    items: items,
+                    note: comment || null
+                };
 
-                if (!response.ok) {
-                    if (response.status === 401 || response.status === 403) {
+                console.log('Saving reading with payload:', payload);
+
+                try {
+                    let url = `${API_BASE}/api/readings`;
+                    console.log('POST to:', url);
+                    
+                    let response;
+                    try {
+                        response = await fetch(url, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify(payload),
+                            credentials: 'include' // Добавляем credentials для передачи сессии
+                        });
+                    } catch (fetchError) {
+                        console.error('Fetch error:', fetchError);
+                        // Try public endpoint if main fails
                         url = `${API_BASE}/api/readings/public`;
                         console.log('Trying public endpoint:', url);
                         response = await fetch(url, {
@@ -1244,46 +1269,68 @@
                             body: JSON.stringify(payload),
                             credentials: 'include' // Добавляем credentials для передачи сессии
                         });
-                        console.log('Public response status:', response.status, response.statusText);
-                        if (!response.ok) {
+                    }
+
+                    console.log('Response status:', response.status, response.statusText);
+
+                    if (!response.ok) {
+                        if (response.status === 401 || response.status === 403) {
+                            url = `${API_BASE}/api/readings/public`;
+                            console.log('Trying public endpoint:', url);
+                            response = await fetch(url, {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify(payload),
+                                credentials: 'include' // Добавляем credentials для передачи сессии
+                            });
+                            console.log('Public response status:', response.status, response.statusText);
+                            if (!response.ok) {
+                                const errorText = await response.text().catch(() => 'Unknown error');
+                                console.error('Public endpoint error:', errorText);
+                                throw new Error(errorText || `HTTP ${response.status}`);
+                            }
+                        } else {
                             const errorText = await response.text().catch(() => 'Unknown error');
-                            console.error('Public endpoint error:', errorText);
+                            console.error('Endpoint error:', errorText);
                             throw new Error(errorText || `HTTP ${response.status}`);
                         }
-                    } else {
-                        const errorText = await response.text().catch(() => 'Unknown error');
-                        console.error('Endpoint error:', errorText);
-                        throw new Error(errorText || `HTTP ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    console.log('Reading saved successfully:', result);
+                    if (typeof showSuccess === 'function') {
+                        showSuccess('Показания успешно записаны!');
+                    }
+                    
+                    // Update filters to the month of the saved reading
+                    const savedDate = new Date(dateStr);
+                    const savedYear = savedDate.getFullYear();
+                    const savedMonth = savedDate.getMonth() + 1; // getMonth() returns 0-11
+                    
+                    const yearSelect = document.getElementById('filterYear');
+                    const monthSelect = document.getElementById('filterMonth');
+                    
+                    if (yearSelect && savedYear) {
+                        yearSelect.value = savedYear.toString();
+                    }
+                    if (monthSelect && savedMonth) {
+                        monthSelect.value = savedMonth.toString();
+                    }
+                    
+                    closeRecordModal();
+                    await loadReadings();
+                } catch (error) {
+                    console.error('Error recording reading:', error);
+                    if (typeof showError === 'function') {
+                        showError('Ошибка сохранения: ' + error.message);
                     }
                 }
-
-                const result = await response.json();
-                console.log('Reading saved successfully:', result);
-                if (typeof showSuccess === 'function') {
-                    showSuccess('Показания успешно записаны!');
-                }
-                
-                // Update filters to the month of the saved reading
-                const savedDate = new Date(dateStr);
-                const savedYear = savedDate.getFullYear();
-                const savedMonth = savedDate.getMonth() + 1; // getMonth() returns 0-11
-                
-                const yearSelect = document.getElementById('filterYear');
-                const monthSelect = document.getElementById('filterMonth');
-                
-                if (yearSelect && savedYear) {
-                    yearSelect.value = savedYear.toString();
-                }
-                if (monthSelect && savedMonth) {
-                    monthSelect.value = savedMonth.toString();
-                }
-                
-            closeRecordModal();
-                await loadReadings();
-            } catch (error) {
-                console.error('Error recording reading:', error);
-                if (typeof showError === 'function') {
-                    showError('Ошибка сохранения: ' + error.message);
+            } finally {
+                // Восстанавливаем состояние кнопки и флага
+                isSubmitting = false;
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalText || 'Записать';
                 }
             }
         }
