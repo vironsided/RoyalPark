@@ -390,15 +390,48 @@
             border-top: 2px solid rgba(255, 255, 255, 0.08);
         }
         
-        /* Pagination styles */
+        /* Card body - ensure dropdown is not clipped */
+        .card-body {
+            position: relative;
+            overflow: visible;
+        }
+        
+        /* Убираем нижние скругления у карточки, если после неё есть пагинация */
+        .content-wrapper .card:has(+ .table-pagination) {
+            border-radius: 1.25rem 1.25rem 0 0 !important;
+        }
+        
+        /* Альтернативный вариант для браузеров без поддержки :has() */
+        .content-wrapper .card {
+            border-radius: 1.25rem 1.25rem 0 0 !important;
+        }
+        
+        /* Восстанавливаем скругления, если пагинации нет (если карточка последняя) */
+        .content-wrapper .card:last-child:not(:has(+ .table-pagination)) {
+            border-radius: 1.25rem !important;
+        }
+        
+        /* Pagination styles - слитно с карточкой */
         .table-pagination {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 20px;
-            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem 2rem;
+            background: #242831;
+            border: 1px solid #3a3f4a;
             border-top: none !important;
-            border-radius: 0 0 15px 15px;
+            border-radius: 0 0 1.25rem 1.25rem;
+            position: relative;
+            z-index: 10;
+            overflow: visible;
+            margin-top: -1px; /* Убираем двойную границу */
+            box-shadow: none;
+        }
+        
+        /* Светлая тема для пагинации */
+        body:not([data-theme="dark"]) .table-pagination {
+            background: var(--glass-bg);
+            border-color: var(--glass-border);
         }
 
         .pagination-controls {
@@ -453,6 +486,9 @@
             gap: 8px;
             color: rgba(255, 255, 255, 0.7);
             font-size: 0.9rem;
+            position: relative;
+            z-index: 11;
+            overflow: visible;
         }
 
         /* Custom dropdown for pagination */
@@ -460,6 +496,7 @@
             position: relative;
             display: inline-block;
             min-width: 60px;
+            z-index: 1000;
         }
 
         .custom-pag-select .select-btn {
@@ -493,7 +530,7 @@
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
             overflow: hidden;
             display: none;
-            z-index: 10000;
+            z-index: 10001 !important;
             min-width: 100%;
         }
 
@@ -521,10 +558,7 @@
             font-weight: 600;
         }
         
-        /* Light theme pagination */
-        body:not([data-theme="dark"]) .table-pagination {
-            background: rgba(255, 255, 255, 0.9) !important;
-        }
+        /* Light theme pagination - уже определено выше */
         
         body:not([data-theme="dark"]) .btn-pagination {
             background: rgba(0, 0, 0, 0.05) !important;
@@ -571,8 +605,11 @@
         [data-theme="dark"] #spa-content .table-pagination,
         body[data-theme="dark"] #spa-content .table-pagination,
         html[data-theme="dark"] #spa-content .table-pagination {
-            background: rgba(255, 255, 255, 0.05) !important;
+            background: #242831 !important;
+            border: 1px solid #3a3f4a !important;
             border-top: none !important;
+            border-radius: 0 0 1.25rem 1.25rem !important;
+            margin-top: -1px !important;
         }
         
         [data-theme="dark"] .btn-pagination,
@@ -631,6 +668,7 @@
             background: #1f2432 !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+            z-index: 10001 !important;
         }
         
         [data-theme="dark"] .custom-pag-select .select-option,

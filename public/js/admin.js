@@ -299,14 +299,20 @@ async function loadDashboardData() {
         // const data = await response.json();
         
         // For now, using placeholder data
-        console.log('Dashboard data loaded');
+        console.log('Dashboard data loaded (placeholder)');
+        // const data = {
+        //     totalUsers: 1245,
+        //     totalBuildings: 48,
+        //     monthlyPayments: 2400000,
+        //     activeRequests: 23
+        // };
         
         // Update stats with real data when backend is ready
         updateStats({
             totalUsers: data.totalUsers,
             totalBuildings: data.totalBuildings,
-            monthlyPayments: 2400000,
-            activeRequests: 23
+            monthlyPayments: data.monthlyPayments,
+            activeRequests: data.activeRequests
         });
 
     } catch (error) {

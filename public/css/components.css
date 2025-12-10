@@ -1,8 +1,8 @@
 /* Dashboard Content */
 .dashboard-content {
     padding: var(--spacing-lg);
-    padding-top: 3rem !important;
-    margin-top: 1.5rem !important;
+    padding-top: 1rem !important;
+    margin-top: 0.5rem !important;
     max-width: 100%;
     overflow-x: hidden;
 }
@@ -12,7 +12,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.5rem;
-    margin-top: 2rem;
+    margin-top: 0.5rem;
     margin-bottom: 2rem;
     width: 100%;
 }
@@ -65,48 +65,48 @@
 .stat-card.solid-blue {
     background: var(--primary-gradient-enhanced);
     color: white;
-    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.35);
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .stat-card.solid-blue:hover {
-    box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5);
+    box-shadow: 0 12px 40px rgba(102, 126, 234, 0.25);
     transform: translateY(-5px);
 }
 
 .stat-card.solid-red {
     background: var(--warning-gradient-enhanced);
     color: white;
-    box-shadow: 0 8px 30px rgba(245, 87, 108, 0.35);
+    box-shadow: 0 8px 30px rgba(245, 87, 108, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .stat-card.solid-red:hover {
-    box-shadow: 0 12px 40px rgba(245, 87, 108, 0.5);
+    box-shadow: 0 12px 40px rgba(245, 87, 108, 0.25);
     transform: translateY(-5px);
 }
 
 .stat-card.solid-orange {
     background: var(--warning-gradient-enhanced);
     color: white;
-    box-shadow: 0 8px 30px rgba(250, 112, 154, 0.35);
+    box-shadow: 0 8px 30px rgba(250, 112, 154, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .stat-card.solid-orange:hover {
-    box-shadow: 0 12px 40px rgba(250, 112, 154, 0.5);
+    box-shadow: 0 12px 40px rgba(250, 112, 154, 0.25);
     transform: translateY(-5px);
 }
 
 .stat-card.solid-green {
     background: var(--success-gradient-enhanced);
     color: white;
-    box-shadow: 0 8px 30px rgba(56, 239, 125, 0.35);
+    box-shadow: 0 8px 30px rgba(56, 239, 125, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .stat-card.solid-green:hover {
-    box-shadow: 0 12px 40px rgba(56, 239, 125, 0.5);
+    box-shadow: 0 12px 40px rgba(56, 239, 125, 0.25);
     transform: translateY(-5px);
 }
 
@@ -114,12 +114,12 @@
 .stat-card.solid-purple {
     background: var(--primary-gradient-enhanced);
     color: white;
-    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.35);
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .stat-card.solid-purple:hover {
-    box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5);
+    box-shadow: 0 12px 40px rgba(102, 126, 234, 0.25);
     transform: translateY(-5px);
 }
 
@@ -292,7 +292,8 @@
 .chart-btn {
     padding: 0.5rem 1.25rem;
     border: 2px solid transparent;
-    background: #f8f9fa;
+    background: #2a2d35;
+    color: rgba(255, 255, 255, 0.8);
     border-radius: 0.5rem;
     cursor: pointer;
     font-size: 0.875rem;
