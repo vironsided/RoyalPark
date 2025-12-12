@@ -74,8 +74,23 @@
         padding: 10px 50px 10px 15px;
         background: rgba(255, 255, 255, 0.05) !important;
         border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-right: none !important;
         border-radius: 8px 0 0 8px !important;
         color: #fefefe !important;
+    }
+    
+    /* Скрываем встроенную иконку календаря браузера */
+    .date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+        display: none;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+    
+    .date-input-wrapper input[type="date"]::-webkit-inner-spin-button,
+    .date-input-wrapper input[type="date"]::-webkit-clear-button {
+        display: none;
+        -webkit-appearance: none;
+        appearance: none;
     }
 
     .date-input-wrapper .btn-calendar {
@@ -85,7 +100,8 @@
         height: 100%;
         padding: 0;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: none;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-left: none;
         border-radius: 0 8px 8px 0;
         color: #ffffff;
         cursor: pointer;
@@ -191,13 +207,25 @@
         border-radius: 15px !important;
         margin-top: 0 !important;
         margin-bottom: 0 !important;
+        box-shadow: none !important;
+        -webkit-box-shadow: none !important;
     }
+    
+    /* Убираем тени у карточки, но сохраняем hover эффекты */
+    /* .payments-page .card:not(:hover) {
+        box-shadow: none !important;
+        -webkit-box-shadow: none !important;
+    } */
+    
+        
 
     [data-theme="dark"] .payments-page .card,
     body[data-theme="dark"] .payments-page .card,
     html[data-theme="dark"] .payments-page .card {
         background: rgba(36, 40, 49, 0.95) !important;
         border: none !important;
+        box-shadow: none !important;
+        -webkit-box-shadow: none !important;
     }
 
     .payments-page .card-body {
@@ -464,6 +492,8 @@
         background: rgba(36, 40, 49, 0.95) !important;
         background-color: rgba(36, 40, 49, 0.95) !important;
         border: none !important;
+        box-shadow: none !important;
+        -webkit-box-shadow: none !important;
     }
 
     [data-theme="dark"] .payments-page .card-body,
@@ -628,8 +658,23 @@
         padding: 10px 50px 10px 15px;
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.12);
+        border-right: none;
         border-radius: 8px 0 0 8px;
         color: #fefefe;
+    }
+    
+    /* Скрываем встроенную иконку календаря браузера */
+    .accept-payment-date-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+        display: none;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+    
+    .accept-payment-date-wrapper input[type="date"]::-webkit-inner-spin-button,
+    .accept-payment-date-wrapper input[type="date"]::-webkit-clear-button {
+        display: none;
+        -webkit-appearance: none;
+        appearance: none;
     }
 
     .accept-payment-date-wrapper .btn-calendar {
@@ -639,7 +684,8 @@
         height: 100%;
         padding: 0;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: none;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-left: none;
         border-radius: 0 8px 8px 0;
         color: #ffffff;
         cursor: pointer;

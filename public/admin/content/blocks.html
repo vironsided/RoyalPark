@@ -214,6 +214,8 @@
             updateOccupancyPercentage();
             // Обновляем карточки блоков с новыми данными о резидентах
             renderBlocks();
+            // Обновляем tooltip-ы на основе новых данных
+            updatePlanTooltips();
             // Если блок уже выбран, обновляем его детали
             if (selectedBlockId) {
                 const block = blocks.find(b => b.id === selectedBlockId);
@@ -228,6 +230,8 @@
             updateOccupancyPercentage();
             // Обновляем карточки блоков даже при ошибке
             renderBlocks();
+            // Обновляем tooltip-ы даже при ошибке
+            updatePlanTooltips();
         }
     }
     
@@ -441,6 +445,8 @@
             // Резиденты не меняются при создании блока, но можно перезагрузить для актуальности
             await loadResidents();
             updateOccupancyPercentage();
+            // Обновляем tooltip-ы после создания блока
+            updatePlanTooltips();
             
             if (window.showSuccess) {
                 showSuccess(`Блок "${blockName}" успешно создан!`);
@@ -533,6 +539,8 @@
             await loadBlocks();
             updateBlocksCount();
             updateActiveResidentsCount(); // Обновляем счетчик активных домов
+            // Обновляем tooltip-ы после переименования
+            updatePlanTooltips();
             
             // После перезагрузки снова выбираем блок, чтобы обновить все данные
             if (selectedBlockId) {
@@ -662,6 +670,54 @@
         // window.location.href = `/admin/meters.html?block=${selectedBlock}`;
     }
     
+    // Функция для обновления tooltip-ов на основе данных блоков
+    function updatePlanTooltips() {
+        const planOverlay = document.querySelector('.plan-overlay');
+        if (!planOverlay) return;
+        
+        const polygons = planOverlay.querySelectorAll('.plan-area');
+        polygons.forEach(polygon => {
+            const blockCode = polygon.getAttribute('data-block-code');
+            if (!blockCode) return;
+            
+            // Находим блок по названию (block.name совпадает с data-block-code)
+            const block = blocks.find(b => b.name === blockCode);
+            if (!block) {
+                // Если блока нет в базе, оставляем дефолтные значения
+                return;
+            }
+            
+            // Получаем статистику для блока (те же данные, что и на карточках)
+            const stats = getBlockStats(block.id);
+            
+            // Обновляем label (как на карточке: "Блок А")
+            const blockLabel = `Блок ${block.name}`;
+            polygon.setAttribute('data-block-label', blockLabel);
+            
+            // Формируем данные в том же формате, что и на карточках
+            // На карточке: "2 дома" и "100% заселённость"
+            const housesText = stats.total === 1 ? 'дом' : (stats.total < 5 ? 'дома' : 'домов');
+            const housesInfo = stats.total > 0 ? `${stats.total} ${housesText}` : 'Нет домов';
+            const occupancyInfo = `${stats.occupancy}% заселённость`;
+            
+            // Формируем HTML для tooltip с теми же данными, что и на карточке
+            const tooltipInfo = `
+                <ul class="list-unstyled">
+                    <li>${housesInfo}</li>
+                    <li>${occupancyInfo}</li>
+                </ul>
+            `;
+            
+            // Обновляем data-block-info
+            polygon.setAttribute('data-block-info', tooltipInfo);
+        });
+        
+        // Обновляем кеш после обновления tooltip-ов
+        if (window.__cachedPlanOverlay) {
+            window.__cachedPlanOverlay = planOverlay.cloneNode(true);
+        }
+    }
+    
     // Функция инициализации страницы
     async function initBlocksPage() {
         await Promise.all([
@@ -669,24 +725,40 @@
             loadResidents()
         ]);
         
-        // Настройка обработчиков для полигонов плана
-        // Примечание: tooltip обрабатывается в admin.js (initPlanTooltip), 
-        // здесь только обработчик клика
-        const areas = document.querySelectorAll('.plan-overlay .plan-area');
-        areas.forEach(area => {
-            const blockCode = area.getAttribute('data-block-code');
-            if (!blockCode) return;
+        // Небольшая задержка для гарантии что DOM обновлен после SPA-перехода
+        setTimeout(() => {
+            // Сохраняем SVG overlay в глобальный кеш при инициализации страницы
+            const planOverlay = document.querySelector('.plan-overlay');
+            if (planOverlay) {
+                // Обновляем tooltip-ы на основе данных из API
+                updatePlanTooltips();
+                
+                // Всегда обновляем кеш при инициализации страницы
+                window.__cachedPlanOverlay = planOverlay.cloneNode(true);
+                console.log('Plan overlay cached, polygons:', planOverlay.querySelectorAll('.plan-area').length);
+            }
             
-            // При клике - показываем детали (но без прокрутки, так как scrollIntoView уже убран)
-            area.addEventListener('click', () => {
-                const block = blocks.find(b => b.name === blockCode);
-                if (block) {
-                    selectBlockById(block.id);
-                } else {
-                    selectBlock(blockCode);
-                }
-            });
-        });
+            // Настройка обработчиков для полигонов плана через делегирование
+            // Примечание: tooltip обрабатывается в admin.js (initPlanTooltip), 
+            // здесь только обработчик клика через делегирование (чтобы не пересоздавать обработчики)
+            if (planOverlay && !planOverlay.dataset.clickHandlerBound) {
+                planOverlay.dataset.clickHandlerBound = 'true';
+                planOverlay.addEventListener('click', (e) => {
+                    const area = e.target.closest('.plan-area');
+                    if (!area) return;
+                    
+                    const blockCode = area.getAttribute('data-block-code');
+                    if (!blockCode) return;
+                    
+                    const block = blocks.find(b => b.name === blockCode);
+                    if (block) {
+                        selectBlockById(block.id);
+                    } else {
+                        selectBlock(blockCode);
+                    }
+                });
+            }
+        }, 150);
     }
     
     // Вызываем сразу при загрузке скрипта (для SPA роутера)

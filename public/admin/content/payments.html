@@ -26,7 +26,7 @@
             <div class="payments-filters-group">
                 <label>От</label>
                 <div class="date-input-wrapper">
-                    <input type="date" id="filterDateFrom">
+                    <input type="date" style="border-radius: 8px !important;" id="filterDateFrom">
                     <button type="button" class="btn-calendar" onclick="openDatePicker('filterDateFrom')" title="Открыть календарь">
                         <i class="bi bi-calendar"></i>
                     </button>
@@ -36,7 +36,7 @@
             <div class="payments-filters-group">
                 <label>До</label>
                 <div class="date-input-wrapper">
-                    <input type="date" id="filterDateTo">
+                    <input type="date" style="border-radius: 8px !important;" id="filterDateTo">
                     <button type="button" class="btn-calendar" onclick="openDatePicker('filterDateTo')" title="Открыть календарь">
                         <i class="bi bi-calendar"></i>
                     </button>
@@ -59,7 +59,8 @@
         </div>
     </div>
 
-    <!-- Payments Table -->
+    <div style="position: relative;">
+        <!-- Payments Table -->
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
@@ -77,46 +78,56 @@
                     </thead>
                     <tbody id="paymentsTable"></tbody>
                 </table>
-</div>
-
-            <!-- Pagination -->
-            <div class="table-pagination">
-                <div class="pagination-controls">
-                    <button class="btn-pagination" onclick="goToPaymentPage('prev')" disabled id="paymentPrevBtn">
-                        <i class="bi bi-chevron-double-left"></i>
-                    </button>
-                    <button class="btn-pagination active" onclick="goToPaymentPage(1)" id="paymentCurrentPageBtn">1</button>
-                    <button class="btn-pagination" onclick="goToPaymentPage('next')" disabled id="paymentNextBtn">
-                        <i class="bi bi-chevron-double-right"></i>
-                    </button>
-                </div>
-                <div class="pagination-info">
-                    <span>Стр. <span id="paymentCurrentPage">1</span> из <span id="paymentTotalPages">1</span> · всего <span id="paymentTotalItems">0</span></span>
-                </div>
-                <div class="pagination-per-page">
-                    <span>На</span>
-                    <span>странице:</span>
-                    <div class="custom-pag-select" id="customPaymentItemsPerPage">
-                        <select id="paymentItemsPerPage" onchange="changePaymentItemsPerPage()" style="display: none;">
-                            <option value="10">10</option>
-                            <option value="25" selected>25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                        <div class="select-btn">
-                            <span class="select-text">25</span>
-                            <span class="arrow">▾</span>
-                </div>
-                        <div class="select-options">
-                            <div class="select-option" data-value="10">10</div>
-                            <div class="select-option selected" data-value="25">25</div>
-                            <div class="select-option" data-value="50">50</div>
-                            <div class="select-option" data-value="100">100</div>
-                </div>
-                </div>
-                </div>
             </div>
+
+            
         </div>
+        
+    </div>
+    <!-- Pagination -->
+    <div class="table-pagination" style="    background: #242831 !important;
+    position: absolute;
+    width: 100%;
+    bottom: -51px;
+    z-index: 2;
+    border-right: 1px solid rgba(102, 126, 234, 0.15) !important;
+    border-bottom: 1px solid rgba(102, 126, 234, 0.15) !important;
+    border-left: 1px solid rgba(102, 126, 234, 0.15) !important;">
+        <div class="pagination-controls">
+            <button class="btn-pagination" onclick="goToPaymentPage('prev')" disabled id="paymentPrevBtn">
+                <i class="bi bi-chevron-double-left"></i>
+            </button>
+            <button class="btn-pagination active" onclick="goToPaymentPage(1)" id="paymentCurrentPageBtn">1</button>
+            <button class="btn-pagination" onclick="goToPaymentPage('next')" disabled id="paymentNextBtn">
+                <i class="bi bi-chevron-double-right"></i>
+            </button>
+        </div>
+        <div class="pagination-info">
+            <span>Стр. <span id="paymentCurrentPage">1</span> из <span id="paymentTotalPages">1</span> · всего <span id="paymentTotalItems">0</span></span>
+        </div>
+        <div class="pagination-per-page">
+            <span>На</span>
+            <span>странице:</span>
+            <div class="custom-pag-select" id="customPaymentItemsPerPage">
+                <select id="paymentItemsPerPage" onchange="changePaymentItemsPerPage()" style="display: none;">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <div class="select-btn">
+                    <span class="select-text">25</span>
+                    <span class="arrow">▾</span>
+        </div>
+                <div class="select-options">
+                    <div class="select-option" data-value="10">10</div>
+                    <div class="select-option selected" data-value="25">25</div>
+                    <div class="select-option" data-value="50">50</div>
+                    <div class="select-option" data-value="100">100</div>
+        </div>
+        </div>
+        </div>
+    </div>
     </div>
 </div>
 
@@ -252,7 +263,7 @@
         }
         
         try {
-            let response = await fetch(`${API_BASE}/api/payments?${params.toString()}`);
+            let response = await fetch(`${API_BASE}/api/payments?${params.toString()}`, { credentials: 'include' });
             if (!response.ok && response.status === 401) {
                 response = await fetch(`${API_BASE}/api/payments/public?${params.toString()}`);
             }
@@ -370,7 +381,7 @@
     // Load residents for filters and modal
     async function loadResidents() {
         try {
-            let response = await fetch(`${API_BASE}/api/residents`);
+            let response = await fetch(`${API_BASE}/api/residents`, { credentials: 'include' });
             if (!response.ok && response.status === 401) {
                 response = await fetch(`${API_BASE}/api/residents/public`);
             }
@@ -488,7 +499,8 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(paymentData)
+                body: JSON.stringify(paymentData),
+                credentials: 'include'
             });
             
             if (!response.ok && response.status === 401) {
@@ -748,7 +760,9 @@
             if (card) {
                 card.style.setProperty('background', 'rgba(36, 40, 49, 0.95)', 'important');
                 card.style.setProperty('background-color', 'rgba(36, 40, 49, 0.95)', 'important');
-                card.style.setProperty('border', 'none', 'important');
+                // card.style.setProperty('border', 'none', 'important');
+                card.style.setProperty('box-shadow', 'none', 'important');
+                card.style.setProperty('-webkit-box-shadow', 'none', 'important');
             }
 
             const cardBody = document.querySelector('.payments-page .card-body');

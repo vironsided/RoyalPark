@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     addCardAnimations();
     initSmoothScroll();
     addRippleEffect();
-    initPlanTooltip();
+    // initPlanTooltip вызывается автоматически через IIFE при готовности DOM
     initPlanLegendNavigation();
     
     // Add loading complete class for animations
@@ -29,8 +29,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
 });
 
-window.addEventListener('spa:contentLoaded', function() {
-    initPlanTooltip();
+window.addEventListener('spa:contentLoaded', function(e) {
+    setTimeout(() => {
+        const planOverlay = document.querySelector('.plan-overlay');
+        if (planOverlay || (e.detail && e.detail.route === '/blocks')) {
+            // 3. При SPA-переходе — просто сбрасываем текущее состояние, НЕ переинициализируя слушатели
+            const tooltip = document.getElementById('planTooltip');
+            if (tooltip) {
+                tooltip.classList.add('hidden');
+                tooltip.classList.remove('visible');
+            }
+            // Сбрасываем текущую область через глобальную переменную
+            window.currentArea = null;
+        }
+    }, 200);
+    // initPlanLegendNavigation можно вызывать, так как она проверяет существование элементов
     initPlanLegendNavigation();
 });
 
@@ -300,12 +313,12 @@ async function loadDashboardData() {
         
         // For now, using placeholder data
         console.log('Dashboard data loaded (placeholder)');
-        // const data = {
-        //     totalUsers: 1245,
-        //     totalBuildings: 48,
-        //     monthlyPayments: 2400000,
-        //     activeRequests: 23
-        // };
+        const data = {
+            totalUsers: 1245,
+            totalBuildings: 48,
+            monthlyPayments: 2400000,
+            activeRequests: 23
+        };
         
         // Update stats with real data when backend is ready
         updateStats({
@@ -419,74 +432,242 @@ function addRippleEffect() {
 }
 
 // Interactive plan tooltip for Blocks page
-function initPlanTooltip() {
-    const planFrame = document.querySelector('.plan-image-frame');
-    const areas = document.querySelectorAll('.plan-area');
-    
-    if (!planFrame || !areas.length) {
+(function() {
+    // 1. Предотвращаем повторную инициализацию
+    if (window.__tooltipInitialized) {
         return;
     }
+    window.__tooltipInitialized = true;
     
-    const tooltip = ensurePlanTooltipElement();
-    const titleEl = tooltip.querySelector('.tooltip-title');
-    const descEl = tooltip.querySelector('.tooltip-desc');
-    
-    const moveTooltip = (event) => {
-        tooltip.style.left = `${event.clientX}px`;
-        tooltip.style.top = `${event.clientY - 16}px`;
-    };
-    
-    areas.forEach(area => {
-        if (area.dataset.planTooltipBound === 'true') return;
-        area.dataset.planTooltipBound = 'true';
-        
-        area.addEventListener('pointerenter', () => {
-            const label = area.dataset.blockLabel || 'Зона';
-            const info = area.dataset.blockInfo || 'Информация уточняется.';
-            titleEl.textContent = label;
-
-            // Если в data-block-info передан HTML (начинается с '<'),
-            // рендерим как HTML (например, список этажей/квартир/жителей/заселённости),
-            // иначе выводим как обычный текст.
-            if (info && info.trim().startsWith('<')) {
-                descEl.innerHTML = info;
-            } else {
-                descEl.textContent = info;
+    // Инициализируем кеш для SVG overlay при первой загрузке
+    if (!window.__cachedPlanOverlay) {
+        // Сохраняем SVG overlay в кеш при первой загрузке страницы
+        const initCache = () => {
+            const overlay = document.querySelector('.plan-overlay');
+            if (overlay && !window.__cachedPlanOverlay) {
+                window.__cachedPlanOverlay = overlay.cloneNode(true);
             }
+        };
+        
+        // Пытаемся сохранить в кеш сразу, если DOM готов
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initCache);
+        } else {
+            setTimeout(initCache, 100);
+        }
+    }
 
+    let currentArea = null;
+    let tooltip = null;
+    let titleEl = null;
+    let descEl = null;
+
+    function ensurePlanTooltipElement() {
+        // Проверяем существующий элемент
+        if (window.planTooltipElement && document.body && document.body.contains(window.planTooltipElement)) {
+            return window.planTooltipElement;
+        }
+        
+        // Убеждаемся что body готов
+        if (!document.body) {
+            console.warn('initPlanTooltip: document.body not ready');
+            return null;
+        }
+        
+        const tooltipEl = document.createElement('div');
+        tooltipEl.id = 'planTooltip';
+        tooltipEl.className = 'plan-tooltip hidden';
+        tooltipEl.style.cssText = 'position: fixed; z-index: 10000; pointer-events: none;';
+        tooltipEl.innerHTML = `
+            <div class="tooltip-title-row">
+                <span class="tooltip-dot"></span>
+                <span class="tooltip-title">Зона</span>
+            </div>
+            <div class="tooltip-desc">Информация уточняется.</div>
+        `;
+        
+        document.body.appendChild(tooltipEl);
+        window.planTooltipElement = tooltipEl;
+        return tooltipEl;
+    }
+
+    // Функция для проверки класса элемента (работает с SVG и обычными элементами)
+    function hasClass(element, className) {
+        if (!element) return false;
+        // Для SVG элементов используем getAttribute
+        if (element.tagName && ['svg', 'polygon', 'path', 'circle', 'rect'].includes(element.tagName.toLowerCase())) {
+            const classAttr = element.getAttribute('class') || '';
+            return classAttr.split(/\s+/).includes(className);
+        }
+        // Для обычных элементов используем classList
+        if (element.classList) {
+            return element.classList.contains(className);
+        }
+        return false;
+    }
+
+    // Функция для получения полигона из события
+    function getPolygonFromEvent(event) {
+        let target = event.target;
+        if (!target) return null;
+        
+        // Проверяем сам элемент
+        if (hasClass(target, 'plan-area')) {
+            return target;
+        }
+        
+        // Для SVG элементов closest может не работать, проверяем вручную
+        if (target.tagName && target.tagName.toLowerCase() === 'polygon' && hasClass(target, 'plan-area')) {
+            return target;
+        }
+        
+        // Проверяем родительские элементы (на случай вложенных элементов)
+        if (target.closest) {
+            try {
+                const closest = target.closest('.plan-area');
+                if (closest) return closest;
+            } catch (e) {
+                // closest может не работать для SVG в некоторых браузерах
+            }
+        }
+        
+        // Для SVG: проверяем родительские элементы вручную
+        let parent = target.parentElement || target.parentNode;
+        let depth = 0;
+        while (parent && depth < 10) {
+            if (hasClass(parent, 'plan-area')) {
+                return parent;
+            }
+            parent = parent.parentElement || parent.parentNode;
+            depth++;
+        }
+        
+        return null;
+    }
+
+    // Обработчик входа мыши
+    function handleEnter(event) {
+        const polygon = getPolygonFromEvent(event);
+        if (!polygon) {
+            if (currentArea && tooltip) {
+                tooltip.classList.add('hidden');
+                tooltip.classList.remove('visible');
+                currentArea = null;
+                window.currentArea = null;
+            }
+            return;
+        }
+
+        // Инициализируем tooltip при первом использовании
+        if (!tooltip) {
+            tooltip = ensurePlanTooltipElement();
+            if (!tooltip) {
+                console.warn('initPlanTooltip: failed to create tooltip element');
+                return;
+            }
+            titleEl = tooltip.querySelector('.tooltip-title');
+            descEl = tooltip.querySelector('.tooltip-desc');
+            if (!titleEl || !descEl) {
+                console.warn('initPlanTooltip: failed to find tooltip elements');
+                return;
+            }
+        }
+
+        currentArea = polygon;
+        window.currentArea = currentArea;
+        
+        // Получаем данные из data-атрибутов (для SVG используем getAttribute)
+        const label = polygon.dataset?.blockLabel || polygon.getAttribute('data-block-label') || 'Зона';
+        const info = polygon.dataset?.blockInfo || polygon.getAttribute('data-block-info') || 'Информация уточняется.';
+        
+        if (titleEl) titleEl.textContent = label;
+
+        // Если в data-block-info передан HTML (начинается с '<'),
+        // рендерим как HTML (например, список этажей/квартир/жителей/заселённости),
+        // иначе выводим как обычный текст.
+        if (info && info.trim().startsWith('<')) {
+            if (descEl) descEl.innerHTML = info;
+        } else {
+            if (descEl) descEl.textContent = info;
+        }
+
+        if (tooltip) {
+            // Убеждаемся что tooltip видим и правильно позиционирован
+            tooltip.style.display = '';
+            tooltip.style.visibility = 'visible';
+            tooltip.style.opacity = '1';
             tooltip.classList.remove('hidden');
             tooltip.classList.add('visible');
-        }, { passive: true });
-        
-        area.addEventListener('pointermove', moveTooltip, { passive: true });
-        
-        area.addEventListener('pointerleave', () => {
-            tooltip.classList.add('hidden');
-            tooltip.classList.remove('visible');
-        }, { passive: true });
-    });
-}
-
-function ensurePlanTooltipElement() {
-    if (window.planTooltipElement && document.body.contains(window.planTooltipElement)) {
-        return window.planTooltipElement;
+            
+            // Позиционируем tooltip сразу
+            tooltip.style.left = `${event.clientX}px`;
+            tooltip.style.top = `${event.clientY - 16}px`;
+        }
     }
+
+    // Обработчик движения мыши
+    function moveTooltip(event) {
+        if (!currentArea || !tooltip) return;
+        
+        tooltip.style.left = `${event.clientX}px`;
+        tooltip.style.top = `${event.clientY - 16}px`;
+    }
+
+    // Обработчик выхода мыши
+    function handleLeave(event) {
+        const polygon = getPolygonFromEvent(event);
+        if (!polygon || polygon === currentArea) {
+            if (tooltip) {
+                tooltip.classList.add('hidden');
+                tooltip.classList.remove('visible');
+            }
+            currentArea = null;
+            window.currentArea = null;
+        }
+    }
+
+    // Инициализация: навешиваем делегированные обработчики на document (БЕЗ capture)
+    // Выполняется один раз при загрузке скрипта
+    document.addEventListener('mouseover', handleEnter, { passive: true });
+    document.addEventListener('mousemove', moveTooltip, { passive: true });
+    document.addEventListener('mouseout', handleLeave, { passive: true });
     
-    const tooltip = document.createElement('div');
-    tooltip.id = 'planTooltip';
-    tooltip.className = 'plan-tooltip hidden';
-    tooltip.innerHTML = `
-        <div class="tooltip-title-row">
-            <span class="tooltip-dot"></span>
-            <span class="tooltip-title">Зона</span>
-        </div>
-        <div class="tooltip-desc">Информация уточняется.</div>
-    `;
-    
-    document.body.appendChild(tooltip);
-    window.planTooltipElement = tooltip;
-    return tooltip;
-}
+    // Отладочная функция для проверки работы tooltip
+    window.debugPlanTooltip = function() {
+        console.log('=== Plan Tooltip Debug ===');
+        console.log('Tooltip initialized:', window.__tooltipInitialized);
+        console.log('Current area:', currentArea);
+        console.log('Tooltip element:', tooltip);
+        console.log('Cached overlay:', window.__cachedPlanOverlay ? 'exists' : 'not found');
+        const overlays = document.querySelectorAll('.plan-overlay');
+        console.log('Overlays in DOM:', overlays.length);
+        const polygons = document.querySelectorAll('.plan-area');
+        console.log('Polygons in DOM:', polygons.length);
+        if (polygons.length > 0) {
+            console.log('First polygon:', polygons[0]);
+            console.log('First polygon classes:', polygons[0].getAttribute('class'));
+            console.log('First polygon data:', {
+                blockCode: polygons[0].getAttribute('data-block-code'),
+                blockLabel: polygons[0].getAttribute('data-block-label'),
+                blockInfo: polygons[0].getAttribute('data-block-info')
+            });
+        }
+        const tooltipEl = document.getElementById('planTooltip');
+        if (tooltipEl) {
+            console.log('Tooltip element found:', tooltipEl);
+            console.log('Tooltip classes:', tooltipEl.className);
+            console.log('Tooltip style:', tooltipEl.style.cssText);
+        } else {
+            console.log('Tooltip element NOT found in DOM');
+        }
+    };
+
+    // Экспортируем функцию для внешнего использования (пустая, так как уже инициализировано)
+    window.initPlanTooltip = function() {
+        // Функция уже инициализирована, ничего не делаем
+        console.log('initPlanTooltip: already initialized via IIFE');
+    };
+})();
 
 // Навигация по плану по клику на легенду блоков
 function initPlanLegendNavigation() {

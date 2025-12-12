@@ -2307,3 +2307,14 @@ body[data-theme="dark"] .user-bills-section select option {
         font-size: 1.5rem;
     }
 }
+
+/* NEW ADDED CSS */
+
+/* .users-table-container {
+    background: rgba(36, 40, 49, 0.95) !important;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+} */
+
+/* END ADDED CSS */

@@ -364,8 +364,35 @@ class SPARouter {
             
             const html = await response.text();
             
+            // Сохраняем существующий SVG overlay в глобальный кеш перед заменой контента
+            if (baseRoute === '/blocks') {
+                const existingOverlay = this.contentContainer.querySelector('.plan-overlay');
+                if (existingOverlay) {
+                    // Сохраняем в глобальный кеш (глубокое клонирование)
+                    window.__cachedPlanOverlay = existingOverlay.cloneNode(true);
+                }
+            }
+            
             // Вставляем контент
             this.contentContainer.innerHTML = html;
+            
+            // Восстанавливаем SVG overlay из кеша для страницы blocks
+            if (baseRoute === '/blocks' && window.__cachedPlanOverlay) {
+                const newOverlay = this.contentContainer.querySelector('.plan-overlay');
+                const planImageFrame = this.contentContainer.querySelector('.plan-image-frame');
+                if (newOverlay && planImageFrame) {
+                    // Заменяем новый overlay на сохраненный из кеша (чтобы не пересоздавать полигоны)
+                    const cachedOverlay = window.__cachedPlanOverlay.cloneNode(true);
+                    planImageFrame.replaceChild(cachedOverlay, newOverlay);
+                    
+                    // Убеждаемся что tooltip может работать с восстановленными элементами
+                    // Небольшая задержка для гарантии что DOM обновлен
+                    setTimeout(() => {
+                        const polygons = this.contentContainer.querySelectorAll('.plan-area');
+                        console.log('Restored polygons count:', polygons.length);
+                    }, 100);
+                }
+            }
             
             // Hide any plan tooltip from blocks page when navigating away
             const planTooltip = document.getElementById('planTooltip');

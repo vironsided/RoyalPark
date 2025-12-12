@@ -24,60 +24,70 @@
     </div>
     
     <!-- Users Table -->
-    <div class="users-table-container">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="users-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Логин</th>
-                            <th>Роль</th>
-                            <th>Последний вход</th>
-                            <th>Пароль</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersTableBody">
-                        <!-- Users will be loaded here -->
-                    </tbody>
-                </table>
+    <div style="position: relative;">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3>Список пользователей</h3>
             </div>
-
-            <!-- Pagination -->
-            <div class="table-pagination">
-                <div class="pagination-controls">
-                    <button class="btn-pagination" onclick="goToUserPage('prev')" disabled id="userPrevBtn">
-                        <i class="bi bi-chevron-double-left"></i>
-                    </button>
-                    <button class="btn-pagination active" onclick="goToUserPage(1)" id="userCurrentPageBtn">1</button>
-                    <button class="btn-pagination" onclick="goToUserPage('next')" disabled id="userNextBtn">
-                        <i class="bi bi-chevron-double-right"></i>
-                    </button>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover tenants-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Логин</th>
+                                <th>Роль</th>
+                                <th>Последний вход</th>
+                                <th>Пароль</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
                 </div>
-                <div class="pagination-info">
-                    <span>Стр. <span id="userCurrentPage">1</span> из <span id="userTotalPages">1</span> · всего <span id="userTotalItems">0</span></span>
-                </div>
-                <div class="pagination-per-page">
-                    <span>На</span>
-                    <span>странице:</span>
-                    <div class="custom-pag-select" id="customUserItemsPerPage">
-                        <select id="userItemsPerPage" onchange="changeUserItemsPerPage()" style="display: none;">
-                            <option value="10">10</option>
-                            <option value="25" selected>25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                        <div class="select-btn">
-                            <span class="select-text">25</span>
-                            <span class="arrow">▾</span>
-                        </div>
-                        <div class="select-options">
-                            <div class="select-option" data-value="10">10</div>
-                            <div class="select-option selected" data-value="25">25</div>
-                            <div class="select-option" data-value="50">50</div>
-                            <div class="select-option" data-value="100">100</div>
-                        </div>
+            </div>
+        </div>
+        <!-- Pagination -->
+        <div class="table-pagination" style="border-bottom: 1px solid rgba(102, 126, 234, 0.15) !important;
+        border-left: 1px solid rgba(102, 126, 234, 0.15) !important;
+        background: #242831 !important;
+        width: 100%;
+        bottom: -46px;
+        position: absolute;
+        border-right: 1px solid rgba(102, 126, 234, 0.15) !important;">
+            <div class="pagination-controls">
+                <button class="btn-pagination" onclick="goToUserPage('prev')" disabled id="userPrevBtn">
+                    <i class="bi bi-chevron-double-left"></i>
+                </button>
+                <button class="btn-pagination active" onclick="goToUserPage(1)" id="userCurrentPageBtn">1</button>
+                <button class="btn-pagination" onclick="goToUserPage('next')" disabled id="userNextBtn">
+                    <i class="bi bi-chevron-double-right"></i>
+                </button>
+            </div>
+            <div class="pagination-info">
+                <span>Стр. <span id="userCurrentPage">1</span> из <span id="userTotalPages">1</span> · всего <span id="userTotalItems">0</span></span>
+            </div>
+            <div class="pagination-per-page">
+                <span>На</span>
+                <span>странице:</span>
+                <div class="custom-pag-select" id="customUserItemsPerPage">
+                    <select id="userItemsPerPage" onchange="changeUserItemsPerPage()" style="display: none;">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <div class="select-btn">
+                        <span class="select-text">25</span>
+                        <span class="arrow">▾</span>
+                    </div>
+                    <div class="select-options">
+                        <div class="select-option" data-value="10">10</div>
+                        <div class="select-option selected" data-value="25">25</div>
+                        <div class="select-option" data-value="50">50</div>
+                        <div class="select-option" data-value="100">100</div>
                     </div>
                 </div>
             </div>
