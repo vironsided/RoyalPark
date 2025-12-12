@@ -367,14 +367,15 @@ style.textContent = `
     }
     
     .confirm-dialog {
-        background: white;
+        background: #1c1e24;
         border-radius: 16px;
         padding: 30px;
         min-width: 400px;
         max-width: 500px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
         transform: scale(0.9);
         transition: transform 0.2s ease;
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
     
     .confirm-overlay.show .confirm-dialog {
@@ -383,7 +384,7 @@ style.textContent = `
     
     .confirm-message {
         font-size: 1.1rem;
-        color: #333;
+        color: #ffffff;
         margin-bottom: 25px;
         line-height: 1.5;
     }
@@ -391,17 +392,20 @@ style.textContent = `
     .prompt-input {
         width: 100%;
         padding: 12px 15px;
-        border: 2px solid #ddd;
+        border: 2px solid rgba(255, 255, 255, 0.2);
         border-radius: 8px;
         font-size: 1rem;
         margin-bottom: 25px;
         transition: border-color 0.3s;
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
     }
     
     .prompt-input:focus {
         outline: none;
         border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+        background: rgba(255, 255, 255, 0.08);
     }
     
     .confirm-actions {

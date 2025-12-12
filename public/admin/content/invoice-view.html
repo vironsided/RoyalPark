@@ -243,10 +243,11 @@
         try {
             let url = `${API_BASE}/api/invoices/${cleanId}`;
             console.log('📤 Fetching invoice from:', url);
-            let response = await fetch(url);
+            let response = await fetch(url, { credentials: 'include' });
             
             if (!response.ok) {
                 if (response.status === 401 || response.status === 403) {
+                    console.log('Not authorized, using public endpoint');
                     url = `${API_BASE}/api/invoices/${cleanId}/public`;
                     console.log('📤 Trying public endpoint:', url);
                     response = await fetch(url);

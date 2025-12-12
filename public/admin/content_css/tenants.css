@@ -661,25 +661,25 @@ html[data-theme="dark"] .filter-group select:focus {
         }
 
         .confirm-modal {
-            background: linear-gradient(145deg, #1f2432 0%, #151924 100%);
+            background: #1c1e24;
             border-radius: 20px;
             padding: 28px;
             width: min(420px, 90vw);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
-            color: #f4f6ff;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+            color: #ffffff;
             animation: modalSlideIn 0.25s ease;
         }
 
         .confirm-modal-body h3 {
             margin: 0 0 12px;
             font-size: 1.3rem;
-            color: #f7f9ff;
+            color: #ffffff;
         }
 
         .confirm-modal-body p {
             margin: 0;
-            color: rgba(255, 255, 255, 0.78);
+            color: rgba(255, 255, 255, 0.9);
             line-height: 1.55;
         }
 
