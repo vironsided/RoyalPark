@@ -1,64 +1,72 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RoyalPark - Панель администратора</title>
-    
+
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏢%3C/text%3E%3C/svg%3E">
-    
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏢%3C/text%3E%3C/svg%3E">
+
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+
     <!-- Material Design Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.3.67/css/materialdesignicons.min.css">
-    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.3.67/css/materialdesignicons.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+
     <!-- Animate.css -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/global.css">
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="/css/dark-theme.css">
-    
+
     <!-- КРИТИЧЕСКИ ВАЖНЫЕ СТИЛИ ДЛЯ SIDEBAR - МАКСИМАЛЬНЫЙ ПРИОРИТЕТ -->
     <style>
         /* Убираем белую полосу сверху */
-        html, body {
+        html,
+        body {
             margin: 0 !important;
             padding: 0 !important;
             overflow-x: hidden !important;
             background-color: #1a1d2e !important;
         }
-        
+
         body {
             min-height: 100vh !important;
         }
-        
+
         .admin-container {
             margin: 0 !important;
             padding: 0 !important;
         }
-        
+
         .sidebar {
             width: 280px !important;
             transition: width 0.3s ease !important;
             display: flex !important;
             flex-direction: column !important;
             height: 100vh !important;
-            overflow: hidden !important; /* скролл убираем с всего сайдбара */
+            overflow: hidden !important;
+            /* скролл убираем с всего сайдбара */
         }
-        
+
         .sidebar.collapsed {
             width: 80px !important;
             min-width: 80px !important;
             max-width: 80px !important;
         }
-        
+
         .sidebar.collapsed .logo-text,
         .sidebar.collapsed .nav-text,
         .sidebar.collapsed .nav-badge,
@@ -67,39 +75,41 @@
             visibility: hidden !important;
             opacity: 0 !important;
         }
-        
+
         .sidebar.collapsed .nav-item {
             justify-content: center !important;
         }
-        
+
         .sidebar-header {
             flex-shrink: 0 !important;
             padding: 20px !important;
         }
-        
+
         .sidebar-scroll {
             flex: 1 1 auto !important;
             overflow-y: auto !important;
             overflow-x: hidden !important;
             padding-bottom: 20px !important;
         }
-        
+
         .nav-menu {
-            padding-top: 10px !important; /* чтобы скролл начинался сразу под header */
+            padding-top: 10px !important;
+            /* чтобы скролл начинался сразу под header */
         }
-        
+
         .main-content {
             margin-left: 280px !important;
             width: calc(100vw - 280px) !important;
             transition: all 0.3s ease !important;
         }
-        
-        .sidebar.collapsed ~ .main-content {
+
+        .sidebar.collapsed~.main-content {
             margin-left: 80px !important;
             width: calc(100vw - 80px) !important;
         }
     </style>
 </head>
+
 <body>
     <div class="admin-container">
         <!-- Sidebar -->
@@ -113,24 +123,24 @@
                 </div>
                 <button class="toggle-sidebar" id="toggleSidebar">
                     <svg width="20" height="20" fill="currentColor">
-                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
                     </svg>
                 </button>
             </div>
 
             <div class="sidebar-scroll">
-            <nav class="nav-menu">
-                <div class="nav-section">
-                    <div class="nav-section-title">Главное</div>
-                    <a href="/dashboard" class="nav-item" data-route="/dashboard">
-                        <span class="nav-icon">
-                            <svg width="20" height="20" fill="currentColor">
-                                <use href="/images/icons.svg#icon-dashboard"></use>
-                            </svg>
-                        </span>
-                        <span class="nav-text">Панель управления</span>
-                    </a>
-                    <!-- <a href="/analytics" class="nav-item" data-route="/analytics">
+                <nav class="nav-menu">
+                    <div class="nav-section">
+                        <div class="nav-section-title">Главное</div>
+                        <a href="/dashboard" class="nav-item" data-route="/dashboard">
+                            <span class="nav-icon">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <use href="/images/icons.svg#icon-dashboard"></use>
+                                </svg>
+                            </span>
+                            <span class="nav-text">Панель управления</span>
+                        </a>
+                        <!-- <a href="/analytics" class="nav-item" data-route="/analytics">
                         <span class="nav-icon">
                             <svg width="20" height="20" fill="currentColor">
                                 <use href="/images/icons.svg#icon-analytics"></use>
@@ -146,81 +156,81 @@
                         </span>
                         <span class="nav-text">Отчеты</span>
                     </a> -->
-                </div>
+                    </div>
 
-                <div class="nav-section">
-                    <div class="nav-section-title">Управление</div>
-                    <a href="/blocks" class="nav-item" data-route="/blocks">
-                        <span class="nav-icon">
-                            <svg width="20" height="20" fill="currentColor">
-                                <use href="/images/icons.svg#icon-buildings"></use>
-                            </svg>
-                        </span>
-                        <span class="nav-text" data-i18n="nav_blocks">Блоки</span>
-                    </a>
-                    <a href="/tariffs" class="nav-item" data-route="/tariffs">
-                        <span class="nav-icon">
-                            <svg width="20" height="20" fill="currentColor">
-                                <use href="/images/icons.svg#icon-payments"></use>
-                            </svg>
-                        </span>
-                        <span class="nav-text" data-i18n="nav_tariffs">Тарифы</span>
-                    </a>
-                    <a href="/residents" class="nav-item" data-route="/residents">
-                        <span class="nav-icon">
-                            <svg width="20" height="20" fill="currentColor">
-                                <use href="/images/icons.svg#icon-users"></use>
-                            </svg>
-                        </span>
-                        <span class="nav-text" data-i18n="nav_residents">Резиденты</span>
-                        <!-- <span class="nav-badge">245</span> -->
-                    </a>
-                    <a href="/tenants" class="nav-item" data-route="/tenants">
-                        <span class="nav-icon">
-                            <svg width="20" height="20" fill="currentColor">
-                                <use href="/images/icons.svg#icon-apartments"></use>
-                            </svg>
-                        </span>
-                        <span class="nav-text" data-i18n="nav_tenants">Жители</span>
-                    </a>
-                    <a href="/readings" class="nav-item" data-route="/readings">
-                        <span class="nav-icon">
-                            <svg width="20" height="20" fill="currentColor">
-                                <use href="/images/icons.svg#icon-meters"></use>
-                            </svg>
-                        </span>
-                        <span class="nav-text" data-i18n="nav_readings">Показатели</span>
-                    </a>
-                    <a href="/users" class="nav-item" data-route="/users">
-                        <span class="nav-icon">
-                            <svg width="20" height="20" fill="currentColor">
-                                <use href="/images/icons.svg#icon-users"></use>
-                            </svg>
-                        </span>
-                        <span class="nav-text" data-i18n="nav_users">Пользователи</span>
-                    </a>
-                </div>
+                    <div class="nav-section">
+                        <div class="nav-section-title">Управление</div>
+                        <a href="/blocks" class="nav-item" data-route="/blocks">
+                            <span class="nav-icon">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <use href="/images/icons.svg#icon-buildings"></use>
+                                </svg>
+                            </span>
+                            <span class="nav-text" data-i18n="nav_blocks">Блоки</span>
+                        </a>
+                        <a href="/tariffs" class="nav-item" data-route="/tariffs">
+                            <span class="nav-icon">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <use href="/images/icons.svg#icon-payments"></use>
+                                </svg>
+                            </span>
+                            <span class="nav-text" data-i18n="nav_tariffs">Тарифы</span>
+                        </a>
+                        <a href="/residents" class="nav-item" data-route="/residents">
+                            <span class="nav-icon">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <use href="/images/icons.svg#icon-users"></use>
+                                </svg>
+                            </span>
+                            <span class="nav-text" data-i18n="nav_residents">Резиденты</span>
+                            <!-- <span class="nav-badge">245</span> -->
+                        </a>
+                        <a href="/tenants" class="nav-item" data-route="/tenants">
+                            <span class="nav-icon">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <use href="/images/icons.svg#icon-apartments"></use>
+                                </svg>
+                            </span>
+                            <span class="nav-text" data-i18n="nav_tenants">Жители</span>
+                        </a>
+                        <a href="/readings" class="nav-item" data-route="/readings">
+                            <span class="nav-icon">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <use href="/images/icons.svg#icon-meters"></use>
+                                </svg>
+                            </span>
+                            <span class="nav-text" data-i18n="nav_readings">Показатели</span>
+                        </a>
+                        <a href="/users" class="nav-item" data-route="/users">
+                            <span class="nav-icon">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <use href="/images/icons.svg#icon-users"></use>
+                                </svg>
+                            </span>
+                            <span class="nav-text" data-i18n="nav_users">Пользователи</span>
+                        </a>
+                    </div>
 
-                <div class="nav-section">
-                    <div class="nav-section-title">Финансы</div>
-                    <a href="/payments" class="nav-item" data-route="/payments">
-                        <span class="nav-icon">
-                            <svg width="20" height="20" fill="currentColor">
-                                <use href="/images/icons.svg#icon-payments"></use>
-                            </svg>
-                        </span>
-                        <span class="nav-text">Платежи</span>
-                    </a>
-                    <a href="/invoices" class="nav-item" data-route="/invoices">
-                        <span class="nav-icon">
-                            <svg width="20" height="20" fill="currentColor">
-                                <use href="/images/icons.svg#icon-bills"></use>
-                            </svg>
-                        </span>
-                        <span class="nav-text">Счета</span>
-                        <!-- <span class="nav-badge">12</span> -->
-                    </a>
-                    <!-- <a href="/debts" class="nav-item" data-route="/debts">
+                    <div class="nav-section">
+                        <div class="nav-section-title">Финансы</div>
+                        <a href="/payments" class="nav-item" data-route="/payments">
+                            <span class="nav-icon">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <use href="/images/icons.svg#icon-payments"></use>
+                                </svg>
+                            </span>
+                            <span class="nav-text">Платежи</span>
+                        </a>
+                        <a href="/invoices" class="nav-item" data-route="/invoices">
+                            <span class="nav-icon">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <use href="/images/icons.svg#icon-bills"></use>
+                                </svg>
+                            </span>
+                            <span class="nav-text">Счета</span>
+                            <!-- <span class="nav-badge">12</span> -->
+                        </a>
+                        <!-- <a href="/debts" class="nav-item" data-route="/debts">
                         <span class="nav-icon">
                             <svg width="20" height="20" fill="currentColor">
                                 <use href="/images/icons.svg#icon-debts"></use>
@@ -228,18 +238,18 @@
                         </span>
                         <span class="nav-text">Обращения</span>
                     </a> -->
-                    <a href="/appeals2" class="nav-item" data-route="/appeals2">
-                        <span class="nav-icon">
-                            <svg width="20" height="20" fill="currentColor">
-                                <use href="/images/icons.svg#icon-debts"></use>
-                            </svg>
-                        </span>
-                        <span class="nav-text">Обращения</span>
-                        <span class="nav-badge" style="display: none;">0</span>
-                    </a>
-                </div>
+                        <a href="/appeals2" class="nav-item" data-route="/appeals2">
+                            <span class="nav-icon">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <use href="/images/icons.svg#icon-debts"></use>
+                                </svg>
+                            </span>
+                            <span class="nav-text">Обращения</span>
+                            <span class="nav-badge" style="display: none;">0</span>
+                        </a>
+                    </div>
 
-                <!-- <div class="nav-section">
+                    <!-- <div class="nav-section">
                     <div class="nav-section-title">Обслуживание</div>
                     <a href="/repair-requests" class="nav-item" data-route="/repair-requests">
                         <span class="nav-icon">
@@ -268,9 +278,9 @@
                     </a>
                 </div> -->
 
-                <div class="nav-section">
-                    <div class="nav-section-title">Система</div>
-                    <!-- <a href="/settings" class="nav-item" data-route="/settings">
+                    <div class="nav-section">
+                        <div class="nav-section-title">Система</div>
+                        <!-- <a href="/settings" class="nav-item" data-route="/settings">
                         <span class="nav-icon">
                             <svg width="20" height="20" fill="currentColor">
                                 <use href="/images/icons.svg#icon-settings"></use>
@@ -278,15 +288,15 @@
                         </span>
                         <span class="nav-text">Настройки</span>
                     </a> -->
-                    <a href="/logs" class="nav-item" data-route="/logs">
-                        <span class="nav-icon">
-                            <svg width="20" height="20" fill="currentColor">
-                                <use href="/images/icons.svg#icon-reports"></use>
-                            </svg>
-                        </span>
-                        <span class="nav-text">Логи</span>
-                    </a>
-                    <!-- <a href="/backup" class="nav-item" data-route="/backup">
+                        <a href="/logs" class="nav-item" data-route="/logs">
+                            <span class="nav-icon">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <use href="/images/icons.svg#icon-reports"></use>
+                                </svg>
+                            </span>
+                            <span class="nav-text">Логи</span>
+                        </a>
+                        <!-- <a href="/backup" class="nav-item" data-route="/backup">
                         <span class="nav-icon">
                             <svg width="20" height="20" fill="currentColor">
                                 <use href="/images/icons.svg#icon-reports"></use>
@@ -294,16 +304,16 @@
                         </span>
                         <span class="nav-text">Резервное копирование</span>
                     </a> -->
-                    <a href="/login.html" class="nav-item logout-btn" id="logoutBtn">
-                        <span class="nav-icon">
-                            <svg width="20" height="20" fill="currentColor">
-                                <use href="/images/icons.svg#icon-logout"></use>
-                            </svg>
-                        </span>
-                        <span class="nav-text">Выход</span>
-                    </a>
-                </div>
-            </nav>
+                        <a href="/login.html" class="nav-item logout-btn" id="logoutBtn">
+                            <span class="nav-icon">
+                                <svg width="20" height="20" fill="currentColor">
+                                    <use href="/images/icons.svg#icon-logout"></use>
+                                </svg>
+                            </span>
+                            <span class="nav-text">Выход</span>
+                        </a>
+                    </div>
+                </nav>
             </div>
         </aside>
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -316,7 +326,8 @@
                     <h1>Панель управления</h1>
                     <div class="page-breadcrumb">
                         <span class="breadcrumb-item">
-                            <svg width="14" height="14" fill="currentColor" style="margin-right: 0.25rem; vertical-align: middle;">
+                            <svg width="14" height="14" fill="currentColor"
+                                style="margin-right: 0.25rem; vertical-align: middle;">
                                 <use href="/images/icons.svg#icon-apartments"></use>
                             </svg>
                             Главная
@@ -329,7 +340,8 @@
                 <div class="top-bar-actions">
                     <button class="notification-btn" id="openNotifications" title="Уведомления">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V11a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z"/>
+                            <path
+                                d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V11a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z" />
                         </svg>
                         <span class="notification-badge" id="notificationsCount">3</span>
                     </button>
@@ -410,7 +422,8 @@
                                 <input type="file" id="accountAvatarInput" accept="image/*">
                             </div>
                         </div>
-                        <button class="account-btn account-btn-primary" id="accountModalSave">Сохранить изменения</button>
+                        <button class="account-btn account-btn-primary" id="accountModalSave">Сохранить
+                            изменения</button>
                     </div>
                 </div>
 
@@ -420,17 +433,21 @@
                         <div class="account-info-section">
                             <div class="account-form-group">
                                 <label>Текущий пароль</label>
-                                <input type="password" id="currentPassword" placeholder="Введите текущий пароль" autocomplete="current-password">
+                                <input type="password" id="currentPassword" placeholder="Введите текущий пароль"
+                                    autocomplete="current-password">
                             </div>
                             <div class="account-form-group">
                                 <label>Новый пароль</label>
-                                <input type="password" id="newPassword" placeholder="Введите новый пароль" autocomplete="new-password">
+                                <input type="password" id="newPassword" placeholder="Введите новый пароль"
+                                    autocomplete="new-password">
                             </div>
                             <div class="account-form-group">
                                 <label>Подтвердите пароль</label>
-                                <input type="password" id="confirmPassword" placeholder="Подтвердите новый пароль" autocomplete="new-password">
+                                <input type="password" id="confirmPassword" placeholder="Подтвердите новый пароль"
+                                    autocomplete="new-password">
                             </div>
-                            <button class="account-btn account-btn-primary" type="button" id="changePasswordBtn">Изменить пароль</button>
+                            <button class="account-btn account-btn-primary" type="button"
+                                id="changePasswordBtn">Изменить пароль</button>
                         </div>
                     </form>
                 </div>
@@ -452,47 +469,53 @@
             <div class="account-modal-body">
                 <div class="account-info-section" style="margin-bottom:1rem;">
                     <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-                        <button class="account-btn account-btn-secondary" id="notifFilterAll" style="display:none;">Все</button>
-                        <button class="account-btn account-btn-secondary active" id="notifFilterImportant">Непрочитанные</button>
-                        <button class="account-btn account-btn-secondary" id="notifFilterSystem" style="display:none;">Системные</button>
+                        <button class="account-btn account-btn-secondary" id="notifFilterAll"
+                            style="display:none;">Все</button>
+                        <button class="account-btn account-btn-secondary active"
+                            id="notifFilterImportant">Непрочитанные</button>
+                        <button class="account-btn account-btn-secondary" id="notifFilterSystem"
+                            style="display:none;">Системные</button>
                     </div>
                 </div>
                 <div id="notificationsList"></div>
             </div>
             <div class="account-modal-footer">
-                <button class="account-btn account-btn-secondary" id="notificationsMarkRead">Отметить все прочитанными</button>
+                <button class="account-btn account-btn-secondary" id="notificationsMarkRead">Отметить все
+                    прочитанными</button>
             </div>
         </div>
     </div>
 
     <!-- Bootstrap 5 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+
     <!-- Notifications System -->
     <script src="/js/notifications.js"></script>
-    
+
     <!-- Test Data (mock data for SPA pages) -->
     <script src="/js/test-data.js"></script>
-    
+
     <!-- Sidebar Toggle (для совместимости со старыми страницами) -->
     <script src="/js/sidebar-toggle.js"></script>
-    
+
     <!-- Theme Management -->
     <script src="/js/theme.js"></script>
-    
+
     <!-- Language Management -->
     <script src="/js/i18n.js"></script>
     <script src="/js/i18n-auto.js"></script>
-    
+
     <!-- Custom JS -->
     <script src="/js/admin.js"></script>
-    
+
     <!-- SPA Router -->
     <script src="/js/spa-router.js"></script>
-    
+
     <!-- Initialize Theme Toggle and Language Selector -->
     <script>
         // Global function to hide plan tooltip from blocks page
@@ -505,87 +528,84 @@
                 tooltip.style.opacity = '0';
             }
         }
-        
+
         // Hide tooltip on page load
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', hidePlanTooltip);
         } else {
             hidePlanTooltip();
         }
-        
+
         // Hide tooltip on hash change (navigation)
         window.addEventListener('hashchange', hidePlanTooltip);
-        
+
         // Hide tooltip on popstate (browser back/forward)
         window.addEventListener('popstate', hidePlanTooltip);
-        
+
         // Make function globally accessible
         window.hidePlanTooltip = hidePlanTooltip;
-        
-        // Функция для обновления счетчика непрочитанных обращений
+
+        // Функции для обновления счетчика непрочитанных обращений
+        function setAppealsBadge(unreadCount) {
+            const appealsNavItem = document.querySelector('a[data-route="/appeals2"]');
+            if (!appealsNavItem) return;
+            let badge = appealsNavItem.querySelector('.nav-badge');
+            if (unreadCount > 0) {
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'nav-badge';
+                    appealsNavItem.appendChild(badge);
+                }
+                badge.textContent = unreadCount;
+                badge.style.display = 'flex';
+            } else if (badge) {
+                badge.style.display = 'none';
+            }
+        }
+
         async function updateAppealsBadge() {
             try {
                 const response = await fetch('http://localhost:8000/api/notifications/unread-count');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const data = await response.json();
                 const unreadCount = data.count || 0;
-                
-                // Находим nav-badge для "Обращения"
-                const appealsNavItem = document.querySelector('a[data-route="/appeals2"]');
-                if (appealsNavItem) {
-                    let badge = appealsNavItem.querySelector('.nav-badge');
-                    if (unreadCount > 0) {
-                        if (!badge) {
-                            badge = document.createElement('span');
-                            badge.className = 'nav-badge';
-                            appealsNavItem.appendChild(badge);
-                        }
-                        badge.textContent = unreadCount;
-                        badge.style.display = 'flex';
-                    } else {
-                        if (badge) {
-                            badge.style.display = 'none';
-                        }
-                    }
-                }
+                setAppealsBadge(unreadCount);
             } catch (error) {
                 console.error('Error updating appeals badge:', error);
             }
         }
-        
-        document.addEventListener('DOMContentLoaded', function() {
+
+        document.addEventListener('DOMContentLoaded', function () {
             // Устанавливаем темную тему по умолчанию (интерфейс всегда будет темным)
             const savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', 'dark');
             localStorage.setItem('theme', 'dark');
-            
+
             // Профиль пользователя загружается в блоке Account Settings Modal
-            
+
             // Загружаем количество непрочитанных обращений
             updateAppealsBadge();
-            
+
             // Обновляем каждые 30 секунд
             setInterval(updateAppealsBadge, 30000);
 
             // Language Selector Buttons
             const langButtons = document.querySelectorAll('.lang-btn');
             langButtons.forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     const lang = this.getAttribute('data-lang');
-                    
+
                     // Remove active from all buttons
                     langButtons.forEach(b => b.classList.remove('active'));
-                    
+
                     // Add active to clicked button
                     this.classList.add('active');
-                    
+
                     // Apply language if i18n is available
                     if (window.i18n) {
                         window.i18n.applyLanguage(lang);
                         localStorage.setItem('language', lang);
-                        
+
                         // Show notification
                         if (window.showSuccess) {
                             const langNames = { ru: '🇷🇺 Русский', az: '🇦🇿 Azərbaycan', en: '🇬🇧 English' };
@@ -594,7 +614,7 @@
                     }
                 });
             });
-            
+
             // Initialize language on load
             const savedLang = localStorage.getItem('language') || 'ru';
             const activeLangBtn = document.querySelector(`.lang-btn[data-lang="${savedLang}"]`);
@@ -602,26 +622,26 @@
                 langButtons.forEach(b => b.classList.remove('active'));
                 activeLangBtn.classList.add('active');
             }
-            
+
             // Apply saved language
             if (window.i18n) {
                 window.i18n.applyLanguage(savedLang);
             }
-            
+
             // Sidebar Toggle Button - FIXED VERSION
             let toggleSidebarBtn = document.getElementById('toggleSidebar');
             const sidebar = document.getElementById('sidebar') || document.querySelector('.sidebar');
-            
+
             console.log('=== SIDEBAR DEBUG ===');
             console.log('Toggle button found:', !!toggleSidebarBtn);
             console.log('Sidebar found:', !!sidebar);
-            
+
             if (toggleSidebarBtn && sidebar) {
                 // Remove any existing event listeners by cloning the button
                 const newToggleBtn = toggleSidebarBtn.cloneNode(true);
                 toggleSidebarBtn.parentNode.replaceChild(newToggleBtn, toggleSidebarBtn);
                 toggleSidebarBtn = newToggleBtn;
-                
+
                 // Add tooltips to nav items
                 const navItems = sidebar.querySelectorAll('.nav-item');
                 navItems.forEach(item => {
@@ -630,7 +650,7 @@
                         item.setAttribute('data-tooltip', textEl.textContent.trim());
                     }
                 });
-                
+
                 // Load saved state
                 let storedSidebarState = localStorage.getItem('sidebarCollapsed');
                 if (storedSidebarState === null) {
@@ -640,7 +660,7 @@
                 }
                 const sidebarCollapsed = storedSidebarState === 'true';
                 console.log('Saved collapsed state:', sidebarCollapsed);
-                
+
                 if (sidebarCollapsed) {
                     sidebar.classList.add('collapsed');
                     console.log('Applied collapsed class from saved state');
@@ -648,11 +668,11 @@
                     sidebar.classList.remove('collapsed');
                     console.log('Sidebar is open by default');
                 }
-                
+
                 // Elements for mobile overlay
                 const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-                const handleToggleClick = function(e) {
+                const handleToggleClick = function (e) {
                     console.log('=== CLICK EVENT FIRED ===');
                     e.preventDefault();
                     e.stopPropagation();
@@ -670,7 +690,7 @@
 
                     const isCurrentlyCollapsed = sidebar.classList.contains('collapsed');
                     console.log('Current collapsed state:', isCurrentlyCollapsed);
-                    
+
                     if (isCurrentlyCollapsed) {
                         console.log('Expanding sidebar...');
                         sidebar.classList.remove('collapsed');
@@ -680,24 +700,24 @@
                         sidebar.classList.add('collapsed');
                         localStorage.setItem('sidebarCollapsed', 'true');
                     }
-                    
+
                     console.log('New collapsed state:', sidebar.classList.contains('collapsed'));
                 };
-                
-                toggleSidebarBtn.addEventListener('click', function(e) {
+
+                toggleSidebarBtn.addEventListener('click', function (e) {
                     handleToggleClick(e);
                 }, true);
 
                 // Close on overlay click (mobile)
                 if (sidebarOverlay) {
-                    sidebarOverlay.addEventListener('click', function() {
+                    sidebarOverlay.addEventListener('click', function () {
                         sidebar.classList.remove('open');
                         sidebarOverlay.classList.remove('show');
                     });
                 }
 
                 // ESC to toggle sidebar (works on both mobile and desktop)
-                document.addEventListener('keydown', function(ev) {
+                document.addEventListener('keydown', function (ev) {
                     if (ev.key === 'Escape' || ev.keyCode === 27) {
                         const isMobile = window.innerWidth <= 768;
                         if (isMobile) {
@@ -721,20 +741,20 @@
                 });
 
                 // Handle resize - cleanup mobile classes when returning to desktop
-                window.addEventListener('resize', function() {
+                window.addEventListener('resize', function () {
                     if (window.innerWidth > 768) {
                         sidebar.classList.remove('open');
                         if (sidebarOverlay) sidebarOverlay.classList.remove('show');
                     }
                 });
-                
+
                 // Debug: log current state
                 console.log('Sidebar initialized successfully');
                 console.log('Initial collapsed state:', sidebar.classList.contains('collapsed'));
                 console.log('Initial width:', sidebar.offsetWidth);
-                
+
                 // Add global function for debugging
-                window.debugSidebar = function() {
+                window.debugSidebar = function () {
                     console.log('=== SIDEBAR DEBUG INFO ===');
                     console.log('Has collapsed class:', sidebar.classList.contains('collapsed'));
                     console.log('Current width:', sidebar.offsetWidth);
@@ -742,13 +762,13 @@
                     console.log('localStorage value:', localStorage.getItem('sidebarCollapsed'));
                     console.log('All classes:', Array.from(sidebar.classList));
                 };
-                
-                window.resetSidebar = function() {
+
+                window.resetSidebar = function () {
                     localStorage.removeItem('sidebarCollapsed');
                     sidebar.classList.remove('collapsed');
                     console.log('✅ Sidebar reset! Reload the page.');
                 };
-                
+
                 console.log('💡 Type debugSidebar() to see current state');
                 console.log('💡 Type resetSidebar() to reset and reload');
             } else {
@@ -758,29 +778,29 @@
                 }
                 if (!sidebar) console.error('Sidebar element is missing!');
             }
-            
+
             // Logout Button Handler
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) {
-                logoutBtn.addEventListener('click', function(e) {
+                logoutBtn.addEventListener('click', function (e) {
                     e.preventDefault();
-                    
+
                     // Clear all session data
                     localStorage.clear();
                     sessionStorage.clear();
-                    
+
                     // Show notification
                     if (window.showInfo) {
                         showInfo('👋 До свидания!');
                     }
-                    
+
                     // Redirect to login page after a short delay
                     setTimeout(() => {
                         window.location.href = '/login.html';
                     }, 500);
                 });
             }
-            
+
             // Notifications Modal logic
             const openNotificationsBtn = document.getElementById('openNotifications');
             const notificationsModal = document.getElementById('notificationsModal');
@@ -814,16 +834,30 @@
                 return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
             }
 
-            // Загрузка уведомлений с сервера
+            // Получить точное число непрочитанных с сервера
+            async function fetchUnreadCount() {
+                try {
+                    const resp = await fetch(`${API_BASE}/api/notifications/unread-count`);
+                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                    const data = await resp.json();
+                    return data.count || 0;
+                } catch (e) {
+                    console.error('Error fetching unread count:', e);
+                    // fallback на локальный подсчет
+                    return notifications.filter(n => n.unread).length;
+                }
+            }
+
+            // Загрузка уведомлений с сервера (список) + обновление счётчика
             async function loadNotifications() {
                 try {
-                    const url = `${API_BASE}/notifications/json?page=1&per_page=50`;
+                    const url = `${API_BASE}/notifications/json?page=1&per_page=200`;
                     const response = await fetch(url);
-                    
+
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                    
+
                     const data = await response.json();
                     notifications = (data.notifications || []).map(n => ({
                         id: n.id,
@@ -833,27 +867,57 @@
                         unread: n.status === 'UNREAD',
                         status: n.status
                     }));
-                    
+
                     renderNotifications();
-                    updateNotificationCount();
+                    const unread = await fetchUnreadCount();
+                    updateNotificationCount(unread);
                 } catch (error) {
                     console.error('Error loading notifications:', error);
                     notifications = [];
                     renderNotifications();
-                    updateNotificationCount();
+                    const unread = await fetchUnreadCount();
+                    updateNotificationCount(unread);
                 }
             }
 
-            function renderNotifications() {
+            async function markNotificationRead(id) {
+                // Обновляем локально мгновенно
+                let changed = false;
+                notifications = notifications.map(n => {
+                    if (n.id === Number(id) && n.unread) {
+                        changed = true;
+                        return { ...n, unread: false, status: 'READ' };
+                    }
+                    return n;
+                });
+                if (changed) {
+                    const unreadLocal = notifications.filter(n => n.unread).length;
+                    renderNotifications(false);
+                    updateNotificationCount(unreadLocal);
+                    setAppealsBadge(unreadLocal);
+                }
+                // Дёргаем сервер, чтобы статус сохранился
+                try {
+                    await fetch(`${API_BASE}/notifications/${id}/json`, { method: 'GET' });
+                    // После ответа уточняем реальное количество
+                    const unread = await fetchUnreadCount();
+                    updateNotificationCount(unread);
+                    setAppealsBadge(unread);
+                } catch (e) {
+                    console.error('Error marking notification as read:', e);
+                }
+            }
+
+            function renderNotifications(rebind = true) {
                 if (!notificationsList) return;
-                
+
                 // Фильтруем по статусу - по умолчанию показываем только непрочитанные
                 let filtered = notifications;
                 if (activeFilter === 'unread') {
                     filtered = notifications.filter(n => n.unread);
                 }
                 // Если фильтр 'all', показываем все
-                
+
                 const items = filtered.map(n => {
                     const color = '#8b5cf6'; // Фиолетовый цвет для всех уведомлений
                     return `
@@ -873,26 +937,32 @@
                             ${n.unread ? '<span class="badge" style="background:#10b981; height:22px; display:flex; align-items:center;">НОВАЯ</span>' : ''}
                         </div>`;
                 }).join('');
-                
+
                 notificationsList.innerHTML = items || '<div class="empty-state" style="text-align:center; padding:2rem; color:var(--text-secondary);">Нет уведомлений</div>';
 
-                // Добавляем обработчики кликов на уведомления
-                notificationsList.querySelectorAll('.notification-item').forEach(item => {
-                    item.addEventListener('click', function() {
-                        const notificationId = this.dataset.id;
-                        closeNotifications();
-                        // Навигация к appeals2 с параметром id
-                        if (window.spaRouter) {
-                            window.spaRouter.navigate(`/appeals2?id=${notificationId}`);
-                        } else {
-                            window.location.hash = `#/appeals2?id=${notificationId}`;
-                        }
+                if (rebind) {
+                    // Добавляем обработчики кликов на уведомления
+                    notificationsList.querySelectorAll('.notification-item').forEach(item => {
+                        item.addEventListener('click', async function () {
+                            const notificationId = this.dataset.id;
+                            // помечаем как прочитанное сразу
+                            await markNotificationRead(notificationId);
+                            closeNotifications();
+                            // Навигация к appeals2 с параметром id
+                            if (window.spaRouter) {
+                                window.spaRouter.navigate(`/appeals2?id=${notificationId}`);
+                            } else {
+                                window.location.hash = `#/appeals2?id=${notificationId}`;
+                            }
+                        });
                     });
-                });
+                }
             }
 
-            function updateNotificationCount() {
-                const unread = notifications.filter(n => n.unread).length;
+            async function updateNotificationCount(unreadFromApi) {
+                const unread = typeof unreadFromApi === 'number'
+                    ? unreadFromApi
+                    : notifications.filter(n => n.unread).length;
                 if (notificationsCount) {
                     notificationsCount.textContent = String(unread);
                     notificationsCount.style.display = unread > 0 ? 'flex' : 'none';
@@ -908,8 +978,18 @@
 
             function closeNotifications() {
                 if (!notificationsModal) return;
-                notificationsModal.classList.remove('show');
-                document.body.style.overflow = '';
+                if (notificationsModal.classList.contains('hiding')) return;
+
+                notificationsModal.classList.add('hiding');
+
+                const onAnimationEnd = (e) => {
+                    if (e.target !== notificationsModal) return;
+                    notificationsModal.classList.remove('show', 'hiding');
+                    document.body.style.overflow = '';
+                    notificationsModal.removeEventListener('animationend', onAnimationEnd);
+                };
+
+                notificationsModal.addEventListener('animationend', onAnimationEnd);
             }
 
             if (openNotificationsBtn) openNotificationsBtn.addEventListener('click', openNotifications);
@@ -919,7 +999,7 @@
 
             // Обновляем фильтры - убираем типы, оставляем только "Все" и "Непрочитанные"
             if (notifFilterAll) {
-                notifFilterAll.addEventListener('click', function() {
+                notifFilterAll.addEventListener('click', function () {
                     activeFilter = 'all';
                     notifFilterAll.classList.add('active');
                     notifFilterImportant?.classList.remove('active');
@@ -928,7 +1008,7 @@
                 });
             }
             if (notifFilterImportant) {
-                notifFilterImportant.addEventListener('click', function() {
+                notifFilterImportant.addEventListener('click', function () {
                     activeFilter = 'unread';
                     notifFilterAll?.classList.remove('active');
                     notifFilterImportant.classList.add('active');
@@ -939,22 +1019,24 @@
             if (notifFilterSystem) {
                 notifFilterSystem.style.display = 'none'; // Скрываем системные фильтры
             }
-            
+
             if (notificationsMarkRead) {
                 notificationsMarkRead.addEventListener('click', async () => {
                     // Помечаем все как прочитанные на сервере
                     const unreadIds = notifications.filter(n => n.unread).map(n => n.id);
-                    for (const id of unreadIds) {
-                        try {
-                            await fetch(`${API_BASE}/notifications/${id}/json`, { method: 'GET' });
-                        } catch (e) {
-                            console.error('Error marking notification as read:', e);
-                        }
-                    }
-                    // Обновляем локально
-                    notifications = notifications.map(n => ({...n, unread: false}));
-                    renderNotifications();
-                    updateNotificationCount();
+                    // Локально сразу ставим прочитанными
+                    notifications = notifications.map(n => ({ ...n, unread: false, status: 'READ' }));
+                    renderNotifications(false);
+                    updateNotificationCount(0);
+                    setAppealsBadge(0);
+
+                    // Параллельно дергаем сервер (не блокируем UI)
+                    Promise.all(unreadIds.map(id => fetch(`${API_BASE}/notifications/${id}/json`, { method: 'GET' }).catch(() => null)))
+                        .finally(async () => {
+                            const unread = await fetchUnreadCount();
+                            updateNotificationCount(unread);
+                            setAppealsBadge(unread);
+                        });
                 });
             }
 
@@ -969,7 +1051,7 @@
                 updateCount: updateNotificationCount,
                 getUnreadCount: () => notifications.filter(n => n.unread).length
             };
-            
+
             // Делаем loadUserProfile доступной глобально для вызова при загрузке страницы
             window.loadUserProfile = loadUserProfile;
 
@@ -979,10 +1061,10 @@
             const accountModalClose = document.getElementById('accountModalClose');
             const accountModalCancel = document.getElementById('accountModalCancel');
             const accountModalSave = document.getElementById('accountModalSave');
-            
+
             let currentUserData = null;
             let initialAccountState = null;
-            
+
             async function loadUserProfile() {
                 try {
                     const response = await fetch(`${API_BASE}/api/users/me/public`, {
@@ -993,17 +1075,17 @@
                     }
                     const user = await response.json();
                     currentUserData = user;
-                    
+
                     // Заполняем поля формы
                     const fullNameInput = document.getElementById('accountFullName');
                     const phoneInput = document.getElementById('accountPhoneInput');
                     const emailInput = document.getElementById('accountEmailInput');
                     const avatarPreview = document.getElementById('accountModalAvatar');
-                    
+
                     if (fullNameInput) fullNameInput.value = user.full_name || '';
                     if (phoneInput) phoneInput.value = user.phone || '';
                     if (emailInput) emailInput.value = user.email || '';
-                    
+
                     // Обновляем аватар
                     if (avatarPreview) {
                         if (user.avatar_path) {
@@ -1018,10 +1100,10 @@
                             avatarPreview.style.backgroundImage = '';
                         }
                     }
-                    
+
                     // Обновляем аватар и имя в шапке
                     updateHeaderUserInfo(user);
-                    
+
                     initialAccountState = getAccountState();
                 } catch (error) {
                     console.error('Error loading user profile:', error);
@@ -1030,7 +1112,7 @@
                     }
                 }
             }
-            
+
             function updateHeaderUserInfo(user) {
                 // Обновляем аватар в шапке
                 const headerAvatar = document.querySelector('.user-avatar');
@@ -1047,13 +1129,13 @@
                         headerAvatar.style.backgroundImage = '';
                     }
                 }
-                
+
                 // Обновляем имя в шапке
                 const userNameEl = document.querySelector('.user-name');
                 if (userNameEl) {
                     userNameEl.textContent = user.full_name || user.username || 'Пользователь';
                 }
-                
+
                 // Обновляем роль в шапке (опционально)
                 const userRoleEl = document.querySelector('.user-role');
                 if (userRoleEl) {
@@ -1068,7 +1150,7 @@
                     userRoleEl.textContent = roleNames[roleValue] || 'Пользователь';
                 }
             }
-            
+
             function getAccountState() {
                 const fullName = document.getElementById('accountFullName')?.value || '';
                 const phone = document.getElementById('accountPhoneInput')?.value || '';
@@ -1078,7 +1160,7 @@
                 const newPassword = document.getElementById('newPassword')?.value || '';
                 const confirmPassword = document.getElementById('confirmPassword')?.value || '';
                 const avatar = document.getElementById('accountAvatarInput')?.files?.length > 0 ? 'has-file' : '';
-                
+
                 return {
                     fullName,
                     phone,
@@ -1090,7 +1172,7 @@
                     avatar
                 };
             }
-            
+
             function hasUnsavedAccountChanges() {
                 if (!initialAccountState) return false;
                 const currentState = getAccountState();
@@ -1098,10 +1180,16 @@
                     key => initialAccountState[key] !== currentState[key]
                 );
             }
-            
+
             function closeAccountModal() {
-                if (accountModal) {
-                    accountModal.classList.remove('show');
+                if (!accountModal) return;
+                if (accountModal.classList.contains('hiding')) return;
+
+                accountModal.classList.add('hiding');
+
+                const onAnimationEnd = (e) => {
+                    if (e.target !== accountModal) return;
+                    accountModal.classList.remove('show', 'hiding');
                     document.body.style.overflow = '';
                     // Очищаем поля пароля
                     document.getElementById('currentPassword').value = '';
@@ -1110,17 +1198,21 @@
                     // Сбрасываем файл аватара
                     const avatarInput = document.getElementById('accountAvatarInput');
                     if (avatarInput) avatarInput.value = '';
-                }
+
+                    accountModal.removeEventListener('animationend', onAnimationEnd);
+                };
+
+                accountModal.addEventListener('animationend', onAnimationEnd);
             }
-            
+
             function requestCloseAccountModal() {
                 if (!hasUnsavedAccountChanges()) {
                     closeAccountModal();
                     return;
                 }
-                
+
                 const message = 'Вы уверены, что хотите отменить изменения? Все несохранённые данные будут потеряны.';
-                
+
                 if (window.showConfirm) {
                     showConfirm(message, () => {
                         closeAccountModal();
@@ -1129,7 +1221,7 @@
                     closeAccountModal();
                 }
             }
-            
+
             async function openAccountModal() {
                 if (accountModal) {
                     accountModal.classList.add('show');
@@ -1137,28 +1229,28 @@
                     const savedLang = localStorage.getItem('language') || 'ru';
                     const langSelect = document.getElementById('accountLanguage');
                     if (langSelect) langSelect.value = savedLang;
-                    
+
                     // Загружаем профиль пользователя
                     await loadUserProfile();
                 }
             }
-            
+
             if (accountProfileBtn) {
-                accountProfileBtn.addEventListener('click', function(e) {
+                accountProfileBtn.addEventListener('click', function (e) {
                     e.stopPropagation();
                     openAccountModal();
                 });
             }
-            
+
             if (accountModalClose) accountModalClose.addEventListener('click', requestCloseAccountModal);
             if (accountModalCancel) accountModalCancel.addEventListener('click', requestCloseAccountModal);
-            
+
             if (accountModal) {
-                accountModal.addEventListener('click', function(e) {
+                accountModal.addEventListener('click', function (e) {
                     if (e.target === accountModal) requestCloseAccountModal();
                 });
             }
-            
+
             // Tabs switching
             const tabButtons = document.querySelectorAll('.account-tab-btn');
             const tabPanels = document.querySelectorAll('.account-tab-panel');
@@ -1174,7 +1266,7 @@
                     if (panel) panel.classList.add('active');
                 });
             });
-            
+
             // Avatar preview
             const avatarInput = document.getElementById('accountAvatarInput');
             const avatarPreview = document.getElementById('accountModalAvatar');
@@ -1192,14 +1284,14 @@
                     reader.readAsDataURL(file);
                 });
             }
-            
+
             const changePasswordBtn = document.getElementById('changePasswordBtn');
             if (changePasswordBtn) {
-                changePasswordBtn.addEventListener('click', async function() {
+                changePasswordBtn.addEventListener('click', async function () {
                     const currentPassword = document.getElementById('currentPassword')?.value || '';
                     const newPassword = document.getElementById('newPassword')?.value || '';
                     const confirmPassword = document.getElementById('confirmPassword')?.value || '';
-                    
+
                     if (!currentPassword || !newPassword || !confirmPassword) {
                         if (window.showError) {
                             showError('Пожалуйста, заполните все поля пароля.');
@@ -1208,7 +1300,7 @@
                         }
                         return;
                     }
-                    
+
                     if (newPassword !== confirmPassword) {
                         if (window.showError) {
                             showError('Пароли не совпадают!');
@@ -1217,7 +1309,7 @@
                         }
                         return;
                     }
-                    
+
                     if (newPassword.length < 6) {
                         if (window.showError) {
                             showError('Пароль должен быть не менее 6 символов!');
@@ -1226,7 +1318,7 @@
                         }
                         return;
                     }
-                    
+
                     try {
                         const response = await fetch(`${API_BASE}/api/users/me/change-password/public`, {
                             method: 'POST',
@@ -1240,15 +1332,15 @@
                                 confirm_password: confirmPassword
                             })
                         });
-                        
+
                         if (!response.ok) {
                             let errorMessage = 'Ошибка изменения пароля';
                             try {
                                 const errorData = await response.json();
                                 // Проверяем разные форматы ошибок
                                 if (errorData.detail) {
-                                    errorMessage = typeof errorData.detail === 'string' 
-                                        ? errorData.detail 
+                                    errorMessage = typeof errorData.detail === 'string'
+                                        ? errorData.detail
                                         : JSON.stringify(errorData.detail);
                                 } else if (errorData.message) {
                                     errorMessage = errorData.message;
@@ -1263,15 +1355,15 @@
                             }
                             throw new Error(errorMessage);
                         }
-                        
+
                         const result = await response.json();
-                        
+
                         if (window.showSuccess) {
                             showSuccess(result.message || 'Пароль успешно изменён!');
                         } else {
                             alert(result.message || 'Пароль успешно изменён!');
                         }
-                        
+
                         document.getElementById('currentPassword').value = '';
                         document.getElementById('newPassword').value = '';
                         document.getElementById('confirmPassword').value = '';
@@ -1293,15 +1385,15 @@
                     }
                 });
             }
-            
+
             if (accountModalSave) {
-                accountModalSave.addEventListener('click', async function() {
+                accountModalSave.addEventListener('click', async function () {
                     const fullName = document.getElementById('accountFullName')?.value || '';
                     const phone = document.getElementById('accountPhoneInput')?.value || '';
                     const email = document.getElementById('accountEmailInput')?.value || '';
                     const avatarInput = document.getElementById('accountAvatarInput');
                     const langSelect = document.getElementById('accountLanguage');
-                    
+
                     // Сохраняем язык
                     if (langSelect) {
                         const lang = langSelect.value;
@@ -1317,36 +1409,36 @@
                             }
                         }
                     }
-                    
+
                     // Тема всегда темная
                     localStorage.setItem('theme', 'dark');
                     document.documentElement.setAttribute('data-theme', 'dark');
-                    
+
                     try {
                         // Формируем FormData для отправки файла аватара
                         const formData = new FormData();
                         formData.append('full_name', fullName);
                         formData.append('phone', phone);
                         formData.append('email', email);
-                        
+
                         if (avatarInput && avatarInput.files && avatarInput.files[0]) {
                             formData.append('avatar', avatarInput.files[0]);
                         }
-                        
+
                         const response = await fetch(`${API_BASE}/api/users/me/public`, {
                             method: 'PUT',
                             credentials: 'include', // Отправляем cookies для сессии
                             body: formData
                         });
-                        
+
                         if (!response.ok) {
                             let errorMessage = 'Ошибка сохранения профиля';
                             try {
                                 const errorData = await response.json();
                                 // Проверяем разные форматы ошибок
                                 if (errorData.detail) {
-                                    errorMessage = typeof errorData.detail === 'string' 
-                                        ? errorData.detail 
+                                    errorMessage = typeof errorData.detail === 'string'
+                                        ? errorData.detail
                                         : JSON.stringify(errorData.detail);
                                 } else if (errorData.message) {
                                     errorMessage = errorData.message;
@@ -1361,10 +1453,10 @@
                             }
                             throw new Error(errorMessage);
                         }
-                        
+
                         const updatedUser = await response.json();
                         currentUserData = updatedUser;
-                        
+
                         // Обновляем аватар в превью
                         const avatarPreview = document.getElementById('accountModalAvatar');
                         if (avatarPreview) {
@@ -1379,16 +1471,16 @@
                                 avatarPreview.style.backgroundImage = '';
                             }
                         }
-                        
+
                         // Обновляем данные в шапке
                         updateHeaderUserInfo(updatedUser);
-                        
+
                         if (window.showSuccess) {
                             showSuccess('Настройки сохранены!');
                         } else {
                             alert('Настройки сохранены!');
                         }
-                        
+
                         // Обновляем начальное состояние
                         initialAccountState = getAccountState();
                         closeAccountModal();
@@ -1410,13 +1502,13 @@
                     }
                 });
             }
-            
-            document.addEventListener('keydown', function(e) {
+
+            document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape' && accountModal && accountModal.classList.contains('show')) {
                     requestCloseAccountModal();
                 }
             });
-            
+
             // Загружаем профиль пользователя при загрузке страницы
             // Вызываем после небольшой задержки, чтобы DOM был готов
             setTimeout(() => {
@@ -1425,8 +1517,5 @@
         });
     </script>
 </body>
+
 </html>
-
-
-
-

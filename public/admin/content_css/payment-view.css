@@ -104,14 +104,14 @@
         padding: 20px;
         margin-bottom: 20px;
     }
-    
+
     .distribution-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 16px;
     }
-    
+
     .distribution-section h3,
     .applications-section h3 {
         color: rgba(255, 255, 255, 0.9);
@@ -119,19 +119,19 @@
         font-weight: 600;
         margin: 0;
     }
-    
+
     .distribution-table-wrapper {
         border-radius: 10px;
         overflow: hidden;
         background: rgba(8, 10, 20, 0.9);
         border: 1px solid rgba(255, 255, 255, 0.06);
     }
-    
+
     .distribution-table {
         width: 100%;
         border-collapse: collapse;
     }
-    
+
     .distribution-table thead th {
         padding: 10px 14px;
         font-size: 0.85rem;
@@ -141,34 +141,34 @@
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         text-align: left;
     }
-    
+
     .distribution-table tbody td {
         padding: 12px 14px;
         color: rgba(255, 255, 255, 0.9);
         border-bottom: 1px solid rgba(255, 255, 255, 0.04);
         font-size: 0.95rem;
     }
-    
+
     .distribution-table tbody tr:last-child td {
         border-bottom: none;
     }
-    
+
     .distribution-invoice-link {
         color: #7aa2ff;
         text-decoration: none;
         font-weight: 500;
     }
-    
+
     .distribution-invoice-link:hover {
         text-decoration: underline;
     }
-    
+
     .distribution-amount,
     .distribution-remaining {
         font-variant-numeric: tabular-nums;
         font-weight: 600;
     }
-    
+
     .apply-input {
         width: 120px;
         padding: 6px 10px;
@@ -179,7 +179,7 @@
         font-variant-numeric: tabular-nums;
         text-align: right;
     }
-    
+
     .apply-input:focus {
         outline: none;
         border-color: #667eea;
@@ -197,7 +197,7 @@
     .apply-input[type="number"] {
         -moz-appearance: textfield;
     }
-    
+
     .distribution-footer {
         display: flex;
         justify-content: space-between;
@@ -206,7 +206,7 @@
         gap: 16px;
         flex-wrap: wrap;
     }
-    
+
     .distribution-info {
         display: flex;
         gap: 24px;
@@ -248,7 +248,7 @@
         box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
         transform: translateY(-1px);
     }
-    
+
     .btn-secondary {
         padding: 8px 16px;
         background: transparent;
@@ -259,7 +259,7 @@
         cursor: pointer;
         transition: all 0.2s;
     }
-    
+
     .btn-secondary:hover {
         background: rgba(255, 255, 255, 0.06);
         border-color: rgba(255, 255, 255, 0.3);

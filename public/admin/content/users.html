@@ -3,15 +3,10 @@
     <div class="users-header">
         <h2>Пользователи</h2>
     </div>
-    
+
     <!-- Create User Form -->
     <div class="user-create-form">
-        <input 
-            type="text" 
-            id="newUserLogin" 
-            placeholder="Логин нового пользователя"
-            autocomplete="off"
-        />
+        <input type="text" id="newUserLogin" placeholder="Логин нового пользователя" autocomplete="off" />
         <select id="newUserRole">
             <option value="ADMIN">ADMIN</option>
             <option value="OPERATOR">OPERATOR</option>
@@ -22,7 +17,9 @@
             Создать
         </button>
     </div>
-    
+
+
+
     <!-- Users Table -->
     <div style="position: relative;">
         <div class="card">
@@ -48,46 +45,41 @@
                     </table>
                 </div>
             </div>
-        </div>
-        <!-- Pagination -->
-        <div class="table-pagination" style="border-bottom: 1px solid rgba(102, 126, 234, 0.15) !important;
-        border-left: 1px solid rgba(102, 126, 234, 0.15) !important;
-        background: #242831 !important;
-        width: 100%;
-        bottom: -46px;
-        position: absolute;
-        border-right: 1px solid rgba(102, 126, 234, 0.15) !important;">
-            <div class="pagination-controls">
-                <button class="btn-pagination" onclick="goToUserPage('prev')" disabled id="userPrevBtn">
-                    <i class="bi bi-chevron-double-left"></i>
-                </button>
-                <button class="btn-pagination active" onclick="goToUserPage(1)" id="userCurrentPageBtn">1</button>
-                <button class="btn-pagination" onclick="goToUserPage('next')" disabled id="userNextBtn">
-                    <i class="bi bi-chevron-double-right"></i>
-                </button>
-            </div>
-            <div class="pagination-info">
-                <span>Стр. <span id="userCurrentPage">1</span> из <span id="userTotalPages">1</span> · всего <span id="userTotalItems">0</span></span>
-            </div>
-            <div class="pagination-per-page">
-                <span>На</span>
-                <span>странице:</span>
-                <div class="custom-pag-select" id="customUserItemsPerPage">
-                    <select id="userItemsPerPage" onchange="changeUserItemsPerPage()" style="display: none;">
-                        <option value="10">10</option>
-                        <option value="25" selected>25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
-                    <div class="select-btn">
-                        <span class="select-text">25</span>
-                        <span class="arrow">▾</span>
-                    </div>
-                    <div class="select-options">
-                        <div class="select-option" data-value="10">10</div>
-                        <div class="select-option selected" data-value="25">25</div>
-                        <div class="select-option" data-value="50">50</div>
-                        <div class="select-option" data-value="100">100</div>
+            <!-- Pagination -->
+            <div class="table-pagination">
+                <div class="pagination-controls" id="userPaginationControls">
+                    <button class="btn-pagination" onclick="goToUserPage('prev')" disabled id="userPrevBtn">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </button>
+                    <div id="userPageButtons" class="pagination-pages"></div>
+                    <button class="btn-pagination" onclick="goToUserPage('next')" disabled id="userNextBtn">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </button>
+                </div>
+                <div class="pagination-info">
+                    <span>Стр. <span id="userCurrentPage">1</span> из <span id="userTotalPages">1</span> · всего <span
+                            id="userTotalItems">0</span></span>
+                </div>
+                <div class="pagination-per-page">
+                    <span>На</span>
+                    <span>странице:</span>
+                    <div class="custom-pag-select" id="customUserItemsPerPage">
+                        <select id="userItemsPerPage" onchange="changeUserItemsPerPage()" style="display: none;">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <div class="select-btn">
+                            <span class="select-text">25</span>
+                            <span class="arrow">▾</span>
+                        </div>
+                        <div class="select-options" style="background: rgba(36, 40, 49, 0.95) !important">
+                            <div class="select-option" data-value="10">10</div>
+                            <div class="select-option selected" data-value="25">25</div>
+                            <div class="select-option" data-value="50">50</div>
+                            <div class="select-option" data-value="100">100</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -123,7 +115,7 @@
 <script src="../../js/jsPDF.js"></script>
 <script>
     // Функция для динамической загрузки jsPDF (резервный вариант)
-    window.loadJSPDFLibrary = function() {
+    window.loadJSPDFLibrary = function () {
         return new Promise((resolve, reject) => {
             // Проверяем, не загружена ли уже библиотека
             const checkLibrary = () => {
@@ -137,12 +129,12 @@
                 }
                 return false;
             };
-            
+
             if (checkLibrary()) {
                 resolve();
                 return;
             }
-            
+
             // Проверяем, не загружается ли уже скрипт
             const existingScript = document.querySelector('script[src*="jspdf"]');
             if (existingScript) {
@@ -153,7 +145,7 @@
                         resolve();
                     }
                 }, 100);
-                
+
                 setTimeout(() => {
                     clearInterval(checkInterval);
                     if (!checkLibrary()) {
@@ -162,7 +154,7 @@
                 }, 5000);
                 return;
             }
-            
+
             // Загружаем библиотеку
             const script = document.createElement('script');
             script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
@@ -185,7 +177,7 @@
             document.head.appendChild(script);
         });
     };
-    
+
     // Предзагружаем библиотеку при загрузке страницы
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', window.loadJSPDFLibrary);
@@ -195,130 +187,130 @@
 </script>
 
 <script>
-(function() {
-    // Текущий список пользователей из backend
-    let users = [];
-    let usersData = {
-        items: [],
-        total: 0,
-        page: 1,
-        per_page: 25,
-        last_page: 1
-    };
-    
-    // Pagination state
-    let paginationState = {
-        currentPage: 1,
-        itemsPerPage: 25,
-        totalItems: 0,
-        totalPages: 1
-    };
-    
-    // Сохраняем данные текущего пользователя для печати
-    let currentQRUserData = {
-        username: null,
-        tempPassword: null,
-        qrUrl: null
-    };
-    
-    const API_BASE = window.BACKEND_API_BASE || 'http://localhost:8000';
-    
-    async function fetchUsers() {
-        try {
-            const params = new URLSearchParams();
-            params.append('page', paginationState.currentPage);
-            params.append('per_page', paginationState.itemsPerPage);
-            
-            // Сначала пробуем с авторизацией
-            let resp = await fetch(`${API_BASE}/api/users?${params.toString()}`, { credentials: 'include' });
-            // Если 401, пробуем временный публичный endpoint
-            if (resp.status === 401) {
-                console.warn('Not authorized, using public endpoint');
-                resp = await fetch(`${API_BASE}/api/users/public?${params.toString()}`);
-            }
-            if (!resp.ok) throw new Error(`Failed to load users: ${resp.status}`);
-            const data = await resp.json();
-            
-            // Handle paginated response
-            if (data.items) {
-                usersData = data;
-                users = data.items;
-                
-                // Update pagination state
-                paginationState.totalItems = data.total || 0;
-                paginationState.totalPages = data.last_page || 1;
-                paginationState.currentPage = data.page || 1;
-            } else {
-                // Fallback for non-paginated response (backward compatibility)
-                users = Array.isArray(data) ? data : [];
+    (function () {
+        // Текущий список пользователей из backend
+        let users = [];
+        let usersData = {
+            items: [],
+            total: 0,
+            page: 1,
+            per_page: 25,
+            last_page: 1
+        };
+
+        // Pagination state
+        let paginationState = {
+            currentPage: 1,
+            itemsPerPage: 25,
+            totalItems: 0,
+            totalPages: 1
+        };
+
+        // Сохраняем данные текущего пользователя для печати
+        let currentQRUserData = {
+            username: null,
+            tempPassword: null,
+            qrUrl: null
+        };
+
+        const API_BASE = window.BACKEND_API_BASE || 'http://localhost:8000';
+
+        async function fetchUsers() {
+            try {
+                const params = new URLSearchParams();
+                params.append('page', paginationState.currentPage);
+                params.append('per_page', paginationState.itemsPerPage);
+
+                // Сначала пробуем с авторизацией
+                let resp = await fetch(`${API_BASE}/api/users?${params.toString()}`, { credentials: 'include' });
+                // Если 401, пробуем временный публичный endpoint
+                if (resp.status === 401) {
+                    console.warn('Not authorized, using public endpoint');
+                    resp = await fetch(`${API_BASE}/api/users/public?${params.toString()}`);
+                }
+                if (!resp.ok) throw new Error(`Failed to load users: ${resp.status}`);
+                const data = await resp.json();
+
+                // Handle paginated response
+                if (data.items) {
+                    usersData = data;
+                    users = data.items;
+
+                    // Update pagination state
+                    paginationState.totalItems = data.total || 0;
+                    paginationState.totalPages = data.last_page || 1;
+                    paginationState.currentPage = data.page || 1;
+                } else {
+                    // Fallback for non-paginated response (backward compatibility)
+                    users = Array.isArray(data) ? data : [];
+                    usersData = {
+                        items: users,
+                        total: users.length,
+                        page: 1,
+                        per_page: users.length,
+                        last_page: 1
+                    };
+                    // Update pagination state for fallback
+                    paginationState.totalItems = users.length;
+                    paginationState.totalPages = 1;
+                    paginationState.currentPage = 1;
+                }
+            } catch (e) {
+                console.error('Users API error:', e);
+                users = [];
                 usersData = {
-                    items: users,
-                    total: users.length,
+                    items: [],
+                    total: 0,
                     page: 1,
-                    per_page: users.length,
+                    per_page: 25,
                     last_page: 1
                 };
-                // Update pagination state for fallback
-                paginationState.totalItems = users.length;
+                // Reset pagination state on error
+                paginationState.totalItems = 0;
                 paginationState.totalPages = 1;
                 paginationState.currentPage = 1;
             }
-        } catch (e) {
-            console.error('Users API error:', e);
-            users = [];
-            usersData = {
-                items: [],
-                total: 0,
-                page: 1,
-                per_page: 25,
-                last_page: 1
-            };
-            // Reset pagination state on error
-            paginationState.totalItems = 0;
-            paginationState.totalPages = 1;
-            paginationState.currentPage = 1;
         }
-    }
-    
-    // Load users on page load
-    async function loadUsers() {
-        const tbody = document.getElementById('usersTableBody');
-        if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Загрузка...</td></tr>';
-        }
-        
-        await fetchUsers();
-        if (!tbody) return;
-        
-        tbody.innerHTML = '';
-        
-        if (users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Пока нет пользователей</td></tr>';
-            updatePaginationUI();
-            return;
-        }
-        
-        users.forEach(user => {
-            const row = document.createElement('tr');
-            
-            // Get role badge class
-            const roleClass = `role-${String(user.role).toLowerCase()}`;
-            
-            // Password badge
-            let passwordBadge = '';
-            const passwordStatus = user.require_password_change ? 'temp' : 'set';
-            const tempPassword = user.temp_password_plain;
-            
-            if (passwordStatus === 'set') {
-                passwordBadge = '<span class="password-badge password-set">установлен</span>';
-            } else if (passwordStatus === 'temp' && tempPassword) {
-                passwordBadge = `<span class="password-badge password-temp">временный: ${tempPassword}</span>`;
+
+        // Load users on page load
+        async function loadUsers() {
+            const tbody = document.getElementById('usersTableBody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Загрузка...</td></tr>';
             }
-            
-            // Actions (only for non-root users)
-            let actions = '';
-            if (user.username !== 'root') {
-                actions = `
+
+            await fetchUsers();
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Пока нет пользователей</td></tr>';
+                updatePaginationUI();
+                return;
+            }
+
+            users.forEach(user => {
+                const row = document.createElement('tr');
+
+                // Get role badge class
+                const roleClass = `role-${String(user.role).toLowerCase()}`;
+
+                // Password badge
+                let passwordBadge = '';
+                const passwordStatus = user.require_password_change ? 'temp' : 'set';
+                const tempPassword = user.temp_password_plain;
+
+                if (passwordStatus === 'set') {
+                    passwordBadge = '<span class="password-badge password-set">установлен</span>';
+                } else if (passwordStatus === 'temp' && tempPassword) {
+                    passwordBadge = `<span class="password-badge password-temp">временный: ${tempPassword}</span>`;
+                }
+
+                // Actions (only for non-root users)
+                let actions = '';
+                if (user.username !== 'root') {
+                    actions = `
                     <div class="user-actions">
                         <button class="btn-user-action btn-reset-password" onclick="resetPassword(${user.id})">
                             Сброс пароля
@@ -343,9 +335,9 @@
                         ` : ''}
                     </div>
                 `;
-            }
-            
-            row.innerHTML = `
+                }
+
+                row.innerHTML = `
                 <td>${user.id}</td>
                 <td>${user.username}</td>
                 <td><span class="role-badge ${roleClass}">RoleEnum.${user.role}</span></td>
@@ -353,150 +345,192 @@
                 <td>${passwordBadge}</td>
                 <td>${actions}</td>
             `;
-            
-            tbody.appendChild(row);
-        });
-        
-        updatePaginationUI();
-    }
-    
-    // Pagination Functions
-    function updatePaginationUI() {
-        const currentPageEl = document.getElementById('userCurrentPage');
-        const totalPagesEl = document.getElementById('userTotalPages');
-        const totalItemsEl = document.getElementById('userTotalItems');
-        const currentPageBtn = document.getElementById('userCurrentPageBtn');
-        const prevBtn = document.getElementById('userPrevBtn');
-        const nextBtn = document.getElementById('userNextBtn');
-        
-        if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
-        if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
-        if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
-        if (currentPageBtn) currentPageBtn.textContent = paginationState.currentPage;
-        if (prevBtn) prevBtn.disabled = paginationState.currentPage === 1;
-        if (nextBtn) nextBtn.disabled = paginationState.currentPage === paginationState.totalPages;
-    }
-    
-    window.goToUserPage = function(page) {
-        if (page === 'prev') {
-            if (paginationState.currentPage > 1) {
-                paginationState.currentPage--;
-                loadUsers();
-            }
-        } else if (page === 'next') {
-            if (paginationState.currentPage < paginationState.totalPages) {
-                paginationState.currentPage++;
-                loadUsers();
-            }
-        } else if (typeof page === 'number') {
-            paginationState.currentPage = page;
-            loadUsers();
+
+                tbody.appendChild(row);
+            });
+
+            updatePaginationUI();
         }
-    };
-    
-    window.changeUserItemsPerPage = function() {
-        const select = document.getElementById('userItemsPerPage');
-        if (select) {
-            paginationState.itemsPerPage = parseInt(select.value);
-            paginationState.currentPage = 1;
-            loadUsers();
+
+        // Pagination Functions
+        function buildUserPageList(current, total) {
+            if (total <= 5) {
+                return Array.from({ length: total }, (_, i) => i + 1);
+            }
+            const pages = new Set([1, total]);
+            if (current <= 3) {
+                [2, 3, 4, 5].forEach(p => pages.add(p));
+            } else if (current >= total - 2) {
+                [total - 1, total - 2, total - 3, total - 4].forEach(p => pages.add(p));
+            } else {
+                [current - 2, current - 1, current, current + 1, current + 2].forEach(p => pages.add(p));
+            }
+            const sorted = Array.from(pages).filter(p => p >= 1 && p <= total).sort((a, b) => a - b);
+            const result = [];
+            for (let i = 0; i < sorted.length; i++) {
+                const page = sorted[i];
+                result.push(page);
+                const next = sorted[i + 1];
+                if (next && next - page > 1) {
+                    result.push('dots');
+                }
+            }
+            return result;
+        }
+
+        function updatePaginationUI() {
+            const currentPageEl = document.getElementById('userCurrentPage');
+            const totalPagesEl = document.getElementById('userTotalPages');
+            const totalItemsEl = document.getElementById('userTotalItems');
+            const prevBtn = document.getElementById('userPrevBtn');
+            const nextBtn = document.getElementById('userNextBtn');
+            const pagesContainer = document.getElementById('userPageButtons');
+
+            if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
+            if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
+            if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
+            if (prevBtn) prevBtn.disabled = paginationState.currentPage <= 1;
+            if (nextBtn) nextBtn.disabled = paginationState.currentPage >= paginationState.totalPages;
+
+            if (!pagesContainer) return;
+            pagesContainer.innerHTML = '';
+
+            const pages = buildUserPageList(paginationState.currentPage, paginationState.totalPages);
+            pages.forEach(p => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-pagination';
+
+                if (p === 'dots') {
+                    btn.textContent = '...';
+                    btn.disabled = true;
+                    btn.classList.add('dots');
+                } else {
+                    btn.textContent = p;
+                    if (p > paginationState.totalPages) {
+                        btn.disabled = true;
+                    } else {
+                        btn.onclick = () => {
+                            if (p !== paginationState.currentPage) {
+                                goToUserPage(p);
+                            }
+                        };
+                    }
+                    if (p === paginationState.currentPage) {
+                        btn.classList.add('active');
+                        btn.setAttribute('aria-current', 'page');
+                    }
+                }
+
+                pagesContainer.appendChild(btn);
+            });
+        }
+
+        window.goToUserPage = function (page) {
+            if (page === 'prev') {
+                if (paginationState.currentPage > 1) {
+                    paginationState.currentPage--;
+                    loadUsers();
+                }
+            } else if (page === 'next') {
+                if (paginationState.currentPage < paginationState.totalPages) {
+                    paginationState.currentPage++;
+                    loadUsers();
+                }
+            } else if (typeof page === 'number') {
+                paginationState.currentPage = page;
+                loadUsers();
+            }
+        };
+
+        window.changeUserItemsPerPage = function () {
+            const select = document.getElementById('userItemsPerPage');
+            if (select) {
+                paginationState.itemsPerPage = parseInt(select.value);
+                paginationState.currentPage = 1;
+                loadUsers();
+                updateCustomUserPaginationDropdown();
+            }
+        };
+
+        function updateCustomUserPaginationDropdown() {
+            const select = document.getElementById('userItemsPerPage');
+            const customSelect = document.getElementById('customUserItemsPerPage');
+            if (!select || !customSelect) return;
+
+            const value = select.value;
+            const selectText = customSelect.querySelector('.select-text');
+            const options = customSelect.querySelectorAll('.select-option');
+
+            if (selectText) selectText.textContent = value;
+            options.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.getAttribute('data-value') === value) {
+                    opt.classList.add('selected');
+                }
+            });
+        }
+
+        function initCustomUserPaginationDropdown() {
+            const customSelect = document.getElementById('customUserItemsPerPage');
+            if (!customSelect) return;
+
+            const selectBtn = customSelect.querySelector('.select-btn');
+            const selectOptions = customSelect.querySelector('.select-options');
+            const options = selectOptions.querySelectorAll('.select-option');
+
+            if (selectBtn) {
+                selectBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    customSelect.classList.toggle('open');
+                });
+            }
+
+            options.forEach(opt => {
+                opt.addEventListener('click', function () {
+                    const value = this.getAttribute('data-value');
+                    const select = document.getElementById('userItemsPerPage');
+                    if (select) {
+                        select.value = value;
+                        changeUserItemsPerPage();
+                    }
+                    customSelect.classList.remove('open');
+                });
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!customSelect.contains(e.target)) {
+                    customSelect.classList.remove('open');
+                }
+            });
+
             updateCustomUserPaginationDropdown();
         }
-    };
-    
-    function updateCustomUserPaginationDropdown() {
-        const select = document.getElementById('userItemsPerPage');
-        const customSelect = document.getElementById('customUserItemsPerPage');
-        if (!select || !customSelect) return;
-        
-        const value = select.value;
-        const selectText = customSelect.querySelector('.select-text');
-        const options = customSelect.querySelectorAll('.select-option');
-        
-        if (selectText) selectText.textContent = value;
-        options.forEach(opt => {
-            opt.classList.remove('selected');
-            if (opt.getAttribute('data-value') === value) {
-                opt.classList.add('selected');
-            }
-        });
-    }
-    
-    function initCustomUserPaginationDropdown() {
-        const customSelect = document.getElementById('customUserItemsPerPage');
-        if (!customSelect) return;
-        
-        const selectBtn = customSelect.querySelector('.select-btn');
-        const selectOptions = customSelect.querySelector('.select-options');
-        const options = selectOptions.querySelectorAll('.select-option');
-        
-        if (selectBtn) {
-            selectBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                customSelect.classList.toggle('open');
-            });
-        }
-        
-        options.forEach(opt => {
-            opt.addEventListener('click', function() {
-                const value = this.getAttribute('data-value');
-                const select = document.getElementById('userItemsPerPage');
-                if (select) {
-                    select.value = value;
-                    changeUserItemsPerPage();
+
+        // Create user через backend API
+        window.createUser = async function () {
+            const loginInput = document.getElementById('newUserLogin');
+            const roleSelect = document.getElementById('newUserRole');
+
+            if (!loginInput || !roleSelect) return;
+
+            const login = loginInput.value.trim();
+            const role = roleSelect.value;
+
+            if (!login) {
+                if (window.showWarning) {
+                    showWarning('⚠️ Введите логин пользователя');
+                } else {
+                    alert('Введите логин пользователя');
                 }
-                customSelect.classList.remove('open');
-            });
-        });
-        
-        document.addEventListener('click', function(e) {
-            if (!customSelect.contains(e.target)) {
-                customSelect.classList.remove('open');
+                return;
             }
-        });
-        
-        updateCustomUserPaginationDropdown();
-    }
-    
-    // Create user через backend API
-    window.createUser = async function() {
-        const loginInput = document.getElementById('newUserLogin');
-        const roleSelect = document.getElementById('newUserRole');
-        
-        if (!loginInput || !roleSelect) return;
-        
-        const login = loginInput.value.trim();
-        const role = roleSelect.value;
-        
-        if (!login) {
-            if (window.showWarning) {
-                showWarning('⚠️ Введите логин пользователя');
-            } else {
-                alert('Введите логин пользователя');
-            }
-            return;
-        }
-        
-        try {
-            // Сначала пробуем с авторизацией
-            let resp = await fetch(`${API_BASE}/api/users`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                    username: login,
-                    role: role,
-                    full_name: null,
-                    phone: null,
-                    email: null
-                })
-            });
-            // Если 401, пробуем временный публичный endpoint
-            if (resp.status === 401) {
-                console.warn('Not authorized, using public endpoint');
-                resp = await fetch(`${API_BASE}/api/users/public`, {
+
+            try {
+                // Сначала пробуем с авторизацией
+                let resp = await fetch(`${API_BASE}/api/users`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({
                         username: login,
                         role: role,
@@ -505,448 +539,484 @@
                         email: null
                     })
                 });
+                // Если 401, пробуем временный публичный endpoint
+                if (resp.status === 401) {
+                    console.warn('Not authorized, using public endpoint');
+                    resp = await fetch(`${API_BASE}/api/users/public`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            username: login,
+                            role: role,
+                            full_name: null,
+                            phone: null,
+                            email: null
+                        })
+                    });
+                }
+                if (!resp.ok) {
+                    const errorText = await resp.text();
+                    throw new Error(`Failed to create user: ${resp.status} - ${errorText}`);
+                }
+                const created = await resp.json();
+
+                // Reset to first page after creating user
+                paginationState.currentPage = 1;
+                await loadUsers();
+
+                loginInput.value = '';
+                roleSelect.value = 'ADMIN';
+
+                const tempPassword = created.temp_password_plain || 'установлен';
+                if (window.showSuccess) {
+                    showSuccess(`✅ Пользователь "${login}" создан! Временный пароль: ${tempPassword}`);
+                } else {
+                    alert(`Пользователь создан!\nЛогин: ${login}\nВременный пароль: ${tempPassword}`);
+                }
+            } catch (e) {
+                console.error('Create user error:', e);
+                if (window.showError) {
+                    showError('❌ Не удалось создать пользователя');
+                } else {
+                    alert('Не удалось создать пользователя');
+                }
             }
-            if (!resp.ok) {
-                const errorText = await resp.text();
-                throw new Error(`Failed to create user: ${resp.status} - ${errorText}`);
+        };
+
+        // Reset password
+        window.resetPassword = async function (userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            if (user.username === 'root') {
+                if (window.showWarning) {
+                    showWarning('⚠️ Невозможно сбросить пароль для root');
+                }
+                return;
             }
-            const created = await resp.json();
-            
-            // Reset to first page after creating user
-            paginationState.currentPage = 1;
-            await loadUsers();
-            
-            loginInput.value = '';
-            roleSelect.value = 'ADMIN';
-            
-            const tempPassword = created.temp_password_plain || 'установлен';
-            if (window.showSuccess) {
-                showSuccess(`✅ Пользователь "${login}" создан! Временный пароль: ${tempPassword}`);
-            } else {
-                alert(`Пользователь создан!\nЛогин: ${login}\nВременный пароль: ${tempPassword}`);
-            }
-        } catch (e) {
-            console.error('Create user error:', e);
-            if (window.showError) {
-                showError('❌ Не удалось создать пользователя');
-            } else {
-                alert('Не удалось создать пользователя');
-            }
-        }
-    };
-    
-    // Reset password
-    window.resetPassword = async function(userId) {
-        const user = users.find(u => u.id === userId);
-        if (!user) return;
-        
-        if (user.username === 'root') {
-            if (window.showWarning) {
-                showWarning('⚠️ Невозможно сбросить пароль для root');
-            }
-            return;
-        }
-        
-        try {
-            let resp = await fetch(`${API_BASE}/api/users/${userId}/reset`, {
-                method: 'POST',
-                credentials: 'include'
-            });
-            if (resp.status === 401) {
-                console.warn('Not authorized, using public endpoint');
-                resp = await fetch(`${API_BASE}/api/users/${userId}/reset/public`, {
-                    method: 'POST'
+
+            try {
+                let resp = await fetch(`${API_BASE}/api/users/${userId}/reset`, {
+                    method: 'POST',
+                    credentials: 'include'
                 });
+                if (resp.status === 401) {
+                    console.warn('Not authorized, using public endpoint');
+                    resp = await fetch(`${API_BASE}/api/users/${userId}/reset/public`, {
+                        method: 'POST'
+                    });
+                }
+                if (!resp.ok) throw new Error('Failed to reset password');
+                const updated = await resp.json();
+
+                // Reload current page to see updated password
+                await loadUsers();
+
+                const tempPassword = updated.temp_password_plain || 'временный пароль обновлён';
+                if (window.showSuccess) {
+                    showSuccess(`✅ Пароль сброшен! Новый временный пароль: ${tempPassword}`);
+                } else {
+                    alert(`Пароль сброшен!\nНовый временный пароль: ${tempPassword}`);
+                }
+            } catch (e) {
+                console.error('Reset password error:', e);
+                if (window.showError) {
+                    showError('❌ Не удалось сбросить пароль');
+                } else {
+                    alert('Не удалось сбросить пароль');
+                }
             }
-            if (!resp.ok) throw new Error('Failed to reset password');
-            const updated = await resp.json();
-            
-            // Reload current page to see updated password
-            await loadUsers();
-            
-            const tempPassword = updated.temp_password_plain || 'временный пароль обновлён';
-            if (window.showSuccess) {
-                showSuccess(`✅ Пароль сброшен! Новый временный пароль: ${tempPassword}`);
-            } else {
-                alert(`Пароль сброшен!\nНовый временный пароль: ${tempPassword}`);
+        };
+
+        // Rename user
+        window.renameUser = async function (userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            const newNameInput = document.getElementById(`newName${userId}`);
+            if (!newNameInput) return;
+
+            const newName = newNameInput.value.trim();
+
+            if (!newName) {
+                if (window.showWarning) {
+                    showWarning('⚠️ Введите новое имя');
+                } else {
+                    alert('Введите новое имя');
+                }
+                return;
             }
-        } catch (e) {
-            console.error('Reset password error:', e);
-            if (window.showError) {
-                showError('❌ Не удалось сбросить пароль');
-            } else {
-                alert('Не удалось сбросить пароль');
-            }
-        }
-    };
-    
-    // Rename user
-    window.renameUser = async function(userId) {
-        const user = users.find(u => u.id === userId);
-        if (!user) return;
-        
-        const newNameInput = document.getElementById(`newName${userId}`);
-        if (!newNameInput) return;
-        
-        const newName = newNameInput.value.trim();
-        
-        if (!newName) {
-            if (window.showWarning) {
-                showWarning('⚠️ Введите новое имя');
-            } else {
-                alert('Введите новое имя');
-            }
-            return;
-        }
-        
-        try {
-            let resp = await fetch(`${API_BASE}/api/users/${userId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ username: newName })
-            });
-            if (resp.status === 401) {
-                console.warn('Not authorized, using public endpoint');
-                resp = await fetch(`${API_BASE}/api/users/${userId}/public`, {
+
+            try {
+                let resp = await fetch(`${API_BASE}/api/users/${userId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ username: newName })
                 });
-            }
-            if (!resp.ok) throw new Error('Failed to rename user');
-            // Reload current page to see updated name
-            await loadUsers();
-            
-            if (window.showSuccess) {
-                showSuccess(`✅ Пользователь "${user.username}" переименован в "${newName}"`);
-            } else {
-                alert(`Пользователь переименован: ${user.username} → ${newName}`);
-            }
-        } catch (e) {
-            console.error('Rename user error:', e);
-            if (window.showError) {
-                showError('❌ Не удалось переименовать пользователя');
-            } else {
-                alert('Не удалось переименовать пользователя');
-            }
-        }
-    };
-    
-    // Функция генерации QR-кода через Google Charts API (работает без внешних библиотек)
-    function generateQRCodeImage(qrUrl, canvas) {
-        // Используем Google Charts API для генерации QR-кода
-        const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl)}`;
-        
-        // Создаем изображение
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        
-        img.onload = function() {
-            const ctx = canvas.getContext('2d');
-            canvas.width = 300;
-            canvas.height = 300;
-            ctx.drawImage(img, 0, 0);
-            
-            // Показываем модальное окно после успешной генерации
-            const modal = document.getElementById('qrModal');
-            if (modal) {
-                modal.classList.add('active');
-            }
-        };
-        
-        img.onerror = function() {
-            // Резервный вариант - показываем URL напрямую
-            const ctx = canvas.getContext('2d');
-            canvas.width = 300;
-            canvas.height = 300;
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, 300, 300);
-            ctx.fillStyle = '#000000';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('QR Code URL:', 150, 140);
-            ctx.fillText(qrUrl, 150, 160, 280);
-            
-            const modal = document.getElementById('qrModal');
-            if (modal) {
-                modal.classList.add('active');
-            }
-        };
-        
-        img.src = apiUrl;
-    }
-    
-    // Show QR Code
-    window.showQRCode = async function(userId, username, tempPassword) {
-        try {
-            // Создаем QR токен через API (используем публичный endpoint)
-            let resp = await fetch(`${API_BASE}/api/qr/users/${userId}/qr-token/public`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            if (!resp.ok) {
-                const errorText = await resp.text();
-                throw new Error(`Failed to generate QR token: ${resp.status} - ${errorText}`);
-            }
-            
-            const data = await resp.json();
-            const qrToken = data.token;
-            
-            // Формируем URL для QR-кода
-            const frontendUrl = window.location.origin || 'http://localhost:3000';
-            const qrUrl = `${frontendUrl}/qr-password-setup?token=${qrToken}`;
-            
-            // Сохраняем данные для печати
-            currentQRUserData = {
-                username: username,
-                tempPassword: tempPassword,
-                qrUrl: qrUrl
-            };
-            
-            // Получаем canvas для QR-кода
-            const canvas = document.getElementById('qrCanvas');
-            if (!canvas) {
-                console.error('QR canvas not found');
-                if (window.showError) {
-                    showError('❌ Элемент для QR-кода не найден');
+                if (resp.status === 401) {
+                    console.warn('Not authorized, using public endpoint');
+                    resp = await fetch(`${API_BASE}/api/users/${userId}/public`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: newName })
+                    });
+                }
+                if (!resp.ok) throw new Error('Failed to rename user');
+                // Reload current page to see updated name
+                await loadUsers();
+
+                if (window.showSuccess) {
+                    showSuccess(`✅ Пользователь "${user.username}" переименован в "${newName}"`);
                 } else {
-                    alert('Элемент для QR-кода не найден');
+                    alert(`Пользователь переименован: ${user.username} → ${newName}`);
+                }
+            } catch (e) {
+                console.error('Rename user error:', e);
+                if (window.showError) {
+                    showError('❌ Не удалось переименовать пользователя');
+                } else {
+                    alert('Не удалось переименовать пользователя');
+                }
+            }
+        };
+
+        // Функция генерации QR-кода через Google Charts API (работает без внешних библиотек)
+        function generateQRCodeImage(qrUrl, canvas) {
+            // Используем Google Charts API для генерации QR-кода
+            const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl)}`;
+
+            // Создаем изображение
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+
+            img.onload = function () {
+                const ctx = canvas.getContext('2d');
+                canvas.width = 300;
+                canvas.height = 300;
+                ctx.drawImage(img, 0, 0);
+
+                // Показываем модальное окно после успешной генерации
+                const modal = document.getElementById('qrModal');
+                if (modal) {
+                    modal.classList.add('active');
+                }
+            };
+
+            img.onerror = function () {
+                // Резервный вариант - показываем URL напрямую
+                const ctx = canvas.getContext('2d');
+                canvas.width = 300;
+                canvas.height = 300;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, 300, 300);
+                ctx.fillStyle = '#000000';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('QR Code URL:', 150, 140);
+                ctx.fillText(qrUrl, 150, 160, 280);
+
+                const modal = document.getElementById('qrModal');
+                if (modal) {
+                    modal.classList.add('active');
+                }
+            };
+
+            img.src = apiUrl;
+        }
+
+        // Show QR Code
+        window.showQRCode = async function (userId, username, tempPassword) {
+            try {
+                // Создаем QR токен через API (используем публичный endpoint)
+                let resp = await fetch(`${API_BASE}/api/qr/users/${userId}/qr-token/public`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (!resp.ok) {
+                    const errorText = await resp.text();
+                    throw new Error(`Failed to generate QR token: ${resp.status} - ${errorText}`);
+                }
+
+                const data = await resp.json();
+                const qrToken = data.token;
+
+                // Формируем URL для QR-кода
+                const frontendUrl = window.location.origin || 'http://localhost:3000';
+                const qrUrl = `${frontendUrl}/qr-password-setup?token=${qrToken}`;
+
+                // Сохраняем данные для печати
+                currentQRUserData = {
+                    username: username,
+                    tempPassword: tempPassword,
+                    qrUrl: qrUrl
+                };
+
+                // Получаем canvas для QR-кода
+                const canvas = document.getElementById('qrCanvas');
+                if (!canvas) {
+                    console.error('QR canvas not found');
+                    if (window.showError) {
+                        showError('❌ Элемент для QR-кода не найден');
+                    } else {
+                        alert('Элемент для QR-кода не найден');
+                    }
+                    return;
+                }
+
+                // Генерируем QR-код через API
+                generateQRCodeImage(qrUrl, canvas);
+            } catch (e) {
+                console.error('Show QR error:', e);
+                if (window.showError) {
+                    showError('❌ Не удалось создать QR-код');
+                } else {
+                    alert('Не удалось создать QR-код');
+                }
+            }
+        };
+
+        // Print QR Code to PDF
+        window.printQRCode = function () {
+            if (!currentQRUserData.username || !currentQRUserData.tempPassword) {
+                if (window.showError) {
+                    showError('❌ Нет данных для печати');
+                } else {
+                    alert('Нет данных для печати');
                 }
                 return;
             }
-            
-            // Генерируем QR-код через API
-            generateQRCodeImage(qrUrl, canvas);
-        } catch (e) {
-            console.error('Show QR error:', e);
-            if (window.showError) {
-                showError('❌ Не удалось создать QR-код');
-            } else {
-                alert('Не удалось создать QR-код');
-            }
-        }
-    };
-    
-    // Print QR Code to PDF
-    window.printQRCode = function() {
-        if (!currentQRUserData.username || !currentQRUserData.tempPassword) {
-            if (window.showError) {
-                showError('❌ Нет данных для печати');
-            } else {
-                alert('Нет данных для печати');
-            }
-            return;
-        }
-        
-        try {
-            // Проверяем наличие jsPDF разными способами
-            let jsPDFClass;
-            
-            // Вариант 1: window.jspdf.jsPDF (UMD модуль)
-            if (typeof window.jspdf !== 'undefined') {
-                if (window.jspdf.jsPDF) {
-                    jsPDFClass = window.jspdf.jsPDF;
-                } else if (typeof window.jspdf === 'function') {
-                    jsPDFClass = window.jspdf;
-                } else if (window.jspdf.default && window.jspdf.default.jsPDF) {
-                    jsPDFClass = window.jspdf.default.jsPDF;
+
+            try {
+                // Проверяем наличие jsPDF разными способами
+                let jsPDFClass;
+
+                // Вариант 1: window.jspdf.jsPDF (UMD модуль)
+                if (typeof window.jspdf !== 'undefined') {
+                    if (window.jspdf.jsPDF) {
+                        jsPDFClass = window.jspdf.jsPDF;
+                    } else if (typeof window.jspdf === 'function') {
+                        jsPDFClass = window.jspdf;
+                    } else if (window.jspdf.default && window.jspdf.default.jsPDF) {
+                        jsPDFClass = window.jspdf.default.jsPDF;
+                    }
+                }
+
+                // Вариант 2: window.jsPDF (глобальный экспорт)
+                if (!jsPDFClass && typeof window.jsPDF !== 'undefined') {
+                    jsPDFClass = window.jsPDF;
+                }
+
+                // Если не нашли, пробуем загрузить динамически
+                if (!jsPDFClass) {
+                    console.warn('jsPDF not found, attempting to load...', {
+                        window_jspdf: typeof window.jspdf,
+                        window_jsPDF: typeof window.jsPDF,
+                        jspdf_content: window.jspdf ? Object.keys(window.jspdf) : 'undefined'
+                    });
+
+                    // Попробуем загрузить библиотеку динамически
+                    window.loadJSPDFLibrary().then(() => {
+                        // Повторно вызываем функцию после загрузки
+                        setTimeout(() => window.printQRCode(), 200);
+                    }).catch((err) => {
+                        console.error('Failed to load jsPDF:', err);
+                        if (window.showError) {
+                            showError('❌ Библиотека для генерации PDF не загружена. Попробуйте обновить страницу.');
+                        } else {
+                            alert('Библиотека для генерации PDF не загружена. Попробуйте обновить страницу.');
+                        }
+                    });
+                    return;
+                }
+
+                const doc = new jsPDFClass();
+
+                // Настройки страницы
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const margin = 20;
+                const contentWidth = pageWidth - (margin * 2);
+
+                // Функция для создания текста как изображения (для поддержки кириллицы)
+                function createTextImage(text, fontSize, isBold, maxWidth) {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    // Устанавливаем размер canvas
+                    canvas.width = maxWidth || 500;
+                    canvas.height = fontSize * 2;
+
+                    // Настройки текста
+                    ctx.fillStyle = '#000000';
+                    ctx.font = `${isBold ? 'bold' : 'normal'} ${fontSize}px Arial, sans-serif`;
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'top';
+
+                    // Рисуем текст
+                    ctx.fillText(text, 0, 0);
+
+                    return canvas.toDataURL('image/png');
+                }
+
+                // Заголовок
+                const titleText = 'QR-код для установки пароля';
+                const titleImg = createTextImage(titleText, 20, true, 500);
+                const titleWidth = 100;
+                const titleHeight = 10;
+                doc.addImage(titleImg, 'PNG', (pageWidth - titleWidth) / 2, margin, titleWidth, titleHeight);
+
+                // Информация о пользователе
+                let yPos = margin + 25;
+                const labelSize = 12;
+                const valueSize = 12;
+
+                // Логин пользователя
+                const loginLabelImg = createTextImage('Логин пользователя:', labelSize, false, 200);
+                doc.addImage(loginLabelImg, 'PNG', margin, yPos, 50, 5);
+
+                const loginValueImg = createTextImage(currentQRUserData.username, valueSize, true, 200);
+                doc.addImage(loginValueImg, 'PNG', margin + 55, yPos, 50, 5);
+
+                yPos += 12;
+
+                // Временный пароль
+                const passwordLabelImg = createTextImage('Временный пароль:', labelSize, false, 200);
+                doc.addImage(passwordLabelImg, 'PNG', margin, yPos, 50, 5);
+
+                const passwordValueImg = createTextImage(currentQRUserData.tempPassword, valueSize, true, 200);
+                doc.addImage(passwordValueImg, 'PNG', margin + 55, yPos, 50, 5);
+
+                // Получаем QR-код из canvas
+                const canvas = document.getElementById('qrCanvas');
+                if (canvas) {
+                    try {
+                        // Конвертируем canvas в изображение
+                        const imgData = canvas.toDataURL('image/png');
+
+                        // Размер QR-кода в PDF (100x100 мм)
+                        const qrSize = 80;
+                        const qrX = (pageWidth - qrSize) / 2;
+                        const qrY = yPos + 20;
+
+                        // Добавляем QR-код
+                        doc.addImage(imgData, 'PNG', qrX, qrY, qrSize, qrSize);
+
+                        // Инструкция под QR-кодом
+                        yPos = qrY + qrSize + 15;
+                        const instructionText1 = 'Пользователь должен отсканировать этот QR-код';
+                        const instructionText2 = 'для установки пароля';
+                        const instructionImg1 = createTextImage(instructionText1, 10, false, 400);
+                        const instructionImg2 = createTextImage(instructionText2, 10, false, 400);
+                        const instructionWidth = 80;
+                        const instructionHeight = 5;
+                        doc.addImage(instructionImg1, 'PNG', (pageWidth - instructionWidth) / 2, yPos, instructionWidth, instructionHeight);
+                        doc.addImage(instructionImg2, 'PNG', (pageWidth - instructionWidth) / 2, yPos + 6, instructionWidth, instructionHeight);
+                    } catch (e) {
+                        console.error('Error adding QR image to PDF:', e);
+                        // Если не удалось добавить изображение, добавляем URL как изображение текста
+                        yPos += 20;
+                        const urlLabelImg = createTextImage('QR URL:', 10, false, 200);
+                        doc.addImage(urlLabelImg, 'PNG', margin, yPos, 30, 5);
+                        const urlValueImg = createTextImage(currentQRUserData.qrUrl, 8, false, contentWidth);
+                        doc.addImage(urlValueImg, 'PNG', margin, yPos + 8, contentWidth, 10);
+                    }
+                } else {
+                    // Если canvas не найден, добавляем URL текстом
+                    yPos += 20;
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text('QR URL:', margin, yPos);
+                    doc.text(currentQRUserData.qrUrl, margin, yPos + 10, { maxWidth: contentWidth });
+                }
+
+                // Футер с датой
+                const date = new Date().toLocaleString('ru-RU');
+                const footerText = `Сгенерировано: ${date}`;
+                const footerImg = createTextImage(footerText, 8, false, 400);
+                doc.addImage(footerImg, 'PNG', (pageWidth - 80) / 2, pageHeight - 10, 80, 4);
+
+                // Сохраняем PDF
+                const filename = `QR_${currentQRUserData.username}_${Date.now()}.pdf`;
+                doc.save(filename);
+
+                if (window.showSuccess) {
+                    showSuccess('✅ PDF файл успешно создан');
+                }
+            } catch (e) {
+                console.error('Print QR error:', e);
+                if (window.showError) {
+                    showError('❌ Не удалось создать PDF файл');
+                } else {
+                    alert('Не удалось создать PDF файл');
                 }
             }
-            
-            // Вариант 2: window.jsPDF (глобальный экспорт)
-            if (!jsPDFClass && typeof window.jsPDF !== 'undefined') {
-                jsPDFClass = window.jsPDF;
+        };
+
+        // Close QR Modal
+        window.closeQRModal = function () {
+            const modal = document.getElementById('qrModal');
+            if (modal) {
+                modal.classList.remove('active');
             }
-            
-            // Если не нашли, пробуем загрузить динамически
-            if (!jsPDFClass) {
-                console.warn('jsPDF not found, attempting to load...', {
-                    window_jspdf: typeof window.jspdf,
-                    window_jsPDF: typeof window.jsPDF,
-                    jspdf_content: window.jspdf ? Object.keys(window.jspdf) : 'undefined'
-                });
-                
-                // Попробуем загрузить библиотеку динамически
-                window.loadJSPDFLibrary().then(() => {
-                    // Повторно вызываем функцию после загрузки
-                    setTimeout(() => window.printQRCode(), 200);
-                }).catch((err) => {
-                    console.error('Failed to load jsPDF:', err);
-                    if (window.showError) {
-                        showError('❌ Библиотека для генерации PDF не загружена. Попробуйте обновить страницу.');
-                    } else {
-                        alert('Библиотека для генерации PDF не загружена. Попробуйте обновить страницу.');
+        };
+
+        // Close modal on overlay click
+        document.addEventListener('DOMContentLoaded', function () {
+            const qrModal = document.getElementById('qrModal');
+            if (qrModal) {
+                qrModal.addEventListener('click', function (e) {
+                    if (e.target === qrModal) {
+                        closeQRModal();
                     }
                 });
-                return;
             }
-            
-            const doc = new jsPDFClass();
-            
-            // Настройки страницы
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const pageHeight = doc.internal.pageSize.getHeight();
-            const margin = 20;
-            const contentWidth = pageWidth - (margin * 2);
-            
-            // Функция для создания текста как изображения (для поддержки кириллицы)
-            function createTextImage(text, fontSize, isBold, maxWidth) {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Устанавливаем размер canvas
-                canvas.width = maxWidth || 500;
-                canvas.height = fontSize * 2;
-                
-                // Настройки текста
-                ctx.fillStyle = '#000000';
-                ctx.font = `${isBold ? 'bold' : 'normal'} ${fontSize}px Arial, sans-serif`;
-                ctx.textAlign = 'left';
-                ctx.textBaseline = 'top';
-                
-                // Рисуем текст
-                ctx.fillText(text, 0, 0);
-                
-                return canvas.toDataURL('image/png');
-            }
-            
-            // Заголовок
-            const titleText = 'QR-код для установки пароля';
-            const titleImg = createTextImage(titleText, 20, true, 500);
-            const titleWidth = 100;
-            const titleHeight = 10;
-            doc.addImage(titleImg, 'PNG', (pageWidth - titleWidth) / 2, margin, titleWidth, titleHeight);
-            
-            // Информация о пользователе
-            let yPos = margin + 25;
-            const labelSize = 12;
-            const valueSize = 12;
-            
-            // Логин пользователя
-            const loginLabelImg = createTextImage('Логин пользователя:', labelSize, false, 200);
-            doc.addImage(loginLabelImg, 'PNG', margin, yPos, 50, 5);
-            
-            const loginValueImg = createTextImage(currentQRUserData.username, valueSize, true, 200);
-            doc.addImage(loginValueImg, 'PNG', margin + 55, yPos, 50, 5);
-            
-            yPos += 12;
-            
-            // Временный пароль
-            const passwordLabelImg = createTextImage('Временный пароль:', labelSize, false, 200);
-            doc.addImage(passwordLabelImg, 'PNG', margin, yPos, 50, 5);
-            
-            const passwordValueImg = createTextImage(currentQRUserData.tempPassword, valueSize, true, 200);
-            doc.addImage(passwordValueImg, 'PNG', margin + 55, yPos, 50, 5);
-            
-            // Получаем QR-код из canvas
-            const canvas = document.getElementById('qrCanvas');
-            if (canvas) {
-                try {
-                    // Конвертируем canvas в изображение
-                    const imgData = canvas.toDataURL('image/png');
-                    
-                    // Размер QR-кода в PDF (100x100 мм)
-                    const qrSize = 80;
-                    const qrX = (pageWidth - qrSize) / 2;
-                    const qrY = yPos + 20;
-                    
-                    // Добавляем QR-код
-                    doc.addImage(imgData, 'PNG', qrX, qrY, qrSize, qrSize);
-                    
-                    // Инструкция под QR-кодом
-                    yPos = qrY + qrSize + 15;
-                    const instructionText1 = 'Пользователь должен отсканировать этот QR-код';
-                    const instructionText2 = 'для установки пароля';
-                    const instructionImg1 = createTextImage(instructionText1, 10, false, 400);
-                    const instructionImg2 = createTextImage(instructionText2, 10, false, 400);
-                    const instructionWidth = 80;
-                    const instructionHeight = 5;
-                    doc.addImage(instructionImg1, 'PNG', (pageWidth - instructionWidth) / 2, yPos, instructionWidth, instructionHeight);
-                    doc.addImage(instructionImg2, 'PNG', (pageWidth - instructionWidth) / 2, yPos + 6, instructionWidth, instructionHeight);
-                } catch (e) {
-                    console.error('Error adding QR image to PDF:', e);
-                    // Если не удалось добавить изображение, добавляем URL как изображение текста
-                    yPos += 20;
-                    const urlLabelImg = createTextImage('QR URL:', 10, false, 200);
-                    doc.addImage(urlLabelImg, 'PNG', margin, yPos, 30, 5);
-                    const urlValueImg = createTextImage(currentQRUserData.qrUrl, 8, false, contentWidth);
-                    doc.addImage(urlValueImg, 'PNG', margin, yPos + 8, contentWidth, 10);
-                }
-            } else {
-                // Если canvas не найден, добавляем URL текстом
-                yPos += 20;
-                doc.setFontSize(10);
-                doc.setFont('helvetica', 'normal');
-                doc.text('QR URL:', margin, yPos);
-                doc.text(currentQRUserData.qrUrl, margin, yPos + 10, { maxWidth: contentWidth });
-            }
-            
-            // Футер с датой
-            const date = new Date().toLocaleString('ru-RU');
-            const footerText = `Сгенерировано: ${date}`;
-            const footerImg = createTextImage(footerText, 8, false, 400);
-            doc.addImage(footerImg, 'PNG', (pageWidth - 80) / 2, pageHeight - 10, 80, 4);
-            
-            // Сохраняем PDF
-            const filename = `QR_${currentQRUserData.username}_${Date.now()}.pdf`;
-            doc.save(filename);
-            
-            if (window.showSuccess) {
-                showSuccess('✅ PDF файл успешно создан');
-            }
-        } catch (e) {
-            console.error('Print QR error:', e);
-            if (window.showError) {
-                showError('❌ Не удалось создать PDF файл');
-            } else {
-                alert('Не удалось создать PDF файл');
-            }
-        }
-    };
-    
-    // Close QR Modal
-    window.closeQRModal = function() {
-        const modal = document.getElementById('qrModal');
-        if (modal) {
-            modal.classList.remove('active');
-        }
-    };
-    
-    // Close modal on overlay click
-    document.addEventListener('DOMContentLoaded', function() {
-        const qrModal = document.getElementById('qrModal');
-        if (qrModal) {
-            qrModal.addEventListener('click', function(e) {
-                if (e.target === qrModal) {
+
+            // Close on Escape key
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
                     closeQRModal();
                 }
             });
-        }
-        
-        // Close on Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeQRModal();
-            }
         });
-    });
-    
-    // Delete user
-    window.deleteUser = async function(userId) {
-        const user = users.find(u => u.id === userId);
-        if (!user) return;
-        
-        if (user.username === 'root') {
-            if (window.showWarning) {
-                showWarning('⚠️ Невозможно удалить root пользователя');
+
+        // Delete user
+        window.deleteUser = async function (userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            if (user.username === 'root') {
+                if (window.showWarning) {
+                    showWarning('⚠️ Невозможно удалить root пользователя');
+                }
+                return;
             }
-            return;
-        }
-        
-        const confirmDelete = confirm(`Вы уверены, что хотите удалить пользователя "${user.username}"?`);
-        
-        if (confirmDelete) {
+
+            // Используем модальное окно приложения вместо браузерного confirm
+            if (typeof showConfirm === 'function') {
+                showConfirm(
+                    `Вы уверены, что хотите удалить пользователя "${user.username}"?`,
+                    async (confirmed) => {
+                        // Удаление происходит ТОЛЬКО если confirmed === true (нажата кнопка OK)
+                        if (confirmed === true) {
+                            await performDeleteUser(userId, user.username);
+                        }
+                        // Если confirmed === false, ничего не делаем (отмена)
+                    },
+                    () => {
+                        // Явный обработчик отмены - ничего не делаем
+                        // Это гарантирует, что при нажатии "Отмена" удаление не произойдет
+                    }
+                );
+            } else {
+                // Fallback на браузерный confirm, если showConfirm недоступен
+                if (confirm(`Вы уверены, что хотите удалить пользователя "${user.username}"?`)) {
+                    await performDeleteUser(userId, user.username);
+                }
+            }
+        };
+
+        async function performDeleteUser(userId, username) {
             try {
                 let resp = await fetch(`${API_BASE}/api/users/${userId}`, {
                     method: 'DELETE',
@@ -959,20 +1029,20 @@
                     });
                 }
                 if (!resp.ok) throw new Error('Failed to delete user');
-                
+
                 // Reload users first to get updated total
                 await loadUsers();
-                
+
                 // If current page is now empty (beyond last page), go to last page
                 if (paginationState.currentPage > paginationState.totalPages && paginationState.totalPages > 0) {
                     paginationState.currentPage = paginationState.totalPages;
                     await loadUsers();
                 }
-                
+
                 if (window.showSuccess) {
-                    showSuccess(`✅ Пользователь "${user.username}" удалён`);
+                    showSuccess(`✅ Пользователь "${username}" удалён`);
                 } else {
-                    alert(`Пользователь "${user.username}" удалён`);
+                    alert(`Пользователь "${username}" удалён`);
                 }
             } catch (e) {
                 console.error('Delete user error:', e);
@@ -983,34 +1053,33 @@
                 }
             }
         }
-    };
-    
-    // Initialize on page load
-    function initUsersPage() {
-        initCustomUserPaginationDropdown();
-        loadUsers();
-    }
-    
-    // Load on DOM ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initUsersPage);
-    } else {
-        initUsersPage();
-    }
-    
-    // Re-initialize when SPA content loads
-    // Удаляем старый обработчик, если он существует
-    if (window._usersContentLoadedHandler) {
-        document.removeEventListener('spa:contentLoaded', window._usersContentLoadedHandler);
-    }
-    
-    window._usersContentLoadedHandler = function(e) {
-        const route = e.detail?.route || window.location.hash.split('?')[0].slice(1);
-        if (!route || route === '/users' || route.startsWith('/users')) {
+
+        // Initialize on page load
+        function initUsersPage() {
+            initCustomUserPaginationDropdown();
+            loadUsers();
+        }
+
+        // Load on DOM ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initUsersPage);
+        } else {
             initUsersPage();
         }
-    };
-    
-    document.addEventListener('spa:contentLoaded', window._usersContentLoadedHandler);
-})();
+
+        // Re-initialize when SPA content loads
+        // Удаляем старый обработчик, если он существует
+        if (window._usersContentLoadedHandler) {
+            document.removeEventListener('spa:contentLoaded', window._usersContentLoadedHandler);
+        }
+
+        window._usersContentLoadedHandler = function (e) {
+            const route = e.detail?.route || window.location.hash.split('?')[0].slice(1);
+            if (!route || route === '/users' || route.startsWith('/users')) {
+                initUsersPage();
+            }
+        };
+
+        document.addEventListener('spa:contentLoaded', window._usersContentLoadedHandler);
+    })();
 </script>

@@ -6,55 +6,65 @@
         border-radius: 999px;
         font-weight: 600;
     }
+
     .appeals-empty {
         text-align: center;
         padding: 3rem 1rem;
         color: var(--text-secondary);
     }
+
     .appeal-modal-overlay {
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0,0,0,0.55);
+        background: rgba(0, 0, 0, 0.55);
         display: none;
         align-items: center;
         justify-content: center;
         z-index: 1100;
     }
+
     .appeal-modal-overlay.show {
         display: flex;
     }
+
     .appeal-modal {
         background: #1f2330;
         color: var(--text-primary);
         border-radius: 1rem;
         width: min(520px, 90vw);
-        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.08);
     }
-    .appeal-modal-header, .appeal-modal-footer {
+
+    .appeal-modal-header,
+    .appeal-modal-footer {
         padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid rgba(255,255,255,0.08);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
+
     .appeal-modal-body {
         padding: 1.5rem;
         display: flex;
         flex-direction: column;
         gap: 1rem;
     }
+
     .appeal-info-row {
         display: flex;
         justify-content: space-between;
         gap: 1rem;
     }
+
     .appeal-info-row span:first-child {
         color: var(--text-secondary);
     }
+
     .appeals-action-btn {
         border-radius: 12px;
         font-weight: 600;
@@ -170,92 +180,92 @@
 </div>
 
 <script>
-(function() {
-    'use strict';
+    (function () {
+        'use strict';
 
-    const API_BASE = 'http://localhost:8000';
-    const state = {
-        notifications: [],
-        currentNotification: null
-    };
+        const API_BASE = 'http://localhost:8000';
+        const state = {
+            notifications: [],
+            currentNotification: null
+        };
 
-    const statusStyles = {
-        READ: { text: 'прочитано', className: 'bg-success' },
-        UNREAD: { text: 'не прочитано', className: 'bg-warning text-dark' }
-    };
+        const statusStyles = {
+            READ: { text: 'прочитано', className: 'bg-success' },
+            UNREAD: { text: 'не прочитано', className: 'bg-warning text-dark' }
+        };
 
-    let tableBody, emptyState, statusSelect, modalOverlay;
-    let modalResident, modalApartment, modalContacts, modalDescription;
+        let tableBody, emptyState, statusSelect, modalOverlay;
+        let modalResident, modalApartment, modalContacts, modalDescription;
 
-    function cacheDom() {
-        tableBody = document.getElementById('appealsTableBody');
-        emptyState = document.getElementById('appealsEmptyState');
-        statusSelect = document.getElementById('appealsStatusFilter');
-        modalOverlay = document.getElementById('appealModal');
-        modalResident = document.getElementById('modalResident');
-        modalApartment = document.getElementById('modalApartment');
-        modalContacts = document.getElementById('modalContacts');
-        modalDescription = document.getElementById('modalDescription');
-    }
+        function cacheDom() {
+            tableBody = document.getElementById('appealsTableBody');
+            emptyState = document.getElementById('appealsEmptyState');
+            statusSelect = document.getElementById('appealsStatusFilter');
+            modalOverlay = document.getElementById('appealModal');
+            modalResident = document.getElementById('modalResident');
+            modalApartment = document.getElementById('modalApartment');
+            modalContacts = document.getElementById('modalContacts');
+            modalDescription = document.getElementById('modalDescription');
+        }
 
-    async function loadNotifications() {
-        try {
-            const statusValue = statusSelect?.value || 'all';
-            const statusParam = statusValue !== 'all' ? `&status=${statusValue}` : '';
-            const url = `${API_BASE}/api/notifications/public?page=1&per_page=200${statusParam}`;
-            
-            console.log('Loading notifications from:', url);
-            const response = await fetch(url);
-            
-            if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    console.log('Not authorized, using public endpoint');
-                    // Уже используем публичный endpoint
-                    throw new Error('Unauthorized');
+        async function loadNotifications() {
+            try {
+                const statusValue = statusSelect?.value || 'all';
+                const statusParam = statusValue !== 'all' ? `&status=${statusValue}` : '';
+                const url = `${API_BASE}/api/notifications/public?page=1&per_page=200${statusParam}`;
+
+                console.log('Loading notifications from:', url);
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        console.log('Not authorized, using public endpoint');
+                        // Уже используем публичный endpoint
+                        throw new Error('Unauthorized');
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                throw new Error(`HTTP error! status: ${response.status}`);
+
+                const data = await response.json();
+                console.log('Notifications data received:', data);
+
+                state.notifications = data.notifications || [];
+                renderTable();
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+                if (typeof showError === 'function') {
+                    showError('Ошибка загрузки обращений: ' + error.message);
+                }
+                state.notifications = [];
+                renderTable();
             }
-            
-            const data = await response.json();
-            console.log('Notifications data received:', data);
-            
-            state.notifications = data.notifications || [];
-            renderTable();
-        } catch (error) {
-            console.error('Error loading notifications:', error);
-            if (typeof showError === 'function') {
-                showError('Ошибка загрузки обращений: ' + error.message);
+        }
+
+        function renderTable() {
+            if (!tableBody) {
+                console.error('Table body not found!');
+                return;
             }
-            state.notifications = [];
-            renderTable();
-        }
-    }
 
-    function renderTable() {
-        if (!tableBody) {
-            console.error('Table body not found!');
-            return;
-        }
+            const items = state.notifications;
 
-        const items = state.notifications;
+            if (!items.length) {
+                tableBody.innerHTML = '';
+                if (emptyState) emptyState.style.display = 'block';
+                return;
+            }
 
-        if (!items.length) {
-            tableBody.innerHTML = '';
-            if (emptyState) emptyState.style.display = 'block';
-            return;
-        }
+            if (emptyState) emptyState.style.display = 'none';
 
-        if (emptyState) emptyState.style.display = 'none';
-        
-        tableBody.innerHTML = items.map(notif => {
-            const status = statusStyles[notif.status] || statusStyles.UNREAD;
-            const block = notif.block_name || '—';
-            const home = notif.unit_number || '—';
-            const resident = notif.user_full_name || '—';
-            const phone = notif.user_phone || '—';
-            const email = notif.user_email || '—';
-            
-            return `
+            tableBody.innerHTML = items.map(notif => {
+                const status = statusStyles[notif.status] || statusStyles.UNREAD;
+                const block = notif.block_name || '—';
+                const home = notif.unit_number || '—';
+                const resident = notif.user_full_name || '—';
+                const phone = notif.user_phone || '—';
+                const email = notif.user_email || '—';
+
+                return `
                 <tr>
                     <td>${formatDateTime(notif.created_at)}</td>
                     <td>${block}</td>
@@ -276,156 +286,156 @@
                     </td>
                 </tr>
             `;
-        }).join('');
-    }
-
-    async function viewNotification(id) {
-        try {
-            const url = `${API_BASE}/api/notifications/${id}/public`;
-            const response = await fetch(url);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const notif = await response.json();
-            state.currentNotification = notif;
-            
-            if (modalApartment) {
-                const block = notif.block_name || '—';
-                const home = notif.unit_number || '—';
-                modalApartment.textContent = `${block} / ${home}`;
-            }
-            if (modalResident) {
-                modalResident.textContent = notif.user_full_name || '—';
-            }
-            if (modalContacts) {
-                const phone = notif.user_phone || '—';
-                const email = notif.user_email || '—';
-                modalContacts.textContent = `${phone} / ${email}`;
-            }
-            if (modalDescription) {
-                modalDescription.textContent = notif.message || '—';
-            }
-            
-            if (modalOverlay) modalOverlay.classList.add('show');
-            
-            // Перезагружаем список, чтобы обновить статус
-            await loadNotifications();
-        } catch (error) {
-            console.error('Error loading notification:', error);
-            if (typeof showError === 'function') {
-                showError('Ошибка загрузки обращения: ' + error.message);
-            }
-        }
-    }
-
-    async function deleteNotification(id) {
-        if (!confirm('Вы уверены, что хотите удалить это обращение?')) {
-            return;
+            }).join('');
         }
 
-        try {
-            const url = `${API_BASE}/api/notifications/${id}/public`;
-            const response = await fetch(url, {
-                method: 'DELETE'
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            if (typeof showSuccess === 'function') {
-                showSuccess('Обращение успешно удалено!');
-            }
-            
-            await loadNotifications();
-        } catch (error) {
-            console.error('Error deleting notification:', error);
-            if (typeof showError === 'function') {
-                showError('Ошибка удаления обращения: ' + error.message);
-            }
-        }
-    }
+        async function viewNotification(id) {
+            try {
+                const url = `${API_BASE}/api/notifications/${id}/public`;
+                const response = await fetch(url);
 
-    function closeModal() {
-        if (modalOverlay) modalOverlay.classList.remove('show');
-    }
-
-    function formatDateTime(value) {
-        if (!value) return '—';
-        const date = new Date(value);
-        return date.toLocaleString('ru-RU', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
-
-    function bindEvents() {
-        if (statusSelect) {
-            statusSelect.addEventListener('change', loadNotifications);
-        }
-
-        if (tableBody) {
-            tableBody.addEventListener('click', (event) => {
-                const viewBtn = event.target.closest('[data-action="view"]');
-                const deleteBtn = event.target.closest('[data-action="delete"]');
-                if (viewBtn) {
-                    const id = parseInt(viewBtn.dataset.id);
-                    viewNotification(id);
-                } else if (deleteBtn) {
-                    const id = parseInt(deleteBtn.dataset.id);
-                    deleteNotification(id);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+
+                const notif = await response.json();
+                state.currentNotification = notif;
+
+                if (modalApartment) {
+                    const block = notif.block_name || '—';
+                    const home = notif.unit_number || '—';
+                    modalApartment.textContent = `${block} / ${home}`;
+                }
+                if (modalResident) {
+                    modalResident.textContent = notif.user_full_name || '—';
+                }
+                if (modalContacts) {
+                    const phone = notif.user_phone || '—';
+                    const email = notif.user_email || '—';
+                    modalContacts.textContent = `${phone} / ${email}`;
+                }
+                if (modalDescription) {
+                    modalDescription.textContent = notif.message || '—';
+                }
+
+                if (modalOverlay) modalOverlay.classList.add('show');
+
+                // Перезагружаем список, чтобы обновить статус
+                await loadNotifications();
+            } catch (error) {
+                console.error('Error loading notification:', error);
+                if (typeof showError === 'function') {
+                    showError('Ошибка загрузки обращения: ' + error.message);
+                }
+            }
+        }
+
+        async function deleteNotification(id) {
+            if (!confirm('Вы уверены, что хотите удалить это обращение?')) {
+                return;
+            }
+
+            try {
+                const url = `${API_BASE}/api/notifications/${id}/public`;
+                const response = await fetch(url, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                if (typeof showSuccess === 'function') {
+                    showSuccess('Обращение успешно удалено!');
+                }
+
+                await loadNotifications();
+            } catch (error) {
+                console.error('Error deleting notification:', error);
+                if (typeof showError === 'function') {
+                    showError('Ошибка удаления обращения: ' + error.message);
+                }
+            }
+        }
+
+        function closeModal() {
+            if (modalOverlay) modalOverlay.classList.remove('show');
+        }
+
+        function formatDateTime(value) {
+            if (!value) return '—';
+            const date = new Date(value);
+            return date.toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
             });
         }
 
-        const closeBtn = document.getElementById('appealModalClose');
-        const dismissBtn = document.getElementById('appealModalDismiss');
-        if (closeBtn) closeBtn.addEventListener('click', closeModal);
-        if (dismissBtn) dismissBtn.addEventListener('click', closeModal);
-        if (modalOverlay) {
-            modalOverlay.addEventListener('click', (event) => {
-                if (event.target === modalOverlay) closeModal();
-            });
+        function bindEvents() {
+            if (statusSelect) {
+                statusSelect.addEventListener('change', loadNotifications);
+            }
+
+            if (tableBody) {
+                tableBody.addEventListener('click', (event) => {
+                    const viewBtn = event.target.closest('[data-action="view"]');
+                    const deleteBtn = event.target.closest('[data-action="delete"]');
+                    if (viewBtn) {
+                        const id = parseInt(viewBtn.dataset.id);
+                        viewNotification(id);
+                    } else if (deleteBtn) {
+                        const id = parseInt(deleteBtn.dataset.id);
+                        deleteNotification(id);
+                    }
+                });
+            }
+
+            const closeBtn = document.getElementById('appealModalClose');
+            const dismissBtn = document.getElementById('appealModalDismiss');
+            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+            if (dismissBtn) dismissBtn.addEventListener('click', closeModal);
+            if (modalOverlay) {
+                modalOverlay.addEventListener('click', (event) => {
+                    if (event.target === modalOverlay) closeModal();
+                });
+            }
         }
-    }
 
-    function initAppealsPage() {
-        console.log('Initializing appeals page...');
-        cacheDom();
-        bindEvents();
-        loadNotifications();
-    }
-
-    // Удаляем старый обработчик, если он существует
-    if (window._appealsContentLoadedHandler) {
-        window.removeEventListener('spa:contentLoaded', window._appealsContentLoadedHandler);
-    }
-    
-    window._appealsContentLoadedHandler = function(e) {
-        console.log('SPA content loaded event:', e.detail);
-        const route = e.detail?.route || window.location.hash.split('?')[0].slice(1);
-        console.log('Current route:', route);
-        if (!route || route === '/appeals' || route.startsWith('/appeals')) {
-            console.log('Loading appeals from spa:contentLoaded');
-            setTimeout(() => {
-                initAppealsPage();
-            }, 100);
+        function initAppealsPage() {
+            console.log('Initializing appeals page...');
+            cacheDom();
+            bindEvents();
+            loadNotifications();
         }
-    };
-    
-    window.addEventListener('spa:contentLoaded', window._appealsContentLoadedHandler);
 
-    // Загрузка при первой загрузке (если не через SPA)
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initAppealsPage);
-    } else {
-        initAppealsPage();
-    }
+        // Удаляем старый обработчик, если он существует
+        if (window._appealsContentLoadedHandler) {
+            window.removeEventListener('spa:contentLoaded', window._appealsContentLoadedHandler);
+        }
 
-})();
+        window._appealsContentLoadedHandler = function (e) {
+            console.log('SPA content loaded event:', e.detail);
+            const route = e.detail?.route || window.location.hash.split('?')[0].slice(1);
+            console.log('Current route:', route);
+            if (!route || route === '/appeals' || route.startsWith('/appeals')) {
+                console.log('Loading appeals from spa:contentLoaded');
+                setTimeout(() => {
+                    initAppealsPage();
+                }, 100);
+            }
+        };
+
+        window.addEventListener('spa:contentLoaded', window._appealsContentLoadedHandler);
+
+        // Загрузка при первой загрузке (если не через SPA)
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAppealsPage);
+        } else {
+            initAppealsPage();
+        }
+
+    })();
 </script>

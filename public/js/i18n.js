@@ -1104,15 +1104,12 @@ class LanguageManager {
         selector.className = 'language-selector';
         selector.innerHTML = `
             <button class="language-btn" data-lang="ru" title="Русский">
-                <span class="flag">🇷🇺</span>
                 <span class="lang-code">RU</span>
             </button>
             <button class="language-btn" data-lang="az" title="Azərbaycan">
-                <span class="flag">🇦🇿</span>
                 <span class="lang-code">AZ</span>
             </button>
             <button class="language-btn" data-lang="en" title="English">
-                <span class="flag">🇬🇧</span>
                 <span class="lang-code">EN</span>
             </button>
         `;

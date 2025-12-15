@@ -1,463 +1,458 @@
 <link rel="stylesheet" href="/admin/content_css/readings.css">
 <div class="content-wrapper">
-                <h2 class="mb-4">Показатели по квартирам</h2>
-                
-                <!-- Filters -->
-                <div class="filters-container">
-                    <div class="filters-grid">
-                        <div class="filter-group">
-                            <label>Блок</label>
-                            <select id="filterBlock">
-                                <option value="all">Все</option>
-                                <option value="A">A</option>
-                                <option value="B">B</option>
-                                <option value="K">K</option>
-                                <option value="X">X</option>
-                                <option value="Z">Z</option>
-                            </select>
-                        </div>
-                        
-                        <div class="filter-group">
-                            <label>Резидент</label>
-                            <select id="filterResident">
-                                <option value="all">Все</option>
-                            </select>
-                        </div>
-                        
-                        <div class="filter-group">
-                            <label>Тип счётчика</label>
-                            <select id="filterMeterType">
-                                <option value="all">Все</option>
-                                <option value="electricity">Электричество</option>
-                                <option value="gas">Газ</option>
-                                <option value="water">Вода</option>
-                                <option value="sewerage">Канализация</option>
-                                <option value="service">Сервис</option>
-                                <option value="rent">Аренда</option>
-                                <option value="construction">Строительство</option>
-                            </select>
-                        </div>
-                        
-                        <div class="filter-group">
-                            <label>Год</label>
-                            <select id="filterYear">
-                                <option value="2028">2028</option>
-                                <option value="2027">2027</option>
-                                <option value="2026">2026</option>
-                                <option value="2025">2025</option>
-                                <option value="2024">2024</option>
-                                <option value="2023">2023</option>
-                            </select>
-                        </div>
-                        
-                        <div class="filter-group">
-                            <label>Месяц</label>
-                            <select id="filterMonth">
-                                <option value="1">Январь</option>
-                                <option value="2">Февраль</option>
-                                <option value="3">Март</option>
-                                <option value="4">Апрель</option>
-                                <option value="5">Май</option>
-                                <option value="6">Июнь</option>
-                                <option value="7">Июль</option>
-                                <option value="8">Август</option>
-                                <option value="9">Сентябрь</option>
-                                <option value="10">Октябрь</option>
-                                <option value="11">Ноябрь</option>
-                                <option value="12" selected>Декабрь</option>
-                            </select>
-                        </div>
-                        
-                        <div class="filter-group">
-                            <label>Поиск</label>
-                            <input type="text" id="filterSearch" placeholder="№ дома, ФИО, телефон, email">
-                        </div>
-                    </div>
-                    
-                    <div class="filters-actions">
-                        <button class="btn btn-outline-secondary" onclick="applyFilters()">
-                            <i class="bi bi-funnel"></i> Фильтр
-                        </button>
-                        <button class="btn btn-primary" onclick="openRecordModal()">
-                            <i class="bi bi-plus-lg"></i> Запись показателя
-                        </button>
-                    </div>
-                </div>
-                
-                <div style="position: relative;">
-                    <!-- Readings Table -->
-                <div class="card readings-card">
-                    <div class="readings-head">
-                        <div>Резидент</div>
-                        <div>Расход по счётчикам</div>
-                        <div>Сумма по счётчикам</div>
-                        <div>Действия</div>
-                    </div>
+    <h2 class="mb-4">Показатели по квартирам</h2>
 
-                    <div class="readings-list" id="readingsTableBody">
-                        <div class="text-muted text-center" style="padding: 40px;">
-                            Загрузка данных...
-                        </div>
-                    </div>
-
-                    
-                </div>
-                <!-- Pagination -->
-                <div class="table-pagination" style="border-bottom: 1px solid rgba(102, 126, 234, 0.15) !important;
-                            border-left: 1px solid rgba(102, 126, 234, 0.15) !important;
-                            background: #242831 !important;
-                            width: 100%;
-                            bottom: -46px;
-                            position: absolute;
-                            border-right: 1px solid rgba(102, 126, 234, 0.15) !important;">
-                    <div class="pagination-controls">
-                        <button class="btn-pagination" onclick="goToReadingPage('prev')" disabled id="readingPrevBtn">
-                            <i class="bi bi-chevron-double-left"></i>
-                        </button>
-                        <button class="btn-pagination active" onclick="goToReadingPage(1)" id="readingCurrentPageBtn">1</button>
-                        <button class="btn-pagination" onclick="goToReadingPage('next')" disabled id="readingNextBtn">
-                            <i class="bi bi-chevron-double-right"></i>
-                        </button>
-                    </div>
-                    <div class="pagination-info">
-                        <span>Стр. <span id="readingCurrentPage">1</span> из <span id="readingTotalPages">1</span> · всего <span id="readingTotalItems">0</span></span>
-                    </div>
-                    <div class="pagination-per-page">
-                        <span>На</span>
-                        <span>странице:</span>
-                        <div class="custom-pag-select" id="customReadingItemsPerPage">
-                            <select id="readingItemsPerPage" onchange="changeReadingItemsPerPage()" style="display: none;">
-                                <option value="10">10</option>
-                                <option value="25" selected>25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                            <div class="select-btn">
-                                <span class="select-text">25</span>
-                                <span class="arrow">▾</span>
-                            </div>
-                            <div class="select-options">
-                                <div class="select-option" data-value="10">10</div>
-                                <div class="select-option selected" data-value="25">25</div>
-                                <div class="select-option" data-value="50">50</div>
-                                <div class="select-option" data-value="100">100</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                </div>
+    <!-- Filters -->
+    <div class="filters-container">
+        <div class="filters-grid">
+            <div class="filter-group">
+                <label>Блок</label>
+                <select id="filterBlock">
+                    <option value="all">Все</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="K">K</option>
+                    <option value="X">X</option>
+                    <option value="Z">Z</option>
+                </select>
             </div>
-        </main>
-    </div>
 
-    <!-- Record Reading Modal -->
-    <div class="modal-overlay" id="recordReadingModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Запись показателя</h2>
-                <button class="modal-close" onclick="closeRecordModal()">
-                    <i class="bi bi-x-lg"></i>
-                </button>
+            <div class="filter-group">
+                <label>Резидент</label>
+                <select id="filterResident">
+                    <option value="all">Все</option>
+                </select>
             </div>
-            
-            <form id="recordReadingForm" onsubmit="recordReading(event)">
-                <div class="record-form-grid">
-                    <div class="form-group">
-                        <label>Блок</label>
-                        <select id="modalBlock" required onchange="window.loadResidents()">
-                            <option value="">— выберите —</option>
-                            <option value="A">A</option>
-                            <option value="B">B</option>
-                            <option value="K">K</option>
-                            <option value="X">X</option>
-                            <option value="Z">Z</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Резидент</label>
-                        <select id="modalResident" required disabled>
-                            <option value="">— выберите блок —</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Дата показаний</label>
-                        <input type="date" id="modalDate" required>
-                    </div>
-                </div>
 
-                <div id="meterDetailsSection" class="meter-details hidden">
-                    <div class="meter-table-wrapper">
-                        <table class="meter-table">
-                            <thead>
-                                <tr>
-                                    <th>Тип</th>
-                                    <th>Тариф</th>
-                                    <th>Предыдущее</th>
-                                    <th>Новое / Отметить</th>
-                                    <th>Расход</th>
-                                    <th>Сумма</th>
-                                    <th>Удалить последнее</th>
-                                </tr>
-                            </thead>
-                            <tbody id="meterTableBody">
-                                <tr>
-                                    <td colspan="7" class="text-muted text-center">Выберите резидента, чтобы увидеть тарифы</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="filter-group">
+                <label>Тип счётчика</label>
+                <select id="filterMeterType">
+                    <option value="all">Все</option>
+                    <option value="electricity">Электричество</option>
+                    <option value="gas">Газ</option>
+                    <option value="water">Вода</option>
+                    <option value="sewerage">Канализация</option>
+                    <option value="service">Сервис</option>
+                    <option value="rent">Аренда</option>
+                    <option value="construction">Строительство</option>
+                </select>
+            </div>
 
-                    <div class="form-group">
-                        <label>Комментарий</label>
-                        <textarea id="modalComment" rows="2" placeholder="Например, показания снял охранник..."></textarea>
-                    </div>
-                </div>
-                
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeRecordModal()">
-                        Отмена
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        Записать
-                    </button>
-                </div>
-            </form>
+            <div class="filter-group">
+                <label>Год</label>
+                <select id="filterYear">
+                    <option value="2028">2028</option>
+                    <option value="2027">2027</option>
+                    <option value="2026">2026</option>
+                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                    <option value="2023">2023</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Месяц</label>
+                <select id="filterMonth">
+                    <option value="1">Январь</option>
+                    <option value="2">Февраль</option>
+                    <option value="3">Март</option>
+                    <option value="4">Апрель</option>
+                    <option value="5">Май</option>
+                    <option value="6">Июнь</option>
+                    <option value="7">Июль</option>
+                    <option value="8">Август</option>
+                    <option value="9">Сентябрь</option>
+                    <option value="10">Октябрь</option>
+                    <option value="11">Ноябрь</option>
+                    <option value="12" selected>Декабрь</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Поиск</label>
+                <input type="text" id="filterSearch" placeholder="№ дома, ФИО, телефон, email">
+            </div>
+        </div>
+
+        <div class="filters-actions">
+            <button class="btn btn-outline-secondary" onclick="applyFilters()">
+                <i class="bi bi-funnel"></i> Фильтр
+            </button>
+            <button class="btn btn-primary" onclick="openRecordModal()">
+                <i class="bi bi-plus-lg"></i> Запись показателя
+            </button>
         </div>
     </div>
 
-    <!-- Reading Details Modal -->
-    <div class="modal-overlay" id="readingDetailsModal">
-        <div class="modal-content readings-detail-modal">
-            <div class="modal-header">
-                <h2 id="readingDetailsTitle">Резидент</h2>
-                <button class="modal-close" onclick="closeReadingDetails()">
-                    <i class="bi bi-x-lg"></i>
-                </button>
+    <div style="position: relative;">
+        <!-- Readings Table -->
+        <div class="card readings-card">
+            <div class="readings-head">
+                <div>Резидент</div>
+                <div>Расход по счётчикам</div>
+                <div>Сумма по счётчикам</div>
+                <div>Действия</div>
             </div>
-            <div class="reading-details-body" id="readingDetailsBody">
-                <div class="text-muted">Выберите запись, чтобы увидеть детали</div>
+
+            <div class="readings-list" id="readingsTableBody">
+                <div class="text-muted text-center" style="padding: 40px;">
+                    Загрузка данных...
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="table-pagination">
+                <div class="pagination-controls" id="readingPaginationControls">
+                    <button class="btn-pagination" onclick="goToReadingPage('prev')" disabled id="readingPrevBtn">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </button>
+                    <div id="readingPageButtons" class="pagination-pages"></div>
+                    <button class="btn-pagination" onclick="goToReadingPage('next')" disabled id="readingNextBtn">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </button>
+                </div>
+                <div class="pagination-info">
+                    <span>Стр. <span id="readingCurrentPage">1</span> из <span id="readingTotalPages">1</span> · всего
+                        <span id="readingTotalItems">0</span></span>
+                </div>
+                <div class="pagination-per-page">
+                    <span>На</span>
+                    <span>странице:</span>
+                    <div class="custom-pag-select" id="customReadingItemsPerPage">
+                        <select id="readingItemsPerPage" onchange="changeReadingItemsPerPage()" style="display: none;">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <div class="select-btn">
+                            <span class="select-text">25</span>
+                            <span class="arrow">▾</span>
+                        </div>
+                        <div class="select-options" style="background: rgba(36, 40, 49, 0.95) !important">
+                            <div class="select-option" data-value="10">10</div>
+                            <div class="select-option selected" data-value="25">25</div>
+                            <div class="select-option" data-value="50">50</div>
+                            <div class="select-option" data-value="100">100</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+</div>
+</main>
+</div>
+
+<!-- Record Reading Modal -->
+<div class="modal-overlay" id="recordReadingModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Запись показателя</h2>
+            <button class="modal-close" onclick="closeRecordModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <form id="recordReadingForm" onsubmit="recordReading(event)">
+            <div class="record-form-grid">
+                <div class="form-group">
+                    <label>Блок</label>
+                    <select id="modalBlock" required onchange="window.loadResidents()">
+                        <option value="">— выберите —</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="K">K</option>
+                        <option value="X">X</option>
+                        <option value="Z">Z</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Резидент</label>
+                    <select id="modalResident" required disabled>
+                        <option value="">— выберите блок —</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Дата показаний</label>
+                    <input type="date" id="modalDate" required>
+                </div>
+            </div>
+
+            <div id="meterDetailsSection" class="meter-details hidden">
+                <div class="meter-table-wrapper">
+                    <table class="meter-table">
+                        <thead>
+                            <tr>
+                                <th>Тип</th>
+                                <th>Тариф</th>
+                                <th>Предыдущее</th>
+                                <th>Новое / Отметить</th>
+                                <th>Расход</th>
+                                <th>Сумма</th>
+                                <th>Удалить последнее</th>
+                            </tr>
+                        </thead>
+                        <tbody id="meterTableBody">
+                            <tr>
+                                <td colspan="7" class="text-muted text-center">Выберите резидента, чтобы увидеть тарифы
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="form-group">
+                    <label>Комментарий</label>
+                    <textarea id="modalComment" rows="2" placeholder="Например, показания снял охранник..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeRecordModal()">
+                    Отмена
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Записать
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reading Details Modal -->
+<div class="modal-overlay" id="readingDetailsModal">
+    <div class="modal-content readings-detail-modal">
+        <div class="modal-header">
+            <h2 id="readingDetailsTitle">Резидент</h2>
+            <button class="modal-close" onclick="closeReadingDetails()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="reading-details-body" id="readingDetailsBody">
+            <div class="text-muted">Выберите запись, чтобы увидеть детали</div>
+        </div>
+    </div>
+</div>
 
 <script>
-        const API_BASE = 'http://localhost:8000';
-        let readingsData = null;
-        let blocks = [];
-        let residents = [];
-        
-        // Pagination state
-        let paginationState = {
-            currentPage: 1,
-            itemsPerPage: 25,
-            totalItems: 0,
-            totalPages: 1
-        };
+    const API_BASE = 'http://localhost:8000';
+    let readingsData = null;
+    let blocks = [];
+    let residents = [];
 
-// Set today's date as default
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOMContentLoaded - readings page');
-            setTimeout(() => {
-                const today = new Date().toISOString().split('T')[0];
-                const modalDate = document.getElementById('modalDate');
-                if (modalDate) {
-                    modalDate.value = today;
-                }
-                initCustomReadingPaginationDropdown();
-                console.log('Calling loadReadings from DOMContentLoaded');
-                if (typeof window.loadReadings === 'function') {
-                    window.loadReadings();
+    // Pagination state
+    let paginationState = {
+        currentPage: 1,
+        itemsPerPage: 25,
+        totalItems: 0,
+        totalPages: 1
+    };
+
+    // Set today's date as default
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('DOMContentLoaded - readings page');
+        setTimeout(() => {
+            const today = new Date().toISOString().split('T')[0];
+            const modalDate = document.getElementById('modalDate');
+            if (modalDate) {
+                modalDate.value = today;
+            }
+            initCustomReadingPaginationDropdown();
+            console.log('Calling loadReadings from DOMContentLoaded');
+            if (typeof window.loadReadings === 'function') {
+                window.loadReadings();
+            } else {
+                console.error('loadReadings is not defined in DOMContentLoaded!');
+            }
+        }, 100);
+    });
+
+    const currentYear = new Date().getFullYear();
+    const select = document.getElementById("filterYear");
+
+
+    if (select.querySelector(`option[value="${currentYear}"]`)) {
+        select.value = currentYear;
+    }
+
+    // Load readings from API
+    window.loadReadings = async function loadReadings() {
+        console.log('=== loadReadings() called ===');
+        try {
+            const blockId = document.getElementById('filterBlock')?.value;
+            const residentId = document.getElementById('filterResident')?.value;
+            const meterType = document.getElementById('filterMeterType')?.value;
+            // Всегда получаем год и месяц, если не указаны - используем текущие
+            const yearSelect = document.getElementById('filterYear');
+            const monthSelect = document.getElementById('filterMonth');
+            const year = yearSelect?.value || new Date().getFullYear().toString();
+            const month = monthSelect?.value || (new Date().getMonth() + 1).toString();
+            const searchTerm = document.getElementById('filterSearch')?.value.trim();
+
+            console.log('Filters:', { blockId, residentId, meterType, year, month, searchTerm });
+
+            const params = new URLSearchParams();
+            // Pagination parameters
+            params.append('page', paginationState.currentPage);
+            params.append('per_page', paginationState.itemsPerPage);
+            // Всегда передаем год и месяц
+            params.append('year', year);
+            params.append('month', month);
+
+            if (blockId && blockId !== 'all') {
+                // Find block ID by name
+                const block = blocks.find(b => b.name === blockId);
+                if (block) {
+                    params.append('block_id', block.id);
                 } else {
-                    console.error('loadReadings is not defined in DOMContentLoaded!');
+                    console.warn('Block not found in blocks array:', blockId, blocks);
                 }
-            }, 100);
-        });
+            }
+            if (residentId && residentId !== 'all') params.append('resident_id', residentId);
+            if (meterType && meterType !== 'all') {
+                const meterTypeMap = {
+                    'electricity': 'ELECTRIC',
+                    'gas': 'GAS',
+                    'water': 'WATER',
+                    'sewerage': 'SEWERAGE',
+                    'service': 'SERVICE',
+                    'rent': 'RENT',
+                    'construction': 'CONSTRUCTION'
+                };
+                if (meterTypeMap[meterType]) params.append('meter_type', meterTypeMap[meterType]);
+            }
+            if (searchTerm) params.append('q', searchTerm);
 
-        const currentYear = new Date().getFullYear();
-        const select = document.getElementById("filterYear");
+            let url = `${API_BASE}/api/readings?${params.toString()}`;
 
-        
-        if (select.querySelector(`option[value="${currentYear}"]`)) {
-            select.value = currentYear;
-        }
+            console.log('Loading readings from:', url);
 
-        // Load readings from API
-        window.loadReadings = async function loadReadings() {
-            console.log('=== loadReadings() called ===');
-            try {
-                const blockId = document.getElementById('filterBlock')?.value;
-                const residentId = document.getElementById('filterResident')?.value;
-                const meterType = document.getElementById('filterMeterType')?.value;
-                // Всегда получаем год и месяц, если не указаны - используем текущие
-                const yearSelect = document.getElementById('filterYear');
-                const monthSelect = document.getElementById('filterMonth');
-                const year = yearSelect?.value || new Date().getFullYear().toString();
-                const month = monthSelect?.value || (new Date().getMonth() + 1).toString();
-                const searchTerm = document.getElementById('filterSearch')?.value.trim();
-
-                console.log('Filters:', { blockId, residentId, meterType, year, month, searchTerm });
-
-                const params = new URLSearchParams();
-                // Pagination parameters
-                params.append('page', paginationState.currentPage);
-                params.append('per_page', paginationState.itemsPerPage);
-                // Всегда передаем год и месяц
-                params.append('year', year);
-                params.append('month', month);
-                
-                if (blockId && blockId !== 'all') {
-                    // Find block ID by name
-                    const block = blocks.find(b => b.name === blockId);
-                    if (block) {
-                        params.append('block_id', block.id);
-                    } else {
-                        console.warn('Block not found in blocks array:', blockId, blocks);
-                    }
-                }
-                if (residentId && residentId !== 'all') params.append('resident_id', residentId);
-                if (meterType && meterType !== 'all') {
-                    const meterTypeMap = {
-                        'electricity': 'ELECTRIC',
-                        'gas': 'GAS',
-                        'water': 'WATER',
-                        'sewerage': 'SEWERAGE',
-                        'service': 'SERVICE',
-                        'rent': 'RENT',
-                        'construction': 'CONSTRUCTION'
-                    };
-                    if (meterTypeMap[meterType]) params.append('meter_type', meterTypeMap[meterType]);
-                }
-                if (searchTerm) params.append('q', searchTerm);
-                
-                let url = `${API_BASE}/api/readings?${params.toString()}`;
-
-                console.log('Loading readings from:', url);
-
-                let response = await fetch(url, { credentials: 'include' });
-                console.log('Response status:', response.status, response.statusText);
-                if (!response.ok) {
-                    if (response.status === 401 || response.status === 403) {
-                        // Try public endpoint
-                        const publicUrl = url.replace('/api/readings?', '/api/readings/public?');
-                        console.log('Trying public endpoint:', publicUrl);
-                        response = await fetch(publicUrl, { credentials: 'include' });
-                        console.log('Public response status:', response.status, response.statusText);
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            console.error('Public endpoint error:', errorText);
-                            throw new Error(`HTTP ${response.status}: ${errorText}`);
-                        }
-                    } else {
+            let response = await fetch(url, { credentials: 'include' });
+            console.log('Response status:', response.status, response.statusText);
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    // Try public endpoint
+                    const publicUrl = url.replace('/api/readings?', '/api/readings/public?');
+                    console.log('Trying public endpoint:', publicUrl);
+                    response = await fetch(publicUrl, { credentials: 'include' });
+                    console.log('Public response status:', response.status, response.statusText);
+                    if (!response.ok) {
                         const errorText = await response.text();
-                        console.error('Endpoint error:', errorText);
+                        console.error('Public endpoint error:', errorText);
                         throw new Error(`HTTP ${response.status}: ${errorText}`);
                     }
+                } else {
+                    const errorText = await response.text();
+                    console.error('Endpoint error:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
                 }
+            }
 
-                readingsData = await response.json();
-                console.log('Readings data received:', readingsData);
-                console.log('Rows count:', readingsData.rows?.length || 0);
-                console.log('First row sample:', readingsData.rows?.[0]);
-                console.log('Blocks:', readingsData.blocks);
-                console.log('Residents:', readingsData.residents);
-                blocks = readingsData.blocks || [];
-                residents = readingsData.residents || [];
-                
-                // Update pagination state
-                const pagination = readingsData.pagination || {};
-                paginationState.totalItems = pagination.total || 0;
-                paginationState.totalPages = pagination.last_page || 1;
-                paginationState.currentPage = pagination.page || 1;
-                
-                console.log('Calling renderReadingsTable...');
-                if (typeof window.renderReadingsTable === 'function') {
-                    window.renderReadingsTable();
-                } else {
-                    console.error('renderReadingsTable is not a function!', typeof renderReadingsTable);
-                }
-                console.log('Calling updateFilterDropdowns...');
-                if (typeof window.updateFilterDropdowns === 'function') {
-                    window.updateFilterDropdowns();
-                } else {
-                    console.error('updateFilterDropdowns is not a function!', typeof updateFilterDropdowns);
-                }
-                updatePaginationUI();
-            } catch (error) {
-                console.error('Error loading readings:', error);
-                if (typeof showError === 'function') {
-                    showError('Ошибка загрузки показаний: ' + error.message);
-                }
+            readingsData = await response.json();
+            console.log('Readings data received:', readingsData);
+            console.log('Rows count:', readingsData.rows?.length || 0);
+            console.log('First row sample:', readingsData.rows?.[0]);
+            console.log('Blocks:', readingsData.blocks);
+            console.log('Residents:', readingsData.residents);
+            blocks = readingsData.blocks || [];
+            residents = readingsData.residents || [];
+
+            // Update pagination state
+            const pagination = readingsData.pagination || {};
+            paginationState.totalItems = pagination.total || 0;
+            paginationState.totalPages = pagination.last_page || 1;
+            paginationState.currentPage = pagination.page || 1;
+
+            console.log('Calling renderReadingsTable...');
+            if (typeof window.renderReadingsTable === 'function') {
+                window.renderReadingsTable();
+            } else {
+                console.error('renderReadingsTable is not a function!', typeof renderReadingsTable);
+            }
+            console.log('Calling updateFilterDropdowns...');
+            if (typeof window.updateFilterDropdowns === 'function') {
+                window.updateFilterDropdowns();
+            } else {
+                console.error('updateFilterDropdowns is not a function!', typeof updateFilterDropdowns);
+            }
+            updatePaginationUI();
+        } catch (error) {
+            console.error('Error loading readings:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка загрузки показаний: ' + error.message);
             }
         }
+    }
 
-        // Render readings table
-        window.renderReadingsTable = function renderReadingsTable() {
-            const tbody = document.getElementById('readingsTableBody');
-            console.log('Rendering readings table:', { tbody: !!tbody, readingsData, hasRows: readingsData?.rows });
-            
-            if (!tbody) {
-                console.error('Table body not found');
-                return;
+    // Render readings table
+    window.renderReadingsTable = function renderReadingsTable() {
+        const tbody = document.getElementById('readingsTableBody');
+        console.log('Rendering readings table:', { tbody: !!tbody, readingsData, hasRows: readingsData?.rows });
+
+        if (!tbody) {
+            console.error('Table body not found');
+            return;
+        }
+
+        if (!readingsData) {
+            console.warn('No readings data');
+            tbody.innerHTML = '<div class="text-muted text-center" style="padding: 40px;">Нет данных</div>';
+            return;
+        }
+
+        if (!readingsData.rows) {
+            console.warn('No rows in readings data:', readingsData);
+            tbody.innerHTML = '<div class="text-muted text-center" style="padding: 40px;">Нет данных</div>';
+            return;
+        }
+
+        if (readingsData.rows.length === 0) {
+            console.log('Empty rows array');
+            tbody.innerHTML = '<div class="text-muted text-center" style="padding: 40px;">Нет показаний за выбранный период</div>';
+            return;
+        }
+
+        console.log('Rendering', readingsData.rows.length, 'rows');
+
+        let totalAmount = 0;
+        const rowsHtmlArray = readingsData.rows.map((row, index) => {
+            console.log(`Processing row ${index}:`, row);
+            totalAmount += row.total_amount || 0;
+
+            if (!row.meters || !Array.isArray(row.meters)) {
+                console.warn(`Row ${index} has no meters array:`, row);
+                return null; // Skip this row if no meters
             }
-            
-            if (!readingsData) {
-                console.warn('No readings data');
-                tbody.innerHTML = '<div class="text-muted text-center" style="padding: 40px;">Нет данных</div>';
-                return;
-            }
-            
-            if (!readingsData.rows) {
-                console.warn('No rows in readings data:', readingsData);
-                tbody.innerHTML = '<div class="text-muted text-center" style="padding: 40px;">Нет данных</div>';
-                return;
-            }
 
-            if (readingsData.rows.length === 0) {
-                console.log('Empty rows array');
-                tbody.innerHTML = '<div class="text-muted text-center" style="padding: 40px;">Нет показаний за выбранный период</div>';
-                return;
-            }
-            
-            console.log('Rendering', readingsData.rows.length, 'rows');
-
-            let totalAmount = 0;
-            const rowsHtmlArray = readingsData.rows.map((row, index) => {
-                console.log(`Processing row ${index}:`, row);
-                totalAmount += row.total_amount || 0;
-
-                if (!row.meters || !Array.isArray(row.meters)) {
-                    console.warn(`Row ${index} has no meters array:`, row);
-                    return null; // Skip this row if no meters
-                }
-
-                const metersHtml = row.meters.map(m => {
-                    const chipClass = m.type === 'Строительство' || m.type === 'Сервис' || m.type === 'Аренда' 
-                        ? 'meter-chip chip-warning' 
-                        : 'meter-chip';
-                    return `
+            const metersHtml = row.meters.map(m => {
+                const chipClass = m.type === 'Строительство' || m.type === 'Сервис' || m.type === 'Аренда'
+                    ? 'meter-chip chip-warning'
+                    : 'meter-chip';
+                return `
                         <div class="meter-item">
                             <span class="${chipClass}">${m.type}</span>
                             <span class="meter-value">${m.consumption.toFixed(3)} ${m.unit}</span>
                         </div>
                     `;
-                }).join('');
+            }).join('');
 
-                const amountsHtml = row.meters.map(m => {
-                    const statusClass = row.is_paid ? 'status-paid' : 'status-due';
-                    const amountClass = row.is_paid ? '' : 'amount-value-alert';
-                    return `
+            const amountsHtml = row.meters.map(m => {
+                const statusClass = row.is_paid ? 'status-paid' : 'status-due';
+                const amountClass = row.is_paid ? '' : 'amount-value-alert';
+                return `
                         <div class="amount-item">
                             <span class="status-pill ${statusClass}">${row.is_paid ? 'Оплачено' : m.type}</span>
                             <span class="amount-value ${amountClass}">${m.total.toFixed(2)} ₼</span>
                         </div>
                     `;
-                }).join('');
+            }).join('');
 
-                const readingKey = `${row.block_name.toLowerCase()}_${row.unit_number}`;
-                const residentTotal = row.total_amount || 0;
-                return `
+            const readingKey = `${row.block_name.toLowerCase()}_${row.unit_number}`;
+            const residentTotal = row.total_amount || 0;
+            return `
                     <div class="reading-row" data-reading-key="${readingKey}" data-resident-id="${row.resident_id}">
                         <div class="reading-col reading-col-resident">
                             <div class="resident-badge">
@@ -494,568 +489,493 @@
                     </div>
                     
                 `;
-            });
+        });
 
-            // Filter out null values (rows with no meters)
-            const filteredRowsHtml = rowsHtmlArray.filter(html => html !== null);
-            console.log('Generated HTML for', filteredRowsHtml.length, 'rows (filtered from', readingsData.rows.length, ')');
-            console.log('Total amount:', totalAmount);
-            
-            if (filteredRowsHtml.length === 0) {
-                tbody.innerHTML = '<div class="text-muted text-center" style="padding: 40px;">Нет данных для отображения</div>';
-                return;
-            }
-            
-            tbody.innerHTML = filteredRowsHtml.join('') + `
+        // Filter out null values (rows with no meters)
+        const filteredRowsHtml = rowsHtmlArray.filter(html => html !== null);
+        console.log('Generated HTML for', filteredRowsHtml.length, 'rows (filtered from', readingsData.rows.length, ')');
+        console.log('Total amount:', totalAmount);
+
+        if (filteredRowsHtml.length === 0) {
+            tbody.innerHTML = '<div class="text-muted text-center" style="padding: 40px;">Нет данных для отображения</div>';
+            return;
+        }
+
+        tbody.innerHTML = filteredRowsHtml.join('') + `
                 <div class="reading-total">
                     <span>Итого:</span>
                     <span class="reading-total-value">${totalAmount.toFixed(2)} ₼</span>
                 </div>
             `;
-            console.log('Table rendered successfully');
-        }
+        console.log('Table rendered successfully');
+    }
 
-        // Update filter dropdowns
-        window.updateFilterDropdowns = function updateFilterDropdowns() {
-            // Update blocks dropdown (filter)
-            const blockSelect = document.getElementById('filterBlock');
-            if (blockSelect && blocks.length > 0) {
-                const currentValue = blockSelect.value;
-                blockSelect.innerHTML = '<option value="all">Все</option>';
-                blocks.forEach(block => {
-                    const option = document.createElement('option');
-                    option.value = block.name;
-                    option.textContent = block.name;
-                    if (block.name === currentValue) option.selected = true;
-                    blockSelect.appendChild(option);
-                });
-            }
-
-            // Update blocks dropdown (modal)
-            const modalBlockSelect = document.getElementById('modalBlock');
-            if (modalBlockSelect && blocks.length > 0) {
-                const currentValue = modalBlockSelect.value;
-                modalBlockSelect.innerHTML = '<option value="">— выберите —</option>';
-                blocks.forEach(block => {
-                    const option = document.createElement('option');
-                    option.value = block.name;
-                    option.textContent = block.name;
-                    if (block.name === currentValue) option.selected = true;
-                    modalBlockSelect.appendChild(option);
-                });
-            }
-
-            // Update residents dropdown
-            const residentSelect = document.getElementById('filterResident');
-            if (residentSelect && residents.length > 0) {
-                const currentValue = residentSelect.value;
-                residentSelect.innerHTML = '<option value="all">Все</option>';
-                residents.forEach(resident => {
-                    const option = document.createElement('option');
-                    option.value = resident.id;
-                    option.textContent = `${resident.block_name}, №${resident.unit_number}`;
-                    if (resident.id.toString() === currentValue) option.selected = true;
-                    residentSelect.appendChild(option);
-                });
-            }
-        }
-        
-        // Pagination Functions
-        function updatePaginationUI() {
-            const currentPageEl = document.getElementById('readingCurrentPage');
-            const totalPagesEl = document.getElementById('readingTotalPages');
-            const totalItemsEl = document.getElementById('readingTotalItems');
-            const currentPageBtn = document.getElementById('readingCurrentPageBtn');
-            const prevBtn = document.getElementById('readingPrevBtn');
-            const nextBtn = document.getElementById('readingNextBtn');
-            
-            if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
-            if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
-            if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
-            if (currentPageBtn) currentPageBtn.textContent = paginationState.currentPage;
-            if (prevBtn) prevBtn.disabled = paginationState.currentPage === 1;
-            if (nextBtn) nextBtn.disabled = paginationState.currentPage === paginationState.totalPages;
-        }
-        
-        window.goToReadingPage = function(page) {
-            if (page === 'prev') {
-                if (paginationState.currentPage > 1) {
-                    paginationState.currentPage--;
-                    loadReadings();
-                }
-            } else if (page === 'next') {
-                if (paginationState.currentPage < paginationState.totalPages) {
-                    paginationState.currentPage++;
-                    loadReadings();
-                }
-            } else if (typeof page === 'number') {
-                paginationState.currentPage = page;
-                loadReadings();
-            }
-        };
-        
-        window.changeReadingItemsPerPage = function() {
-            const select = document.getElementById('readingItemsPerPage');
-            if (select) {
-                paginationState.itemsPerPage = parseInt(select.value);
-                paginationState.currentPage = 1;
-                loadReadings();
-                updateCustomReadingPaginationDropdown();
-            }
-        };
-        
-        function updateCustomReadingPaginationDropdown() {
-            const select = document.getElementById('readingItemsPerPage');
-            const customSelect = document.getElementById('customReadingItemsPerPage');
-            if (!select || !customSelect) return;
-            
-            const value = select.value;
-            const selectText = customSelect.querySelector('.select-text');
-            const options = customSelect.querySelectorAll('.select-option');
-            
-            if (selectText) selectText.textContent = value;
-            options.forEach(opt => {
-                opt.classList.remove('selected');
-                if (opt.getAttribute('data-value') === value) {
-                    opt.classList.add('selected');
-                }
+    // Update filter dropdowns
+    window.updateFilterDropdowns = function updateFilterDropdowns() {
+        // Update blocks dropdown (filter)
+        const blockSelect = document.getElementById('filterBlock');
+        if (blockSelect && blocks.length > 0) {
+            const currentValue = blockSelect.value;
+            blockSelect.innerHTML = '<option value="all">Все</option>';
+            blocks.forEach(block => {
+                const option = document.createElement('option');
+                option.value = block.name;
+                option.textContent = block.name;
+                if (block.name === currentValue) option.selected = true;
+                blockSelect.appendChild(option);
             });
         }
-        
-        function initCustomReadingPaginationDropdown() {
-            const customSelect = document.getElementById('customReadingItemsPerPage');
-            if (!customSelect) {
-                console.warn('initCustomReadingPaginationDropdown: customSelect not found');
-                return;
-            }
-            
-            const selectBtn = customSelect.querySelector('.select-btn');
-            const selectOptions = customSelect.querySelector('.select-options');
-            if (!selectBtn || !selectOptions) {
-                console.warn('initCustomReadingPaginationDropdown: selectBtn or selectOptions not found');
-                return;
-            }
-            
-            const options = selectOptions.querySelectorAll('.select-option');
-            
-            // Удаляем старые обработчики, если они есть (предотвращаем дублирование)
-            if (selectBtn._clickHandler) {
-                selectBtn.removeEventListener('click', selectBtn._clickHandler);
-            }
-            
-            // Создаем новый обработчик для кнопки
-            selectBtn._clickHandler = function(e) {
-                e.stopPropagation();
-                customSelect.classList.toggle('open');
-            };
-            selectBtn.addEventListener('click', selectBtn._clickHandler);
-            
-            // Удаляем старые обработчики с опций
-            options.forEach(opt => {
-                if (opt._clickHandler) {
-                    opt.removeEventListener('click', opt._clickHandler);
-                }
-                
-                // Создаем новый обработчик для опции
-                opt._clickHandler = function() {
-                    const value = this.getAttribute('data-value');
-                    const select = document.getElementById('readingItemsPerPage');
-                    if (select) {
-                        select.value = value;
-                        changeReadingItemsPerPage();
-                    }
-                    customSelect.classList.remove('open');
-                };
-                opt.addEventListener('click', opt._clickHandler);
+
+        // Update blocks dropdown (modal)
+        const modalBlockSelect = document.getElementById('modalBlock');
+        if (modalBlockSelect && blocks.length > 0) {
+            const currentValue = modalBlockSelect.value;
+            modalBlockSelect.innerHTML = '<option value="">— выберите —</option>';
+            blocks.forEach(block => {
+                const option = document.createElement('option');
+                option.value = block.name;
+                option.textContent = block.name;
+                if (block.name === currentValue) option.selected = true;
+                modalBlockSelect.appendChild(option);
             });
-            
-            // Удаляем старый обработчик клика вне селекта, если есть
-            if (window._readingPaginationOutsideClickHandler) {
-                document.removeEventListener('click', window._readingPaginationOutsideClickHandler);
+        }
+
+        // Update residents dropdown
+        const residentSelect = document.getElementById('filterResident');
+        if (residentSelect && residents.length > 0) {
+            const currentValue = residentSelect.value;
+            residentSelect.innerHTML = '<option value="all">Все</option>';
+            residents.forEach(resident => {
+                const option = document.createElement('option');
+                option.value = resident.id;
+                option.textContent = `${resident.block_name}, №${resident.unit_number}`;
+                if (resident.id.toString() === currentValue) option.selected = true;
+                residentSelect.appendChild(option);
+            });
+        }
+    }
+
+    // Pagination Functions
+    function buildReadingPageList(current, total) {
+        if (total <= 5) {
+            return Array.from({ length: total }, (_, i) => i + 1);
+        }
+        const pages = new Set([1, total]);
+        if (current <= 3) {
+            [2, 3, 4, 5].forEach(p => pages.add(p));
+        } else if (current >= total - 2) {
+            [total - 1, total - 2, total - 3, total - 4].forEach(p => pages.add(p));
+        } else {
+            [current - 2, current - 1, current, current + 1, current + 2].forEach(p => pages.add(p));
+        }
+        const sorted = Array.from(pages).filter(p => p >= 1 && p <= total).sort((a, b) => a - b);
+        const result = [];
+        for (let i = 0; i < sorted.length; i++) {
+            const page = sorted[i];
+            result.push(page);
+            const next = sorted[i + 1];
+            if (next && next - page > 1) {
+                result.push('dots');
             }
-            
-            // Создаем новый обработчик клика вне селекта
-            window._readingPaginationOutsideClickHandler = function(e) {
-                if (!customSelect.contains(e.target)) {
-                    customSelect.classList.remove('open');
+        }
+        return result;
+    }
+
+    function updatePaginationUI() {
+        const currentPageEl = document.getElementById('readingCurrentPage');
+        const totalPagesEl = document.getElementById('readingTotalPages');
+        const totalItemsEl = document.getElementById('readingTotalItems');
+        const prevBtn = document.getElementById('readingPrevBtn');
+        const nextBtn = document.getElementById('readingNextBtn');
+        const pagesContainer = document.getElementById('readingPageButtons');
+
+        if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
+        if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
+        if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
+        if (prevBtn) prevBtn.disabled = paginationState.currentPage <= 1;
+        if (nextBtn) nextBtn.disabled = paginationState.currentPage >= paginationState.totalPages;
+
+        if (!pagesContainer) return;
+        pagesContainer.innerHTML = '';
+
+        const pages = buildReadingPageList(paginationState.currentPage, paginationState.totalPages);
+        pages.forEach(p => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-pagination';
+
+            if (p === 'dots') {
+                btn.textContent = '...';
+                btn.disabled = true;
+                btn.classList.add('dots');
+            } else {
+                btn.textContent = p;
+                if (p > paginationState.totalPages) {
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => {
+                        if (p !== paginationState.currentPage) {
+                            goToReadingPage(p);
+                        }
+                    };
                 }
-            };
-            document.addEventListener('click', window._readingPaginationOutsideClickHandler);
-            
+                if (p === paginationState.currentPage) {
+                    btn.classList.add('active');
+                    btn.setAttribute('aria-current', 'page');
+                }
+            }
+
+            pagesContainer.appendChild(btn);
+        });
+    }
+
+    window.goToReadingPage = function (page) {
+        if (page === 'prev') {
+            if (paginationState.currentPage > 1) {
+                paginationState.currentPage--;
+                loadReadings();
+            }
+        } else if (page === 'next') {
+            if (paginationState.currentPage < paginationState.totalPages) {
+                paginationState.currentPage++;
+                loadReadings();
+            }
+        } else if (typeof page === 'number') {
+            paginationState.currentPage = page;
+            loadReadings();
+        }
+    };
+
+    window.changeReadingItemsPerPage = function () {
+        const select = document.getElementById('readingItemsPerPage');
+        if (select) {
+            paginationState.itemsPerPage = parseInt(select.value);
+            paginationState.currentPage = 1;
+            loadReadings();
             updateCustomReadingPaginationDropdown();
         }
-        
-        // Filter Functions
-        window.applyFilters = async function applyFilters() {
-            paginationState.currentPage = 1; // Reset to first page on filter apply
-            await loadReadings();
-            if (typeof showSuccess === 'function') {
-                showSuccess('Фильтры применены!');
-            }
-        }
-        
-        // Modal Functions
-        window.openRecordModal = function openRecordModal() {
-            document.getElementById('recordReadingModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-        
-        window.closeRecordModal = function closeRecordModal() {
-            document.getElementById('recordReadingModal').classList.remove('active');
-            document.body.style.overflow = 'auto';
-            document.getElementById('recordReadingForm').reset();
-            document.getElementById('modalResident').disabled = true;
-            document.getElementById('modalResident').innerHTML = '<option value="">— выберите блок —</option>';
-            hideMeterDetails();
-        }
-        
-        // Close modal on overlay click
-        document.getElementById('recordReadingModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeRecordModal();
+    };
+
+    function updateCustomReadingPaginationDropdown() {
+        const select = document.getElementById('readingItemsPerPage');
+        const customSelect = document.getElementById('customReadingItemsPerPage');
+        if (!select || !customSelect) return;
+
+        const value = select.value;
+        const selectText = customSelect.querySelector('.select-text');
+        const options = customSelect.querySelectorAll('.select-option');
+
+        if (selectText) selectText.textContent = value;
+        options.forEach(opt => {
+            opt.classList.remove('selected');
+            if (opt.getAttribute('data-value') === value) {
+                opt.classList.add('selected');
             }
         });
+    }
 
-        const detailsModal = document.getElementById('readingDetailsModal');
-        if (detailsModal) {
-            detailsModal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeReadingDetails();
-                }
-            });
+    function initCustomReadingPaginationDropdown() {
+        const customSelect = document.getElementById('customReadingItemsPerPage');
+        if (!customSelect) {
+            console.warn('initCustomReadingPaginationDropdown: customSelect not found');
+            return;
         }
-        
-        // Close modal on Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeRecordModal();
+
+        const selectBtn = customSelect.querySelector('.select-btn');
+        const selectOptions = customSelect.querySelector('.select-options');
+        if (!selectBtn || !selectOptions) {
+            console.warn('initCustomReadingPaginationDropdown: selectBtn or selectOptions not found');
+            return;
+        }
+
+        const options = selectOptions.querySelectorAll('.select-option');
+
+        // Удаляем старые обработчики, если они есть (предотвращаем дублирование)
+        if (selectBtn._clickHandler) {
+            selectBtn.removeEventListener('click', selectBtn._clickHandler);
+        }
+
+        // Создаем новый обработчик для кнопки
+        selectBtn._clickHandler = function (e) {
+            e.stopPropagation();
+            customSelect.classList.toggle('open');
+        };
+        selectBtn.addEventListener('click', selectBtn._clickHandler);
+
+        // Удаляем старые обработчики с опций
+        options.forEach(opt => {
+            if (opt._clickHandler) {
+                opt.removeEventListener('click', opt._clickHandler);
+            }
+
+            // Создаем новый обработчик для опции
+            opt._clickHandler = function () {
+                const value = this.getAttribute('data-value');
+                const select = document.getElementById('readingItemsPerPage');
+                if (select) {
+                    select.value = value;
+                    changeReadingItemsPerPage();
+                }
+                customSelect.classList.remove('open');
+            };
+            opt.addEventListener('click', opt._clickHandler);
+        });
+
+        // Удаляем старый обработчик клика вне селекта, если есть
+        if (window._readingPaginationOutsideClickHandler) {
+            document.removeEventListener('click', window._readingPaginationOutsideClickHandler);
+        }
+
+        // Создаем новый обработчик клика вне селекта
+        window._readingPaginationOutsideClickHandler = function (e) {
+            if (!customSelect.contains(e.target)) {
+                customSelect.classList.remove('open');
+            }
+        };
+        document.addEventListener('click', window._readingPaginationOutsideClickHandler);
+
+        updateCustomReadingPaginationDropdown();
+    }
+
+    // Filter Functions
+    window.applyFilters = async function applyFilters() {
+        paginationState.currentPage = 1; // Reset to first page on filter apply
+        await loadReadings();
+        if (typeof showSuccess === 'function') {
+            showSuccess('Фильтры применены!');
+        }
+    }
+
+    // Modal Functions
+    window.openRecordModal = function openRecordModal() {
+        document.getElementById('recordReadingModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    window.closeRecordModal = function closeRecordModal() {
+        document.getElementById('recordReadingModal').classList.remove('active');
+        document.body.style.overflow = 'auto';
+        document.getElementById('recordReadingForm').reset();
+        document.getElementById('modalResident').disabled = true;
+        document.getElementById('modalResident').innerHTML = '<option value="">— выберите блок —</option>';
+        hideMeterDetails();
+    }
+
+    // Close modal on overlay click
+    document.getElementById('recordReadingModal').addEventListener('click', function (e) {
+        if (e.target === this) {
+            closeRecordModal();
+        }
+    });
+
+    const detailsModal = document.getElementById('readingDetailsModal');
+    if (detailsModal) {
+        detailsModal.addEventListener('click', function (e) {
+            if (e.target === this) {
                 closeReadingDetails();
             }
         });
-        
-        const sampleMeterTariffs = {
-            1: [
-                { id: 'gas-a-1', type: 'Газ', tariff: 'A-gas', prev: 120, unit: 'м³', price: 45, placeholder: '≥ 120' },
-                { id: 'water-a-1', type: 'Вода', tariff: 'A-su', prev: 80, unit: 'м³', price: 30, value: 95 },
-            ],
-            2: [
-                { id: 'electric-a-2', type: 'Электричество', tariff: 'A tok', prev: 40, unit: 'кВт·ч', price: 70, value: 185 },
-                { id: 'water-a-2', type: 'Вода', tariff: 'A aqua', prev: 60, unit: 'м³', price: 28, placeholder: '≥ 60' },
-                { id: 'gas-a-2', type: 'Газ', tariff: 'A gas+', prev: 25, unit: 'м³', price: 55, value: 40 },
-            ],
-            3: [
-                { id: 'water-b-0', type: 'Вода', tariff: 'B aqua', prev: 10, unit: 'м³', price: 28, value: 16 },
-                { id: 'electric-b-0', type: 'Электричество', tariff: 'B tok', prev: 100, unit: 'кВт·ч', price: 82, placeholder: '≥ 100' },
-            ],
-            4: [
-                { id: 'gas-b-1', type: 'Газ', tariff: 'Qaz', prev: 50, unit: 'м³', price: 55, placeholder: '≥ 50', value: 60 },
-                { id: 'electric-b-1', type: 'Электричество', tariff: 'B tok', prev: 0, unit: 'кВт·ч', price: 80, value: 220 },
-                { id: 'water-b-1', type: 'Вода', tariff: 'B su', prev: 30, unit: 'м³', price: 28, placeholder: '≥ 30' },
-            ],
-            5: [
-                { id: 'electric-k-1', type: 'Электричество', tariff: 'K tok', prev: 300, unit: 'кВт·ч', price: 78, value: 430 },
-                { id: 'water-k-1', type: 'Вода', tariff: 'K aqua', prev: 140, unit: 'м³', price: 32, value: 180 },
-            ],
-            6: [
-                { id: 'gas-k-2', type: 'Газ', tariff: 'K gas', prev: 0, unit: 'м³', price: 60, placeholder: '≥ 0' },
-                { id: 'water-k-2', type: 'Вода', tariff: 'K aqua+', prev: 70, unit: 'м³', price: 29, value: 110 },
-            ],
-            7: [
-                { id: 'gas-main', type: 'Газ', tariff: 'Qaz', prev: 0, unit: 'м³', price: 50, placeholder: '≥ 0' },
-                { id: 'electric', type: 'Электричество', tariff: 'X2 tok', prev: 0, unit: 'кВт·ч', price: 75, value: 200 },
-                { id: 'gas-aux', type: 'Газ', tariff: 'Qaz', prev: 0, unit: 'м³', price: 50, placeholder: '≥ 0' },
-                { id: 'water', type: 'Вода', tariff: 'X2 su', prev: 0, unit: 'м³', price: 50, value: 300 },
-            ],
-            8: [
-                { id: 'electric-x-2', type: 'Электричество', tariff: 'X tok+', prev: 150, unit: 'кВт·ч', price: 77, value: 280 },
-                { id: 'water-x-2', type: 'Вода', tariff: 'X su+', prev: 90, unit: 'м³', price: 35, placeholder: '≥ 90' },
-            ],
-            9: [
-                { id: 'electric-z-1', type: 'Электричество', tariff: 'Z tok', prev: 400, unit: 'кВт·ч', price: 65, value: 540 },
-                { id: 'water-z-1', type: 'Вода', tariff: 'Z aqua', prev: 220, unit: 'м³', price: 25, placeholder: '≥ 220' },
-            ],
-            10: [
-                { id: 'gas-z-2', type: 'Газ', tariff: 'Z gas', prev: 95, unit: 'м³', price: 58, value: 120 },
-                { id: 'electric-z-2', type: 'Электричество', tariff: 'Z tok+', prev: 210, unit: 'кВт·ч', price: 68, placeholder: '≥ 210' },
-            ],
-            11: [
-                { id: 'gas-a-41', type: 'Газ', tariff: 'Qaz', prev: 180, unit: 'м³', price: 55, placeholder: '≥ 180' },
-                { id: 'water-a-41', type: 'Вода', tariff: 'X2 su', prev: 250, unit: 'м³', price: 35, value: 300 },
-            ],
-            12: [
-                { id: 'electric-a-50', type: 'Электричество', tariff: 'X2 tok', prev: 100, unit: 'кВт·ч', price: 75, value: 200 },
-                { id: 'water-a-50', type: 'Вода', tariff: 'X2 su', prev: 0, unit: 'м³', price: 50, value: 300 },
-                { id: 'gas-a-50', type: 'Газ', tariff: 'Qaz', prev: 0, unit: 'м³', price: 55, placeholder: '≥ 0' },
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeRecordModal();
+            closeReadingDetails();
+        }
+    });
+
+    const sampleMeterTariffs = {
+        1: [
+            { id: 'gas-a-1', type: 'Газ', tariff: 'A-gas', prev: 120, unit: 'м³', price: 45, placeholder: '≥ 120' },
+            { id: 'water-a-1', type: 'Вода', tariff: 'A-su', prev: 80, unit: 'м³', price: 30, value: 95 },
+        ],
+        2: [
+            { id: 'electric-a-2', type: 'Электричество', tariff: 'A tok', prev: 40, unit: 'кВт·ч', price: 70, value: 185 },
+            { id: 'water-a-2', type: 'Вода', tariff: 'A aqua', prev: 60, unit: 'м³', price: 28, placeholder: '≥ 60' },
+            { id: 'gas-a-2', type: 'Газ', tariff: 'A gas+', prev: 25, unit: 'м³', price: 55, value: 40 },
+        ],
+        3: [
+            { id: 'water-b-0', type: 'Вода', tariff: 'B aqua', prev: 10, unit: 'м³', price: 28, value: 16 },
+            { id: 'electric-b-0', type: 'Электричество', tariff: 'B tok', prev: 100, unit: 'кВт·ч', price: 82, placeholder: '≥ 100' },
+        ],
+        4: [
+            { id: 'gas-b-1', type: 'Газ', tariff: 'Qaz', prev: 50, unit: 'м³', price: 55, placeholder: '≥ 50', value: 60 },
+            { id: 'electric-b-1', type: 'Электричество', tariff: 'B tok', prev: 0, unit: 'кВт·ч', price: 80, value: 220 },
+            { id: 'water-b-1', type: 'Вода', tariff: 'B su', prev: 30, unit: 'м³', price: 28, placeholder: '≥ 30' },
+        ],
+        5: [
+            { id: 'electric-k-1', type: 'Электричество', tariff: 'K tok', prev: 300, unit: 'кВт·ч', price: 78, value: 430 },
+            { id: 'water-k-1', type: 'Вода', tariff: 'K aqua', prev: 140, unit: 'м³', price: 32, value: 180 },
+        ],
+        6: [
+            { id: 'gas-k-2', type: 'Газ', tariff: 'K gas', prev: 0, unit: 'м³', price: 60, placeholder: '≥ 0' },
+            { id: 'water-k-2', type: 'Вода', tariff: 'K aqua+', prev: 70, unit: 'м³', price: 29, value: 110 },
+        ],
+        7: [
+            { id: 'gas-main', type: 'Газ', tariff: 'Qaz', prev: 0, unit: 'м³', price: 50, placeholder: '≥ 0' },
+            { id: 'electric', type: 'Электричество', tariff: 'X2 tok', prev: 0, unit: 'кВт·ч', price: 75, value: 200 },
+            { id: 'gas-aux', type: 'Газ', tariff: 'Qaz', prev: 0, unit: 'м³', price: 50, placeholder: '≥ 0' },
+            { id: 'water', type: 'Вода', tariff: 'X2 su', prev: 0, unit: 'м³', price: 50, value: 300 },
+        ],
+        8: [
+            { id: 'electric-x-2', type: 'Электричество', tariff: 'X tok+', prev: 150, unit: 'кВт·ч', price: 77, value: 280 },
+            { id: 'water-x-2', type: 'Вода', tariff: 'X su+', prev: 90, unit: 'м³', price: 35, placeholder: '≥ 90' },
+        ],
+        9: [
+            { id: 'electric-z-1', type: 'Электричество', tariff: 'Z tok', prev: 400, unit: 'кВт·ч', price: 65, value: 540 },
+            { id: 'water-z-1', type: 'Вода', tariff: 'Z aqua', prev: 220, unit: 'м³', price: 25, placeholder: '≥ 220' },
+        ],
+        10: [
+            { id: 'gas-z-2', type: 'Газ', tariff: 'Z gas', prev: 95, unit: 'м³', price: 58, value: 120 },
+            { id: 'electric-z-2', type: 'Электричество', tariff: 'Z tok+', prev: 210, unit: 'кВт·ч', price: 68, placeholder: '≥ 210' },
+        ],
+        11: [
+            { id: 'gas-a-41', type: 'Газ', tariff: 'Qaz', prev: 180, unit: 'м³', price: 55, placeholder: '≥ 180' },
+            { id: 'water-a-41', type: 'Вода', tariff: 'X2 su', prev: 250, unit: 'м³', price: 35, value: 300 },
+        ],
+        12: [
+            { id: 'electric-a-50', type: 'Электричество', tariff: 'X2 tok', prev: 100, unit: 'кВт·ч', price: 75, value: 200 },
+            { id: 'water-a-50', type: 'Вода', tariff: 'X2 su', prev: 0, unit: 'м³', price: 50, value: 300 },
+            { id: 'gas-a-50', type: 'Газ', tariff: 'Qaz', prev: 0, unit: 'м³', price: 55, placeholder: '≥ 0' },
+        ]
+    };
+
+    const readingDetailsData = {
+        a41: {
+            title: 'Резидент: A / 41',
+            meters: [
+                {
+                    type: 'Газ',
+                    meter: '№ 123',
+                    tariff: 'Qaz',
+                    unit: 'м³',
+                    rows: []
+                },
+                {
+                    type: 'Электричество',
+                    meter: '№ 1234',
+                    tariff: 'X2 tok',
+                    unit: 'кВт·ч',
+                    rows: [
+                        { date: '2025-11-26', value: '200.000', consumption: '200.000', amount: '15000.00', vat: '0', comment: '—' }
+                    ]
+                },
+                {
+                    type: 'Газ',
+                    meter: '№ 13445',
+                    tariff: 'Qaz',
+                    unit: 'м³',
+                    rows: []
+                },
+                {
+                    type: 'Вода',
+                    meter: '№ 58585',
+                    tariff: 'X2 su',
+                    unit: 'м³',
+                    rows: [
+                        { date: '2025-11-26', value: '300.000', consumption: '300.000', amount: '15000.00', vat: '0', comment: '—' }
+                    ]
+                }
             ]
-        };
-
-        const readingDetailsData = {
-            a41: {
-                title: 'Резидент: A / 41',
-                meters: [
-                    {
-                        type: 'Газ',
-                        meter: '№ 123',
-                        tariff: 'Qaz',
-                        unit: 'м³',
-                        rows: []
-                    },
-                    {
-                        type: 'Электричество',
-                        meter: '№ 1234',
-                        tariff: 'X2 tok',
-                        unit: 'кВт·ч',
-                        rows: [
-                            { date: '2025-11-26', value: '200.000', consumption: '200.000', amount: '15000.00', vat: '0', comment: '—' }
-                        ]
-                    },
-                    {
-                        type: 'Газ',
-                        meter: '№ 13445',
-                        tariff: 'Qaz',
-                        unit: 'м³',
-                        rows: []
-                    },
-                    {
-                        type: 'Вода',
-                        meter: '№ 58585',
-                        tariff: 'X2 su',
-                        unit: 'м³',
-                        rows: [
-                            { date: '2025-11-26', value: '300.000', consumption: '300.000', amount: '15000.00', vat: '0', comment: '—' }
-                        ]
-                    }
-                ]
-            },
-            a50: {
-                title: 'Резидент: A / 50',
-                meters: [
-                    {
-                        type: 'Электричество',
-                        meter: '№ 9801',
-                        tariff: 'X2 tok',
-                        unit: 'кВт·ч',
-                        rows: [
-                            { date: '2025-11-15', value: '120.000', consumption: '120.000', amount: '8200.00', vat: '0', comment: 'Оплачено' },
-                            { date: '2025-10-15', value: '100.000', consumption: '100.000', amount: '6500.00', vat: '0', comment: '—' }
-                        ]
-                    },
-                    {
-                        type: 'Вода',
-                        meter: '№ 7742',
-                        tariff: 'A su',
-                        unit: 'м³',
-                        rows: [
-                            { date: '2025-11-10', value: '180.000', consumption: '40.000', amount: '2400.00', vat: '0', comment: 'Контрольное снятие' }
-                        ]
-                    }
-                ]
-            }
-        };
-
-        const readingEditorPrefill = {
-            a41: {
-                block: 'A',
-                residentId: '11',
-                date: '2025-11-26',
-                comment: 'Показания подтверждены охраной'
-            },
-            a50: {
-                block: 'A',
-                residentId: '12',
-                date: '2025-11-15',
-                comment: 'Заполнено вручную'
-            }
-        };
-
-        // Load residents based on selected block
-        window.loadResidents = async function loadResidents() {
-            const blockName = document.getElementById('modalBlock').value;
-            const residentSelect = document.getElementById('modalResident');
-            hideMeterDetails();
-            
-            if (blockName) {
-                residentSelect.disabled = false;
-                residentSelect.innerHTML = '<option value="">— загрузка... —</option>';
-                
-                try {
-                    console.log('Loading residents for block:', blockName);
-                    console.log('Available blocks:', blocks);
-                    
-                    // Find block ID by name
-                    let block = blocks.find(b => b.name === blockName);
-                    
-                    // If block not found in local array, try to load from API
-                    if (!block) {
-                        console.log('Block not found in local array, loading from API...');
-                        try {
-                            let url = `${API_BASE}/api/blocks`;
-                            let response = await fetch(url);
-                            if (!response.ok) {
-                                if (response.status === 401 || response.status === 403) {
-                                    url = `${API_BASE}/api/blocks/public`;
-                                    response = await fetch(url);
-                                }
-                            }
-                            if (response.ok) {
-                                const blocksData = await response.json();
-                                blocks = Array.isArray(blocksData) ? blocksData : (blocksData.items || []);
-                                block = blocks.find(b => b.name === blockName);
-                                console.log('Blocks loaded from API:', blocks);
-                                console.log('Found block:', block);
-                            }
-                        } catch (error) {
-                            console.error('Error loading blocks:', error);
-                        }
-                    }
-                    
-                    if (!block) {
-                        console.error('Block not found:', blockName);
-                        residentSelect.innerHTML = '<option value="">— блок не найден —</option>';
-                        return;
-                    }
-                    
-                    console.log('Using block:', block);
-
-                    let url = `${API_BASE}/api/residents?block_id=${block.id}`;
-                    console.log('Fetching residents from:', url);
-                    let response = await fetch(url);
-                    if (!response.ok) {
-                        if (response.status === 401 || response.status === 403) {
-                            url = `${API_BASE}/api/residents/public?block_id=${block.id}`;
-                            console.log('Trying public endpoint:', url);
-                            response = await fetch(url);
-                            if (!response.ok) {
-                                throw new Error(`HTTP ${response.status}`);
-                            }
-                        } else {
-                            throw new Error(`HTTP ${response.status}`);
-                        }
-                    }
-
-                    const data = await response.json();
-                    console.log('Residents data received:', data);
-                    console.log('Data type:', Array.isArray(data) ? 'Array' : 'Object');
-                    
-                    // Handle paginated response (with items) or direct array
-                    let residentsList = [];
-                    if (Array.isArray(data)) {
-                        residentsList = data;
-                    } else if (data.items) {
-                        residentsList = data.items;
-                    } else if (data.residents) {
-                        residentsList = data.residents;
-                    }
-                    
-                    console.log('Residents count:', residentsList.length);
-                    console.log('Residents list:', residentsList);
-                    populateResidentsSelect(residentsList);
-                } catch (error) {
-                    console.error('Error loading residents:', error);
-                    residentSelect.innerHTML = '<option value="">— ошибка загрузки —</option>';
+        },
+        a50: {
+            title: 'Резидент: A / 50',
+            meters: [
+                {
+                    type: 'Электричество',
+                    meter: '№ 9801',
+                    tariff: 'X2 tok',
+                    unit: 'кВт·ч',
+                    rows: [
+                        { date: '2025-11-15', value: '120.000', consumption: '120.000', amount: '8200.00', vat: '0', comment: 'Оплачено' },
+                        { date: '2025-10-15', value: '100.000', consumption: '100.000', amount: '6500.00', vat: '0', comment: '—' }
+                    ]
+                },
+                {
+                    type: 'Вода',
+                    meter: '№ 7742',
+                    tariff: 'A su',
+                    unit: 'м³',
+                    rows: [
+                        { date: '2025-11-10', value: '180.000', consumption: '40.000', amount: '2400.00', vat: '0', comment: 'Контрольное снятие' }
+                    ]
                 }
-            } else {
-                residentSelect.disabled = true;
-                residentSelect.innerHTML = '<option value="">— выберите блок —</option>';
-            }
+            ]
         }
+    };
 
-        function populateResidentsSelect(residentsList) {
-            const residentSelect = document.getElementById('modalResident');
-            console.log('Populating residents select with', residentsList.length, 'residents');
-            residentSelect.innerHTML = '<option value="">— выберите —</option>';
-            if (residentsList.length === 0) {
-                residentSelect.innerHTML = '<option value="">— нет резидентов —</option>';
-                return;
-            }
-            residentsList.forEach(resident => {
-                const option = document.createElement('option');
-                option.value = resident.id;
-                option.textContent = `${resident.block_name || ''} / ${resident.unit_number}`;
-                residentSelect.appendChild(option);
-                console.log('Added resident option:', option.textContent, 'ID:', resident.id);
-            });
+    const readingEditorPrefill = {
+        a41: {
+            block: 'A',
+            residentId: '11',
+            date: '2025-11-26',
+            comment: 'Показания подтверждены охраной'
+        },
+        a50: {
+            block: 'A',
+            residentId: '12',
+            date: '2025-11-15',
+            comment: 'Заполнено вручную'
         }
+    };
 
-        window.openReadingEditor = async function openReadingEditor(residentId) {
-            openRecordModal();
-            
-            // Find resident in readingsData
-            const resident = readingsData?.rows?.find(r => r.resident_id === residentId);
-            if (!resident) {
-                if (typeof showError === 'function') {
-                    showError('Резидент не найден');
-                }
-                return;
-            }
+    // Load residents based on selected block
+    window.loadResidents = async function loadResidents() {
+        const blockName = document.getElementById('modalBlock').value;
+        const residentSelect = document.getElementById('modalResident');
+        hideMeterDetails();
 
-            const blockSelect = document.getElementById('modalBlock');
-            const residentSelect = document.getElementById('modalResident');
-            const dateInput = document.getElementById('modalDate');
-            const commentField = document.getElementById('modalComment');
+        if (blockName) {
+            residentSelect.disabled = false;
+            residentSelect.innerHTML = '<option value="">— загрузка... —</option>';
 
-            if (blockSelect) {
-                blockSelect.value = resident.block_name;
-                await loadResidents();
-            }
-
-            // Get real reading date from resident data FIRST
-            const now = new Date();
-            const year = readingsData?.year || now.getFullYear();
-            const month = readingsData?.month || now.getMonth() + 1;
-            
-            // Try to get reading date from resident data (if available from API)
-            let readingDate = null;
-            if (resident.reading_date) {
-                readingDate = resident.reading_date;
-            } else {
-                // Fallback to 04th of month (as shown in backend example)
-                readingDate = `${year}-${String(month).padStart(2, '0')}-04`;
-            }
-            
-            // Set date BEFORE calling renderMeterDetails
-            if (dateInput) {
-                dateInput.value = readingDate;
-            }
-
-            if (residentSelect && residentId) {
-                setTimeout(() => {
-                    residentSelect.disabled = false;
-                    residentSelect.value = residentId;
-                    // Now renderMeterDetails will use the correct date
-                    renderMeterDetails(residentId);
-                }, 300);
-            }
-        }
-
-        window.openReadingDetails = async function openReadingDetails(residentId) {
-            const modal = document.getElementById('readingDetailsModal');
-            const title = document.getElementById('readingDetailsTitle');
-            const body = document.getElementById('readingDetailsBody');
-            if (!modal || !title || !body) return;
-
-            const resident = readingsData?.rows?.find(r => r.resident_id === residentId);
-            if (!resident) {
-                title.textContent = 'Детали показаний';
-                body.innerHTML = '<div class="detail-empty">Резидент не найден</div>';
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-                return;
-            }
-
-            title.textContent = `Резидент: ${resident.resident_code}`;
-            body.innerHTML = '<div class="text-muted text-center" style="padding: 20px;">Загрузка...</div>';
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-
-            // Load detailed readings from API
             try {
-                let url = `${API_BASE}/api/readings/resident/${residentId}/history`;
-                let response = await fetch(url, { credentials: 'include' });
+                console.log('Loading residents for block:', blockName);
+                console.log('Available blocks:', blocks);
+
+                // Find block ID by name
+                let block = blocks.find(b => b.name === blockName);
+
+                // If block not found in local array, try to load from API
+                if (!block) {
+                    console.log('Block not found in local array, loading from API...');
+                    try {
+                        let url = `${API_BASE}/api/blocks`;
+                        let response = await fetch(url);
+                        if (!response.ok) {
+                            if (response.status === 401 || response.status === 403) {
+                                url = `${API_BASE}/api/blocks/public`;
+                                response = await fetch(url);
+                            }
+                        }
+                        if (response.ok) {
+                            const blocksData = await response.json();
+                            blocks = Array.isArray(blocksData) ? blocksData : (blocksData.items || []);
+                            block = blocks.find(b => b.name === blockName);
+                            console.log('Blocks loaded from API:', blocks);
+                            console.log('Found block:', block);
+                        }
+                    } catch (error) {
+                        console.error('Error loading blocks:', error);
+                    }
+                }
+
+                if (!block) {
+                    console.error('Block not found:', blockName);
+                    residentSelect.innerHTML = '<option value="">— блок не найден —</option>';
+                    return;
+                }
+
+                console.log('Using block:', block);
+
+                let url = `${API_BASE}/api/residents?block_id=${block.id}`;
+                console.log('Fetching residents from:', url);
+                let response = await fetch(url);
                 if (!response.ok) {
                     if (response.status === 401 || response.status === 403) {
-                        url = `${API_BASE}/api/readings/resident/${residentId}/history/public`;
-                        response = await fetch(url, { credentials: 'include' });
+                        url = `${API_BASE}/api/residents/public?block_id=${block.id}`;
+                        console.log('Trying public endpoint:', url);
+                        response = await fetch(url);
                         if (!response.ok) {
                             throw new Error(`HTTP ${response.status}`);
                         }
@@ -1065,37 +985,168 @@
                 }
 
                 const data = await response.json();
-                console.log('Reading history data:', data);
+                console.log('Residents data received:', data);
+                console.log('Data type:', Array.isArray(data) ? 'Array' : 'Object');
 
-                if (!data.meters || data.meters.length === 0) {
-                    body.innerHTML = '<div class="detail-empty">Нет данных о показаниях</div>';
-                    return;
+                // Handle paginated response (with items) or direct array
+                let residentsList = [];
+                if (Array.isArray(data)) {
+                    residentsList = data;
+                } else if (data.items) {
+                    residentsList = data.items;
+                } else if (data.residents) {
+                    residentsList = data.residents;
                 }
 
-                // Группируем счётчики по типу, чтобы избежать дубликатов
-                const metersByType = {};
-                data.meters.forEach(meter => {
-                    const key = `${meter.type}_${meter.tariff_name || ''}`;
-                    if (!metersByType[key]) {
-                        metersByType[key] = {
-                            type: meter.type,
-                            tariff_name: meter.tariff_name,
-                            unit: meter.unit,
-                            serial_number: meter.serial_number,
-                            readings: []
-                        };
-                    }
-                    // Объединяем показания всех счётчиков этого типа
-                    metersByType[key].readings.push(...meter.readings);
-                });
-                
-                // Сортируем показания по дате (от новых к старым)
-                Object.values(metersByType).forEach(meter => {
-                    meter.readings.sort((a, b) => new Date(b.date) - new Date(a.date));
-                });
+                console.log('Residents count:', residentsList.length);
+                console.log('Residents list:', residentsList);
+                populateResidentsSelect(residentsList);
+            } catch (error) {
+                console.error('Error loading residents:', error);
+                residentSelect.innerHTML = '<option value="">— ошибка загрузки —</option>';
+            }
+        } else {
+            residentSelect.disabled = true;
+            residentSelect.innerHTML = '<option value="">— выберите блок —</option>';
+        }
+    }
 
-                const metersHtml = Object.values(metersByType).map(meter => {
-                    const rowsHtml = meter.readings.map(reading => `
+    function populateResidentsSelect(residentsList) {
+        const residentSelect = document.getElementById('modalResident');
+        console.log('Populating residents select with', residentsList.length, 'residents');
+        residentSelect.innerHTML = '<option value="">— выберите —</option>';
+        if (residentsList.length === 0) {
+            residentSelect.innerHTML = '<option value="">— нет резидентов —</option>';
+            return;
+        }
+        residentsList.forEach(resident => {
+            const option = document.createElement('option');
+            option.value = resident.id;
+            option.textContent = `${resident.block_name || ''} / ${resident.unit_number}`;
+            residentSelect.appendChild(option);
+            console.log('Added resident option:', option.textContent, 'ID:', resident.id);
+        });
+    }
+
+    window.openReadingEditor = async function openReadingEditor(residentId) {
+        openRecordModal();
+
+        // Find resident in readingsData
+        const resident = readingsData?.rows?.find(r => r.resident_id === residentId);
+        if (!resident) {
+            if (typeof showError === 'function') {
+                showError('Резидент не найден');
+            }
+            return;
+        }
+
+        const blockSelect = document.getElementById('modalBlock');
+        const residentSelect = document.getElementById('modalResident');
+        const dateInput = document.getElementById('modalDate');
+        const commentField = document.getElementById('modalComment');
+
+        if (blockSelect) {
+            blockSelect.value = resident.block_name;
+            await loadResidents();
+        }
+
+        // Get real reading date from resident data FIRST
+        const now = new Date();
+        const year = readingsData?.year || now.getFullYear();
+        const month = readingsData?.month || now.getMonth() + 1;
+
+        // Try to get reading date from resident data (if available from API)
+        let readingDate = null;
+        if (resident.reading_date) {
+            readingDate = resident.reading_date;
+        } else {
+            // Fallback to 04th of month (as shown in backend example)
+            readingDate = `${year}-${String(month).padStart(2, '0')}-04`;
+        }
+
+        // Set date BEFORE calling renderMeterDetails
+        if (dateInput) {
+            dateInput.value = readingDate;
+        }
+
+        if (residentSelect && residentId) {
+            setTimeout(() => {
+                residentSelect.disabled = false;
+                residentSelect.value = residentId;
+                // Now renderMeterDetails will use the correct date
+                renderMeterDetails(residentId);
+            }, 300);
+        }
+    }
+
+    window.openReadingDetails = async function openReadingDetails(residentId) {
+        const modal = document.getElementById('readingDetailsModal');
+        const title = document.getElementById('readingDetailsTitle');
+        const body = document.getElementById('readingDetailsBody');
+        if (!modal || !title || !body) return;
+
+        const resident = readingsData?.rows?.find(r => r.resident_id === residentId);
+        if (!resident) {
+            title.textContent = 'Детали показаний';
+            body.innerHTML = '<div class="detail-empty">Резидент не найден</div>';
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            return;
+        }
+
+        title.textContent = `Резидент: ${resident.resident_code}`;
+        body.innerHTML = '<div class="text-muted text-center" style="padding: 20px;">Загрузка...</div>';
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        // Load detailed readings from API
+        try {
+            let url = `${API_BASE}/api/readings/resident/${residentId}/history`;
+            let response = await fetch(url, { credentials: 'include' });
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    url = `${API_BASE}/api/readings/resident/${residentId}/history/public`;
+                    response = await fetch(url, { credentials: 'include' });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            }
+
+            const data = await response.json();
+            console.log('Reading history data:', data);
+
+            if (!data.meters || data.meters.length === 0) {
+                body.innerHTML = '<div class="detail-empty">Нет данных о показаниях</div>';
+                return;
+            }
+
+            // Группируем счётчики по типу, чтобы избежать дубликатов
+            const metersByType = {};
+            data.meters.forEach(meter => {
+                const key = `${meter.type}_${meter.tariff_name || ''}`;
+                if (!metersByType[key]) {
+                    metersByType[key] = {
+                        type: meter.type,
+                        tariff_name: meter.tariff_name,
+                        unit: meter.unit,
+                        serial_number: meter.serial_number,
+                        readings: []
+                    };
+                }
+                // Объединяем показания всех счётчиков этого типа
+                metersByType[key].readings.push(...meter.readings);
+            });
+
+            // Сортируем показания по дате (от новых к старым)
+            Object.values(metersByType).forEach(meter => {
+                meter.readings.sort((a, b) => new Date(b.date) - new Date(a.date));
+            });
+
+            const metersHtml = Object.values(metersByType).map(meter => {
+                const rowsHtml = meter.readings.map(reading => `
                         <div class="detail-grid-row">
                             <div>${reading.date}</div>
                             <div>${reading.value.toFixed(3)}</div>
@@ -1106,12 +1157,12 @@
                         </div>
                     `).join('');
 
-                    // Показываем серийный номер, если он есть и не является фикс-услугой
-                    const serialInfo = meter.serial_number && meter.serial_number !== '-' 
-                        ? ` (№${meter.serial_number})` 
-                        : '';
+                // Показываем серийный номер, если он есть и не является фикс-услугой
+                const serialInfo = meter.serial_number && meter.serial_number !== '-'
+                    ? ` (№${meter.serial_number})`
+                    : '';
 
-                    return `
+                return `
                         <div class="detail-meter-card">
                             <div class="detail-meter-head">
                                 <span class="detail-meter-badge">${meter.type}${serialInfo}</span>
@@ -1133,18 +1184,18 @@
                             </div>
                         </div>
                     `;
-                }).join('');
+            }).join('');
 
-                body.innerHTML = metersHtml || '<div class="detail-empty">Нет данных</div>';
-            } catch (error) {
-                console.error('Error loading reading history:', error);
-                body.innerHTML = '<div class="detail-empty">Ошибка загрузки данных: ' + error.message + '</div>';
-            }
+            body.innerHTML = metersHtml || '<div class="detail-empty">Нет данных</div>';
+        } catch (error) {
+            console.error('Error loading reading history:', error);
+            body.innerHTML = '<div class="detail-empty">Ошибка загрузки данных: ' + error.message + '</div>';
         }
+    }
 
-        function renderDetailMeterCard(meter) {
-            const rows = (meter.rows && meter.rows.length)
-                ? meter.rows.map(row => `
+    function renderDetailMeterCard(meter) {
+        const rows = (meter.rows && meter.rows.length)
+            ? meter.rows.map(row => `
                     <div class="detail-grid-row">
                         <div>${row.date || '—'}</div>
                         <div>${row.value || '—'}</div>
@@ -1154,9 +1205,9 @@
                         <div>${row.comment || '—'}</div>
                     </div>
                 `).join('')
-                : '<div class="detail-empty-row">Нет записей</div>';
+            : '<div class="detail-empty-row">Нет записей</div>';
 
-            return `
+        return `
                 <div class="detail-meter-card">
                     <div class="detail-meter-head">
                         <span class="detail-meter-badge">${meter.type}</span>
@@ -1179,442 +1230,442 @@
                     </div>
                 </div>
             `;
+    }
+
+    window.closeReadingDetails = function closeReadingDetails() {
+        const modal = document.getElementById('readingDetailsModal');
+        if (!modal) return;
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+
+    // Record Reading Function
+    let isSubmitting = false; // Флаг для предотвращения двойной отправки
+    window.recordReading = async function recordReading(event) {
+        event.preventDefault();
+
+        // Предотвращаем двойную отправку
+        if (isSubmitting) {
+            console.log('Already submitting, ignoring duplicate request');
+            return;
         }
 
-        window.closeReadingDetails = function closeReadingDetails() {
-            const modal = document.getElementById('readingDetailsModal');
-            if (!modal) return;
-            modal.classList.remove('active');
-            document.body.style.overflow = 'auto';
+        isSubmitting = true;
+
+        // Отключаем кнопку отправки
+        const submitButton = event.target.querySelector('button[type="submit"]');
+        let originalText = '';
+        if (submitButton) {
+            submitButton.disabled = true;
+            originalText = submitButton.textContent;
+            submitButton.textContent = 'Сохранение...';
         }
-        
-        // Record Reading Function
-        let isSubmitting = false; // Флаг для предотвращения двойной отправки
-        window.recordReading = async function recordReading(event) {
-            event.preventDefault();
-            
-            // Предотвращаем двойную отправку
-            if (isSubmitting) {
-                console.log('Already submitting, ignoring duplicate request');
-                return;
-            }
-            
-            isSubmitting = true;
-            
-            // Отключаем кнопку отправки
-            const submitButton = event.target.querySelector('button[type="submit"]');
-            let originalText = '';
-            if (submitButton) {
-                submitButton.disabled = true;
-                originalText = submitButton.textContent;
-                submitButton.textContent = 'Сохранение...';
-            }
-            
-            try {
-                const residentId = parseInt(document.getElementById('modalResident').value);
-                let dateStr = document.getElementById('modalDate').value;
-                const comment = document.getElementById('modalComment').value.trim();
-            
-                if (!residentId) {
-                    if (typeof showError === 'function') {
-                        showError('Выберите резидента');
-                    }
-                    isSubmitting = false;
-                    if (submitButton) {
-                        submitButton.disabled = false;
-                        submitButton.textContent = originalText || 'Записать';
-                    }
-                    return;
+
+        try {
+            const residentId = parseInt(document.getElementById('modalResident').value);
+            let dateStr = document.getElementById('modalDate').value;
+            const comment = document.getElementById('modalComment').value.trim();
+
+            if (!residentId) {
+                if (typeof showError === 'function') {
+                    showError('Выберите резидента');
                 }
-                
-                if (!dateStr) {
-                    if (typeof showError === 'function') {
-                        showError('Выберите дату показаний');
-                    }
-                    isSubmitting = false;
-                    if (submitButton) {
-                        submitButton.disabled = false;
-                        submitButton.textContent = originalText || 'Записать';
-                    }
-                    return;
-                }
-                
-                // Ensure date is in YYYY-MM-DD format
-                // If date is in DD.MM.YYYY format, convert it
-                if (dateStr.includes('.')) {
-                    const parts = dateStr.split('.');
-                    if (parts.length === 3) {
-                        dateStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                    }
-                }
-                
-                console.log('Date string:', dateStr);
-
-                let items;
-                try {
-                    items = collectMeterData();
-                } catch (error) {
-                    // Ошибка валидации уже показана в collectMeterData
-                    isSubmitting = false;
-                    if (submitButton) {
-                        submitButton.disabled = false;
-                        submitButton.textContent = originalText || 'Записать';
-                    }
-                    return;
-                }
-                
-                if (items.length === 0) {
-                    if (typeof showWarning === 'function') {
-                        showWarning('Нет данных для сохранения');
-                    }
-                    isSubmitting = false;
-                    if (submitButton) {
-                        submitButton.disabled = false;
-                        submitButton.textContent = originalText || 'Записать';
-                    }
-                    return;
-                }
-
-                const payload = {
-                    resident_id: residentId,
-                    date_str: dateStr,
-                    items: items,
-                    note: comment || null
-                };
-
-                console.log('Saving reading with payload:', payload);
-
-                try {
-                    let url = `${API_BASE}/api/readings`;
-                    console.log('POST to:', url);
-                    
-                    let response;
-                    try {
-                        response = await fetch(url, {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify(payload),
-                            credentials: 'include' // Добавляем credentials для передачи сессии
-                        });
-                    } catch (fetchError) {
-                        console.error('Fetch error:', fetchError);
-                        // Try public endpoint if main fails
-                        url = `${API_BASE}/api/readings/public`;
-                        console.log('Trying public endpoint:', url);
-                        response = await fetch(url, {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify(payload),
-                            credentials: 'include' // Добавляем credentials для передачи сессии
-                        });
-                    }
-
-                    console.log('Response status:', response.status, response.statusText);
-
-                    if (!response.ok) {
-                        if (response.status === 401 || response.status === 403) {
-                            url = `${API_BASE}/api/readings/public`;
-                            console.log('Trying public endpoint:', url);
-                            response = await fetch(url, {
-                                method: 'POST',
-                                headers: {'Content-Type': 'application/json'},
-                                body: JSON.stringify(payload),
-                                credentials: 'include' // Добавляем credentials для передачи сессии
-                            });
-                            console.log('Public response status:', response.status, response.statusText);
-                            if (!response.ok) {
-                                const errorText = await response.text().catch(() => 'Unknown error');
-                                console.error('Public endpoint error:', errorText);
-                                throw new Error(errorText || `HTTP ${response.status}`);
-                            }
-                        } else {
-                            const errorText = await response.text().catch(() => 'Unknown error');
-                            console.error('Endpoint error:', errorText);
-                            throw new Error(errorText || `HTTP ${response.status}`);
-                        }
-                    }
-
-                    const result = await response.json();
-                    console.log('Reading saved successfully:', result);
-                    if (typeof showSuccess === 'function') {
-                        showSuccess('Показания успешно записаны!');
-                    }
-                    
-                    // Update filters to the month of the saved reading
-                    const savedDate = new Date(dateStr);
-                    const savedYear = savedDate.getFullYear();
-                    const savedMonth = savedDate.getMonth() + 1; // getMonth() returns 0-11
-                    
-                    const yearSelect = document.getElementById('filterYear');
-                    const monthSelect = document.getElementById('filterMonth');
-                    
-                    if (yearSelect && savedYear) {
-                        yearSelect.value = savedYear.toString();
-                    }
-                    if (monthSelect && savedMonth) {
-                        monthSelect.value = savedMonth.toString();
-                    }
-                    
-                    closeRecordModal();
-                    await loadReadings();
-                } catch (error) {
-                    console.error('Error recording reading:', error);
-                    if (typeof showError === 'function') {
-                        showError('Ошибка сохранения: ' + error.message);
-                    }
-                }
-            } finally {
-                // Восстанавливаем состояние кнопки и флага
                 isSubmitting = false;
                 if (submitButton) {
                     submitButton.disabled = false;
                     submitButton.textContent = originalText || 'Записать';
                 }
+                return;
             }
-        }
 
-        function collectMeterData() {
-            const rows = document.querySelectorAll('#meterTableBody tr[data-meter-id]');
-            const items = [];
-            
-            for (const row of rows) {
-                const meterId = parseInt(row.dataset.meterId);
-                const isFixed = row.dataset.isFixed === 'true';
-                
-                if (isFixed) {
-                    const checkbox = row.querySelector('.meter-checkbox');
-                    if (checkbox?.checked) {
-                        items.push({
-                            meter_id: meterId,
-                            new_value: 1
-                        });
-                    }
-                } else {
-                    const input = row.querySelector('.meter-input');
-                    const value = input?.value ? parseFloat(input.value) : null;
-                    
-                    if (value !== null) {
-                        // Проверяем значение только при сохранении
-                        const prev = parseFloat(row.dataset.prevValue || '0');
-                        if (value < prev) {
-                            if (typeof showError === 'function') {
-                                const meterType = row.querySelector('.meter-type-pill')?.textContent || 'счётчика';
-                                showError(`Новое значение для ${meterType} (${value.toFixed(3)}) не может быть меньше предыдущего (${prev.toFixed(3)})`);
-                            }
-                            throw new Error(`Value ${value} is less than previous ${prev}`);
-                        }
-                        
-                        items.push({
-                            meter_id: meterId,
-                            new_value: value
-                        });
-                    }
+            if (!dateStr) {
+                if (typeof showError === 'function') {
+                    showError('Выберите дату показаний');
+                }
+                isSubmitting = false;
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalText || 'Записать';
+                }
+                return;
+            }
+
+            // Ensure date is in YYYY-MM-DD format
+            // If date is in DD.MM.YYYY format, convert it
+            if (dateStr.includes('.')) {
+                const parts = dateStr.split('.');
+                if (parts.length === 3) {
+                    dateStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
                 }
             }
-            
-            return items;
+
+            console.log('Date string:', dateStr);
+
+            let items;
+            try {
+                items = collectMeterData();
+            } catch (error) {
+                // Ошибка валидации уже показана в collectMeterData
+                isSubmitting = false;
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalText || 'Записать';
+                }
+                return;
+            }
+
+            if (items.length === 0) {
+                if (typeof showWarning === 'function') {
+                    showWarning('Нет данных для сохранения');
+                }
+                isSubmitting = false;
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalText || 'Записать';
+                }
+                return;
+            }
+
+            const payload = {
+                resident_id: residentId,
+                date_str: dateStr,
+                items: items,
+                note: comment || null
+            };
+
+            console.log('Saving reading with payload:', payload);
+
+            try {
+                let url = `${API_BASE}/api/readings`;
+                console.log('POST to:', url);
+
+                let response;
+                try {
+                    response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                        credentials: 'include' // Добавляем credentials для передачи сессии
+                    });
+                } catch (fetchError) {
+                    console.error('Fetch error:', fetchError);
+                    // Try public endpoint if main fails
+                    url = `${API_BASE}/api/readings/public`;
+                    console.log('Trying public endpoint:', url);
+                    response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                        credentials: 'include' // Добавляем credentials для передачи сессии
+                    });
+                }
+
+                console.log('Response status:', response.status, response.statusText);
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        url = `${API_BASE}/api/readings/public`;
+                        console.log('Trying public endpoint:', url);
+                        response = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload),
+                            credentials: 'include' // Добавляем credentials для передачи сессии
+                        });
+                        console.log('Public response status:', response.status, response.statusText);
+                        if (!response.ok) {
+                            const errorText = await response.text().catch(() => 'Unknown error');
+                            console.error('Public endpoint error:', errorText);
+                            throw new Error(errorText || `HTTP ${response.status}`);
+                        }
+                    } else {
+                        const errorText = await response.text().catch(() => 'Unknown error');
+                        console.error('Endpoint error:', errorText);
+                        throw new Error(errorText || `HTTP ${response.status}`);
+                    }
+                }
+
+                const result = await response.json();
+                console.log('Reading saved successfully:', result);
+                if (typeof showSuccess === 'function') {
+                    showSuccess('Показания успешно записаны!');
+                }
+
+                // Update filters to the month of the saved reading
+                const savedDate = new Date(dateStr);
+                const savedYear = savedDate.getFullYear();
+                const savedMonth = savedDate.getMonth() + 1; // getMonth() returns 0-11
+
+                const yearSelect = document.getElementById('filterYear');
+                const monthSelect = document.getElementById('filterMonth');
+
+                if (yearSelect && savedYear) {
+                    yearSelect.value = savedYear.toString();
+                }
+                if (monthSelect && savedMonth) {
+                    monthSelect.value = savedMonth.toString();
+                }
+
+                closeRecordModal();
+                await loadReadings();
+            } catch (error) {
+                console.error('Error recording reading:', error);
+                if (typeof showError === 'function') {
+                    showError('Ошибка сохранения: ' + error.message);
+                }
+            }
+        } finally {
+            // Восстанавливаем состояние кнопки и флага
+            isSubmitting = false;
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = originalText || 'Записать';
+            }
+        }
+    }
+
+    function collectMeterData() {
+        const rows = document.querySelectorAll('#meterTableBody tr[data-meter-id]');
+        const items = [];
+
+        for (const row of rows) {
+            const meterId = parseInt(row.dataset.meterId);
+            const isFixed = row.dataset.isFixed === 'true';
+
+            if (isFixed) {
+                const checkbox = row.querySelector('.meter-checkbox');
+                if (checkbox?.checked) {
+                    items.push({
+                        meter_id: meterId,
+                        new_value: 1
+                    });
+                }
+            } else {
+                const input = row.querySelector('.meter-input');
+                const value = input?.value ? parseFloat(input.value) : null;
+
+                if (value !== null) {
+                    // Проверяем значение только при сохранении
+                    const prev = parseFloat(row.dataset.prevValue || '0');
+                    if (value < prev) {
+                        if (typeof showError === 'function') {
+                            const meterType = row.querySelector('.meter-type-pill')?.textContent || 'счётчика';
+                            showError(`Новое значение для ${meterType} (${value.toFixed(3)}) не может быть меньше предыдущего (${prev.toFixed(3)})`);
+                        }
+                        throw new Error(`Value ${value} is less than previous ${prev}`);
+                    }
+
+                    items.push({
+                        meter_id: meterId,
+                        new_value: value
+                    });
+                }
+            }
         }
 
-        window.hideMeterDetails = function hideMeterDetails() {
-            const section = document.getElementById('meterDetailsSection');
-            if (section) {
-                section.classList.add('hidden');
-                document.getElementById('meterTableBody').innerHTML = `
+        return items;
+    }
+
+    window.hideMeterDetails = function hideMeterDetails() {
+        const section = document.getElementById('meterDetailsSection');
+        if (section) {
+            section.classList.add('hidden');
+            document.getElementById('meterTableBody').innerHTML = `
                     <tr>
                         <td colspan="7" class="text-muted text-center">Выберите резидента, чтобы увидеть тарифы</td>
                     </tr>`;
-            }
         }
+    }
 
-        document.getElementById('modalResident').addEventListener('change', function() {
-            const residentId = this.value;
-            if (!residentId) {
-                hideMeterDetails();
-                return;
+    document.getElementById('modalResident').addEventListener('change', function () {
+        const residentId = this.value;
+        if (!residentId) {
+            hideMeterDetails();
+            return;
+        }
+        renderMeterDetails(residentId);
+    });
+
+    // Add event listener for date change to reload meter details
+    const modalDateInput = document.getElementById('modalDate');
+    if (modalDateInput) {
+        modalDateInput.addEventListener('change', function () {
+            const residentId = document.getElementById('modalResident')?.value;
+            if (residentId) {
+                console.log('📅 Date changed, reloading meter details for resident:', residentId);
+                renderMeterDetails(residentId);
             }
-            renderMeterDetails(residentId);
         });
+    }
 
-        // Add event listener for date change to reload meter details
-        const modalDateInput = document.getElementById('modalDate');
-        if (modalDateInput) {
-            modalDateInput.addEventListener('change', function() {
-                const residentId = document.getElementById('modalResident')?.value;
-                if (residentId) {
-                    console.log('📅 Date changed, reloading meter details for resident:', residentId);
-                    renderMeterDetails(residentId);
+    window.renderMeterDetails = async function renderMeterDetails(residentId) {
+        const section = document.getElementById('meterDetailsSection');
+        const tbody = document.getElementById('meterTableBody');
+
+        if (!section || !tbody) return;
+
+        if (!residentId) {
+            console.warn('renderMeterDetails called without residentId');
+            return;
+        }
+
+        tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center">Загрузка...</td></tr>';
+        section.classList.remove('hidden');
+
+        try {
+            const dateInput = document.getElementById('modalDate');
+            let dateStr = dateInput?.value || new Date().toISOString().split('T')[0];
+
+            // Если дата в формате DD.MM.YYYY, конвертируем в YYYY-MM-DD
+            if (dateStr.includes('.')) {
+                const parts = dateStr.split('.');
+                if (parts.length === 3) {
+                    dateStr = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
                 }
+            }
+
+            console.log('🔍 renderMeterDetails - dateStr:', dateStr, 'residentId:', residentId);
+
+            let url = `${API_BASE}/api/readings/resident/${residentId}/meters?date=${dateStr}`;
+            const response = await fetch(url, { credentials: 'include' });
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    url = `${API_BASE}/api/readings/resident/${residentId}/meters/public?date=${dateStr}`;
+                    const publicResponse = await fetch(url, { credentials: 'include' });
+                    if (publicResponse.ok) {
+                        const data = await publicResponse.json();
+                        renderMeterTable(data.meters || []);
+                        return;
+                    }
+                }
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            renderMeterTable(data.meters || []);
+        } catch (error) {
+            console.error('Error loading meters:', error);
+            tbody.innerHTML = `<tr><td colspan="7" class="text-danger text-center">Ошибка загрузки: ${error.message}</td></tr>`;
+        }
+    }
+
+    function calculateAmount(consumption, tariffSteps, vatPercent) {
+        if (!tariffSteps || tariffSteps.length === 0) {
+            return 0;
+        }
+
+        let left = consumption;
+        let totalNet = 0;
+
+        // Для CONSTRUCTION тарифов используем первую ступень
+        if (tariffSteps[0] && tariffSteps[0].from_date !== null && tariffSteps[0].from_date !== undefined) {
+            // Date-based tariff (CONSTRUCTION)
+            if (tariffSteps.length > 0) {
+                const price = tariffSteps[0].price;
+                totalNet = left * price;
+            }
+        } else {
+            // Value-based tariff
+            for (const step of tariffSteps) {
+                if (left <= 0) break;
+
+                const fromValue = step.from_value !== null ? step.from_value : 0;
+                const toValue = step.to_value !== null ? step.to_value : null;
+                const price = step.price;
+
+                let chunk = 0;
+                if (toValue === null) {
+                    chunk = left;
+                } else {
+                    const width = toValue - fromValue;
+                    chunk = Math.min(left, width);
+                }
+
+                if (chunk > 0) {
+                    totalNet += chunk * price;
+                    left -= chunk;
+                }
+            }
+        }
+
+        const vat = totalNet * (vatPercent / 100);
+        return totalNet + vat;
+    }
+
+    function renderMeterTable(meters) {
+        const tbody = document.getElementById('meterTableBody');
+        if (!tbody) return;
+
+        if (meters.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center">Для выбранного резидента нет счётчиков</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = meters.map(meter => {
+            // prev_value - это последнее показание ДО начала месяца (или initial_reading)
+            // existing_value - это существующее показание ЗА этот месяц (если есть)
+            // НО: для отображения "Предыдущее" мы должны показывать prev_value
+            // А для поля "Новое / Отметить" НЕ должны заполнять existing_value - поле должно быть пустым
+            // prev_value из backend - это последнее показание ДО начала месяца (или initial_reading)
+            // Если prev_value = 0, это может означать, что нет предыдущих показаний И initial_reading = 0
+            const prev = (meter.prev_value !== null && meter.prev_value !== undefined && !isNaN(meter.prev_value))
+                ? parseFloat(meter.prev_value)
+                : 0;
+            const existing = (meter.existing_value !== null && meter.existing_value !== undefined) ? parseFloat(meter.existing_value) : null;
+            const isFixed = meter.is_fixed;
+
+            // Debug logging
+            console.log('🔍 Meter data:', {
+                meter_id: meter.meter_id,
+                type: meter.display_type,
+                prev_value_backend: meter.prev_value,
+                prev_parsed: prev,
+                existing_value_backend: meter.existing_value,
+                existing_parsed: existing,
+                unit: meter.unit
             });
-        }
+            // Убираем min атрибут, чтобы можно было вводить любое значение
+            // Проверка будет при сохранении
+            const placeholder = isFixed ? '' : `placeholder="≥ ${prev.toFixed(3)}"`;
 
-        window.renderMeterDetails = async function renderMeterDetails(residentId) {
-            const section = document.getElementById('meterDetailsSection');
-            const tbody = document.getElementById('meterTableBody');
-            
-            if (!section || !tbody) return;
-            
-            if (!residentId) {
-                console.warn('renderMeterDetails called without residentId');
-                return;
-            }
-            
-            tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center">Загрузка...</td></tr>';
-                section.classList.remove('hidden');
-
-            try {
-                const dateInput = document.getElementById('modalDate');
-                let dateStr = dateInput?.value || new Date().toISOString().split('T')[0];
-                
-                // Если дата в формате DD.MM.YYYY, конвертируем в YYYY-MM-DD
-                if (dateStr.includes('.')) {
-                    const parts = dateStr.split('.');
-                    if (parts.length === 3) {
-                        dateStr = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-                    }
-                }
-                
-                console.log('🔍 renderMeterDetails - dateStr:', dateStr, 'residentId:', residentId);
-                
-                let url = `${API_BASE}/api/readings/resident/${residentId}/meters?date=${dateStr}`;
-                const response = await fetch(url, { credentials: 'include' });
-                if (!response.ok) {
-                    if (response.status === 401 || response.status === 403) {
-                        url = `${API_BASE}/api/readings/resident/${residentId}/meters/public?date=${dateStr}`;
-                        const publicResponse = await fetch(url, { credentials: 'include' });
-                        if (publicResponse.ok) {
-                            const data = await publicResponse.json();
-                            renderMeterTable(data.meters || []);
-                return;
-                        }
-                    }
-                    throw new Error(`HTTP ${response.status}`);
+            // For fixed services, use checkbox
+            if (isFixed) {
+                const tariffStepsJson = JSON.stringify(meter.tariff_steps || []);
+                const vatPercent = meter.vat_percent || 0;
+                // Для фикс-услуг consumption всегда = 1, если отмечено
+                const consumption = meter.existing ? 1 : 0;
+                // Рассчитываем сумму на основе consumption
+                // Если есть existing показание, используем его сумму, иначе рассчитываем
+                let initialAmount = 0;
+                if (meter.existing && meter.existing_value !== null && meter.existing_value !== undefined) {
+                    // Если есть существующее показание, используем его сумму (будет загружена из backend)
+                    // Но для фикс-услуг нужно рассчитать на основе consumption = 1
+                    initialAmount = calculateAmount(1, meter.tariff_steps || [], vatPercent);
+                } else if (consumption > 0) {
+                    // Если отмечено, но нет existing показания, рассчитываем
+                    initialAmount = calculateAmount(consumption, meter.tariff_steps || [], vatPercent);
+                } else {
+                    // Если не отмечено, сумма = 0.00
+                    initialAmount = 0;
                 }
 
-                const data = await response.json();
-                renderMeterTable(data.meters || []);
-            } catch (error) {
-                console.error('Error loading meters:', error);
-                tbody.innerHTML = `<tr><td colspan="7" class="text-danger text-center">Ошибка загрузки: ${error.message}</td></tr>`;
-            }
-        }
+                // Для "Предыдущее" показываем единицу измерения (для фикс-услуг всегда "0 мес.")
+                const prevDisplay = meter.unit ? `0 ${meter.unit}` : '—';
 
-        function calculateAmount(consumption, tariffSteps, vatPercent) {
-            if (!tariffSteps || tariffSteps.length === 0) {
-                return 0;
-            }
-            
-            let left = consumption;
-            let totalNet = 0;
-            
-            // Для CONSTRUCTION тарифов используем первую ступень
-            if (tariffSteps[0] && tariffSteps[0].from_date !== null && tariffSteps[0].from_date !== undefined) {
-                // Date-based tariff (CONSTRUCTION)
-                if (tariffSteps.length > 0) {
-                    const price = tariffSteps[0].price;
-                    totalNet = left * price;
+                // Для Construction показываем диапазон дат рядом с чекбоксом
+                let dateRangeText = '';
+                if (meter.date_range && meter.date_range.from_date && meter.date_range.to_date) {
+                    const fromDate = new Date(meter.date_range.from_date);
+                    const toDate = new Date(meter.date_range.to_date);
+                    const formatDate = (date) => {
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const year = date.getFullYear();
+                        return `${day}.${month}.${year}`;
+                    };
+                    dateRangeText = ` от ${formatDate(fromDate)} до ${formatDate(toDate)}`;
                 }
-            } else {
-                // Value-based tariff
-                for (const step of tariffSteps) {
-                    if (left <= 0) break;
-                    
-                    const fromValue = step.from_value !== null ? step.from_value : 0;
-                    const toValue = step.to_value !== null ? step.to_value : null;
-                    const price = step.price;
-                    
-                    let chunk = 0;
-                    if (toValue === null) {
-                        chunk = left;
-                    } else {
-                        const width = toValue - fromValue;
-                        chunk = Math.min(left, width);
-                    }
-                    
-                    if (chunk > 0) {
-                        totalNet += chunk * price;
-                        left -= chunk;
-                    }
-                }
-            }
-            
-            const vat = totalNet * (vatPercent / 100);
-            return totalNet + vat;
-        }
 
-        function renderMeterTable(meters) {
-            const tbody = document.getElementById('meterTableBody');
-            if (!tbody) return;
-
-            if (meters.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center">Для выбранного резидента нет счётчиков</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = meters.map(meter => {
-                // prev_value - это последнее показание ДО начала месяца (или initial_reading)
-                // existing_value - это существующее показание ЗА этот месяц (если есть)
-                // НО: для отображения "Предыдущее" мы должны показывать prev_value
-                // А для поля "Новое / Отметить" НЕ должны заполнять existing_value - поле должно быть пустым
-                // prev_value из backend - это последнее показание ДО начала месяца (или initial_reading)
-                // Если prev_value = 0, это может означать, что нет предыдущих показаний И initial_reading = 0
-                const prev = (meter.prev_value !== null && meter.prev_value !== undefined && !isNaN(meter.prev_value)) 
-                    ? parseFloat(meter.prev_value) 
-                    : 0;
-                const existing = (meter.existing_value !== null && meter.existing_value !== undefined) ? parseFloat(meter.existing_value) : null;
-                const isFixed = meter.is_fixed;
-                
-                // Debug logging
-                console.log('🔍 Meter data:', {
-                    meter_id: meter.meter_id,
-                    type: meter.display_type,
-                    prev_value_backend: meter.prev_value,
-                    prev_parsed: prev,
-                    existing_value_backend: meter.existing_value,
-                    existing_parsed: existing,
-                    unit: meter.unit
-                });
-                // Убираем min атрибут, чтобы можно было вводить любое значение
-                // Проверка будет при сохранении
-                const placeholder = isFixed ? '' : `placeholder="≥ ${prev.toFixed(3)}"`;
-                
-                // For fixed services, use checkbox
-                if (isFixed) {
-                    const tariffStepsJson = JSON.stringify(meter.tariff_steps || []);
-                    const vatPercent = meter.vat_percent || 0;
-                    // Для фикс-услуг consumption всегда = 1, если отмечено
-                    const consumption = meter.existing ? 1 : 0;
-                    // Рассчитываем сумму на основе consumption
-                    // Если есть existing показание, используем его сумму, иначе рассчитываем
-                    let initialAmount = 0;
-                    if (meter.existing && meter.existing_value !== null && meter.existing_value !== undefined) {
-                        // Если есть существующее показание, используем его сумму (будет загружена из backend)
-                        // Но для фикс-услуг нужно рассчитать на основе consumption = 1
-                        initialAmount = calculateAmount(1, meter.tariff_steps || [], vatPercent);
-                    } else if (consumption > 0) {
-                        // Если отмечено, но нет existing показания, рассчитываем
-                        initialAmount = calculateAmount(consumption, meter.tariff_steps || [], vatPercent);
-                    } else {
-                        // Если не отмечено, сумма = 0.00
-                        initialAmount = 0;
-                    }
-                    
-                    // Для "Предыдущее" показываем единицу измерения (для фикс-услуг всегда "0 мес.")
-                    const prevDisplay = meter.unit ? `0 ${meter.unit}` : '—';
-                    
-                    // Для Construction показываем диапазон дат рядом с чекбоксом
-                    let dateRangeText = '';
-                    if (meter.date_range && meter.date_range.from_date && meter.date_range.to_date) {
-                        const fromDate = new Date(meter.date_range.from_date);
-                        const toDate = new Date(meter.date_range.to_date);
-                        const formatDate = (date) => {
-                            const day = String(date.getDate()).padStart(2, '0');
-                            const month = String(date.getMonth() + 1).padStart(2, '0');
-                            const year = date.getFullYear();
-                            return `${day}.${month}.${year}`;
-                        };
-                        dateRangeText = ` от ${formatDate(fromDate)} до ${formatDate(toDate)}`;
-                    }
-                    
                 return `
                         <tr data-meter-id="${meter.meter_id}" 
                             data-is-fixed="true"
@@ -1633,33 +1684,33 @@
                             <td><span class="meter-consumption">${consumption.toFixed(3)}</span></td>
                             <td><span class="meter-amount">${initialAmount.toFixed(2)}</span></td>
                             <td>
-                                <button class="btn btn-sm btn-danger" 
-                                        onclick="deleteLastReading(${meter.meter_id}, this)"
+                                <button type="button" class="btn btn-sm btn-danger" 
+                                        onclick="deleteLastReading(${meter.meter_id}, this, event)"
                                         title="Удалить последнее показание">
                                     Удалить
                                 </button>
                             </td>
                         </tr>
                     `;
-                }
+            }
 
-                const tariffStepsJson = JSON.stringify(meter.tariff_steps || []);
-                const vatPercent = meter.vat_percent || 0;
-                
-                // Если есть существующее значение, используем его для поля ввода
-                const inputValue = (existing !== null && existing !== undefined) ? existing.toFixed(3) : '';
-                
-                // Рассчитываем consumption и amount для существующего значения
-                let initialConsumption = 0;
-                let initialAmount = 0;
-                if (existing !== null && existing !== undefined) {
-                    initialConsumption = existing - prev;
-                    if (initialConsumption > 0) {
-                        initialAmount = calculateAmount(initialConsumption, meter.tariff_steps || [], vatPercent);
-                    }
+            const tariffStepsJson = JSON.stringify(meter.tariff_steps || []);
+            const vatPercent = meter.vat_percent || 0;
+
+            // Если есть существующее значение, используем его для поля ввода
+            const inputValue = (existing !== null && existing !== undefined) ? existing.toFixed(3) : '';
+
+            // Рассчитываем consumption и amount для существующего значения
+            let initialConsumption = 0;
+            let initialAmount = 0;
+            if (existing !== null && existing !== undefined) {
+                initialConsumption = existing - prev;
+                if (initialConsumption > 0) {
+                    initialAmount = calculateAmount(initialConsumption, meter.tariff_steps || [], vatPercent);
                 }
-                
-                return `
+            }
+
+            return `
                     <tr data-meter-id="${meter.meter_id}" 
                         data-prev-value="${prev}" 
                         data-tariff-id="${meter.tariff_id}"
@@ -1680,151 +1731,198 @@
                         <td><span class="meter-consumption">${initialConsumption.toFixed(3)}</span></td>
                         <td><span class="meter-amount">${initialAmount.toFixed(2)}</span></td>
                         <td>
-                            <button class="btn btn-sm btn-danger" 
-                                    onclick="deleteLastReading(${meter.meter_id}, this)"
+                            <button type="button" class="btn btn-sm btn-danger" 
+                                    onclick="deleteLastReading(${meter.meter_id}, this, event)"
                                     title="Удалить последнее показание">
                                 Удалить
                             </button>
                         </td>
                     </tr>
                 `;
-            }).join('');
+        }).join('');
+    }
+
+    window.handleMeterInput = async function handleMeterInput(input, meterId) {
+        const row = input.closest('tr');
+        if (!row) return;
+
+        const prev = parseFloat(row.dataset.prevValue || '0');
+        const value = parseFloat(input.value || '0');
+
+        // Убрали проверку при вводе - позволяем вводить любое значение
+        // Проверка будет при сохранении
+
+        const consumption = Math.max(0, value - prev);
+
+        // Calculate amount using tariff steps
+        const tariffSteps = JSON.parse(row.dataset.tariffSteps || '[]');
+        const vatPercent = parseFloat(row.dataset.vatPercent || '0');
+        const amount = calculateAmount(consumption, tariffSteps, vatPercent);
+
+        row.dataset.consumption = consumption.toFixed(3);
+        row.querySelector('.meter-consumption').textContent = consumption.toFixed(3);
+        row.querySelector('.meter-amount').textContent = amount.toFixed(2);
+    }
+
+    window.handleFixedMeterChange = function handleFixedMeterChange(checkbox, meterId) {
+        const row = checkbox.closest('tr');
+        if (!row) return;
+
+        const consumption = checkbox.checked ? 1 : 0;
+        row.querySelector('.meter-consumption').textContent = consumption.toFixed(3);
+
+        // Calculate amount for fixed services
+        const tariffSteps = JSON.parse(row.dataset.tariffSteps || '[]');
+        const vatPercent = parseFloat(row.dataset.vatPercent || '0');
+        const amount = calculateAmount(consumption, tariffSteps, vatPercent);
+        // Всегда показываем сумму, даже если 0.00
+        row.querySelector('.meter-amount').textContent = amount.toFixed(2);
+    }
+
+    window.deleteLastReading = async function deleteLastReading(meterId, button, event) {
+        // КРИТИЧЕСКИ ВАЖНО: Предотвращаем любые действия по умолчанию (submit формы и т.д.)
+        // Это предотвращает случайную отправку формы при клике на кнопку удаления
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
         }
 
-        window.handleMeterInput = async function handleMeterInput(input, meterId) {
-            const row = input.closest('tr');
-            if (!row) return;
-            
-            const prev = parseFloat(row.dataset.prevValue || '0');
-            const value = parseFloat(input.value || '0');
-            
-            // Убрали проверку при вводе - позволяем вводить любое значение
-            // Проверка будет при сохранении
-            
-            const consumption = Math.max(0, value - prev);
-            
-            // Calculate amount using tariff steps
-            const tariffSteps = JSON.parse(row.dataset.tariffSteps || '[]');
-            const vatPercent = parseFloat(row.dataset.vatPercent || '0');
-            const amount = calculateAmount(consumption, tariffSteps, vatPercent);
-            
-            row.dataset.consumption = consumption.toFixed(3);
-            row.querySelector('.meter-consumption').textContent = consumption.toFixed(3);
-            row.querySelector('.meter-amount').textContent = amount.toFixed(2);
+        // Также предотвращаем submit формы программно
+        const form = button.closest('form');
+        if (form) {
+            // Временно отключаем submit формы
+            const originalSubmit = form.onsubmit;
+            form.onsubmit = function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            };
+
+            // Восстанавливаем через небольшую задержку
+            setTimeout(() => {
+                form.onsubmit = originalSubmit;
+            }, 100);
         }
 
-        window.handleFixedMeterChange = function handleFixedMeterChange(checkbox, meterId) {
-            const row = checkbox.closest('tr');
-            if (!row) return;
-            
-            const consumption = checkbox.checked ? 1 : 0;
-            row.querySelector('.meter-consumption').textContent = consumption.toFixed(3);
-            
-            // Calculate amount for fixed services
-            const tariffSteps = JSON.parse(row.dataset.tariffSteps || '[]');
-            const vatPercent = parseFloat(row.dataset.vatPercent || '0');
-            const amount = calculateAmount(consumption, tariffSteps, vatPercent);
-            // Всегда показываем сумму, даже если 0.00
-            row.querySelector('.meter-amount').textContent = amount.toFixed(2);
-        }
-        
-        window.deleteLastReading = async function deleteLastReading(meterId, button) {
-            if (!confirm('Вы уверены, что хотите удалить последнее показание для этого счётчика?')) {
-                return;
+        // Используем модальное окно приложения вместо браузерного confirm
+        // Удаление НЕ происходит до подтверждения в модальном окне
+        if (typeof showConfirm === 'function') {
+            showConfirm(
+                'Вы уверены, что хотите удалить последнее показание для этого счётчика?',
+                async (confirmed) => {
+                    // Удаление происходит ТОЛЬКО если confirmed === true (нажата кнопка OK)
+                    if (confirmed === true) {
+                        await performDeleteLastReading(meterId, button);
+                    }
+                    // Если confirmed === false, ничего не делаем (отмена)
+                },
+                () => {
+                    // Явный обработчик отмены - ничего не делаем
+                    // Это гарантирует, что при нажатии "Отмена" удаление не произойдет
+                }
+            );
+        } else {
+            // Fallback на браузерный confirm, если showConfirm недоступен
+            if (confirm('Вы уверены, что хотите удалить последнее показание для этого счётчика?')) {
+                await performDeleteLastReading(meterId, button);
             }
-            
-            button.disabled = true;
-            button.textContent = 'Удаление...';
-            
-            try {
-                let url = `${API_BASE}/api/readings/meter/${meterId}/last`;
-                let response = await fetch(url, {
-                    method: 'DELETE',
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    if (response.status === 401 || response.status === 403) {
-                        url = `${API_BASE}/api/readings/meter/${meterId}/last/public`;
-                        response = await fetch(url, {
-                            method: 'DELETE',
-                            credentials: 'include'
-                        });
-                        if (!response.ok) {
-                            throw new Error(`HTTP ${response.status}`);
-                        }
-                    } else {
+        }
+    }
+
+    async function performDeleteLastReading(meterId, button) {
+        button.disabled = true;
+        const originalText = button.textContent;
+        button.textContent = 'Удаление...';
+
+        try {
+            let url = `${API_BASE}/api/readings/meter/${meterId}/last`;
+            let response = await fetch(url, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    url = `${API_BASE}/api/readings/meter/${meterId}/last/public`;
+                    response = await fetch(url, {
+                        method: 'DELETE',
+                        credentials: 'include'
+                    });
+                    if (!response.ok) {
                         throw new Error(`HTTP ${response.status}`);
                     }
-                }
-                
-                const data = await response.json();
-                
-                if (typeof showSuccess === 'function') {
-                    showSuccess('Последнее показание успешно удалено');
-                }
-                
-                // Перезагружаем данные счётчика
-                const residentId = document.getElementById('modalResident')?.value;
-                if (residentId) {
-                    await renderMeterDetails(residentId);
-                }
-                
-                // Перезагружаем список показаний
-                await loadReadings();
-            } catch (error) {
-                console.error('Error deleting last reading:', error);
-                if (typeof showError === 'function') {
-                    showError('Ошибка удаления: ' + error.message);
-                }
-            } finally {
-                button.disabled = false;
-                button.textContent = 'Удалить';
-            }
-        }
-
-        // Listen for SPA content loaded
-        function initReadingsPage() {
-            console.log('=== Initializing readings page ===');
-            setTimeout(() => {
-                initCustomReadingPaginationDropdown();
-                if (typeof window.loadReadings === 'function') {
-                    console.log('Calling loadReadings');
-                    window.loadReadings();
                 } else {
-                    console.error('loadReadings is not defined!');
+                    throw new Error(`HTTP ${response.status}`);
                 }
-            }, 150);
-        }
-        
-        // Удаляем старый обработчик, если он существует
-        if (window._readingsContentLoadedHandler) {
-            window.removeEventListener('spa:contentLoaded', window._readingsContentLoadedHandler);
-        }
-        
-        window._readingsContentLoadedHandler = function(e) {
-            console.log('=== spa:contentLoaded - readings page ===');
-            console.log('Event detail:', e.detail);
-            const route = e.detail?.route || window.location.hash.split('?')[0].slice(1);
-            console.log('Current route:', route);
-            if (!route || route === '/readings' || route.startsWith('/readings')) {
-                console.log('Loading readings from spa:contentLoaded');
-                initReadingsPage();
             }
-        };
-        
-        window.addEventListener('spa:contentLoaded', window._readingsContentLoadedHandler);
-        
-        // Also try to load immediately if page is already loaded
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() {
-                console.log('DOMContentLoaded - calling initReadingsPage');
-                initReadingsPage();
-            });
-        } else {
-            // Page already loaded, call immediately
-            console.log('Page already loaded, calling initReadingsPage');
+
+            const data = await response.json();
+
+            if (typeof showSuccess === 'function') {
+                showSuccess('Последнее показание успешно удалено');
+            }
+
+            // Перезагружаем данные счётчика
+            const residentId = document.getElementById('modalResident')?.value;
+            if (residentId) {
+                await renderMeterDetails(residentId);
+            }
+
+            // Перезагружаем список показаний
+            await loadReadings();
+        } catch (error) {
+            console.error('Error deleting last reading:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка удаления: ' + error.message);
+            }
+        } finally {
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+    }
+
+    // Listen for SPA content loaded
+    function initReadingsPage() {
+        console.log('=== Initializing readings page ===');
+        setTimeout(() => {
+            initCustomReadingPaginationDropdown();
+            if (typeof window.loadReadings === 'function') {
+                console.log('Calling loadReadings');
+                window.loadReadings();
+            } else {
+                console.error('loadReadings is not defined!');
+            }
+        }, 150);
+    }
+
+    // Удаляем старый обработчик, если он существует
+    if (window._readingsContentLoadedHandler) {
+        window.removeEventListener('spa:contentLoaded', window._readingsContentLoadedHandler);
+    }
+
+    window._readingsContentLoadedHandler = function (e) {
+        console.log('=== spa:contentLoaded - readings page ===');
+        console.log('Event detail:', e.detail);
+        const route = e.detail?.route || window.location.hash.split('?')[0].slice(1);
+        console.log('Current route:', route);
+        if (!route || route === '/readings' || route.startsWith('/readings')) {
+            console.log('Loading readings from spa:contentLoaded');
             initReadingsPage();
         }
-</script>
+    };
 
+    window.addEventListener('spa:contentLoaded', window._readingsContentLoadedHandler);
+
+    // Also try to load immediately if page is already loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('DOMContentLoaded - calling initReadingsPage');
+            initReadingsPage();
+        });
+    } else {
+        // Page already loaded, call immediately
+        console.log('Page already loaded, calling initReadingsPage');
+        initReadingsPage();
+    }
+</script>

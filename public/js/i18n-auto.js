@@ -204,13 +204,21 @@
         
         while (node = walker.nextNode()) {
             const text = node.nodeValue.trim();
-            if (text && textMapping[text]) {
-                textNodes.push({
-                    node: node,
-                    text: text,
-                    key: textMapping[text]
-                });
+            if (!text || !textMapping[text]) continue;
+
+            const parentEl = node.parentElement;
+            // ВАЖНО: не трогаем заголовок в #page-title-container,
+            // им управляет SPA Router (spa-router.js). Иначе h1
+            // будет всегда переводиться как "Панель управления".
+            if (parentEl && parentEl.closest('#page-title-container')) {
+                continue;
             }
+
+            textNodes.push({
+                node: node,
+                text: text,
+                key: textMapping[text]
+            });
         }
         
         // Apply data-i18n to parent elements

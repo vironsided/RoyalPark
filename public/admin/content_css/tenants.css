@@ -1,16 +1,16 @@
         .content-wrapper {
             padding: 0 32px 32px 32px;
         }
-        
+
         .filters-container {
             background: rgba(255, 255, 255, 0.9);
             border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 15px;
             padding: 25px;
             margin-bottom: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
-        
+
         /* Темный фон для filters-container в темном режиме */
         [data-theme="dark"] .filters-container,
         body[data-theme="dark"] .filters-container,
@@ -23,26 +23,26 @@
             border: none !important;
             box-shadow: none !important;
         }
-        
+
         .filter-row {
             display: flex;
             gap: 15px;
             align-items: end;
         }
-        
+
         .filter-group {
             flex: 1;
             display: flex;
             flex-direction: column;
         }
-        
+
         .filter-group label {
             font-weight: 600;
             margin-bottom: 8px;
             color: #495057;
             font-size: 0.9rem;
         }
-        
+
         .filter-group input,
         .filter-group select {
             padding: 10px 15px;
@@ -53,49 +53,49 @@
             font-size: 0.95rem;
             transition: all 0.3s;
         }
-        
+
         .filter-group input:focus,
         .filter-group select:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-        
+
         .filter-actions {
             display: flex;
             gap: 10px;
             align-items: flex-end;
         }
-        
+
         /* Темные стили для фильтров в темном режиме */
         [data-theme="dark"] .filter-group label,
         body[data-theme="dark"] .filter-group label,
         html[data-theme="dark"] .filter-group label {
             color: rgba(255, 255, 255, 0.8) !important;
         }
-        
-[data-theme="dark"] .filter-group input,
-[data-theme="dark"] .filter-group select,
-body[data-theme="dark"] .filter-group input,
-body[data-theme="dark"] .filter-group select,
-html[data-theme="dark"] .filter-group input,
-html[data-theme="dark"] .filter-group select {
+
+        [data-theme="dark"] .filter-group input,
+        [data-theme="dark"] .filter-group select,
+        body[data-theme="dark"] .filter-group input,
+        body[data-theme="dark"] .filter-group select,
+        html[data-theme="dark"] .filter-group input,
+        html[data-theme="dark"] .filter-group select {
             background: rgba(255, 255, 255, 0.05) !important;
             color: #fefefe !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
         }
-        
-[data-theme="dark"] .filter-group input:focus,
-[data-theme="dark"] .filter-group select:focus,
-body[data-theme="dark"] .filter-group input:focus,
-body[data-theme="dark"] .filter-group select:focus,
-html[data-theme="dark"] .filter-group input:focus,
-html[data-theme="dark"] .filter-group select:focus {
+
+        [data-theme="dark"] .filter-group input:focus,
+        [data-theme="dark"] .filter-group select:focus,
+        body[data-theme="dark"] .filter-group input:focus,
+        body[data-theme="dark"] .filter-group select:focus,
+        html[data-theme="dark"] .filter-group input:focus,
+        html[data-theme="dark"] .filter-group select:focus {
             border-color: #667eea !important;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
             background: rgba(255, 255, 255, 0.08) !important;
         }
-        
+
         /* Modal Styles */
         .modal-overlay {
             display: none;
@@ -109,11 +109,11 @@ html[data-theme="dark"] .filter-group select:focus {
             align-items: center;
             justify-content: center;
         }
-        
+
         .modal-overlay.active {
             display: flex;
         }
-        
+
         .modal-content {
             background: linear-gradient(135deg, #1f2432 0%, #181c27 100%);
             color: #f6f7ff;
@@ -130,39 +130,40 @@ html[data-theme="dark"] .filter-group select:focus {
             scrollbar-width: thin;
             scrollbar-color: rgba(110, 118, 155, 0.6) rgba(17, 20, 28, 0.9);
         }
-        
+
         .modal-content::-webkit-scrollbar {
             width: 10px;
         }
-        
+
         .modal-content::-webkit-scrollbar-track {
             background: rgba(17, 20, 28, 0.9);
             border-radius: 999px;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        
+
         .modal-content::-webkit-scrollbar-thumb {
             background: linear-gradient(180deg, rgba(93, 103, 160, 0.9), rgba(59, 66, 108, 0.95));
             border-radius: 999px;
             border: 2px solid rgba(17, 20, 28, 0.9);
             box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.35);
         }
-        
+
         .modal-content::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(180deg, rgba(120, 132, 210, 0.95), rgba(76, 84, 140, 0.95));
         }
-        
+
         @keyframes modalSlideIn {
             from {
                 opacity: 0;
                 transform: translateY(-50px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
-        
+
         .modal-header {
             display: flex;
             justify-content: space-between;
@@ -171,13 +172,13 @@ html[data-theme="dark"] .filter-group select:focus {
             padding-bottom: 15px;
             border-bottom: 2px solid rgba(255, 255, 255, 0.08);
         }
-        
+
         .modal-header h2 {
             margin: 0;
             font-size: 1.75rem;
             color: #f5f6ff;
         }
-        
+
         .modal-close {
             background: none;
             border: none;
@@ -186,34 +187,34 @@ html[data-theme="dark"] .filter-group select:focus {
             color: #9ea4c0;
             transition: color 0.3s;
         }
-        
+
         .modal-close:hover {
             color: #ffffff;
         }
-        
+
         .form-section {
             margin-bottom: 30px;
         }
-        
+
         .form-section h4 {
             font-size: 1.1rem;
             margin-bottom: 15px;
             color: #9bb0ff;
             font-weight: 600;
         }
-        
+
         .form-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin-bottom: 15px;
         }
-        
+
         .form-group {
             display: flex;
             flex-direction: column;
         }
-        
+
         .form-group label {
             display: block;
             font-weight: 600;
@@ -221,7 +222,7 @@ html[data-theme="dark"] .filter-group select:focus {
             color: #d2d7ff;
             font-size: 0.9rem;
         }
-        
+
         .form-group input,
         .form-group select,
         .form-group textarea {
@@ -237,7 +238,7 @@ html[data-theme="dark"] .filter-group select:focus {
             -webkit-appearance: none;
             -moz-appearance: none;
         }
-        
+
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
@@ -314,7 +315,7 @@ html[data-theme="dark"] .filter-group select:focus {
             background-color: #667eea !important;
             color: #ffffff !important;
         }
-        
+
         .residents-section {
             background: rgba(255, 255, 255, 0.03);
             border-radius: 16px;
@@ -323,27 +324,27 @@ html[data-theme="dark"] .filter-group select:focus {
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.15);
         }
-        
+
         .residents-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
         }
-        
+
         .residents-filter-group {
             display: flex;
             gap: 10px;
             align-items: center;
         }
-        
+
         .residents-filter-group label {
             font-weight: 600;
             margin: 0;
             white-space: nowrap;
             color: #d2d7ff;
         }
-        
+
         .residents-table {
             width: 100%;
             background: rgba(255, 255, 255, 0.05);
@@ -352,12 +353,12 @@ html[data-theme="dark"] .filter-group select:focus {
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        
+
         .residents-table table {
             width: 100%;
             border-collapse: collapse;
         }
-        
+
         .residents-table th,
         .residents-table td {
             padding: 12px 15px;
@@ -366,7 +367,7 @@ html[data-theme="dark"] .filter-group select:focus {
             font-size: 0.9rem;
             color: #f6f7ff;
         }
-        
+
         .residents-table th {
             background: rgba(255, 255, 255, 0.05);
             font-weight: 600;
@@ -375,23 +376,23 @@ html[data-theme="dark"] .filter-group select:focus {
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
+
         .residents-table tbody tr {
             transition: background 0.2s;
         }
-        
+
         .residents-table tbody tr:hover {
             background: rgba(255, 255, 255, 0.05);
         }
-        
+
         .residents-table tbody tr:last-child td {
             border-bottom: none;
         }
-        
+
         .residents-table tbody tr.selected {
             background: rgba(102, 126, 234, 0.2);
         }
-        
+
         .residents-table tbody tr.selected:hover {
             background: rgba(102, 126, 234, 0.25);
         }
@@ -517,7 +518,7 @@ html[data-theme="dark"] .filter-group select:focus {
             background: rgba(255, 255, 255, 0.04);
             color: rgba(255, 255, 255, 0.85);
         }
-        
+
         /* QR Button in tenant actions (identical to users.css) */
         .tenant-actions .btn-user-action {
             padding: 0.5rem 1rem;
@@ -529,13 +530,13 @@ html[data-theme="dark"] .filter-group select:focus {
             border: none;
             white-space: nowrap;
         }
-        
+
         .tenant-actions .btn-qr-user {
             background: transparent;
             border: 1px solid #667eea;
             color: #667eea;
         }
-        
+
         .tenant-actions .btn-qr-user:hover {
             background: #667eea;
             color: white;
@@ -560,7 +561,7 @@ html[data-theme="dark"] .filter-group select:focus {
             transform: translateY(-2px);
             box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
         }
-        
+
         /* QR Button Styles (identical to users.css) */
         .btn-user-action {
             padding: 0.5rem 1rem;
@@ -572,18 +573,18 @@ html[data-theme="dark"] .filter-group select:focus {
             border: none;
             white-space: nowrap;
         }
-        
+
         .btn-qr-user {
             background: transparent;
             border: 1px solid #667eea;
             color: #667eea;
         }
-        
+
         .btn-qr-user:hover {
             background: #667eea;
             color: white;
         }
-        
+
         .selected-info {
             margin-top: 15px;
             padding: 12px 15px;
@@ -595,62 +596,64 @@ html[data-theme="dark"] .filter-group select:focus {
             animation: slideIn 0.3s ease-out;
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
-        
+
         .selected-info i {
             margin-right: 8px;
             font-size: 1.1rem;
         }
-        
-.resident-checkbox {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-}
 
-.resident-checkbox span {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px 18px;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #7b8cff, #b77bff);
-    color: #fff;
-    font-weight: 600;
-    font-size: 0.85rem;
-    letter-spacing: 0.02em;
-    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-}
-.resident-checkbox input {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
+        .resident-checkbox {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
 
-.resident-checkbox input:checked + span {
-    background: linear-gradient(135deg, #38ef7d, #11998e);
-    box-shadow: 0 8px 20px rgba(56, 239, 125, 0.3);
-    color: #0d1f0d;
-    font-weight: 700;
-}
+        .resident-checkbox span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 18px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #7b8cff, #b77bff);
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 0.02em;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+        }
 
-.resident-checkbox span:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 18px rgba(123, 140, 255, 0.25);
-}
-        
+        .resident-checkbox input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .resident-checkbox input:checked+span {
+            background: linear-gradient(135deg, #38ef7d, #11998e);
+            box-shadow: 0 8px 20px rgba(56, 239, 125, 0.3);
+            color: #0d1f0d;
+            font-weight: 700;
+        }
+
+        .resident-checkbox span:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(123, 140, 255, 0.25);
+        }
+
         @keyframes slideIn {
             from {
                 opacity: 0;
                 transform: translateY(-10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
-        
+
         .modal-actions {
             display: flex;
             gap: 10px;
@@ -813,50 +816,50 @@ html[data-theme="dark"] .filter-group select:focus {
             color: #ffffff !important;
             font-weight: 600;
         }
-        
+
         /* Light theme pagination */
         body:not([data-theme="dark"]) .table-pagination {
             background: rgba(255, 255, 255, 0.9) !important;
         }
-        
+
         body:not([data-theme="dark"]) .btn-pagination {
             background: rgba(0, 0, 0, 0.05) !important;
             border: 1px solid rgba(0, 0, 0, 0.1) !important;
             color: #495057 !important;
         }
-        
+
         body:not([data-theme="dark"]) .btn-pagination:hover:not(:disabled) {
             background: rgba(0, 0, 0, 0.1) !important;
             border-color: rgba(0, 0, 0, 0.2) !important;
             color: #212529 !important;
         }
-        
+
         body:not([data-theme="dark"]) .pagination-info,
         body:not([data-theme="dark"]) .pagination-per-page {
             color: #495057 !important;
         }
-        
+
         body:not([data-theme="dark"]) .custom-pag-select .select-btn {
             background: rgba(0, 0, 0, 0.05) !important;
             border: 1px solid rgba(0, 0, 0, 0.1) !important;
             color: #495057 !important;
         }
-        
+
         body:not([data-theme="dark"]) .custom-pag-select .select-options {
             background: #ffffff !important;
             border: 1px solid rgba(0, 0, 0, 0.1) !important;
         }
-        
+
         body:not([data-theme="dark"]) .custom-pag-select .select-option {
             background: #ffffff !important;
             color: #495057 !important;
         }
-        
+
         body:not([data-theme="dark"]) .custom-pag-select .select-option:hover {
             background: rgba(0, 0, 0, 0.05) !important;
             color: #212529 !important;
         }
-        
+
         /* Dark theme pagination - same as payments */
         [data-theme="dark"] .table-pagination,
         body[data-theme="dark"] .table-pagination,
@@ -867,7 +870,7 @@ html[data-theme="dark"] .filter-group select:focus {
             background: rgba(255, 255, 255, 0.05) !important;
             border-top: none !important;
         }
-        
+
         [data-theme="dark"] .btn-pagination,
         body[data-theme="dark"] .btn-pagination,
         html[data-theme="dark"] .btn-pagination {
@@ -875,7 +878,7 @@ html[data-theme="dark"] .filter-group select:focus {
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
             color: rgba(255, 255, 255, 0.7) !important;
         }
-        
+
         [data-theme="dark"] .btn-pagination:hover:not(:disabled),
         body[data-theme="dark"] .btn-pagination:hover:not(:disabled),
         html[data-theme="dark"] .btn-pagination:hover:not(:disabled) {
@@ -883,7 +886,7 @@ html[data-theme="dark"] .filter-group select:focus {
             border-color: rgba(255, 255, 255, 0.2) !important;
             color: #ffffff !important;
         }
-        
+
         [data-theme="dark"] .btn-pagination.active,
         body[data-theme="dark"] .btn-pagination.active,
         html[data-theme="dark"] .btn-pagination.active {
@@ -893,7 +896,7 @@ html[data-theme="dark"] .filter-group select:focus {
             font-weight: 600 !important;
             box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
         }
-        
+
         [data-theme="dark"] .pagination-info,
         [data-theme="dark"] .pagination-per-page,
         body[data-theme="dark"] .pagination-info,
@@ -902,7 +905,7 @@ html[data-theme="dark"] .filter-group select:focus {
         html[data-theme="dark"] .pagination-per-page {
             color: rgba(255, 255, 255, 0.7) !important;
         }
-        
+
         [data-theme="dark"] .custom-pag-select .select-btn,
         body[data-theme="dark"] .custom-pag-select .select-btn,
         html[data-theme="dark"] .custom-pag-select .select-btn {
@@ -910,14 +913,14 @@ html[data-theme="dark"] .filter-group select:focus {
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
             color: rgba(255, 255, 255, 0.9) !important;
         }
-        
+
         [data-theme="dark"] .custom-pag-select .select-btn:hover,
         body[data-theme="dark"] .custom-pag-select .select-btn:hover,
         html[data-theme="dark"] .custom-pag-select .select-btn:hover {
             background: rgba(255, 255, 255, 0.08) !important;
             border-color: rgba(255, 255, 255, 0.2) !important;
         }
-        
+
         [data-theme="dark"] .custom-pag-select .select-options,
         body[data-theme="dark"] .custom-pag-select .select-options,
         html[data-theme="dark"] .custom-pag-select .select-options {
@@ -925,21 +928,21 @@ html[data-theme="dark"] .filter-group select:focus {
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
         }
-        
+
         [data-theme="dark"] .custom-pag-select .select-option,
         body[data-theme="dark"] .custom-pag-select .select-option,
         html[data-theme="dark"] .custom-pag-select .select-option {
             background: #1f2432 !important;
             color: #f6f7ff !important;
         }
-        
+
         [data-theme="dark"] .custom-pag-select .select-option:hover,
         body[data-theme="dark"] .custom-pag-select .select-option:hover,
         html[data-theme="dark"] .custom-pag-select .select-option:hover {
             background: #3b4261 !important;
             color: #ffffff !important;
         }
-        
+
         [data-theme="dark"] .custom-pag-select .select-option.selected,
         body[data-theme="dark"] .custom-pag-select .select-option.selected,
         html[data-theme="dark"] .custom-pag-select .select-option.selected {
@@ -947,138 +950,138 @@ html[data-theme="dark"] .filter-group select:focus {
             color: #ffffff !important;
             font-weight: 600 !important;
         }
-        
+
         /* Light theme (default) - ensure text is visible */
         .content-wrapper h2 {
             color: #1a1d2e;
         }
-        
+
         /* Стили для светлой темы */
         body:not([data-theme="dark"]) .filters-container {
             background: rgba(255, 255, 255, 0.9);
             border: 1px solid rgba(0, 0, 0, 0.1);
         }
-        
+
         body:not([data-theme="dark"]) .filter-group label {
             color: #495057;
         }
-        
+
         body:not([data-theme="dark"]) .filter-group input {
             background: #ffffff;
             color: #212529;
             border: 1px solid #dee2e6;
         }
-        
+
         .tenants-table table {
             background: rgba(255, 255, 255, 0.9);
         }
-        
+
         .tenants-table thead th {
             color: #495057;
             background: rgba(102, 126, 234, 0.05);
             border-bottom: 2px solid rgba(0, 0, 0, 0.1);
         }
-        
+
         .tenants-table tbody td {
             color: #212529;
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
-        
+
         .tenants-table tbody tr:hover {
             background: rgba(102, 126, 234, 0.05);
         }
-        
+
         .modal-content {
             background: #ffffff;
             color: #212529;
         }
-        
+
         .modal-header h2 {
             color: #1a1d2e;
         }
-        
+
         .form-row label {
             color: #495057;
         }
-        
+
         .form-row input,
         .form-row select {
             background: #ffffff;
             color: #212529;
             border: 1px solid #dee2e6;
         }
-        
+
         /* Dark theme support */
         [data-theme="dark"] .content-wrapper h2 {
             color: #ffffff;
         }
-        
+
         [data-theme="dark"] .filters-container {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        
+
         [data-theme="dark"] .filter-group label {
             color: rgba(255, 255, 255, 0.8);
         }
-        
+
         [data-theme="dark"] .filter-group input {
             background: rgba(255, 255, 255, 0.1);
             color: #ffffff;
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
+
         [data-theme="dark"] .tenants-table table {
             background: rgba(255, 255, 255, 0.02);
         }
-        
+
         [data-theme="dark"] .tenants-table thead th {
             color: rgba(255, 255, 255, 0.8);
             background: rgba(102, 126, 234, 0.1);
             border-bottom: 2px solid rgba(255, 255, 255, 0.1);
         }
-        
+
         [data-theme="dark"] .tenants-table tbody td {
             color: #ffffff;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
-        
+
         [data-theme="dark"] .tenants-table tbody tr:hover {
             background: rgba(102, 126, 234, 0.1);
         }
-        
+
         [data-theme="dark"] .modal-content {
             background: #1e2128;
             color: #ffffff;
         }
-        
+
         [data-theme="dark"] .modal-header h2 {
             color: #ffffff;
         }
-        
+
         [data-theme="dark"] .modal-header {
             border-bottom: 2px solid rgba(255, 255, 255, 0.1);
         }
-        
+
         [data-theme="dark"] .form-row label {
             color: rgba(255, 255, 255, 0.8);
         }
-        
+
         [data-theme="dark"] .form-row input,
         [data-theme="dark"] .form-row select {
             background: rgba(255, 255, 255, 0.1);
             color: #ffffff;
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
+
         [data-theme="dark"] .modal-actions {
             border-top: 2px solid rgba(255, 255, 255, 0.1);
         }
-        
+
         [data-theme="dark"] .form-group label {
             color: rgba(255, 255, 255, 0.8);
         }
-        
+
         [data-theme="dark"] .form-group input,
         [data-theme="dark"] .form-group select,
         [data-theme="dark"] .form-group textarea {

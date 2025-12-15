@@ -368,7 +368,7 @@
 
 /* Notifications */
 [data-theme="dark"] .notification-badge {
-    background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+    background: #dc3545 !important;
 }
 
 /* Footer */
@@ -383,14 +383,26 @@
     background: transparent!important;
 }
 
+/* Global horizontal pagination layout (admin tables) */
+[data-theme="dark"] #spa-content .table-pagination .pagination-controls,
+[data-theme="dark"] #spa-content .table-pagination .pagination-pages,
+[data-theme="dark"] .table-pagination .pagination-controls,
+[data-theme="dark"] .table-pagination .pagination-pages {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+}
 
+[data-theme="dark"] .table-pagination .btn-pagination {
+    white-space: nowrap;
+}
 
-
-
-
-
-
-
-
-
+/* Open per-page dropdown upwards in tables (so it не уходит вниз за пределы) */
+[data-theme="dark"] .table-pagination .custom-pag-select .select-options {
+    top: auto !important;
+    bottom: calc(100% + 8px) !important;
+}
 

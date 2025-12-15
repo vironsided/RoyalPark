@@ -2107,6 +2107,7 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
     background: #2d3139 !important;
     color: #e4e6eb !important;
     border-color: #3a3f4a !important;
+    border-radius: 8px;
 }
 
 [data-theme="dark"] #spa-content .content-wrapper .form-control::placeholder,
@@ -2511,6 +2512,7 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
     background-color: transparent !important;
 }
 
+
 /* Override any remaining white backgrounds */
 [data-theme="dark"] #spa-content .card .table-hover tbody tr:hover,
 [data-theme="dark"] .dashboard-content .card .table-hover tbody tr:hover,
@@ -2649,6 +2651,47 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
 }
 
 /* Account Settings Modal */
+
+@keyframes accountOverlayFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes accountModalSlideFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(40px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes accountOverlayFadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes accountModalSlideFadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(40px) scale(0.95);
+    }
+}
+
 .account-modal-overlay {
     position: fixed;
     top: 0;
@@ -2662,12 +2705,17 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
     align-items: center;
     justify-content: center;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.1s ease;
 }
 
 .account-modal-overlay.show {
     display: flex;
     opacity: 1;
+    animation: accountOverlayFadeIn 0.1s ease-out;
+}
+
+.account-modal-overlay.hiding {
+    animation: accountOverlayFadeOut 0.1s ease-out forwards;
 }
 
 .account-modal {
@@ -2687,6 +2735,11 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
 .account-modal-overlay.show .account-modal {
     transform: scale(1);
     box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    animation: accountModalSlideFadeIn 0.5s ease-out;
+}
+
+.account-modal-overlay.hiding .account-modal {
+    animation: accountModalSlideFadeOut 0.5s ease-out forwards;
 }
 
 .account-modal-header {
@@ -3090,4 +3143,29 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
    - public/admin/content_css/invoice.css
    - public/admin/content_css/payment.css
 */
+
+/* === Notifications Modal Scrollbar (dark, inside body only) === */
+#notificationsModal .account-modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #3a3f4a #1f2432;
+}
+
+#notificationsModal .account-modal-body::-webkit-scrollbar {
+    width: 10px;
+}
+
+#notificationsModal .account-modal-body::-webkit-scrollbar-track {
+    background: #1f2432;
+}
+
+#notificationsModal .account-modal-body::-webkit-scrollbar-thumb {
+    background: #3a3f4a;
+    border-radius: 10px;
+}
+
+#notificationsModal .account-modal-body::-webkit-scrollbar-thumb:hover {
+    background: #4b5161;
+}
 

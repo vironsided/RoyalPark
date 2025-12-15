@@ -302,6 +302,20 @@
         color: #fefefe;
     }
 
+    /* Скрываем встроенную иконку календаря браузера (левая иконка) */
+    .date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+        display: none;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
+    .date-input-wrapper input[type="date"]::-webkit-inner-spin-button,
+    .date-input-wrapper input[type="date"]::-webkit-clear-button {
+        display: none;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
     .date-input-wrapper .btn-calendar {
         position: absolute;
         right: 0;
@@ -355,6 +369,7 @@
             opacity: 0;
             transform: scale(0.9) translateY(-20px);
         }
+
         to {
             opacity: 1;
             transform: scale(1) translateY(0);

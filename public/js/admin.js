@@ -119,7 +119,12 @@ function initNavigation() {
 
 // Load content based on navigation
 function loadContent(section) {
-    console.log('Loading section:', section);
+    // Полностью отключаем legacy-обновление заголовков.
+    // Сейчас всю навигацию и заголовки контролирует SPA Router (spa-router.js),
+    // поэтому эта функция должна НИЧЕГО не менять, иначе заголовок может
+    // мигать "Панель управления" при переходах между страницами.
+    console.log('Sidebar Toggle Script: loadContent() is legacy and is now a no-op in SPA mode.', section);
+    return;
     
     // Update page title
     const pageTitle = document.querySelector('.page-title h1');
@@ -312,13 +317,7 @@ async function loadDashboardData() {
         // const data = await response.json();
         
         // For now, using placeholder data
-        console.log('Dashboard data loaded (placeholder)');
-        const data = {
-            totalUsers: 1245,
-            totalBuildings: 48,
-            monthlyPayments: 2400000,
-            activeRequests: 23
-        };
+        // console.log('Dashboard data loaded (placeholder)');
         
         // Update stats with real data when backend is ready
         updateStats({
@@ -329,7 +328,7 @@ async function loadDashboardData() {
         });
 
     } catch (error) {
-        console.error('Error loading dashboard data:', error);
+        //console.error('Error loading dashboard data:', error);
     }
 }
 

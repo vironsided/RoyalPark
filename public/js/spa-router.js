@@ -116,13 +116,13 @@ class SPARouter {
                 section: 'Финансы'
             },
             '/appeals': {
-                title: 'Обращения',
-                breadcrumb: ['Финансы', 'Обращения'],
+                title: 'Обращения 11',
+                breadcrumb: ['Финансы', 'Обращения 11'],
                 section: 'Финансы'
             },
             '/appeals2': {
-                title: 'Обращения 2',
-                breadcrumb: ['Финансы', 'Обращения 2'],
+                title: 'Обращения',
+                breadcrumb: ['Финансы', 'Обращения'],
                 section: 'Финансы'
             },
             '/invoice-view': {
@@ -191,8 +191,13 @@ class SPARouter {
         
         // Обрабатываем кнопки "назад" и "вперед"
         window.addEventListener('popstate', (e) => {
+            const route = this.getRouteFromHash();
+            const normalizedRoute = this.normalizeRoute(route);
+            this.updateActiveMenuItem(normalizedRoute);
             if (e.state && e.state.route) {
                 this.loadContent(e.state.route, false);
+            } else {
+                this.loadContent(normalizedRoute, false);
             }
         });
         
@@ -208,6 +213,8 @@ class SPARouter {
             
             const route = this.getRouteFromHash();
             const normalizedRoute = this.normalizeRoute(route);
+            // Обновляем активный пункт меню
+            this.updateActiveMenuItem(normalizedRoute);
             // Проверяем, что это не тот же роут, чтобы избежать двойной загрузки
             if (normalizedRoute !== this.currentRoute) {
                 this.loadContent(normalizedRoute, false);
@@ -216,6 +223,9 @@ class SPARouter {
         
         // Загружаем начальную страницу
         const initialRoute = this.getRouteFromHash();
+        const normalizedInitialRoute = this.normalizeRoute(initialRoute || '/dashboard');
+        // Обновляем активный пункт меню при инициализации
+        this.updateActiveMenuItem(normalizedInitialRoute);
         this.navigate(initialRoute || '/dashboard');
     }
     
@@ -269,6 +279,10 @@ class SPARouter {
         
         const normalizedRoute = this.normalizeRoute(route);
         
+        // Обновляем активный пункт меню всегда (даже если роут не изменился)
+        // Это важно при обновлении страницы или переходе по прямой ссылке
+        this.updateActiveMenuItem(route);
+        
         // Проверяем, не пытаемся ли загрузить тот же роут
         if (normalizedRoute === this.currentRoute) {
             return;
@@ -279,9 +293,6 @@ class SPARouter {
         
         // Обновляем URL
         window.location.hash = route;
-        
-        // Обновляем активный пункт меню
-        this.updateActiveMenuItem(route);
         
         // Загружаем контент
         this.loadContent(normalizedRoute, true);
@@ -312,17 +323,49 @@ class SPARouter {
     
     updateActiveMenuItem(route) {
         const baseRoute = this.normalizeRoute(route);
-        // Убираем active со всех пунктов
+        
+        // Маппинг дочерних страниц к родительским пунктам меню
+        const parentRouteMap = {
+            '/invoice-view': '/invoices',
+            '/payment-view': '/payments',
+            '/appeals': '/appeals2',
+            '/': '/dashboard'
+        };
+        
+        // Определяем, какой роут должен быть активным в меню
+        // Если это дочерняя страница, используем родительский роут
+        const menuRoute = parentRouteMap[baseRoute] || baseRoute;
+        
+        // Убираем active со всех пунктов меню
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active');
         });
         
-        // Добавляем active на текущий пункт
+        // Добавляем active на текущий пункт меню
         document.querySelectorAll('.nav-item').forEach(item => {
-            const href = item.getAttribute('href');
-            const itemRoute = this.extractRoute(href);
+            // Пропускаем элементы без href и logout кнопки
+            if (!item.hasAttribute('href') || item.classList.contains('logout-btn')) {
+                return;
+            }
             
-            if (itemRoute === baseRoute) {
+            // Получаем route из data-route или href
+            const dataRoute = item.getAttribute('data-route');
+            const href = item.getAttribute('href');
+            
+            let itemRoute = null;
+            if (dataRoute) {
+                itemRoute = this.normalizeRoute(dataRoute);
+            } else if (href) {
+                itemRoute = this.extractRoute(href);
+            }
+            
+            // Сравниваем нормализованные роуты
+            // Сначала проверяем точное совпадение с menuRoute
+            if (itemRoute && itemRoute === menuRoute) {
+                item.classList.add('active');
+            }
+            // Также проверяем прямое совпадение с baseRoute (на случай, если нет в parentRouteMap)
+            else if (itemRoute && itemRoute === baseRoute) {
                 item.classList.add('active');
             }
         });
@@ -415,6 +458,9 @@ class SPARouter {
             }
             
             this.currentRoute = baseRoute;
+            
+            // Обновляем активный пункт меню после загрузки контента
+            this.updateActiveMenuItem(baseRoute);
             
             // Инициализируем скрипты на новой странице
             // Это выполнит скрипты и отправит событие spa:contentLoaded

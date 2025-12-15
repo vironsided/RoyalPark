@@ -1,432 +1,17 @@
+<link rel="stylesheet" href="/css/appeals2.css">
 <style>
-    /* Стили для таблицы обращений */
-    .table-responsive {
-        overflow-x: auto;
-    }
-
-    .table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        margin-bottom: 0;
-    }
-
-    .table thead th {
-        background: rgba(255, 255, 255, 0.03);
-        color: var(--text-secondary);
-        font-weight: 600;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        padding: 1rem 0.75rem;
-        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-        text-align: left;
-        white-space: nowrap;
-    }
-
-    .table tbody td {
-        padding: 1rem 0.75rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        color: var(--text-primary);
-        vertical-align: middle;
-    }
-
-    .table tbody tr:hover {
-        background: rgba(255, 255, 255, 0.02);
-    }
-
-    .table tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    /* Выравнивание колонок */
-    .table th:nth-child(1),
-    .table td:nth-child(1) {
-        width: 12%;
-        min-width: 140px;
-    }
-
-    .table th:nth-child(2),
-    .table td:nth-child(2) {
-        width: 8%;
-        min-width: 60px;
-        text-align: center;
-    }
-
-    .table th:nth-child(3),
-    .table td:nth-child(3) {
-        width: 8%;
-        min-width: 60px;
-        text-align: center;
-    }
-
-    .table th:nth-child(4),
-    .table td:nth-child(4) {
-        width: 18%;
-        min-width: 150px;
-    }
-
-    .table th:nth-child(5),
-    .table td:nth-child(5) {
-        width: 15%;
-        min-width: 120px;
-    }
-
-    .table th:nth-child(6),
-    .table td:nth-child(6) {
-        width: 18%;
-        min-width: 150px;
-    }
-
-    .table th:nth-child(7),
-    .table td:nth-child(7) {
-        width: 12%;
-        min-width: 120px;
-        text-align: center;
-    }
-
-    .table th:nth-child(8),
-    .table td:nth-child(8) {
-        width: 9%;
-        min-width: 140px;
-        text-align: right;
-    }
-
-    /* Стили для статусных бейджей */
-    .appeals-status-badge {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        padding: 0.4rem 0.9rem;
-        border-radius: 6px;
-        font-weight: 600;
-        letter-spacing: 0.3px;
-        display: inline-block;
-        min-width: 100px;
-        text-align: center;
-        border: 1px solid transparent;
-    }
-
-    .appeals-status-badge.bg-success {
-        background: rgba(40, 167, 69, 0.2) !important;
-        color: #28a745 !important;
-        border-color: rgba(40, 167, 69, 0.3);
-    }
-
-    .appeals-status-badge.bg-warning {
-        background: rgba(255, 193, 7, 0.25) !important;
-        color: #ffc107 !important;
-        border-color: rgba(255, 193, 7, 0.4);
-    }
-
-    .appeals-status-badge.bg-warning.text-dark {
-        background: rgba(255, 193, 7, 0.3) !important;
-        color: #ffc107 !important;
-        border-color: rgba(255, 193, 7, 0.5);
-    }
-
-    .appeals-empty {
-        text-align: center;
-        padding: 3rem 1rem;
-        color: var(--text-secondary);
-    }
-
-    .appeal-modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.55);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 1100;
-    }
-
-    .appeal-modal-overlay.show {
-        display: flex;
-    }
-
-    .appeal-modal {
-        background: #1f2330;
-        color: var(--text-primary);
-        border-radius: 1rem;
-        width: min(520px, 90vw);
-        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-        border: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .appeal-modal-header, .appeal-modal-footer {
-        padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid rgba(255,255,255,0.08);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .appeal-modal-body {
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .appeal-info-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 1rem;
-    }
-
-    .appeal-info-row span:first-child {
-        color: var(--text-secondary);
-    }
-
-    .appeals-action-btn {
-        border-radius: 12px;
-        font-weight: 600;
-    }
-
-    .appeals-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-        gap: 1rem;
-    }
-
-    .appeals-filter-group {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        font-size: 0.9rem;
-        color: var(--text-secondary);
-    }
-
-    .appeals-filter-select {
-        min-width: 160px;
-        padding: 0.45rem 0.9rem;
-        padding-right: 2.5rem;
-        border-radius: 8px;
-        border: 1px solid rgba(102, 126, 234, 0.5);
-        background: rgba(31, 35, 48, 0.8);
-        color: var(--text-primary);
-        font-size: 0.9rem;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 0.75rem center;
-        background-size: 12px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .appeals-filter-select:hover {
-        border-color: rgba(102, 126, 234, 0.7);
-        background-color: rgba(31, 35, 48, 0.95);
-    }
-
-    .appeals-filter-select:focus {
-        outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
-        background-color: rgba(31, 35, 48, 1);
-    }
-
-    /* Темные стили для опций в выпадающем списке */
-    .appeals-filter-select option {
-        background: #1f2330 !important;
-        background-color: #1f2330 !important;
-        color: #ffffff !important;
-        padding: 0.5rem;
-    }
-
-    .appeals-filter-select option:hover,
-    .appeals-filter-select option:focus {
-        background: rgba(102, 126, 234, 0.3) !important;
-        background-color: rgba(102, 126, 234, 0.3) !important;
-    }
-
-    .appeals-filter-select option:checked {
-        background: #667eea !important;
-        background-color: #667eea !important;
-        color: white !important;
-    }
-
-    /* Дополнительные стили для темной темы select */
-    #appealsStatusFilter {
-        background-color: rgba(31, 35, 48, 0.9) !important;
-        background: rgba(31, 35, 48, 0.9) !important;
-        color: #ffffff !important;
-    }
-
-    #appealsStatusFilter option {
-        background: #1f2330 !important;
-        background-color: #1f2330 !important;
-        color: #ffffff !important;
-    }
-
-    /* Стили для модального окна подтверждения удаления */
-    #deleteConfirmModal {
-        z-index: 1200;
-    }
-
-    #deleteConfirmModal .appeal-modal-footer {
-        border-top: 1px solid rgba(255,255,255,0.08);
-        padding-top: 1rem;
-    }
-
-    #deleteConfirmModal .btn-primary {
-        background: #667eea;
-        border-color: #667eea;
-        color: white;
-    }
-
-    #deleteConfirmModal .btn-primary:hover {
-        background: #5568d3;
-        border-color: #5568d3;
-    }
-
-    #deleteConfirmModal .btn-outline-light {
-        border-color: rgba(255, 255, 255, 0.3);
-        color: rgba(255, 255, 255, 0.9);
-    }
-
-    #deleteConfirmModal .btn-outline-light:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.5);
-    }
-
-    /* Pagination styles */
-    .table-pagination {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 15px 20px;
-        background: rgba(255, 255, 255, 0.05);
-        border-top: none !important;
-        border-radius: 0 0 15px 15px;
-    }
-
+    /* Horizontal pagination buttons */
     .pagination-controls {
         display: flex;
         gap: 8px;
         align-items: center;
     }
 
-    .btn-pagination {
-        min-width: 36px;
-        height: 36px;
-        padding: 0 12px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 8px;
-        color: rgba(255, 255, 255, 0.7);
-        cursor: pointer;
-        transition: all 0.3s;
+    .pagination-pages {
         display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.9rem;
-    }
-
-    .btn-pagination:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.2);
-        color: #ffffff;
-    }
-
-    .btn-pagination:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-    }
-
-    .btn-pagination.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-color: #667eea;
-        color: #ffffff;
-        font-weight: 600;
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-    }
-
-    .pagination-info {
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 0.9rem;
-    }
-
-    .pagination-per-page {
-        display: flex;
-        align-items: center;
         gap: 8px;
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 0.9rem;
-    }
-
-    /* Custom dropdown for pagination */
-    .custom-pag-select {
-        position: relative;
-        display: inline-block;
-        min-width: 60px;
-    }
-
-    .custom-pag-select .select-btn {
-        display: flex;
         align-items: center;
-        justify-content: space-between;
-        padding: 6px 12px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 6px;
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: all 0.3s;
-        min-width: 60px;
-        user-select: none;
     }
-
-    .custom-pag-select .select-btn:hover {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .custom-pag-select .select-options {
-        position: absolute;
-        top: calc(100% + 8px);
-        left: 0;
-        background: #1f2432 !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        border-radius: 8px !important;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
-        overflow: hidden;
-        display: none;
-        z-index: 10000;
-        min-width: 100%;
-    }
-
-    .custom-pag-select.open .select-options {
-        display: block;
-    }
-
-    .custom-pag-select .select-option {
-        padding: 8px 12px;
-        cursor: pointer;
-        color: #f6f7ff !important;
-        font-size: 0.9rem;
-        transition: all 0.2s;
-        background: #1f2432 !important;
-    }
-
-    .custom-pag-select .select-option:hover {
-        background: #3b4261 !important;
-        color: #ffffff !important;
-    }
-
-    .custom-pag-select .select-option.selected {
-        background: #667eea !important;
-        color: #ffffff !important;
-        font-weight: 600;
-    }
-    
 </style>
 
 <div class="dashboard-content">
@@ -444,7 +29,7 @@
                         </select>
                     </div>
                 </div>
-    
+
                 <div class="table-responsive">
                     <table class="table align-middle">
                         <thead>
@@ -466,54 +51,49 @@
                         </tbody>
                     </table>
                 </div>
-    
-                
-    
+
+
+
                 <div class="appeals-empty" id="appealsEmptyState" style="display: none;">
                     <i class="bi bi-inbox" style="font-size:2rem;"></i>
                     <p class="mt-3 mb-0">Обращений нет</p>
                 </div>
             </div>
-        </div>
-        <!-- Pagination -->
-        <div class="table-pagination" style="    border-right: 1px solid rgba(102, 126, 234, 0.15) !important;
-        border-bottom: 1px solid rgba(102, 126, 234, 0.15) !important;
-        border-left: 1px solid rgba(102, 126, 234, 0.15) !important;
-        background: rgba(36, 40, 49, 0.95) !important;
-        position: absolute;
-        width: 100%;
-        bottom: -41px;">
-            <div class="pagination-controls">
-                <button class="btn-pagination" onclick="goToAppealPage('prev')" disabled id="appealPrevBtn">
-                    <i class="bi bi-chevron-double-left"></i>
-                </button>
-                <button class="btn-pagination active" onclick="goToAppealPage(1)" id="appealCurrentPageBtn">1</button>
-                <button class="btn-pagination" onclick="goToAppealPage('next')" disabled id="appealNextBtn">
-                    <i class="bi bi-chevron-double-right"></i>
-                </button>
-            </div>
-            <div class="pagination-info">
-                <span>Стр. <span id="appealCurrentPage">1</span> из <span id="appealTotalPages">1</span> · всего <span id="appealTotalItems">0</span></span>
-            </div>
-            <div class="pagination-per-page">
-                <span>На</span>
-                <span>странице:</span>
-                <div class="custom-pag-select" id="customAppealItemsPerPage">
-                    <select id="appealItemsPerPage" onchange="changeAppealItemsPerPage()" style="display: none;">
-                        <option value="10">10</option>
-                        <option value="25" selected>25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
-                    <div class="select-btn">
-                        <span class="select-text">25</span>
-                        <span class="arrow">▾</span>
-                    </div>
-                    <div class="select-options">
-                        <div class="select-option" data-value="10">10</div>
-                        <div class="select-option selected" data-value="25">25</div>
-                        <div class="select-option" data-value="50">50</div>
-                        <div class="select-option" data-value="100">100</div>
+            <!-- Pagination -->
+            <div class="table-pagination">
+                <div class="pagination-controls" id="appealPaginationControls">
+                    <button class="btn-pagination" onclick="goToAppealPage('prev')" disabled id="appealPrevBtn">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </button>
+                    <div id="appealPageButtons" class="pagination-pages"></div>
+                    <button class="btn-pagination" onclick="goToAppealPage('next')" disabled id="appealNextBtn">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </button>
+                </div>
+                <div class="pagination-info">
+                    <span>Стр. <span id="appealCurrentPage">1</span> из <span id="appealTotalPages">1</span> · всего
+                        <span id="appealTotalItems">0</span></span>
+                </div>
+                <div class="pagination-per-page">
+                    <span>На</span>
+                    <span>странице:</span>
+                    <div class="custom-pag-select" id="customAppealItemsPerPage">
+                        <select id="appealItemsPerPage" onchange="changeAppealItemsPerPage()" style="display: none;">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <div class="select-btn">
+                            <span class="select-text">25</span>
+                            <span class="arrow">▾</span>
+                        </div>
+                        <div class="select-options" style="background: rgba(36, 40, 49, 0.95) !important">
+                            <div class="select-option" data-value="10">10</div>
+                            <div class="select-option selected" data-value="25">25</div>
+                            <div class="select-option" data-value="50">50</div>
+                            <div class="select-option" data-value="100">100</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -569,139 +149,139 @@
 </div>
 
 <script>
-(function() {
-    'use strict';
+    (function () {
+        'use strict';
 
-    const API_BASE = 'http://localhost:8000';
-    const state = {
-        notifications: [],
-        currentNotification: null,
-        notificationOpenedFromUrl: false // Флаг, что модальное окно уже было открыто из URL
-    };
-    
-    // Pagination state
-    let paginationState = {
-        currentPage: 1,
-        itemsPerPage: 25,
-        totalItems: 0,
-        totalPages: 1
-    };
+        const API_BASE = 'http://localhost:8000';
+        const state = {
+            notifications: [],
+            currentNotification: null,
+            notificationOpenedFromUrl: false // Флаг, что модальное окно уже было открыто из URL
+        };
 
-    const statusStyles = {
-        READ: { text: 'прочитано', className: 'bg-success' },
-        UNREAD: { text: 'не прочитано', className: 'bg-warning text-dark' }
-    };
+        // Pagination state
+        let paginationState = {
+            currentPage: 1,
+            itemsPerPage: 25,
+            totalItems: 0,
+            totalPages: 1
+        };
 
-    let tableBody, emptyState, statusSelect, modalOverlay;
-    let modalResident, modalApartment, modalContacts, modalDescription;
-    let deleteConfirmModal, deleteConfirmMessage, deleteConfirmOk, deleteConfirmCancel, deleteConfirmClose;
-    let pendingDeleteId = null;
+        const statusStyles = {
+            READ: { text: 'прочитано', className: 'bg-success' },
+            UNREAD: { text: 'не прочитано', className: 'bg-warning text-dark' }
+        };
 
-    function cacheDom() {
-        tableBody = document.getElementById('appealsTableBody');
-        emptyState = document.getElementById('appealsEmptyState');
-        statusSelect = document.getElementById('appealsStatusFilter');
-        modalOverlay = document.getElementById('appealModal');
-        modalResident = document.getElementById('modalResident');
-        modalApartment = document.getElementById('modalApartment');
-        modalContacts = document.getElementById('modalContacts');
-        modalDescription = document.getElementById('modalDescription');
-        
-        // Элементы модального окна подтверждения удаления
-        deleteConfirmModal = document.getElementById('deleteConfirmModal');
-        deleteConfirmMessage = document.getElementById('deleteConfirmMessage');
-        deleteConfirmOk = document.getElementById('deleteConfirmOk');
-        deleteConfirmCancel = document.getElementById('deleteConfirmCancel');
-        deleteConfirmClose = document.getElementById('deleteConfirmModalClose');
-    }
+        let tableBody, emptyState, statusSelect, modalOverlay;
+        let modalResident, modalApartment, modalContacts, modalDescription;
+        let deleteConfirmModal, deleteConfirmMessage, deleteConfirmOk, deleteConfirmCancel, deleteConfirmClose;
+        let pendingDeleteId = null;
 
-    async function loadNotifications() {
-        try {
-            const statusValue = statusSelect?.value || 'all';
-            const statusParam = statusValue !== 'all' ? `&status=${statusValue}` : '';
-            // Используем /notifications/json с пагинацией
-            const url = `${API_BASE}/notifications/json?page=${paginationState.currentPage}&per_page=${paginationState.itemsPerPage}${statusParam}`;
-            
-            console.log('Loading notifications from:', url);
-            const response = await fetch(url);
-            
-            if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    console.log('Not authorized, using public endpoint');
-                    // Уже используем публичный endpoint
-                    throw new Error('Unauthorized');
+        function cacheDom() {
+            tableBody = document.getElementById('appealsTableBody');
+            emptyState = document.getElementById('appealsEmptyState');
+            statusSelect = document.getElementById('appealsStatusFilter');
+            modalOverlay = document.getElementById('appealModal');
+            modalResident = document.getElementById('modalResident');
+            modalApartment = document.getElementById('modalApartment');
+            modalContacts = document.getElementById('modalContacts');
+            modalDescription = document.getElementById('modalDescription');
+
+            // Элементы модального окна подтверждения удаления
+            deleteConfirmModal = document.getElementById('deleteConfirmModal');
+            deleteConfirmMessage = document.getElementById('deleteConfirmMessage');
+            deleteConfirmOk = document.getElementById('deleteConfirmOk');
+            deleteConfirmCancel = document.getElementById('deleteConfirmCancel');
+            deleteConfirmClose = document.getElementById('deleteConfirmModalClose');
+        }
+
+        async function loadNotifications() {
+            try {
+                const statusValue = statusSelect?.value || 'all';
+                const statusParam = statusValue !== 'all' ? `&status=${statusValue}` : '';
+                // Используем /notifications/json с пагинацией
+                const url = `${API_BASE}/notifications/json?page=${paginationState.currentPage}&per_page=${paginationState.itemsPerPage}${statusParam}`;
+
+                console.log('Loading notifications from:', url);
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        console.log('Not authorized, using public endpoint');
+                        // Уже используем публичный endpoint
+                        throw new Error('Unauthorized');
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            console.log('Notifications data received:', data);
-            
-            // Handle paginated response
-            if (data.notifications && data.pagination) {
-                state.notifications = data.notifications || [];
-                
-                // Update pagination state
-                paginationState.totalItems = data.pagination.total || 0;
-                paginationState.totalPages = data.pagination.last_page || 1;
-                paginationState.currentPage = data.pagination.page || 1;
-            } else {
-                // Fallback for non-paginated response (backward compatibility)
-                state.notifications = data.notifications || [];
-                paginationState.totalItems = state.notifications.length;
+
+                const data = await response.json();
+                console.log('Notifications data received:', data);
+
+                // Handle paginated response
+                if (data.notifications && data.pagination) {
+                    state.notifications = data.notifications || [];
+
+                    // Update pagination state
+                    paginationState.totalItems = data.pagination.total || 0;
+                    paginationState.totalPages = data.pagination.last_page || 1;
+                    paginationState.currentPage = data.pagination.page || 1;
+                } else {
+                    // Fallback for non-paginated response (backward compatibility)
+                    state.notifications = data.notifications || [];
+                    paginationState.totalItems = state.notifications.length;
+                    paginationState.totalPages = 1;
+                    paginationState.currentPage = 1;
+                }
+
+                renderTable();
+                updatePaginationUI();
+
+                // Возвращаем промис для возможности ожидания
+                return Promise.resolve();
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+                if (typeof showError === 'function') {
+                    showError('Ошибка загрузки обращений: ' + error.message);
+                }
+                state.notifications = [];
+                paginationState.totalItems = 0;
                 paginationState.totalPages = 1;
                 paginationState.currentPage = 1;
+                renderTable();
+                updatePaginationUI();
+                return Promise.reject(error);
             }
-            
-            renderTable();
-            updatePaginationUI();
-            
-            // Возвращаем промис для возможности ожидания
-            return Promise.resolve();
-        } catch (error) {
-            console.error('Error loading notifications:', error);
-            if (typeof showError === 'function') {
-                showError('Ошибка загрузки обращений: ' + error.message);
+        }
+
+        function renderTable() {
+            if (!tableBody) {
+                console.error('Table body not found!');
+                return;
             }
-            state.notifications = [];
-            paginationState.totalItems = 0;
-            paginationState.totalPages = 1;
-            paginationState.currentPage = 1;
-            renderTable();
-            updatePaginationUI();
-            return Promise.reject(error);
-        }
-    }
 
-    function renderTable() {
-        if (!tableBody) {
-            console.error('Table body not found!');
-            return;
-        }
+            const items = state.notifications;
 
-        const items = state.notifications;
+            if (!items.length) {
+                tableBody.innerHTML = '';
+                if (emptyState) emptyState.style.display = 'block';
+                return;
+            }
 
-        if (!items.length) {
-            tableBody.innerHTML = '';
-            if (emptyState) emptyState.style.display = 'block';
-            return;
-        }
+            if (emptyState) emptyState.style.display = 'none';
 
-        if (emptyState) emptyState.style.display = 'none';
-        
-        tableBody.innerHTML = items.map(notif => {
-            const status = statusStyles[notif.status] || statusStyles.UNREAD;
-            const block = notif.block_name || '—';
-            const home = notif.unit_number || '—';
-            const resident = notif.user_full_name || '—';
-            const phone = notif.user_phone || '—';
-            const email = notif.user_email || '—';
-            
-            // Форматируем дату как на фотографии: отдельно дата и время
-            const dateStr = formatDateTime(notif.created_at);
-            const [datePart, timePart] = dateStr.split(', ');
-            
-            return `
+            tableBody.innerHTML = items.map(notif => {
+                const status = statusStyles[notif.status] || statusStyles.UNREAD;
+                const block = notif.block_name || '—';
+                const home = notif.unit_number || '—';
+                const resident = notif.user_full_name || '—';
+                const phone = notif.user_phone || '—';
+                const email = notif.user_email || '—';
+
+                // Форматируем дату как на фотографии: отдельно дата и время
+                const dateStr = formatDateTime(notif.created_at);
+                const [datePart, timePart] = dateStr.split(', ');
+
+                return `
                 <tr>
                     <td>
                         <div style="font-weight: 500;">${datePart || '—'}</div>
@@ -725,243 +305,243 @@
                     </td>
                 </tr>
             `;
-        }).join('');
-    }
+            }).join('');
+        }
 
-    async function viewNotification(id) {
-        try {
-            console.log('Opening notification modal for ID:', id);
-            // Используем /notifications/{id}/json вместо /api/notifications/{id}/public
-            const url = `${API_BASE}/notifications/${id}/json`;
-            console.log('Fetching from:', url);
-            const response = await fetch(url);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const notif = await response.json();
-            console.log('Notification data received:', notif);
-            state.currentNotification = notif;
-            
-            // Обрабатываем данные - проверяем разные форматы ответа
-            let block = '—';
-            let home = '—';
-            let residentName = '—';
-            let phone = '—';
-            let email = '—';
-            let message = '—';
-            
-            // Проверяем формат с вложенными объектами (старый формат)
-            if (notif.resident) {
-                block = notif.resident.block || '—';
-                home = notif.resident.unit_number || '—';
-            } else {
-                // Новый формат с плоскими полями
-                block = notif.block_name || '—';
-                home = notif.unit_number || '—';
-            }
-            
-            if (notif.user) {
-                residentName = notif.user.full_name || '—';
-                phone = notif.user.phone || '—';
-                email = notif.user.email || '—';
-            } else {
-                residentName = notif.user_full_name || '—';
-                phone = notif.user_phone || '—';
-                email = notif.user_email || '—';
-            }
-            
-            message = notif.message || '—';
-            
-            // Заполняем модальное окно
-            if (modalApartment) {
-                modalApartment.textContent = `${block} / ${home}`;
-            }
-            if (modalResident) {
-                modalResident.textContent = residentName;
-            }
-            if (modalContacts) {
-                modalContacts.textContent = `${phone} / ${email}`;
-            }
-            if (modalDescription) {
-                modalDescription.textContent = message;
-            }
-            
-            // Показываем модальное окно
-            if (modalOverlay) {
-                console.log('Showing modal overlay');
-                modalOverlay.classList.add('show');
-                // Убеждаемся, что модальное окно видимо
-                modalOverlay.style.display = 'flex';
-            } else {
-                console.error('Modal overlay not found! Attempting to cache DOM again...');
-                cacheDom();
+        async function viewNotification(id) {
+            try {
+                console.log('Opening notification modal for ID:', id);
+                // Используем /notifications/{id}/json вместо /api/notifications/{id}/public
+                const url = `${API_BASE}/notifications/${id}/json`;
+                console.log('Fetching from:', url);
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const notif = await response.json();
+                console.log('Notification data received:', notif);
+                state.currentNotification = notif;
+
+                // Обрабатываем данные - проверяем разные форматы ответа
+                let block = '—';
+                let home = '—';
+                let residentName = '—';
+                let phone = '—';
+                let email = '—';
+                let message = '—';
+
+                // Проверяем формат с вложенными объектами (старый формат)
+                if (notif.resident) {
+                    block = notif.resident.block || '—';
+                    home = notif.resident.unit_number || '—';
+                } else {
+                    // Новый формат с плоскими полями
+                    block = notif.block_name || '—';
+                    home = notif.unit_number || '—';
+                }
+
+                if (notif.user) {
+                    residentName = notif.user.full_name || '—';
+                    phone = notif.user.phone || '—';
+                    email = notif.user.email || '—';
+                } else {
+                    residentName = notif.user_full_name || '—';
+                    phone = notif.user_phone || '—';
+                    email = notif.user_email || '—';
+                }
+
+                message = notif.message || '—';
+
+                // Заполняем модальное окно
+                if (modalApartment) {
+                    modalApartment.textContent = `${block} / ${home}`;
+                }
+                if (modalResident) {
+                    modalResident.textContent = residentName;
+                }
+                if (modalContacts) {
+                    modalContacts.textContent = `${phone} / ${email}`;
+                }
+                if (modalDescription) {
+                    modalDescription.textContent = message;
+                }
+
+                // Показываем модальное окно
                 if (modalOverlay) {
-                    console.log('Modal overlay found after re-caching');
+                    console.log('Showing modal overlay');
                     modalOverlay.classList.add('show');
+                    // Убеждаемся, что модальное окно видимо
                     modalOverlay.style.display = 'flex';
                 } else {
-                    console.error('Modal overlay still not found!');
+                    console.error('Modal overlay not found! Attempting to cache DOM again...');
+                    cacheDom();
+                    if (modalOverlay) {
+                        console.log('Modal overlay found after re-caching');
+                        modalOverlay.classList.add('show');
+                        modalOverlay.style.display = 'flex';
+                    } else {
+                        console.error('Modal overlay still not found!');
+                    }
                 }
-            }
-            
-            // Очищаем параметр id из URL после открытия модального окна
-            clearNotificationIdFromUrl();
-            
-            // Перезагружаем список, чтобы обновить статус
-            await loadNotifications();
-        } catch (error) {
-            console.error('Error loading notification:', error);
-            if (typeof showError === 'function') {
-                showError('Ошибка загрузки обращения: ' + error.message);
-            } else {
-                alert('Ошибка загрузки обращения: ' + error.message);
-            }
-        }
-    }
 
-    function showDeleteConfirm(id) {
-        pendingDeleteId = id;
-        if (deleteConfirmModal) {
-            deleteConfirmModal.style.display = 'flex';
-        }
-    }
+                // Очищаем параметр id из URL после открытия модального окна
+                clearNotificationIdFromUrl();
 
-    function hideDeleteConfirm() {
-        pendingDeleteId = null;
-        if (deleteConfirmModal) {
-            deleteConfirmModal.style.display = 'none';
-        }
-    }
-
-    async function deleteNotification(id) {
-        try {
-            // Используем /notifications/{id}/json вместо /api/notifications/{id}/public
-            const url = `${API_BASE}/notifications/${id}/json`;
-            const response = await fetch(url, {
-                method: 'DELETE'
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            if (typeof showSuccess === 'function') {
-                showSuccess('Обращение успешно удалено!');
-            }
-            
-            hideDeleteConfirm();
-            // Reload current page to see updated list
-            await loadNotifications();
-            
-            // If current page is now empty (beyond last page), go to last page
-            if (paginationState.currentPage > paginationState.totalPages && paginationState.totalPages > 0) {
-                paginationState.currentPage = paginationState.totalPages;
+                // Перезагружаем список, чтобы обновить статус
                 await loadNotifications();
+            } catch (error) {
+                console.error('Error loading notification:', error);
+                if (typeof showError === 'function') {
+                    showError('Ошибка загрузки обращения: ' + error.message);
+                } else {
+                    alert('Ошибка загрузки обращения: ' + error.message);
+                }
             }
-        } catch (error) {
-            console.error('Error deleting notification:', error);
-            if (typeof showError === 'function') {
-                showError('Ошибка удаления обращения: ' + error.message);
+        }
+
+        function showDeleteConfirm(id) {
+            pendingDeleteId = id;
+            if (deleteConfirmModal) {
+                deleteConfirmModal.style.display = 'flex';
             }
-            hideDeleteConfirm();
         }
-    }
 
-    function closeModal() {
-        if (modalOverlay) {
-            modalOverlay.classList.remove('show');
-            modalOverlay.style.display = 'none';
+        function hideDeleteConfirm() {
+            pendingDeleteId = null;
+            if (deleteConfirmModal) {
+                deleteConfirmModal.style.display = 'none';
+            }
         }
-    }
 
-    function formatDateTime(value) {
-        if (!value) return '—';
-        const date = new Date(value);
-        return date.toLocaleString('ru-RU', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
+        async function deleteNotification(id) {
+            try {
+                // Используем /notifications/{id}/json вместо /api/notifications/{id}/public
+                const url = `${API_BASE}/notifications/${id}/json`;
+                const response = await fetch(url, {
+                    method: 'DELETE'
+                });
 
-    function bindEvents() {
-        // Обработчик change уже добавлен в initAppealsPage
-
-        if (tableBody) {
-            tableBody.addEventListener('click', (event) => {
-                const viewBtn = event.target.closest('[data-action="view"]');
-                const deleteBtn = event.target.closest('[data-action="delete"]');
-                if (viewBtn) {
-                    const id = parseInt(viewBtn.dataset.id);
-                    viewNotification(id);
-                } else if (deleteBtn) {
-                    const id = parseInt(deleteBtn.dataset.id);
-                    showDeleteConfirm(id);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-            });
-        }
 
-        const closeBtn = document.getElementById('appealModalClose');
-        const dismissBtn = document.getElementById('appealModalDismiss');
-        if (closeBtn) closeBtn.addEventListener('click', closeModal);
-        if (dismissBtn) dismissBtn.addEventListener('click', closeModal);
-        if (modalOverlay) {
-            modalOverlay.addEventListener('click', (event) => {
-                if (event.target === modalOverlay) closeModal();
-            });
-        }
-
-        // Обработчики для модального окна подтверждения удаления
-        if (deleteConfirmOk) {
-            deleteConfirmOk.addEventListener('click', () => {
-                if (pendingDeleteId !== null) {
-                    deleteNotification(pendingDeleteId);
+                if (typeof showSuccess === 'function') {
+                    showSuccess('Обращение успешно удалено!');
                 }
-            });
-        }
-        if (deleteConfirmCancel) {
-            deleteConfirmCancel.addEventListener('click', hideDeleteConfirm);
-        }
-        if (deleteConfirmClose) {
-            deleteConfirmClose.addEventListener('click', hideDeleteConfirm);
-        }
-        if (deleteConfirmModal) {
-            deleteConfirmModal.addEventListener('click', (event) => {
-                if (event.target === deleteConfirmModal) {
-                    hideDeleteConfirm();
-                }
-            });
-        }
-    }
 
-    function applyDarkThemeToSelect() {
-        const selectElement = document.getElementById('appealsStatusFilter');
-        if (selectElement) {
-            // Применить темные стили к select
-            selectElement.style.setProperty('background-color', 'rgba(31, 35, 48, 0.9)', 'important');
-            selectElement.style.setProperty('background', 'rgba(31, 35, 48, 0.9)', 'important');
-            selectElement.style.setProperty('color', '#ffffff', 'important');
-            selectElement.style.setProperty('border-color', 'rgba(102, 126, 234, 0.5)', 'important');
-            
-            // Применить темные стили к option элементам
-            const options = selectElement.querySelectorAll('option');
-            options.forEach(option => {
-                option.style.setProperty('background', '#1f2330', 'important');
-                option.style.setProperty('background-color', '#1f2330', 'important');
-                option.style.setProperty('color', '#ffffff', 'important');
+                hideDeleteConfirm();
+                // Reload current page to see updated list
+                await loadNotifications();
+
+                // If current page is now empty (beyond last page), go to last page
+                if (paginationState.currentPage > paginationState.totalPages && paginationState.totalPages > 0) {
+                    paginationState.currentPage = paginationState.totalPages;
+                    await loadNotifications();
+                }
+            } catch (error) {
+                console.error('Error deleting notification:', error);
+                if (typeof showError === 'function') {
+                    showError('Ошибка удаления обращения: ' + error.message);
+                }
+                hideDeleteConfirm();
+            }
+        }
+
+        function closeModal() {
+            if (modalOverlay) {
+                modalOverlay.classList.remove('show');
+                modalOverlay.style.display = 'none';
+            }
+        }
+
+        function formatDateTime(value) {
+            if (!value) return '—';
+            const date = new Date(value);
+            return date.toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
             });
         }
-        
-        // Инъекция CSS для темных option элементов
-        const styleId = 'appeals-select-dark-theme';
-        if (!document.getElementById(styleId)) {
-            const style = document.createElement('style');
-            style.id = styleId;
-            style.textContent = `
+
+        function bindEvents() {
+            // Обработчик change уже добавлен в initAppealsPage
+
+            if (tableBody) {
+                tableBody.addEventListener('click', (event) => {
+                    const viewBtn = event.target.closest('[data-action="view"]');
+                    const deleteBtn = event.target.closest('[data-action="delete"]');
+                    if (viewBtn) {
+                        const id = parseInt(viewBtn.dataset.id);
+                        viewNotification(id);
+                    } else if (deleteBtn) {
+                        const id = parseInt(deleteBtn.dataset.id);
+                        showDeleteConfirm(id);
+                    }
+                });
+            }
+
+            const closeBtn = document.getElementById('appealModalClose');
+            const dismissBtn = document.getElementById('appealModalDismiss');
+            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+            if (dismissBtn) dismissBtn.addEventListener('click', closeModal);
+            if (modalOverlay) {
+                modalOverlay.addEventListener('click', (event) => {
+                    if (event.target === modalOverlay) closeModal();
+                });
+            }
+
+            // Обработчики для модального окна подтверждения удаления
+            if (deleteConfirmOk) {
+                deleteConfirmOk.addEventListener('click', () => {
+                    if (pendingDeleteId !== null) {
+                        deleteNotification(pendingDeleteId);
+                    }
+                });
+            }
+            if (deleteConfirmCancel) {
+                deleteConfirmCancel.addEventListener('click', hideDeleteConfirm);
+            }
+            if (deleteConfirmClose) {
+                deleteConfirmClose.addEventListener('click', hideDeleteConfirm);
+            }
+            if (deleteConfirmModal) {
+                deleteConfirmModal.addEventListener('click', (event) => {
+                    if (event.target === deleteConfirmModal) {
+                        hideDeleteConfirm();
+                    }
+                });
+            }
+        }
+
+        function applyDarkThemeToSelect() {
+            const selectElement = document.getElementById('appealsStatusFilter');
+            if (selectElement) {
+                // Применить темные стили к select
+                selectElement.style.setProperty('background-color', 'rgba(31, 35, 48, 0.9)', 'important');
+                selectElement.style.setProperty('background', 'rgba(31, 35, 48, 0.9)', 'important');
+                selectElement.style.setProperty('color', '#ffffff', 'important');
+                selectElement.style.setProperty('border-color', 'rgba(102, 126, 234, 0.5)', 'important');
+
+                // Применить темные стили к option элементам
+                const options = selectElement.querySelectorAll('option');
+                options.forEach(option => {
+                    option.style.setProperty('background', '#1f2330', 'important');
+                    option.style.setProperty('background-color', '#1f2330', 'important');
+                    option.style.setProperty('color', '#ffffff', 'important');
+                });
+            }
+
+            // Инъекция CSS для темных option элементов
+            const styleId = 'appeals-select-dark-theme';
+            if (!document.getElementById(styleId)) {
+                const style = document.createElement('style');
+                style.id = styleId;
+                style.textContent = `
                 #appealsStatusFilter {
                     background-color: rgba(31, 35, 48, 0.9) !important;
                     background: rgba(31, 35, 48, 0.9) !important;
@@ -978,260 +558,347 @@
                     color: #ffffff !important;
                 }
             `;
-            document.head.appendChild(style);
+                document.head.appendChild(style);
+            }
         }
-    }
 
-    function getNotificationIdFromUrl() {
-        // Если модальное окно уже было открыто из URL, не открываем снова
-        if (state.notificationOpenedFromUrl) {
+        function getNotificationIdFromUrl() {
+            // Если модальное окно уже было открыто из URL, не открываем снова
+            if (state.notificationOpenedFromUrl) {
+                return null;
+            }
+
+            // Сначала проверяем глобальную переменную, установленную spa-router
+            if (window.__currentNotificationId) {
+                return window.__currentNotificationId;
+            }
+
+            // Проверяем hash для SPA роутера
+            const hash = window.location.hash;
+            if (hash.includes('?')) {
+                const hashParts = hash.split('?');
+                if (hashParts.length > 1) {
+                    const params = new URLSearchParams(hashParts[1]);
+                    const id = params.get('id');
+                    if (id) return parseInt(id);
+                }
+            }
+
+            // Проверяем обычный query string
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            if (id) return parseInt(id);
+
             return null;
         }
-        
-        // Сначала проверяем глобальную переменную, установленную spa-router
-        if (window.__currentNotificationId) {
-            return window.__currentNotificationId;
-        }
-        
-        // Проверяем hash для SPA роутера
-        const hash = window.location.hash;
-        if (hash.includes('?')) {
-            const hashParts = hash.split('?');
-            if (hashParts.length > 1) {
+
+        function clearNotificationIdFromUrl() {
+            // Очищаем глобальную переменную
+            if (window.__currentNotificationId) {
+                delete window.__currentNotificationId;
+            }
+
+            // Очищаем параметр id из hash
+            const hash = window.location.hash;
+            if (hash.includes('?')) {
+                const hashParts = hash.split('?');
+                const baseRoute = hashParts[0];
                 const params = new URLSearchParams(hashParts[1]);
-                const id = params.get('id');
-                if (id) return parseInt(id);
-            }
-        }
-        
-        // Проверяем обычный query string
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
-        if (id) return parseInt(id);
-        
-        return null;
-    }
+                params.delete('id');
 
-    function clearNotificationIdFromUrl() {
-        // Очищаем глобальную переменную
-        if (window.__currentNotificationId) {
-            delete window.__currentNotificationId;
-        }
-        
-        // Очищаем параметр id из hash
-        const hash = window.location.hash;
-        if (hash.includes('?')) {
-            const hashParts = hash.split('?');
-            const baseRoute = hashParts[0];
-            const params = new URLSearchParams(hashParts[1]);
-            params.delete('id');
-            
-            // Формируем новый hash без параметра id
-            const newHash = params.toString() ? `${baseRoute}?${params.toString()}` : baseRoute;
-            
-            // Обновляем URL без перезагрузки страницы
-            if (window.spaRouter) {
-                // Используем navigate без параметра id
-                window.spaRouter.navigate(baseRoute.slice(1)); // Убираем #
-            } else {
-                window.location.hash = baseRoute;
-            }
-        }
-        
-        // Устанавливаем флаг, что модальное окно было открыто
-        state.notificationOpenedFromUrl = true;
-    }
+                // Формируем новый hash без параметра id
+                const newHash = params.toString() ? `${baseRoute}?${params.toString()}` : baseRoute;
 
-    // Pagination Functions
-    function updatePaginationUI() {
-        const currentPageEl = document.getElementById('appealCurrentPage');
-        const totalPagesEl = document.getElementById('appealTotalPages');
-        const totalItemsEl = document.getElementById('appealTotalItems');
-        const currentPageBtn = document.getElementById('appealCurrentPageBtn');
-        const prevBtn = document.getElementById('appealPrevBtn');
-        const nextBtn = document.getElementById('appealNextBtn');
-        
-        if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
-        if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
-        if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
-        if (currentPageBtn) currentPageBtn.textContent = paginationState.currentPage;
-        if (prevBtn) prevBtn.disabled = paginationState.currentPage === 1;
-        if (nextBtn) nextBtn.disabled = paginationState.currentPage === paginationState.totalPages;
-    }
-    
-    window.goToAppealPage = function(page) {
-        if (page === 'prev') {
-            if (paginationState.currentPage > 1) {
-                paginationState.currentPage--;
-                loadNotifications();
-            }
-        } else if (page === 'next') {
-            if (paginationState.currentPage < paginationState.totalPages) {
-                paginationState.currentPage++;
-                loadNotifications();
-            }
-        } else if (typeof page === 'number') {
-            paginationState.currentPage = page;
-            loadNotifications();
-        }
-    };
-    
-    window.changeAppealItemsPerPage = function() {
-        const select = document.getElementById('appealItemsPerPage');
-        if (select) {
-            paginationState.itemsPerPage = parseInt(select.value);
-            paginationState.currentPage = 1;
-            loadNotifications();
-            updateCustomAppealPaginationDropdown();
-        }
-    };
-    
-    function updateCustomAppealPaginationDropdown() {
-        const select = document.getElementById('appealItemsPerPage');
-        const customSelect = document.getElementById('customAppealItemsPerPage');
-        if (!select || !customSelect) return;
-        
-        const value = select.value;
-        const selectText = customSelect.querySelector('.select-text');
-        const options = customSelect.querySelectorAll('.select-option');
-        
-        if (selectText) selectText.textContent = value;
-        options.forEach(opt => {
-            opt.classList.remove('selected');
-            if (opt.getAttribute('data-value') === value) {
-                opt.classList.add('selected');
-            }
-        });
-    }
-    
-    function initCustomAppealPaginationDropdown() {
-        const customSelect = document.getElementById('customAppealItemsPerPage');
-        if (!customSelect) return;
-        
-        const selectBtn = customSelect.querySelector('.select-btn');
-        const selectOptions = customSelect.querySelector('.select-options');
-        const options = selectOptions.querySelectorAll('.select-option');
-        
-        if (selectBtn) {
-            selectBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                customSelect.classList.toggle('open');
-            });
-        }
-        
-        options.forEach(opt => {
-            opt.addEventListener('click', function() {
-                const value = this.getAttribute('data-value');
-                const select = document.getElementById('appealItemsPerPage');
-                if (select) {
-                    select.value = value;
-                    changeAppealItemsPerPage();
+                // Обновляем URL без перезагрузки страницы
+                if (window.spaRouter) {
+                    // Используем navigate без параметра id
+                    window.spaRouter.navigate(baseRoute.slice(1)); // Убираем #
+                } else {
+                    window.location.hash = baseRoute;
                 }
-                customSelect.classList.remove('open');
-            });
-        });
-        
-        document.addEventListener('click', function(e) {
-            if (!customSelect.contains(e.target)) {
-                customSelect.classList.remove('open');
             }
-        });
-        
-        updateCustomAppealPaginationDropdown();
-    }
 
-    function initAppealsPage() {
-        console.log('Initializing appeals2 page...');
-        
-        // Сбрасываем флаг при каждой инициализации страницы
-        // Это позволяет открывать модальное окно при переходе с параметром id
-        state.notificationOpenedFromUrl = false;
-        
-        cacheDom();
-        bindEvents();
-        initCustomAppealPaginationDropdown();
-        
-        // Применить темные стили к выпадающему списку
-        applyDarkThemeToSelect();
-        
-        // Применить стили при открытии select
-        if (statusSelect) {
-            statusSelect.addEventListener('mousedown', function() {
-                setTimeout(applyDarkThemeToSelect, 10);
+            // Устанавливаем флаг, что модальное окно было открыто
+            state.notificationOpenedFromUrl = true;
+        }
+
+        // Pagination Functions
+        function buildAppealPageList(current, total) {
+            if (total <= 5) {
+                return Array.from({ length: total }, (_, i) => i + 1);
+            }
+
+            const pages = new Set([1, total]);
+
+            if (current <= 3) {
+                [2, 3, 4, 5].forEach(p => pages.add(p));
+            } else if (current >= total - 2) {
+                [total - 1, total - 2, total - 3, total - 4].forEach(p => pages.add(p));
+            } else {
+                [current - 2, current - 1, current, current + 1, current + 2].forEach(p => pages.add(p));
+            }
+
+            const sorted = Array.from(pages).filter(p => p >= 1 && p <= total).sort((a, b) => a - b);
+            const result = [];
+
+            for (let i = 0; i < sorted.length; i++) {
+                const page = sorted[i];
+                result.push(page);
+                const next = sorted[i + 1];
+                if (next && next - page > 1) {
+                    result.push('dots');
+                }
+            }
+
+            return result;
+        }
+
+        function updatePaginationUI() {
+            const currentPageEl = document.getElementById('appealCurrentPage');
+            const totalPagesEl = document.getElementById('appealTotalPages');
+            const totalItemsEl = document.getElementById('appealTotalItems');
+            const prevBtn = document.getElementById('appealPrevBtn');
+            const nextBtn = document.getElementById('appealNextBtn');
+            const pagesContainer = document.getElementById('appealPageButtons');
+
+            if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
+            if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
+            if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
+            if (prevBtn) prevBtn.disabled = paginationState.currentPage <= 1;
+            if (nextBtn) nextBtn.disabled = paginationState.currentPage >= paginationState.totalPages;
+
+            if (!pagesContainer) return;
+            pagesContainer.innerHTML = '';
+
+            const pages = buildAppealPageList(paginationState.currentPage, paginationState.totalPages);
+            pages.forEach(p => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-pagination';
+
+                if (p === 'dots') {
+                    btn.textContent = '...';
+                    btn.disabled = true;
+                    btn.classList.add('dots');
+                } else {
+                    btn.textContent = p;
+                    if (p > paginationState.totalPages) {
+                        btn.disabled = true;
+                    } else {
+                        btn.onclick = () => {
+                            if (p !== paginationState.currentPage) {
+                                goToAppealPage(p);
+                            }
+                        };
+                    }
+                    if (p === paginationState.currentPage) {
+                        btn.classList.add('active');
+                        btn.setAttribute('aria-current', 'page');
+                    }
+                }
+
+                pagesContainer.appendChild(btn);
             });
-            statusSelect.addEventListener('focus', function() {
-                setTimeout(applyDarkThemeToSelect, 10);
-            });
-            statusSelect.addEventListener('change', function() {
-                setTimeout(applyDarkThemeToSelect, 10);
-                // Reset to first page when filter changes
+        }
+
+        window.goToAppealPage = function (page) {
+            if (page === 'prev') {
+                if (paginationState.currentPage > 1) {
+                    paginationState.currentPage--;
+                    loadNotifications();
+                }
+            } else if (page === 'next') {
+                if (paginationState.currentPage < paginationState.totalPages) {
+                    paginationState.currentPage++;
+                    loadNotifications();
+                }
+            } else if (typeof page === 'number') {
+                paginationState.currentPage = page;
+                loadNotifications();
+            }
+        };
+
+        window.changeAppealItemsPerPage = function () {
+            const select = document.getElementById('appealItemsPerPage');
+            if (select) {
+                paginationState.itemsPerPage = parseInt(select.value);
                 paginationState.currentPage = 1;
                 loadNotifications();
+                updateCustomAppealPaginationDropdown();
+            }
+        };
+
+        function updateCustomAppealPaginationDropdown() {
+            const select = document.getElementById('appealItemsPerPage');
+            const customSelect = document.getElementById('customAppealItemsPerPage');
+            if (!select || !customSelect) return;
+
+            const value = select.value;
+            const selectText = customSelect.querySelector('.select-text');
+            const options = customSelect.querySelectorAll('.select-option');
+
+            if (selectText) selectText.textContent = value;
+            options.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.getAttribute('data-value') === value) {
+                    opt.classList.add('selected');
+                }
             });
         }
-        
-        // Проверяем, есть ли id в URL - если есть, значит это переход с уведомления
-        const notificationId = getNotificationIdFromUrl();
-        if (notificationId) {
-            console.log('Found notification ID in URL:', notificationId);
-            // Загружаем список, затем открываем нужное уведомление
-            loadNotifications().then(() => {
-                // Увеличиваем задержку, чтобы DOM точно был готов
-                setTimeout(() => {
-                    console.log('Attempting to open notification:', notificationId);
-                    // Повторно кешируем DOM элементы перед открытием
-                    cacheDom();
-                    if (modalOverlay) {
-                        viewNotification(notificationId);
-                    } else {
-                        console.error('Modal overlay not found, retrying...');
-                        setTimeout(() => {
-                            cacheDom();
-                            if (modalOverlay) {
-                                viewNotification(notificationId);
-                            }
-                        }, 200);
+
+        function initCustomAppealPaginationDropdown() {
+            const customSelect = document.getElementById('customAppealItemsPerPage');
+            if (!customSelect) return;
+
+            const selectBtn = customSelect.querySelector('.select-btn');
+            const selectOptions = customSelect.querySelector('.select-options');
+
+            if (!selectBtn || !selectOptions) {
+                console.warn('Custom pagination select elements not found');
+                return;
+            }
+
+            const options = selectOptions.querySelectorAll('.select-option');
+
+            // Удаляем старый обработчик, если он существует
+            if (selectBtn._appealClickHandler) {
+                selectBtn.removeEventListener('click', selectBtn._appealClickHandler);
+            }
+
+            selectBtn._appealClickHandler = function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+                customSelect.classList.toggle('open');
+            };
+
+            selectBtn.addEventListener('click', selectBtn._appealClickHandler);
+
+            options.forEach(opt => {
+                // Удаляем старый обработчик, если он существует
+                if (opt._appealOptionClickHandler) {
+                    opt.removeEventListener('click', opt._appealOptionClickHandler);
+                }
+
+                opt._appealOptionClickHandler = function (e) {
+                    e.stopPropagation();
+                    const value = this.getAttribute('data-value');
+                    const select = document.getElementById('appealItemsPerPage');
+                    if (select) {
+                        select.value = value;
+                        changeAppealItemsPerPage();
                     }
-                }, 500);
-            }).catch(err => {
-                console.error('Error loading notifications:', err);
+                    customSelect.classList.remove('open');
+                };
+
+                opt.addEventListener('click', opt._appealOptionClickHandler);
             });
+
+            // Удаляем старый обработчик клика на документе, если он существует
+            if (window._appealPaginationClickHandler) {
+                document.removeEventListener('click', window._appealPaginationClickHandler);
+            }
+
+            window._appealPaginationClickHandler = function (e) {
+                if (!customSelect.contains(e.target)) {
+                    customSelect.classList.remove('open');
+                }
+            };
+
+            document.addEventListener('click', window._appealPaginationClickHandler);
+
+            updateCustomAppealPaginationDropdown();
+        }
+
+        function initAppealsPage() {
+            console.log('Initializing appeals2 page...');
+
+            // Сбрасываем флаг при каждой инициализации страницы
+            // Это позволяет открывать модальное окно при переходе с параметром id
+            state.notificationOpenedFromUrl = false;
+
+            cacheDom();
+            bindEvents();
+            initCustomAppealPaginationDropdown();
+
+            // Применить темные стили к выпадающему списку
+            applyDarkThemeToSelect();
+
+            // Применить стили при открытии select
+            if (statusSelect) {
+                statusSelect.addEventListener('mousedown', function () {
+                    setTimeout(applyDarkThemeToSelect, 10);
+                });
+                statusSelect.addEventListener('focus', function () {
+                    setTimeout(applyDarkThemeToSelect, 10);
+                });
+                statusSelect.addEventListener('change', function () {
+                    setTimeout(applyDarkThemeToSelect, 10);
+                    // Reset to first page when filter changes
+                    paginationState.currentPage = 1;
+                    loadNotifications();
+                });
+            }
+
+            // Проверяем, есть ли id в URL - если есть, значит это переход с уведомления
+            const notificationId = getNotificationIdFromUrl();
+            if (notificationId) {
+                console.log('Found notification ID in URL:', notificationId);
+                // Загружаем список, затем открываем нужное уведомление
+                loadNotifications().then(() => {
+                    // Увеличиваем задержку, чтобы DOM точно был готов
+                    setTimeout(() => {
+                        console.log('Attempting to open notification:', notificationId);
+                        // Повторно кешируем DOM элементы перед открытием
+                        cacheDom();
+                        if (modalOverlay) {
+                            viewNotification(notificationId);
+                        } else {
+                            console.error('Modal overlay not found, retrying...');
+                            setTimeout(() => {
+                                cacheDom();
+                                if (modalOverlay) {
+                                    viewNotification(notificationId);
+                                }
+                            }, 200);
+                        }
+                    }, 500);
+                }).catch(err => {
+                    console.error('Error loading notifications:', err);
+                });
+            } else {
+                loadNotifications();
+            }
+
+            // Повторно применить стили через небольшую задержку
+            setTimeout(applyDarkThemeToSelect, 100);
+            setTimeout(applyDarkThemeToSelect, 500);
+        }
+
+        // Удаляем старый обработчик, если он существует
+        if (window._appeals2ContentLoadedHandler) {
+            window.removeEventListener('spa:contentLoaded', window._appeals2ContentLoadedHandler);
+        }
+
+        window._appeals2ContentLoadedHandler = function (e) {
+            console.log('SPA content loaded event:', e.detail);
+            const route = e.detail?.route || window.location.hash.split('?')[0].slice(1);
+            console.log('Current route:', route);
+            if (!route || route === '/appeals2' || route.startsWith('/appeals2')) {
+                console.log('Loading appeals2 from spa:contentLoaded');
+                // Инициализируем страницу - она сама проверит URL на наличие id
+                setTimeout(() => {
+                    initAppealsPage();
+                }, 100);
+            }
+        };
+
+        window.addEventListener('spa:contentLoaded', window._appeals2ContentLoadedHandler);
+
+        // Загрузка при первой загрузке (если не через SPA)
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAppealsPage);
         } else {
-            loadNotifications();
+            initAppealsPage();
         }
-        
-        // Повторно применить стили через небольшую задержку
-        setTimeout(applyDarkThemeToSelect, 100);
-        setTimeout(applyDarkThemeToSelect, 500);
-    }
 
-    // Удаляем старый обработчик, если он существует
-    if (window._appeals2ContentLoadedHandler) {
-        window.removeEventListener('spa:contentLoaded', window._appeals2ContentLoadedHandler);
-    }
-    
-    window._appeals2ContentLoadedHandler = function(e) {
-        console.log('SPA content loaded event:', e.detail);
-        const route = e.detail?.route || window.location.hash.split('?')[0].slice(1);
-        console.log('Current route:', route);
-        if (!route || route === '/appeals2' || route.startsWith('/appeals2')) {
-            console.log('Loading appeals2 from spa:contentLoaded');
-            // Инициализируем страницу - она сама проверит URL на наличие id
-            setTimeout(() => {
-                initAppealsPage();
-            }, 100);
-        }
-    };
-    
-    window.addEventListener('spa:contentLoaded', window._appeals2ContentLoadedHandler);
-
-    // Загрузка при первой загрузке (если не через SPA)
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initAppealsPage);
-    } else {
-        initAppealsPage();
-    }
-
-})();
+    })();
 </script>
-

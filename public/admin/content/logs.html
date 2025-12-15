@@ -68,44 +68,40 @@
                 
                 
             </div>
-        </div>
-        <!-- Pagination -->
-        <div class="table-pagination" style="    background: rgba(36, 40, 49, 0.95) !important;
-        position: absolute;
-        width: 100%;
-        bottom: -41px;
-        border-left: 1px solid rgba(102, 126, 234, 0.15) !important;
-        border-bottom: 1px solid rgba(102, 126, 234, 0.15) !important;
-        border-right: 1px solid rgba(102, 126, 234, 0.15) !important;">
-            <div class="pagination-controls">
-                <button class="btn-pagination" onclick="goToLogPage('prev')" disabled id="logPrevBtn">
-                    <i class="bi bi-chevron-double-left"></i>
-                </button>
-                <button class="btn-pagination active" onclick="goToLogPage(1)" id="logCurrentPageBtn">1</button>
-                <button class="btn-pagination" onclick="goToLogPage('next')" disabled id="logNextBtn">
-                    <i class="bi bi-chevron-double-right"></i>
-                </button>
-            </div>
-            <div class="pagination-info">
-                <span>Стр. <span id="logCurrentPage">1</span> из <span id="logTotalPages">1</span> · всего <span id="logTotalItems">0</span></span>
-            </div>
-            <div class="pagination-per-page">
-                <span>На</span>
-                <span>странице:</span>
-                <div class="custom-pag-select" id="customLogItemsPerPage">
-                    <select id="logItemsPerPage" onchange="changeLogItemsPerPage()" style="display: none;">
-                        <option value="25">25</option>
-                        <option value="50" selected>50</option>
-                        <option value="100">100</option>
-                    </select>
-                    <div class="select-btn">
-                        <span class="select-text">50</span>
-                        <span class="arrow">▾</span>
-                    </div>
-                    <div class="select-options">
-                        <div class="select-option" data-value="25">25</div>
-                        <div class="select-option selected" data-value="50">50</div>
-                        <div class="select-option" data-value="100">100</div>
+                    <!-- Pagination -->
+        <div class="table-pagination">
+            <div class="pagination-controls" id="logPaginationControls">
+                    <button class="btn-pagination" onclick="goToLogPage('prev')" disabled id="logPrevBtn">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </button>
+                <div id="logPageButtons" class="pagination-pages"></div>
+                    <button class="btn-pagination" onclick="goToLogPage('next')" disabled id="logNextBtn">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </button>
+                </div>
+                <div class="pagination-info">
+                    <span>Стр. <span id="logCurrentPage">1</span> из <span id="logTotalPages">1</span> · всего <span id="logTotalItems">0</span></span>
+                </div>
+                <div class="pagination-per-page">
+                    <span>На</span>
+                    <span>странице:</span>
+                    <div class="custom-pag-select" id="customLogItemsPerPage">
+                        <select id="logItemsPerPage" onchange="changeLogItemsPerPage()" style="display: none;">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <div class="select-btn">
+                            <span class="select-text">25</span>
+                            <span class="arrow">▾</span>
+                        </div>
+                        <div class="select-options" style="background: rgba(36, 40, 49, 0.95) !important">
+                            <div class="select-option" data-value="10">10</div>
+                            <div class="select-option selected" data-value="25">25</div>
+                            <div class="select-option" data-value="50">50</div>
+                            <div class="select-option" data-value="100">100</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -122,7 +118,7 @@
     // Pagination state
     let paginationState = {
         currentPage: 1,
-        itemsPerPage: 50,
+        itemsPerPage: 25,
         totalItems: 0,
         totalPages: 1
     };
@@ -286,20 +282,76 @@
     }
     
     // Pagination Functions
+    function buildLogPageList(current, total) {
+        if (total <= 5) {
+            return Array.from({ length: total }, (_, i) => i + 1);
+        }
+        const pages = new Set([1, total]);
+        if (current <= 3) {
+            [2, 3, 4, 5].forEach(p => pages.add(p));
+        } else if (current >= total - 2) {
+            [total - 1, total - 2, total - 3, total - 4].forEach(p => pages.add(p));
+        } else {
+            [current - 2, current - 1, current, current + 1, current + 2].forEach(p => pages.add(p));
+        }
+        const sorted = Array.from(pages).filter(p => p >= 1 && p <= total).sort((a, b) => a - b);
+        const result = [];
+        for (let i = 0; i < sorted.length; i++) {
+            const page = sorted[i];
+            result.push(page);
+            const next = sorted[i + 1];
+            if (next && next - page > 1) {
+                result.push('dots');
+            }
+        }
+        return result;
+    }
+
     function updatePaginationUI() {
         const currentPageEl = document.getElementById('logCurrentPage');
         const totalPagesEl = document.getElementById('logTotalPages');
         const totalItemsEl = document.getElementById('logTotalItems');
-        const currentPageBtn = document.getElementById('logCurrentPageBtn');
         const prevBtn = document.getElementById('logPrevBtn');
         const nextBtn = document.getElementById('logNextBtn');
+        const pagesContainer = document.getElementById('logPageButtons');
         
         if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
         if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
         if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
-        if (currentPageBtn) currentPageBtn.textContent = paginationState.currentPage;
-        if (prevBtn) prevBtn.disabled = paginationState.currentPage === 1;
-        if (nextBtn) nextBtn.disabled = paginationState.currentPage === paginationState.totalPages;
+        if (prevBtn) prevBtn.disabled = paginationState.currentPage <= 1;
+        if (nextBtn) nextBtn.disabled = paginationState.currentPage >= paginationState.totalPages;
+
+        if (!pagesContainer) return;
+        pagesContainer.innerHTML = '';
+
+        const pages = buildLogPageList(paginationState.currentPage, paginationState.totalPages);
+        pages.forEach(p => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-pagination';
+
+            if (p === 'dots') {
+                btn.textContent = '...';
+                btn.disabled = true;
+                btn.classList.add('dots');
+            } else {
+                btn.textContent = p;
+                if (p > paginationState.totalPages) {
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => {
+                        if (p !== paginationState.currentPage) {
+                            goToLogPage(p);
+                        }
+                    };
+                }
+                if (p === paginationState.currentPage) {
+                    btn.classList.add('active');
+                    btn.setAttribute('aria-current', 'page');
+                }
+            }
+
+            pagesContainer.appendChild(btn);
+        });
     }
     
     window.goToLogPage = function(page) {
@@ -429,11 +481,10 @@
         document.getElementById('filterResident').value = '';
         document.getElementById('filterUser').value = '';
         paginationState.currentPage = 1;
-        paginationState.itemsPerPage = 50;
-        // Update the custom dropdown to match
+        paginationState.itemsPerPage = 25;
         const select = document.getElementById('logItemsPerPage');
         if (select) {
-            select.value = '50';
+            select.value = '25';
             updateCustomLogPaginationDropdown();
         }
         loadLogs();

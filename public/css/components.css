@@ -935,6 +935,24 @@
     will-change: transform, opacity;
 }
 
+/* Pagination layout helpers */
+.pagination-controls {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+}
+
+.pagination-pages {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 8px;
+    align-items: center;
+}
+
 /* Glassmorphism Effect for Cards */
 @supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
     .stat-card.solid-blue,

@@ -3,12 +3,12 @@
 </div>
 
 <script>
-(function(){
-    const container = document.getElementById('buildingsList');
-    if(container) {
-        container.innerHTML = TestData.buildings.map((b, i) => `
+    (function () {
+        const container = document.getElementById('buildingsList');
+        if (container) {
+            container.innerHTML = TestData.buildings.map((b, i) => `
             <div class="col-lg-4">
-                <div class="card animate__animated animate__fadeInUp" style="animation-delay: ${i*0.1}s;">
+                <div class="card animate__animated animate__fadeInUp" style="animation-delay: ${i * 0.1}s;">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div>
@@ -42,8 +42,6 @@
                 </div>
             </div>
         `).join('');
-    }
-})();
+        }
+    })();
 </script>
-
-

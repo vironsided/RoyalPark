@@ -126,8 +126,8 @@ def create_user_api(
     if actor.role == RoleEnum.ADMIN and payload.role in (RoleEnum.ROOT, RoleEnum.ADMIN):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
 
-    # генерируем временный пароль (пока без возврата в ответе)
-    temp_password = "Temp1234"
+    # Генерируем уникальный сложный временный пароль
+    temp_password = generate_temp_password(12)
 
     user = User(
         username=payload.username,
@@ -520,8 +520,8 @@ def reset_password_api(
     if not can_manage_user(target, actor):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
 
-    # простой временный пароль (можно заменить на более сложный генератор)
-    temp_pass = "Temp1234"
+    # Сложный временный пароль как у жителей (только буквы, случайный)
+    temp_pass = generate_temp_password(10)
     target.password_hash = hash_password(temp_pass)
     target.require_password_change = True
     target.temp_password_plain = temp_pass

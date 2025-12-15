@@ -6,8 +6,8 @@ class Settings(BaseModel):
     PG_HOST: str = "127.0.0.1"
     PG_PORT: int = 5432
     PG_USER: str = "postgres"
-    PG_PASSWORD: str = "admin"
-    PG_DB: str = "fast1"
+    PG_PASSWORD: str = "admin Ayaz"
+    PG_DB: str = "fastApiAyaz"
 
     # Секреты/куки:
     SESSION_SECRET_KEY: str = "change-this-in-production"

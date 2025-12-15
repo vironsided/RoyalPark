@@ -82,22 +82,13 @@
 
             
         </div>
-        
-    </div>
-    <!-- Pagination -->
-    <div class="table-pagination" style="    background: #242831 !important;
-    position: absolute;
-    width: 100%;
-    bottom: -51px;
-    z-index: 2;
-    border-right: 1px solid rgba(102, 126, 234, 0.15) !important;
-    border-bottom: 1px solid rgba(102, 126, 234, 0.15) !important;
-    border-left: 1px solid rgba(102, 126, 234, 0.15) !important;">
-        <div class="pagination-controls">
+            <!-- Pagination -->
+    <div class="table-pagination">
+        <div class="pagination-controls" id="paymentPaginationControls">
             <button class="btn-pagination" onclick="goToPaymentPage('prev')" disabled id="paymentPrevBtn">
                 <i class="bi bi-chevron-double-left"></i>
             </button>
-            <button class="btn-pagination active" onclick="goToPaymentPage(1)" id="paymentCurrentPageBtn">1</button>
+            <div id="paymentPageButtons" class="pagination-pages"></div>
             <button class="btn-pagination" onclick="goToPaymentPage('next')" disabled id="paymentNextBtn">
                 <i class="bi bi-chevron-double-right"></i>
             </button>
@@ -119,7 +110,7 @@
                     <span class="select-text">25</span>
                     <span class="arrow">▾</span>
         </div>
-                <div class="select-options">
+                <div class="select-options" style="background: rgba(36, 40, 49, 0.95) !important">
                     <div class="select-option" data-value="10">10</div>
                     <div class="select-option selected" data-value="25">25</div>
                     <div class="select-option" data-value="50">50</div>
@@ -127,6 +118,7 @@
         </div>
         </div>
         </div>
+    </div>
     </div>
     </div>
 </div>
@@ -327,21 +319,77 @@
         updatePaginationUI();
     }
     
+    function buildPaymentPageList(current, total) {
+        if (total <= 5) {
+            return Array.from({ length: total }, (_, i) => i + 1);
+        }
+        const pages = new Set([1, total]);
+        if (current <= 3) {
+            [2, 3, 4, 5].forEach(p => pages.add(p));
+        } else if (current >= total - 2) {
+            [total - 1, total - 2, total - 3, total - 4].forEach(p => pages.add(p));
+        } else {
+            [current - 2, current - 1, current, current + 1, current + 2].forEach(p => pages.add(p));
+        }
+        const sorted = Array.from(pages).filter(p => p >= 1 && p <= total).sort((a, b) => a - b);
+        const result = [];
+        for (let i = 0; i < sorted.length; i++) {
+            const page = sorted[i];
+            result.push(page);
+            const next = sorted[i + 1];
+            if (next && next - page > 1) {
+                result.push('dots');
+            }
+        }
+        return result;
+    }
+
     // Update pagination UI
     function updatePaginationUI() {
         const currentPageEl = document.getElementById('paymentCurrentPage');
         const totalPagesEl = document.getElementById('paymentTotalPages');
         const totalItemsEl = document.getElementById('paymentTotalItems');
-        const currentPageBtn = document.getElementById('paymentCurrentPageBtn');
         const prevBtn = document.getElementById('paymentPrevBtn');
         const nextBtn = document.getElementById('paymentNextBtn');
+        const pagesContainer = document.getElementById('paymentPageButtons');
         
         if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
         if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
         if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
-        if (currentPageBtn) currentPageBtn.textContent = paginationState.currentPage;
-        if (prevBtn) prevBtn.disabled = paginationState.currentPage === 1;
-        if (nextBtn) nextBtn.disabled = paginationState.currentPage === paginationState.totalPages;
+        if (prevBtn) prevBtn.disabled = paginationState.currentPage <= 1;
+        if (nextBtn) nextBtn.disabled = paginationState.currentPage >= paginationState.totalPages;
+
+        if (!pagesContainer) return;
+        pagesContainer.innerHTML = '';
+
+        const pages = buildPaymentPageList(paginationState.currentPage, paginationState.totalPages);
+        pages.forEach(p => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-pagination';
+
+            if (p === 'dots') {
+                btn.textContent = '...';
+                btn.disabled = true;
+                btn.classList.add('dots');
+            } else {
+                btn.textContent = p;
+                if (p > paginationState.totalPages) {
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => {
+                        if (p !== paginationState.currentPage) {
+                            goToPaymentPage(p);
+                        }
+                    };
+                }
+                if (p === paginationState.currentPage) {
+                    btn.classList.add('active');
+                    btn.setAttribute('aria-current', 'page');
+                }
+            }
+
+            pagesContainer.appendChild(btn);
+        });
     }
     
     // Pagination functions
@@ -714,29 +762,24 @@
         });
     }
     
-    // Auto-apply filters on input change
+    // Инициализация фильтров (БЕЗ автоматического применения)
+    // Фильтрация происходит ТОЛЬКО при нажатии на кнопку "Фильтр" или Enter в поле поиска
     function initFilters() {
-        const filterInputs = ['filterResident', 'filterMethod', 'filterDateFrom', 'filterDateTo', 'filterSearch'];
-        filterInputs.forEach(inputId => {
-            const input = document.getElementById(inputId);
-            if (input) {
-                // Remove existing listeners
-                const newInput = input.cloneNode(true);
-                input.parentNode.replaceChild(newInput, input);
-                
-                if (inputId === 'filterSearch') {
-                    let searchTimeout;
-                    newInput.addEventListener('input', function() {
-                        clearTimeout(searchTimeout);
-                        searchTimeout = setTimeout(applyPaymentFilters, 300);
-                    });
-                } else {
-                    newInput.addEventListener('change', applyPaymentFilters);
-                }
-            }
-        });
+        // Убираем все автоматические обработчики событий (onchange, oninput)
+        // Фильтрация будет происходить только при нажатии на кнопку "Фильтр"
         
-        // Initialize pagination dropdown
+        // Добавляем обработчик Enter для поля поиска (удобство для пользователя)
+        const searchInput = document.getElementById('filterSearch');
+        if (searchInput) {
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    applyPaymentFilters();
+                }
+            });
+        }
+        
+        // Инициализируем только pagination dropdown
         setTimeout(() => {
             initCustomPaginationDropdown();
         }, 500);
