@@ -522,6 +522,10 @@ class SPARouter {
         const h1 = titleContainer.querySelector('h1');
         if (h1) {
             h1.textContent = pageInfo.title;
+            // Удаляем любые inline стили, которые могут перезаписать CSS стили
+            h1.removeAttribute('style');
+            // Принудительно перерисовываем элемент для применения CSS стилей
+            void h1.offsetHeight; // Trigger reflow
         }
         
         // Обновляем breadcrumb

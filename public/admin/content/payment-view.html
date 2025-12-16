@@ -198,8 +198,16 @@
         }
 
         function renderPayment(payment) {
-            // Update title
+            // Проверяем, что необходимые элементы существуют в DOM
             const titleEl = document.getElementById('paymentTitle');
+            if (!titleEl) {
+                console.warn('Payment title element not found, DOM may not be ready yet');
+                // Повторяем попытку через небольшую задержку
+                setTimeout(() => renderPayment(payment), 100);
+                return;
+            }
+
+            // Update title
             if (titleEl) titleEl.textContent = `Платеж #${payment.id}`;
 
             // Update summary
@@ -233,6 +241,7 @@
 
             // Update applications table
             const tbody = document.getElementById('applicationsTable');
+            if (tbody) {
             if (payment.applications && payment.applications.length > 0) {
                 tbody.innerHTML = payment.applications.map(app => {
                     const invoiceDisplay = app.invoice_number || app.invoice_period || `${app.invoice_id}`;
@@ -247,6 +256,7 @@
                 }).join('');
             } else {
                 tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">Нет применений</td></tr>';
+                }
             }
 
             updateDistributionTotals();
@@ -268,23 +278,51 @@
 
         // Update page header when payment view loads
         function updatePageHeaderForPaymentsView() {
-            const pageTitle = document.querySelector('.page-title');
-            const breadcrumb = document.querySelector('.breadcrumb');
+            // Правильно обновляем заголовок через page-title-container
+            const titleContainer = document.getElementById('page-title-container');
+            if (titleContainer) {
+                const h1 = titleContainer.querySelector('h1');
+                if (h1) {
+                    h1.textContent = 'Платежи';
+                    // Удаляем любые inline стили, чтобы применились CSS стили
+                    h1.removeAttribute('style');
+                }
 
-            if (pageTitle) {
-                pageTitle.textContent = 'Платежи';
-            }
-
+                const breadcrumb = titleContainer.querySelector('.page-breadcrumb');
             if (breadcrumb) {
-                breadcrumb.innerHTML = '<a href="#/dashboard">Главная</a> / <a href="#/payments">Финансы</a> / Платежи';
+                    breadcrumb.innerHTML = `
+                        <span class="breadcrumb-item">
+                            <svg width="14" height="14" fill="currentColor" style="margin-right: 0.25rem; vertical-align: middle;">
+                                <use href="/images/icons.svg#icon-apartments"></use>
+                            </svg>
+                            Главная
+                        </span>
+                        <span>›</span>
+                        <span class="breadcrumb-item">Финансы</span>
+                        <span>›</span>
+                        <span class="breadcrumb-item">Платежи</span>
+                    `;
+                }
             }
         }
 
         // Update page header when loaded in SPA
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', updatePageHeaderForPaymentsView);
-        } else {
+        // Используем событие spa:contentLoaded для правильного обновления после загрузки контента
+        function initPaymentViewHeader() {
             updatePageHeaderForPaymentsView();
+        }
+
+        // Вызываем при загрузке контента через SPA
+        if (window.spaRouter) {
+            // Если уже загружен, обновляем сразу
+            setTimeout(initPaymentViewHeader, 100);
+        } else {
+            // Иначе ждем события
+            document.addEventListener('spa:contentLoaded', function(e) {
+                if (e.detail && e.detail.route === '/payment-view') {
+                    setTimeout(initPaymentViewHeader, 100);
+                }
+            });
         }
 
         function renderDistributionTable() {
@@ -539,16 +577,31 @@
 
         // Функция для обновления заголовка и breadcrumb при открытии просмотра счета
         function updatePageHeaderForInvoiceView(invoiceId) {
-            // Обновить заголовок страницы
-            const pageTitle = document.querySelector('.page-title');
-            const breadcrumb = document.querySelector('.breadcrumb');
+            // Правильно обновляем заголовок через page-title-container
+            const titleContainer = document.getElementById('page-title-container');
+            if (titleContainer) {
+                const h1 = titleContainer.querySelector('h1');
+                if (h1) {
+                    h1.textContent = 'Счета';
+                    // Удаляем любые inline стили, чтобы применились CSS стили
+                    h1.removeAttribute('style');
+                }
 
-            if (pageTitle) {
-                pageTitle.textContent = 'Счета';
-            }
-
+                const breadcrumb = titleContainer.querySelector('.page-breadcrumb');
             if (breadcrumb) {
-                breadcrumb.innerHTML = '<a href="#/dashboard">Главная</a> / <a href="#/invoices">Финансы</a> / Счета';
+                    breadcrumb.innerHTML = `
+                        <span class="breadcrumb-item">
+                            <svg width="14" height="14" fill="currentColor" style="margin-right: 0.25rem; vertical-align: middle;">
+                                <use href="/images/icons.svg#icon-apartments"></use>
+                            </svg>
+                            Главная
+                        </span>
+                        <span>›</span>
+                        <span class="breadcrumb-item">Финансы</span>
+                        <span>›</span>
+                        <span class="breadcrumb-item">Счета</span>
+                    `;
+                }
             }
 
             // Обновить title страницы

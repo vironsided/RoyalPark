@@ -749,6 +749,13 @@
     window.openRecordModal = function openRecordModal() {
         document.getElementById('recordReadingModal').classList.add('active');
         document.body.style.overflow = 'hidden';
+        
+        // Устанавливаем сегодняшнюю дату по умолчанию
+        const today = new Date().toISOString().split('T')[0];
+        const modalDate = document.getElementById('modalDate');
+        if (modalDate) {
+            modalDate.value = today;
+        }
     }
 
     window.closeRecordModal = function closeRecordModal() {
@@ -1050,18 +1057,13 @@
             await loadResidents();
         }
 
-        // Get real reading date from resident data FIRST
-        const now = new Date();
-        const year = readingsData?.year || now.getFullYear();
-        const month = readingsData?.month || now.getMonth() + 1;
-
+        // Устанавливаем сегодняшнюю дату по умолчанию
+        const today = new Date().toISOString().split('T')[0];
+        
         // Try to get reading date from resident data (if available from API)
-        let readingDate = null;
+        let readingDate = today; // По умолчанию сегодняшняя дата
         if (resident.reading_date) {
             readingDate = resident.reading_date;
-        } else {
-            // Fallback to 04th of month (as shown in backend example)
-            readingDate = `${year}-${String(month).padStart(2, '0')}-04`;
         }
 
         // Set date BEFORE calling renderMeterDetails

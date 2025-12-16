@@ -1088,16 +1088,34 @@
 
                     // Обновляем аватар
                     if (avatarPreview) {
+                        const initials = (user.full_name || user.username || 'U').substring(0, 2).toUpperCase();
+                        
                         if (user.avatar_path) {
-                            avatarPreview.style.backgroundImage = `url('${API_BASE}${user.avatar_path}')`;
-                            avatarPreview.style.backgroundSize = 'cover';
-                            avatarPreview.style.backgroundPosition = 'center';
-                            avatarPreview.textContent = '';
+                            // Создаем изображение для проверки загрузки
+                            const img = new Image();
+                            img.onload = function() {
+                                avatarPreview.style.backgroundImage = `url('${API_BASE}${user.avatar_path}')`;
+                                avatarPreview.style.background = 'none'; // Убираем градиентный фон
+                                avatarPreview.style.backgroundSize = 'cover';
+                                avatarPreview.style.backgroundPosition = 'center';
+                                avatarPreview.textContent = '';
+                            };
+                            img.onerror = function() {
+                                // Если изображение не загрузилось, показываем инициалы
+                                avatarPreview.textContent = initials;
+                                avatarPreview.style.backgroundImage = 'none';
+                                avatarPreview.style.background = ''; // Восстанавливаем градиент из CSS
+                                avatarPreview.style.backgroundSize = '';
+                                avatarPreview.style.backgroundPosition = '';
+                            };
+                            img.src = `${API_BASE}${user.avatar_path}`;
                         } else {
-                            // Показываем инициалы
-                            const initials = (user.full_name || user.username || 'U').substring(0, 2).toUpperCase();
+                            // Показываем инициалы если нет аватара
                             avatarPreview.textContent = initials;
-                            avatarPreview.style.backgroundImage = '';
+                            avatarPreview.style.backgroundImage = 'none';
+                            avatarPreview.style.background = ''; // Восстанавливаем градиент из CSS
+                            avatarPreview.style.backgroundSize = '';
+                            avatarPreview.style.backgroundPosition = '';
                         }
                     }
 
@@ -1117,16 +1135,34 @@
                 // Обновляем аватар в шапке
                 const headerAvatar = document.querySelector('.user-avatar');
                 if (headerAvatar) {
+                    const initials = (user.full_name || user.username || 'U').substring(0, 2).toUpperCase();
+                    
                     if (user.avatar_path) {
-                        headerAvatar.style.backgroundImage = `url('${API_BASE}${user.avatar_path}')`;
-                        headerAvatar.style.backgroundSize = 'cover';
-                        headerAvatar.style.backgroundPosition = 'center';
-                        headerAvatar.textContent = '';
+                        // Создаем изображение для проверки загрузки
+                        const img = new Image();
+                        img.onload = function() {
+                            headerAvatar.style.backgroundImage = `url('${API_BASE}${user.avatar_path}')`;
+                            headerAvatar.style.background = 'none'; // Убираем градиентный фон
+                            headerAvatar.style.backgroundSize = 'cover';
+                            headerAvatar.style.backgroundPosition = 'center';
+                            headerAvatar.textContent = '';
+                        };
+                        img.onerror = function() {
+                            // Если изображение не загрузилось, показываем инициалы
+                            headerAvatar.textContent = initials;
+                            headerAvatar.style.backgroundImage = 'none';
+                            headerAvatar.style.background = ''; // Восстанавливаем градиент из CSS
+                            headerAvatar.style.backgroundSize = '';
+                            headerAvatar.style.backgroundPosition = '';
+                        };
+                        img.src = `${API_BASE}${user.avatar_path}`;
                     } else {
                         // Показываем инициалы если нет аватара
-                        const initials = (user.full_name || user.username || 'U').substring(0, 2).toUpperCase();
                         headerAvatar.textContent = initials;
-                        headerAvatar.style.backgroundImage = '';
+                        headerAvatar.style.backgroundImage = 'none';
+                        headerAvatar.style.background = ''; // Восстанавливаем градиент из CSS
+                        headerAvatar.style.backgroundSize = '';
+                        headerAvatar.style.backgroundPosition = '';
                     }
                 }
 
@@ -1273,13 +1309,36 @@
             if (avatarInput && avatarPreview) {
                 avatarInput.addEventListener('change', function () {
                     const file = this.files && this.files[0];
-                    if (!file) return;
+                    if (!file) {
+                        // Если файл удален, показываем инициалы из текущего пользователя
+                        const userNameEl = document.querySelector('.user-name');
+                        const userName = userNameEl ? userNameEl.textContent : 'U';
+                        const initials = userName.substring(0, 2).toUpperCase();
+                        avatarPreview.textContent = initials;
+                        avatarPreview.style.backgroundImage = 'none';
+                        avatarPreview.style.background = ''; // Восстанавливаем градиент из CSS
+                        avatarPreview.style.backgroundSize = '';
+                        avatarPreview.style.backgroundPosition = '';
+                        return;
+                    }
                     const reader = new FileReader();
                     reader.onload = function (e) {
                         avatarPreview.style.backgroundImage = `url('${e.target.result}')`;
+                        avatarPreview.style.background = 'none'; // Убираем градиентный фон
                         avatarPreview.style.backgroundSize = 'cover';
                         avatarPreview.style.backgroundPosition = 'center';
                         avatarPreview.textContent = '';
+                    };
+                    reader.onerror = function() {
+                        // Если ошибка чтения файла, показываем инициалы
+                        const userNameEl = document.querySelector('.user-name');
+                        const userName = userNameEl ? userNameEl.textContent : 'U';
+                        const initials = userName.substring(0, 2).toUpperCase();
+                        avatarPreview.textContent = initials;
+                        avatarPreview.style.backgroundImage = 'none';
+                        avatarPreview.style.background = ''; // Восстанавливаем градиент из CSS
+                        avatarPreview.style.backgroundSize = '';
+                        avatarPreview.style.backgroundPosition = '';
                     };
                     reader.readAsDataURL(file);
                 });
@@ -1460,15 +1519,34 @@
                         // Обновляем аватар в превью
                         const avatarPreview = document.getElementById('accountModalAvatar');
                         if (avatarPreview) {
+                            const initials = (updatedUser.full_name || updatedUser.username || 'U').substring(0, 2).toUpperCase();
+                            
                             if (updatedUser.avatar_path) {
-                                avatarPreview.style.backgroundImage = `url('${API_BASE}${updatedUser.avatar_path}')`;
-                                avatarPreview.style.backgroundSize = 'cover';
-                                avatarPreview.style.backgroundPosition = 'center';
-                                avatarPreview.textContent = '';
+                                // Создаем изображение для проверки загрузки
+                                const img = new Image();
+                                img.onload = function() {
+                                    avatarPreview.style.backgroundImage = `url('${API_BASE}${updatedUser.avatar_path}')`;
+                                    avatarPreview.style.background = 'none'; // Убираем градиентный фон
+                                    avatarPreview.style.backgroundSize = 'cover';
+                                    avatarPreview.style.backgroundPosition = 'center';
+                                    avatarPreview.textContent = '';
+                                };
+                                img.onerror = function() {
+                                    // Если изображение не загрузилось, показываем инициалы
+                                    avatarPreview.textContent = initials;
+                                    avatarPreview.style.backgroundImage = 'none';
+                                    avatarPreview.style.background = ''; // Восстанавливаем градиент из CSS
+                                    avatarPreview.style.backgroundSize = '';
+                                    avatarPreview.style.backgroundPosition = '';
+                                };
+                                img.src = `${API_BASE}${updatedUser.avatar_path}`;
                             } else {
-                                const initials = (updatedUser.full_name || updatedUser.username || 'U').substring(0, 2).toUpperCase();
+                                // Показываем инициалы если нет аватара
                                 avatarPreview.textContent = initials;
-                                avatarPreview.style.backgroundImage = '';
+                                avatarPreview.style.backgroundImage = 'none';
+                                avatarPreview.style.background = ''; // Восстанавливаем градиент из CSS
+                                avatarPreview.style.backgroundSize = '';
+                                avatarPreview.style.backgroundPosition = '';
                             }
                         }
 

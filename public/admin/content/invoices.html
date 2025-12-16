@@ -730,6 +730,8 @@
             const h1 = titleContainer.querySelector('h1');
             if (h1) {
                 h1.textContent = 'Счета';
+                // Удаляем любые inline стили, чтобы применились CSS стили
+                h1.removeAttribute('style');
             }
             
             // Обновить breadcrumb

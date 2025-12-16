@@ -426,36 +426,56 @@
         loadPayments();
     };
     
-    // Load residents for filters and modal
+    // Load residents for filters and modal (учитываем пагинацию API)
     async function loadResidents() {
         try {
-            let response = await fetch(`${API_BASE}/api/residents`, { credentials: 'include' });
-            if (!response.ok && response.status === 401) {
-                response = await fetch(`${API_BASE}/api/residents/public`);
+            const perPage = 100;
+            let page = 1;
+            let allResidents = [];
+            let lastPage = 1;
+
+            while (page <= lastPage) {
+                let url = `${API_BASE}/api/residents?per_page=${perPage}&page=${page}`;
+                let response = await fetch(url, { credentials: 'include' });
+
+                if (!response.ok && response.status === 401) {
+                    // Публичная версия, если нет авторизации
+                    url = `${API_BASE}/api/residents/public?per_page=${perPage}&page=${page}`;
+                    response = await fetch(url);
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const items = Array.isArray(data) ? data : (data.items || data.residents || []);
+                allResidents = allResidents.concat(items);
+
+                const pagination = data.pagination || {};
+                lastPage = pagination.last_page || 1;
+                page += 1;
             }
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            residents = Array.isArray(data) ? data : (data.residents || []);
-            
+
+            residents = allResidents;
+            console.log('Loaded residents for payments:', residents.length);
+
             // Populate filter dropdown
             const filterResident = document.getElementById('filterResident');
             if (filterResident) {
-                filterResident.innerHTML = '<option value="all">Все</option>' + 
+                filterResident.innerHTML = '<option value="all">Все</option>' +
                     residents.map(r => `<option value="${r.id}">${r.block_name} / ${r.unit_number}</option>`).join('');
             }
-            
+
             // Populate modal dropdown
             const paymentResident = document.getElementById('paymentResident');
             if (paymentResident) {
-                paymentResident.innerHTML = '<option value="">Выберите резидента</option>' + 
+                paymentResident.innerHTML = '<option value="">Выберите резидента</option>' +
                     residents.map(r => `<option value="${r.id}">${r.block_name} / ${r.unit_number}</option>`).join('');
             }
         } catch (error) {
             console.error('Error loading residents:', error);
+            residents = [];
         }
     }
     
