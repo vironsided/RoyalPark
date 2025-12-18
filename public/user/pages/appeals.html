@@ -8,14 +8,13 @@
                 <div class="user-appeals-field">
                     <label for="appealHouse" data-i18n="user_appeals_house">Дом</label>
                     <select id="appealHouse">
-                        <option value="x2">X / 2</option>
-                        <option value="a50">A / 50</option>
+                        <!-- Будет заполнено из API -->
                     </select>
                 </div>
 
                 <div class="user-appeals-field">
                     <label for="appealText" data-i18n="user_appeals_description">Опишите проблему</label>
-                    <textarea id="appealText" rows="6" data-i18n-placeholder="user_appeals_placeholder" placeholder="Например: в доме 12Б не работает уличное освещение..."></textarea>
+                    <textarea id="appealText" rows="17" data-i18n-placeholder="user_appeals_placeholder" placeholder="Например: в доме 12Б не работает уличное освещение..."></textarea>
                     <small class="user-appeals-hint" data-i18n="user_appeals_hint">Максимум 2000 символов.</small>
                 </div>
 
@@ -32,28 +31,6 @@
             </div>
 
             <div class="user-appeals-list">
-                <div class="user-appeal-item" data-apartment="A / 50" data-created="23.11.2025 15:42" data-status="read" data-text="В подъезде перегорела лампочка на 3 этаже.">
-                    <div class="user-appeal-main">
-                        <div>
-                            <div class="user-appeal-house">A / 50</div>
-                            <div class="user-appeal-date">23.11.2025 15:42</div>
-                        </div>
-                        <span class="user-appeal-badge user-appeal-badge-read" data-i18n="user_appeal_status_read">Прочитано</span>
-                    </div>
-                    <button type="button" class="btn btn-outline-info btn-sm user-appeal-view" data-i18n="apply">Просмотр</button>
-                </div>
-
-                <div class="user-appeal-item" data-apartment="A / 50" data-created="22.11.2025 09:02" data-status="unread" data-text="Шум в подвале по ночам, возможно, неисправность оборудования.">
-                    <div class="user-appeal-main">
-                        <div>
-                            <div class="user-appeal-house">A / 50</div>
-                            <div class="user-appeal-date">22.11.2025 09:02</div>
-                        </div>
-                        <span class="user-appeal-badge user-appeal-badge-unread" data-i18n="user_appeal_status_unread">Не прочитано</span>
-                    </div>
-                    <button type="button" class="btn btn-outline-info btn-sm user-appeal-view" data-i18n="apply">Просмотр</button>
-                </div>
-
                 <div class="user-appeals-empty" style="display:none;" data-i18n="no_data">
                     Обращений пока нет.
                 </div>
@@ -113,28 +90,151 @@
             const modalStatus = document.getElementById('userAppealModalStatus');
             const modalText = document.getElementById('userAppealModalText');
             const modalEdit = document.getElementById('userAppealModalEdit');
+            const modalEditBlock = document.querySelector('.user-appeal-modal-edit');
+            const modalSaveBtn = document.getElementById('userAppealSave');
+            const modalDeleteBtn = document.getElementById('userAppealDelete');
 
             if (!list || !modal) return;
 
+            const API_BASE_URL = 'http://localhost:8000';
+
+            let residents = [];
+            let currentAppealId = null;
+
+            async function loadResidents() {
+                try {
+                    const resp = await fetch(`${API_BASE_URL}/api/resident/dashboard`, {
+                        method: 'GET',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    if (!resp.ok) return;
+                    const data = await resp.json();
+                    residents = data.residents || [];
+                    const select = document.getElementById('appealHouse');
+                    if (select && residents.length) {
+                        select.innerHTML = '';
+                        residents.forEach(r => {
+                            const opt = document.createElement('option');
+                            opt.value = r.id;
+                            opt.textContent = r.code;
+                            select.appendChild(opt);
+                        });
+                    }
+                } catch (e) {
+                    console.error('Failed to load residents for appeals:', e);
+                }
+            }
+
+            function renderAppeals(items) {
+                // очищаем всё, кроме emptyState
+                list.querySelectorAll('.user-appeal-item').forEach(el => el.remove());
+                if (!items || !items.length) {
+                    if (emptyState) emptyState.style.display = 'block';
+                    return;
+                }
+                if (emptyState) emptyState.style.display = 'none';
+
+                items.forEach(appeal => {
+                    const item = document.createElement('div');
+                    item.className = 'user-appeal-item';
+                    item.dataset.id = appeal.id;
+                    item.dataset.apartment = appeal.resident_code || '—';
+                    const createdDate = appeal.created_at ? new Date(appeal.created_at) : null;
+                    const createdDisplay = createdDate && !isNaN(createdDate.getTime())
+                        ? createdDate.toLocaleString('ru-RU')
+                        : '—';
+                    item.dataset.createdRaw = appeal.created_at || '';
+                    item.dataset.created = createdDisplay;
+                    item.dataset.status = appeal.status === 'READ' ? 'read' : 'unread';
+                    item.dataset.text = appeal.message;
+
+                    const isRead = appeal.status === 'READ';
+
+                    item.innerHTML = `
+                        <div class="user-appeal-main">
+                            <div>
+                                <div class="user-appeal-house">${item.dataset.apartment}</div>
+                                <div class="user-appeal-date">${item.dataset.created}</div>
+                            </div>
+                            <span class="user-appeal-badge ${isRead ? 'user-appeal-badge-read' : 'user-appeal-badge-unread'}">
+                                ${isRead ? (window.languageManager?.translateKey?.('user_appeal_status_read') || 'Прочитано')
+                                         : (window.languageManager?.translateKey?.('user_appeal_status_unread') || 'Не прочитано')}
+                            </span>
+                        </div>
+                        <button type="button" class="btn btn-outline-info btn-sm user-appeal-view" data-i18n="apply">Просмотр</button>
+                    `;
+
+                    list.insertBefore(item, emptyState);
+                });
+            }
+
+            async function loadAppeals() {
+                try {
+                    const resp = await fetch(`${API_BASE_URL}/api/resident/appeals`, {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
+                    if (!resp.ok) {
+                        console.error('Failed to load appeals, status:', resp.status);
+                        return;
+                    }
+                    const data = await resp.json();
+                    renderAppeals(data);
+                } catch (e) {
+                    console.error('Failed to load appeals:', e);
+                }
+            }
+
             function openModalFromItem(item) {
+                currentAppealId = item.dataset.id ? Number(item.dataset.id) : null;
                 modalApartment.textContent = item.dataset.apartment || '—';
                 modalCreated.textContent = item.dataset.created || '—';
 
-                // Локализуем статус по ключу (read/unread) через i18n
+                // Определяем язык интерфейса: сначала из languageManager, затем из <html lang>, по умолчанию ru
+                const currentLang =
+                    (window.languageManager && window.languageManager.currentLanguage) ||
+                    document.documentElement.lang ||
+                    'ru';
+
+                // Хелпер перевода статуса (работает даже без languageManager)
+                const translateStatus = (key, fallback) => {
+                    if (window.languageManager && typeof window.languageManager.translateKey === 'function') {
+                        const v = window.languageManager.translateKey(key);
+                        if (v) return v;
+                    }
+                    if (typeof translations !== 'undefined' &&
+                        translations[currentLang] &&
+                        translations[currentLang][key]) {
+                        return translations[currentLang][key];
+                    }
+                    return fallback;
+                };
+
+                // Локализуем статус по ключу (read/unread)
                 const statusKey = item.dataset.status;
-                if (statusKey === 'read' && window.languageManager) {
-                    modalStatus.textContent = window.languageManager.translateKey
-                        ? window.languageManager.translateKey('user_appeal_status_read')
-                        : translations[window.languageManager.currentLanguage || 'ru'].user_appeal_status_read;
-                } else if (statusKey === 'unread' && window.languageManager) {
-                    modalStatus.textContent = window.languageManager.translateKey
-                        ? window.languageManager.translateKey('user_appeal_status_unread')
-                        : translations[window.languageManager.currentLanguage || 'ru'].user_appeal_status_unread;
+                const isRead = statusKey === 'read';
+                if (statusKey === 'read') {
+                    modalStatus.textContent = translateStatus('user_appeal_status_read', 'Read');
+                } else if (statusKey === 'unread') {
+                    modalStatus.textContent = translateStatus('user_appeal_status_unread', 'Unread');
                 } else {
-                    modalStatus.textContent = item.dataset.status || '—';
+                    modalStatus.textContent = statusKey || '—';
                 }
+
                 modalText.textContent = item.dataset.text || '—';
                 modalEdit.value = item.dataset.text || '';
+
+                // READ: скрываем редактор и кнопку "Сохранить", оставляем только просмотр и удаление
+                if (isRead) {
+                    if (modalEditBlock) modalEditBlock.style.display = 'none';
+                    if (modalSaveBtn) modalSaveBtn.style.display = 'none';
+                    modalEdit.readOnly = true;
+                } else {
+                    if (modalEditBlock) modalEditBlock.style.display = '';
+                    if (modalSaveBtn) modalSaveBtn.style.display = '';
+                    modalEdit.readOnly = false;
+                }
                 modal.classList.add('show');
                 document.body.style.overflow = 'hidden';
             }
@@ -158,6 +258,72 @@
                 if (e.target === modal) closeModal();
             });
 
+            if (modalSaveBtn) {
+                modalSaveBtn.addEventListener('click', async () => {
+                    if (!currentAppealId) return;
+                    const newText = (modalEdit.value || '').trim();
+                    if (!newText) return;
+                    try {
+                        const resp = await fetch(`${API_BASE_URL}/api/resident/appeals/${currentAppealId}`, {
+                            method: 'PUT',
+                            credentials: 'include',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: newText })
+                        });
+                        if (!resp.ok) {
+                            console.error('Failed to update appeal, status:', resp.status);
+                            return;
+                        }
+                        const updated = await resp.json();
+                        // обновляем текущий элемент в списке
+                        const item = list.querySelector(`.user-appeal-item[data-id="${currentAppealId}"]`);
+                        if (item) {
+                            item.dataset.text = updated.message;
+                            const createdDate = updated.created_at ? new Date(updated.created_at) : null;
+                            const createdDisplay = createdDate && !isNaN(createdDate.getTime())
+                                ? createdDate.toLocaleString('ru-RU')
+                                : '—';
+                            item.dataset.createdRaw = updated.created_at || '';
+                            item.dataset.created = createdDisplay;
+                            item.querySelector('.user-appeal-date').textContent = createdDisplay;
+                        }
+                        modalText.textContent = updated.message;
+                        modalEdit.value = updated.message;
+                        closeModal();
+                    } catch (e) {
+                        console.error('Failed to update appeal:', e);
+                    }
+                });
+            }
+
+            if (modalDeleteBtn) {
+                modalDeleteBtn.addEventListener('click', async () => {
+                    if (!currentAppealId) return;
+                    try {
+                        const resp = await fetch(`${API_BASE_URL}/api/resident/appeals/${currentAppealId}`, {
+                            method: 'DELETE',
+                            credentials: 'include'
+                        });
+                        if (!resp.ok) {
+                            console.error('Failed to delete appeal, status:', resp.status);
+                            return;
+                        }
+                        // удаляем элемент из списка
+                        const item = list.querySelector(`.user-appeal-item[data-id="${currentAppealId}"]`);
+                        if (item) {
+                            item.remove();
+                        }
+                        // показать empty state если больше нет элементов
+                        if (!list.querySelector('.user-appeal-item') && emptyState) {
+                            emptyState.style.display = 'block';
+                        }
+                        closeModal();
+                    } catch (e) {
+                        console.error('Failed to delete appeal:', e);
+                    }
+                });
+            }
+
             if (form && textarea && emptyState) {
                 form.addEventListener('submit', (e) => {
                     e.preventDefault();
@@ -165,32 +331,45 @@
                     if (!text) return;
 
                     const select = document.getElementById('appealHouse');
-                    const house = select ? select.options[select.selectedIndex].textContent : '—';
-                    const now = new Date();
-                    const created = now.toLocaleDateString('ru-RU') + ' ' + now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                    const residentId = select ? Number(select.value) : null;
+                    if (!residentId) return;
 
-                    const item = document.createElement('div');
-                    item.className = 'user-appeal-item';
-                    item.dataset.apartment = house;
-                    item.dataset.created = created;
-                    item.dataset.status = 'Не прочитано';
-                    item.dataset.text = text;
-                    item.innerHTML = `
-                        <div class="user-appeal-main">
-                            <div>
-                                <div class="user-appeal-house">${house}</div>
-                                <div class="user-appeal-date">${created}</div>
-                            </div>
-                            <span class="user-appeal-badge user-appeal-badge-unread">не прочитано</span>
-                        </div>
-                        <button type="button" class="btn btn-outline-info btn-sm user-appeal-view">Просмотр</button>
-                    `;
-
-                    list.insertBefore(item, emptyState);
-                    emptyState.style.display = 'none';
-                    textarea.value = '';
+                    fetch(`${API_BASE_URL}/api/resident/appeals`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            resident_id: residentId,
+                            message: text
+                        })
+                    })
+                        .then(resp => {
+                            if (!resp.ok) {
+                                throw new Error(`HTTP ${resp.status}`);
+                            }
+                            return resp.json();
+                        })
+                        .then(appeal => {
+                            // Дополняем список локально
+                            renderAppeals([appeal, ...Array.from(list.querySelectorAll('.user-appeal-item')).map(el => ({
+                                resident_code: el.dataset.apartment,
+                                created_at: el.dataset.createdRaw || el.dataset.created,
+                                status: el.dataset.status === 'read' ? 'READ' : 'UNREAD',
+                                message: el.dataset.text
+                            }))]);
+                            textarea.value = '';
+                        })
+                        .catch(err => {
+                            console.error('Failed to submit appeal:', err);
+                        });
                 });
             }
+
+            // initial load
+            loadResidents();
+            loadAppeals();
         })();
     </script>
 </section>

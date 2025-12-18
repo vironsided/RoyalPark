@@ -145,7 +145,10 @@
                             </div>
                             <div class="resident-amount-box">
                                 <span data-i18n="user_to_pay_month">К оплате за месяц</span>
-                                <strong>0.00</strong>
+                                <button class="resident-btn primary resident-pay-month-btn mt-2" data-action="pay-month">
+                                    <strong class="resident-amount-value">0.00</strong>
+                                    <span data-i18n="user_btn_pay_month">Оплатить за месяц</span>
+                                </button>
                             </div>
                         </div>
 
@@ -155,9 +158,8 @@
                                 <span data-i18n="user_paid_short">Оплачено</span>
                             </div>
                             <div class="resident-progress-bar">
-                                <div class="resident-progress-fill" style="width: 65%;">
-                                    <span>10.00 / 0.50</span>
-                                </div>
+                                <div class="resident-progress-fill" style="width: 65%;"></div>
+                                <span class="resident-progress-text">0/0</span>
                             </div>
                         </div>
 
@@ -186,10 +188,13 @@
                         </div>
                     </div>
 
-                    <div class="resident-side-cards">
+                        <div class="resident-side-cards">
                         <div class="resident-summary-card">
                             <span class="summary-label" data-i18n="user_debt">Долг по счетам</span>
                             <span class="summary-value">0.00</span>
+                            <button class="resident-btn primary w-100 mt-2" data-action="pay-all" data-i18n="user_btn_pay_all">
+                                Оплатить всё
+                            </button>
                         </div>
                         <div class="resident-summary-card accent">
                             <span class="summary-label" data-i18n="user_advance">Аванс</span>
@@ -200,47 +205,51 @@
 
                 <!-- Stats Grid -->
                 <div class="stats-grid">
-                    <div class="stat-card solid-blue">
-                        <div class="stat-icon blue">
-                            <i class="bi bi-wallet2"></i>
-                        </div>
-                        <div class="stat-details">
-                            <div class="stat-value">₼5,200</div>
-                            <div class="stat-label" data-i18n="user_balance">Баланс</div>
-                            <div class="stat-change positive" data-i18n="status_paid">Оплачено</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card solid-orange">
-                        <div class="stat-icon orange">
+                    <!-- Неоплаченных счета -->
+                    <div class="stat-card solid-purple">
+                        <div class="stat-icon purple">
                             <i class="bi bi-receipt-cutoff"></i>
                         </div>
                         <div class="stat-details">
-                            <div class="stat-value">3</div>
+                            <div class="stat-value" id="stat-unpaid-count">0</div>
                             <div class="stat-label" data-i18n="user_unpaid_bills">Неоплаченных счета</div>
-                            <div class="stat-change negative" data-i18n="user_requires_payment">Требует оплаты</div>
+                            <div class="stat-change negative" id="stat-unpaid-status" data-i18n="user_requires_payment">Требует оплаты</div>
                         </div>
                     </div>
 
-                    <div class="stat-card solid-green">
-                        <div class="stat-icon green">
-                            <i class="bi bi-speedometer2"></i>
+                    <!-- Электричество -->
+                    <div class="stat-card solid-orange">
+                        <div class="stat-icon orange">
+                            <i class="bi bi-lightning-charge"></i>
                         </div>
                         <div class="stat-details">
-                            <div class="stat-value">324</div>
+                            <div class="stat-value" id="stat-electricity">0</div>
                             <div class="stat-label" data-i18n="user_kwh_per_month">кВт⋅ч за месяц</div>
-                            <div class="stat-change positive" data-i18n="user_energy_change_month">-12% за месяц</div>
+                            <div class="stat-change" id="stat-electricity-sub" data-i18n="user_electricity">Электричество</div>
                         </div>
                     </div>
 
-                    <div class="stat-card solid-red">
-                        <div class="stat-icon purple">
-                            <i class="bi bi-tools"></i>
+                    <!-- Вода -->
+                    <div class="stat-card solid-blue">
+                        <div class="stat-icon blue">
+                            <i class="bi bi-droplet"></i>
                         </div>
                         <div class="stat-details">
-                            <div class="stat-value">1</div>
-                            <div class="stat-label" data-i18n="user_active_request">Активная заявка</div>
-                            <div class="stat-change positive" data-i18n="status_processing">В обработке</div>
+                            <div class="stat-value" id="stat-water">0</div>
+                            <div class="stat-label" data-i18n="user_water_per_month">м³ за месяц</div>
+                            <div class="stat-change" id="stat-water-sub" data-i18n="user_water">Вода</div>
+                        </div>
+                    </div>
+
+                    <!-- Газ -->
+                    <div class="stat-card solid-red">
+                        <div class="stat-icon red">
+                            <i class="bi bi-fire"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value" id="stat-gas">0</div>
+                            <div class="stat-label" data-i18n="user_gas_per_month">м³ за месяц</div>
+                            <div class="stat-change" id="stat-gas-sub" data-i18n="user_gas">Газ</div>
                         </div>
                     </div>
                 </div>

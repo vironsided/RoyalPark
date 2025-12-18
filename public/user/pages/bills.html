@@ -4,21 +4,44 @@
             <h2 data-i18n="user_bills_title">Мои счета</h2>
             <div class="user-bills-filters">
                 <div class="user-bills-filter-group">
-                    <label for="userBillsStatus" data-i18n="user_bills_status_label">Статус</label>
-                    <select id="userBillsStatus">
-                        <option value="all" data-i18n="user_bills_status_all">Все</option>
-                        <option value="DRAFT">DRAFT</option>
-                        <option value="ISSUED">ISSUED</option>
-                        <option value="PARTIAL">PARTIAL</option>
-                        <option value="PAID">PAID</option>
-                        <option value="OVERPAID">OVERPAID</option>
-                        <option value="CANCELED">CANCELED</option>
-                    </select>
+                    <label data-i18n="user_bills_status_label">Статус</label>
+                    <div class="user-bills-status-multiselect" id="userBillsStatusMultiselect">
+                        <button type="button" class="status-multiselect-toggle" id="userBillsStatusToggle">
+                            <span id="userBillsStatusLabel" data-i18n="user_bills_status_all">Все</span>
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                        <div class="status-multiselect-dropdown" id="userBillsStatusGroup">
+                            <label class="status-checkbox">
+                                <input type="checkbox" class="user-status-checkbox" value="all" checked>
+                                <span data-i18n="user_bills_status_all">Все</span>
+                            </label>
+                            <label class="status-checkbox">
+                                <input type="checkbox" class="user-status-checkbox" value="DRAFT">
+                                <span>DRAFT</span>
+                            </label>
+                            <label class="status-checkbox">
+                                <input type="checkbox" class="user-status-checkbox" value="ISSUED" checked>
+                                <span>ISSUED</span>
+                            </label>
+                            <label class="status-checkbox">
+                                <input type="checkbox" class="user-status-checkbox" value="PARTIAL" checked>
+                                <span>PARTIAL</span>
+                            </label>
+                            <label class="status-checkbox">
+                                <input type="checkbox" class="user-status-checkbox" value="PAID">
+                                <span>PAID</span>
+                            </label>
+                            <label class="status-checkbox">
+                                <input type="checkbox" class="user-status-checkbox" value="OVERPAID">
+                                <span>OVERPAID</span>
+                            </label>
+                            <label class="status-checkbox">
+                                <input type="checkbox" class="user-status-checkbox" value="CANCELED">
+                                <span>CANCELED</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
-                <button class="user-bills-filter-btn">
-                    <i class="bi bi-funnel"></i>
-                    <span data-i18n="user_bills_filter_button">Фильтр</span>
-                </button>
             </div>
         </div>
 
@@ -49,26 +72,78 @@
         'use strict';
         const API_BASE_URL = 'http://localhost:8000';
         
+        // Если пришли со страницы оплаты, там могли сохранить:
+        // - список id счетов, которые нужно показать (например, «Несколько счетов (3)»)
+        // - набор статусов, которые надо сразу отметить (ISSUED/PARTIAL)
+        let initialFilterInvoiceIds = null;
+        let initialFilterStatuses = null;
+        try {
+            const raw = sessionStorage.getItem('billsFilterInvoiceIds');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length) {
+                    initialFilterInvoiceIds = parsed.map(id => Number(id)).filter(id => !Number.isNaN(id));
+                }
+                // Используем один раз, потом очищаем
+                sessionStorage.removeItem('billsFilterInvoiceIds');
+            }
+            const rawStatuses = sessionStorage.getItem('billsFilterStatuses');
+            if (rawStatuses) {
+                const parsedStatuses = JSON.parse(rawStatuses);
+                if (Array.isArray(parsedStatuses) && parsedStatuses.length) {
+                    initialFilterStatuses = parsedStatuses.filter(Boolean);
+                }
+                sessionStorage.removeItem('billsFilterStatuses');
+            }
+        } catch (e) {
+            console.warn('Failed to parse billsFilterInvoiceIds from sessionStorage', e);
+        }
+        
         // Wait for DOM to be ready
         function initBillsPage() {
-            const statusSelect = document.getElementById('userBillsStatus');
-            const filterBtn = document.querySelector('.user-bills-filter-btn');
+            const statusMultiselect = document.getElementById('userBillsStatusMultiselect');
+            const statusGroup = document.getElementById('userBillsStatusGroup');
+            const statusToggle = document.getElementById('userBillsStatusToggle');
+            const statusLabel = document.getElementById('userBillsStatusLabel');
             const tableBody = document.getElementById('billsTableBody');
             
-            if (!statusSelect || !filterBtn || !tableBody) {
+            if (!statusMultiselect || !statusGroup || !statusToggle || !statusLabel || !tableBody) {
                 console.error('Required elements not found');
                 return;
             }
             
-            // Load invoices from backend
-            async function loadInvoices(status = null) {
-            try {
-                const params = new URLSearchParams();
-                if (status && status !== 'all') {
-                    params.append('status', status);
+            function getSelectedStatuses() {
+                const checked = Array.from(
+                    statusGroup.querySelectorAll('.user-status-checkbox:checked')
+                ).map(cb => cb.value);
+                if (!checked.length || checked.includes('all')) {
+                    return [];
                 }
-                
-                const url = `${API_BASE_URL}/api/resident/invoices${params.toString() ? '?' + params.toString() : ''}`;
+                return checked;
+            }
+
+            function updateStatusLabel() {
+                const checkedBoxes = Array.from(
+                    statusGroup.querySelectorAll('.user-status-checkbox:checked')
+                );
+                if (!checkedBoxes.length || checkedBoxes.some(cb => cb.value === 'all')) {
+                    statusLabel.textContent = statusLabel.getAttribute('data-i18n')
+                        ? (window.i18n ? window.i18n.translate('user_bills_status_all') : 'Все')
+                        : 'Все';
+                    return;
+                }
+                const names = checkedBoxes.map(cb => cb.nextElementSibling?.textContent?.trim() || cb.value);
+                if (names.length <= 3) {
+                    statusLabel.textContent = names.join(', ');
+                } else {
+                    statusLabel.textContent = `${names.slice(0, 2).join(', ')} +${names.length - 2}`;
+                }
+            }
+
+            // Load invoices from backend
+            async function loadInvoices(statuses = []) {
+            try {
+                const url = `${API_BASE_URL}/api/resident/invoices`;
                 
                 const response = await fetch(url, {
                     method: 'GET',
@@ -87,7 +162,23 @@
                 }
 
                 const data = await response.json();
-                renderInvoices(data.invoices || []);
+                let list = data.invoices || [];
+
+                // Если пришёл предустановленный список id счетов из страницы оплаты —
+                // показываем только эти счета (например, «Несколько счетов (3)»).
+                // Применяем ОДИН раз, затем сбрасываем initialFilterInvoiceIds,
+                // чтобы при последующих переходах фильтр не залипал.
+                if (initialFilterInvoiceIds && initialFilterInvoiceIds.length) {
+                    list = list.filter(inv => initialFilterInvoiceIds.includes(inv.id));
+                    initialFilterInvoiceIds = null;
+                }
+
+                // Фильтр по множеству статусов на клиенте
+                if (statuses && statuses.length) {
+                    list = list.filter(inv => statuses.includes(inv.status));
+                }
+
+                renderInvoices(list);
             } catch (error) {
                 console.error('Error loading invoices:', error);
                 tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Не удалось загрузить данные. Проверьте подключение к серверу.</td></tr>';
@@ -171,19 +262,56 @@
             }).format(amount);
             }
 
-            // Handle filter button click
-            filterBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const status = statusSelect.value;
-                console.log('Filter button clicked, status:', status);
-                loadInvoices(status);
+            // Handle status change - apply filter immediately
+            statusGroup.addEventListener('change', (e) => {
+                const target = e.target;
+                if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') return;
+
+                const allCb = statusGroup.querySelector('.user-status-checkbox[value="all"]');
+                const otherCbs = Array.from(
+                    statusGroup.querySelectorAll('.user-status-checkbox')
+                ).filter(cb => cb.value !== 'all');
+
+                if (target.value === 'all') {
+                    // Клик по чекбоксу "Все"
+                    if (target.checked) {
+                        // Если выбрали "Все" — отметить ВСЕ статусы
+                        statusGroup.querySelectorAll('.user-status-checkbox').forEach(cb => {
+                            cb.checked = true;
+                        });
+                    } else {
+                        // Если сняли "Все" — снять ВСЕ статусы
+                        statusGroup.querySelectorAll('.user-status-checkbox').forEach(cb => {
+                            cb.checked = false;
+                        });
+                    }
+                } else {
+                    // Если сняли какой‑то статус — снять "Все"
+                    if (!target.checked && allCb && allCb.checked) {
+                        allCb.checked = false;
+                    }
+                    // Если все конкретные статусы отмечены — автоматически отметить "Все"
+                    if (allCb && otherCbs.length && otherCbs.every(cb => cb.checked)) {
+                        allCb.checked = true;
+                    }
+                }
+
+                const statuses = getSelectedStatuses();
+                console.log('Status changed to:', statuses);
+                loadInvoices(statuses);
+                updateStatusLabel();
             });
 
-            // Handle status change - apply filter immediately
-            statusSelect.addEventListener('change', () => {
-                const status = statusSelect.value;
-                console.log('Status changed to:', status);
-                loadInvoices(status);
+            // Toggle dropdown open/close
+            statusToggle.addEventListener('click', () => {
+                statusMultiselect.classList.toggle('open');
+            });
+
+            // Close dropdown on outside click
+            document.addEventListener('click', (e) => {
+                if (!statusMultiselect.contains(e.target)) {
+                    statusMultiselect.classList.remove('open');
+                }
             });
 
             // Handle PDF button clicks (using event delegation)
@@ -202,8 +330,33 @@
                 }
             });
 
-            // Load initial data
-            loadInvoices();
+            // Начальное состояние фильтра:
+            // 1) если пришли со страницы оплаты и есть initialFilterStatuses (ISSUED/PARTIAL),
+            //    отмечаем только их и сразу фильтруем;
+            // 2) во всех остальных случаях отмечена только "Все".
+
+            if (initialFilterStatuses && initialFilterStatuses.length) {
+                // Сначала снимаем "Все" и остальные
+                statusGroup.querySelectorAll('.user-status-checkbox').forEach(cb => {
+                    cb.checked = false;
+                });
+                // Отмечаем нужные статусы
+                statusGroup.querySelectorAll('.user-status-checkbox').forEach(cb => {
+                    if (initialFilterStatuses.includes(cb.value)) {
+                        cb.checked = true;
+                    }
+                });
+                const statuses = getSelectedStatuses();
+                loadInvoices(statuses);
+            } else {
+                // По умолчанию только "Все" включено
+                statusGroup.querySelectorAll('.user-status-checkbox').forEach(cb => {
+                    cb.checked = (cb.value === 'all');
+                });
+                loadInvoices();
+            }
+
+            updateStatusLabel();
         }
         
         // Initialize when DOM is ready

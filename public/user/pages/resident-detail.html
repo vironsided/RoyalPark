@@ -23,28 +23,33 @@
         </button>
     </div>
 
-    <div class="resident-filter-card">
-        <div class="date-range">
-            <div class="input-group">
-                <label data-i18n="user_resident_date_from">От</label>
-                <input id="filterDateFrom" type="date" value="2025-11-01">
-            </div>
-            <div class="input-group">
-                <label data-i18n="user_resident_date_to">До</label>
-                <input id="filterDateTo" type="date" value="2025-11-30">
+    <div class="resident-filter-card filter-grid">
+        <!-- Колонка 1: От -->
+        <div class="filter-col">
+            <label data-i18n="user_resident_date_from">От</label>
+            <input id="filterDateFrom" type="date" value="">
+        </div>
+        <!-- Колонка 2: До -->
+        <div class="filter-col">
+            <label data-i18n="user_resident_date_to">До</label>
+            <input id="filterDateTo" type="date" value="">
+        </div>
+        <!-- Колонка 3: Кнопки фильтра (без лейбла) -->
+        <div class="filter-col filter-col-buttons">
+            <label>&nbsp;</label>
+            <div class="filter-buttons-row">
+                <button type="button" class="btn btn-outline-light" id="filterApplyBtn" data-i18n="user_resident_filter_btn">Фильтр</button>
+                <button type="button" class="btn btn-outline-warning" id="filterResetBtn" data-i18n="user_resident_reset_btn">Очистить</button>
             </div>
         </div>
-        <div class="filter-actions">
-            <button class="btn btn-outline-light" id="filterApplyBtn" data-i18n="user_resident_filter_btn">Фильтр</button>
-            <button class="btn btn-outline-warning" id="filterResetBtn" data-i18n="user_resident_reset_btn">Очистить</button>
-        </div>
-        <div class="quick-filter">
-            <span data-i18n="user_resident_quick_select">Быстрый выбор</span>
+        <!-- Колонка 4: Быстрый выбор -->
+        <div class="filter-col filter-col-quick">
+            <label data-i18n="user_resident_quick_select">Быстрый выбор</label>
             <div class="quick-filter-buttons">
-                <button class="quick-filter-btn active" data-range="month" data-i18n="user_resident_quick_month">За месяц</button>
-                <button class="quick-filter-btn" data-range="quarter" data-i18n="user_resident_quick_quarter">За 3 мес.</button>
-                <button class="quick-filter-btn" data-range="half" data-i18n="user_resident_quick_half">За 6 мес.</button>
-                <button class="quick-filter-btn" data-range="year" data-i18n="user_resident_quick_year">За год</button>
+                <button type="button" class="quick-filter-btn" data-range="month" data-i18n="user_resident_quick_month">За месяц</button>
+                <button type="button" class="quick-filter-btn" data-range="quarter" data-i18n="user_resident_quick_quarter">За 3 мес.</button>
+                <button type="button" class="quick-filter-btn" data-range="half" data-i18n="user_resident_quick_half">За 6 мес.</button>
+                <button type="button" class="quick-filter-btn" data-range="year" data-i18n="user_resident_quick_year">За год</button>
             </div>
         </div>
     </div>
@@ -143,17 +148,12 @@
                 const filterResetBtn = document.getElementById('filterResetBtn');
                 const quickFilterBtns = document.querySelectorAll('.quick-filter-btn');
                 
-                // Set default date range (current month)
+                // По умолчанию: От - пусто, До - пусто
                 const currentDate = new Date();
-                const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-                const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-                const defaultRange = {
-                    from: firstDay.toISOString().split('T')[0],
-                    to: lastDay.toISOString().split('T')[0]
-                };
+                const todayStr = currentDate.toISOString().split('T')[0];
                 
-                if (dateFromInput) dateFromInput.value = defaultRange.from;
-                if (dateToInput) dateToInput.value = defaultRange.to;
+                if (dateFromInput) dateFromInput.value = '';  // От пустой
+                if (dateToInput) dateToInput.value = '';  // До тоже пустой
 
                 const formatForInput = (date) => {
                     return date.toISOString().split('T')[0];
@@ -285,16 +285,22 @@
                 }
 
                 const applyFilter = () => {
-                    loadResidentDetail(dateFromInput.value, dateToInput.value, null);
+                    // Снимаем активные быстрые фильтры при ручном выборе дат
+                    quickFilterBtns.forEach(btn => btn.classList.remove('active'));
+                    const fromVal = dateFromInput ? dateFromInput.value : '';
+                    const toVal = dateToInput ? dateToInput.value : '';
+                    console.log('Applying filter:', { from: fromVal, to: toVal });
+                    loadResidentDetail(fromVal, toVal, null);
                 };
 
                 const resetFilter = () => {
-                    dateFromInput.value = defaultRange.from;
-                    dateToInput.value = defaultRange.to;
+                    // Очистить: От - пусто, До - пусто, никакой фильтр не активен
+                    if (dateFromInput) dateFromInput.value = '';
+                    if (dateToInput) dateToInput.value = '';
                     quickFilterBtns.forEach(btn => btn.classList.remove('active'));
-                    const defaultBtn = document.querySelector('.quick-filter-btn[data-range="month"]');
-                    if (defaultBtn) defaultBtn.classList.add('active');
-                    loadResidentDetail(defaultRange.from, defaultRange.to, 'month');
+                    console.log('Resetting filter');
+                    // Загружаем все данные без фильтра
+                    loadResidentDetail('', '', null);
                 };
 
                 const applyQuickRange = (range) => {
@@ -335,8 +341,22 @@
                     // You can implement a toast notification here
                 }
 
-                if (filterApplyBtn) filterApplyBtn.addEventListener('click', applyFilter);
-                if (filterResetBtn) filterResetBtn.addEventListener('click', resetFilter);
+                if (filterApplyBtn) {
+                    filterApplyBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        applyFilter();
+                    });
+                    console.log('Filter Apply button listener attached');
+                }
+                if (filterResetBtn) {
+                    filterResetBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        resetFilter();
+                    });
+                    console.log('Filter Reset button listener attached');
+                }
 
                 quickFilterBtns.forEach(btn => {
                     btn.addEventListener('click', () => {
@@ -347,13 +367,10 @@
                 });
 
                 // Load initial data with a small delay to ensure DOM is ready
+                // По умолчанию: От - пусто, До - пусто, никакой быстрый фильтр не активен
                 setTimeout(() => {
-                    const currentDateForInit = new Date();
-                    const firstDayOfMonth = new Date(currentDateForInit.getFullYear(), currentDateForInit.getMonth(), 1);
-                    const lastDayOfMonth = new Date(currentDateForInit.getFullYear(), currentDateForInit.getMonth() + 1, 0);
-                    const defaultFrom = firstDayOfMonth.toISOString().split('T')[0];
-                    const defaultTo = lastDayOfMonth.toISOString().split('T')[0];
-                    loadResidentDetail(defaultFrom, defaultTo, 'month');
+                    quickFilterBtns.forEach(btn => btn.classList.remove('active'));
+                    loadResidentDetail('', '', null);
                 }, 50);
             }
         }

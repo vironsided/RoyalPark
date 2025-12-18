@@ -474,6 +474,12 @@
 
             const ctx = canvas.getContext('2d');
 
+            // Gradient background for line area (top -> bottom)
+            const gradientFill = ctx.createLinearGradient(0, 0, 0, canvas.clientHeight || 350);
+            gradientFill.addColorStop(0, 'rgba(59, 130, 246, 0.45)');   // blue top
+            gradientFill.addColorStop(0.5, 'rgba(79, 70, 229, 0.25)');  // indigo mid
+            gradientFill.addColorStop(1, 'rgba(15, 23, 42, 0)');        // transparent bottom
+
             // Загружаем данные для всех периодов
             const [weekChartData, monthChartData, yearChartData] = await Promise.all([
                 loadChartData('week'),
@@ -487,15 +493,16 @@
                 datasets: [{
                     label: 'Платежи (₼)',
                     data: weekChartData.data.length > 0 ? weekChartData.data : [0, 0, 0, 0, 0, 0, 0],
-                    borderColor: 'rgba(102, 126, 234, 1)',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    tension: 0.4,
+                    borderColor: '#f97316', // warm orange line
+                    backgroundColor: gradientFill,
+                    tension: 0.45,
                     fill: true,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    pointBackgroundColor: 'rgba(102, 126, 234, 1)',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2
+                    pointRadius: 6,
+                    pointHoverRadius: 9,
+                    pointBackgroundColor: '#f97316',
+                    pointBorderColor: '#0f172a',
+                    pointBorderWidth: 3,
+                    pointHoverBorderWidth: 3
                 }]
             };
 
@@ -504,15 +511,16 @@
                 datasets: [{
                     label: 'Платежи (₼)',
                     data: monthChartData.data.length > 0 ? monthChartData.data : [0, 0, 0, 0],
-                    borderColor: 'rgba(102, 126, 234, 1)',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    tension: 0.4,
+                    borderColor: '#f97316',
+                    backgroundColor: gradientFill,
+                    tension: 0.45,
                     fill: true,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    pointBackgroundColor: 'rgba(102, 126, 234, 1)',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2
+                    pointRadius: 6,
+                    pointHoverRadius: 9,
+                    pointBackgroundColor: '#f97316',
+                    pointBorderColor: '#0f172a',
+                    pointBorderWidth: 3,
+                    pointHoverBorderWidth: 3
                 }]
             };
 
@@ -521,15 +529,16 @@
                 datasets: [{
                     label: 'Платежи (₼)',
                     data: yearChartData.data.length > 0 ? yearChartData.data : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                    borderColor: 'rgba(102, 126, 234, 1)',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    tension: 0.4,
+                    borderColor: '#f97316',
+                    backgroundColor: gradientFill,
+                    tension: 0.45,
                     fill: true,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: 'rgba(102, 126, 234, 1)',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2
+                    pointRadius: 5,
+                    pointHoverRadius: 8,
+                    pointBackgroundColor: '#f97316',
+                    pointBorderColor: '#0f172a',
+                    pointBorderWidth: 3,
+                    pointHoverBorderWidth: 3
                 }]
             };
 
@@ -547,12 +556,16 @@
                             display: false
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            backgroundColor: 'rgba(15, 23, 42, 0.96)',
                             padding: 12,
-                            cornerRadius: 8,
+                            cornerRadius: 10,
+                            titleColor: '#e5e7eb',
+                            bodyColor: '#f9fafb',
+                            borderColor: 'rgba(148, 163, 184, 0.5)',
+                            borderWidth: 1,
                             titleFont: {
-                                size: 14,
-                                weight: 'bold'
+                                size: 13,
+                                weight: '600'
                             },
                             bodyFont: {
                                 size: 13
@@ -579,10 +592,11 @@
                                 font: {
                                     size: 12
                                 },
-                                color: '#6c757d'
+                                color: 'rgba(148, 163, 184, 0.9)'
                             },
                             grid: {
-                                color: 'rgba(0, 0, 0, 0.05)',
+                                color: 'rgba(148, 163, 184, 0.18)',
+                                borderDash: [4, 4],
                                 drawBorder: false
                             }
                         },
@@ -591,7 +605,7 @@
                                 font: {
                                     size: 12
                                 },
-                                color: '#6c757d'
+                                color: 'rgba(148, 163, 184, 0.9)'
                             },
                             grid: {
                                 display: false

@@ -4,9 +4,11 @@
 .admin-container .sidebar,
 .user-app .sidebar {
     background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
+    /* Сам sidebar больше не скроллится – скролл внутри nav-menu */
+    overflow: visible !important;
     height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 [data-theme="dark"] .admin-container .sidebar,
@@ -14,35 +16,46 @@
     background: linear-gradient(180deg, #12141d 0%, #090b13 100%);
     border-right: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.6);
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
+    overflow: visible !important;
     height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Улучшенный скроллбар для sidebar в user-кабинете - копируем стили из admin панели */
-.user-app .sidebar::-webkit-scrollbar,
-[data-theme="dark"] .user-app .sidebar::-webkit-scrollbar,
-.admin-container .sidebar::-webkit-scrollbar {
-    width: 6px;
+/* Делает область меню внутри сайдбара скроллируемой */
+.user-app .sidebar .nav-menu {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Для Firefox – делаем скролл максимально незаметным */
+    scrollbar-width: thin; /* можно заменить на 'none', если хочешь вообще скрыть */
+    scrollbar-color: transparent transparent;
 }
 
-.user-app .sidebar::-webkit-scrollbar-track,
-[data-theme="dark"] .user-app .sidebar::-webkit-scrollbar-track,
-.admin-container .sidebar::-webkit-scrollbar-track {
+/* Улучшенный скроллбар для nav-menu в user-кабинете - копируем стили из admin панели */
+.user-app .sidebar .nav-menu::-webkit-scrollbar,
+[data-theme="dark"] .user-app .sidebar .nav-menu::-webkit-scrollbar,
+.admin-container .sidebar .nav-menu::-webkit-scrollbar {
+    width: 1px; /* максимально тонкая полоска скролла */
+}
+
+.user-app .sidebar .nav-menu::-webkit-scrollbar-track,
+[data-theme="dark"] .user-app .sidebar .nav-menu::-webkit-scrollbar-track,
+.admin-container .sidebar .nav-menu::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.05);
 }
 
-.user-app .sidebar::-webkit-scrollbar-thumb,
-[data-theme="dark"] .user-app .sidebar::-webkit-scrollbar-thumb,
-.admin-container .sidebar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
+.user-app .sidebar .nav-menu::-webkit-scrollbar-thumb,
+[data-theme="dark"] .user-app .sidebar .nav-menu::-webkit-scrollbar-thumb,
+.admin-container .sidebar .nav-menu::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12); /* более прозрачный, чтобы меньше бросался в глаза */
     border-radius: 3px;
 }
 
-.user-app .sidebar::-webkit-scrollbar-thumb:hover,
-[data-theme="dark"] .user-app .sidebar::-webkit-scrollbar-thumb:hover,
-.admin-container .sidebar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+.user-app .sidebar .nav-menu::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .user-app .sidebar .nav-menu::-webkit-scrollbar-thumb:hover,
+.admin-container .sidebar .nav-menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.18);
 }
 
 /* Улучшенный скроллбар для свернутого сайдбара */
@@ -299,7 +312,7 @@
 .resident-amount-box strong {
     font-size: 2rem;
     font-weight: 700;
-    color: #63ffba;
+    color: inherit
 }
 
 .resident-progress {
@@ -316,6 +329,7 @@
 }
 
 .resident-progress-bar {
+    position: relative;
     height: 16px;
     border-radius: 999px;
     background: rgba(99, 255, 186, 0.15);
@@ -326,13 +340,18 @@
     height: 100%;
     border-radius: inherit;
     background: linear-gradient(90deg, #42e695 0%, #3bb2b8 100%);
+}
+
+.resident-progress-text {
+    position: absolute;
+    inset: 0;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    padding-right: 0.75rem;
+    justify-content: center;
     font-size: 0.75rem;
     font-weight: 600;
     color: white;
+    pointer-events: none;
 }
 
 .resident-stats-row {
@@ -763,14 +782,15 @@
 
 .user-app,
 .resident-detail-page {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(120, 120, 120, 0.7) #0b0d14;
+    /* Общий скролл страницы – делаем тоньше и менее заметным */
+    scrollbar-width: thin; /* для Firefox */
+    scrollbar-color: rgba(120, 120, 120, 0.4) #0b0d14;
 }
 
 .user-app::-webkit-scrollbar,
 .resident-detail-page::-webkit-scrollbar {
-    width: 12px;
-    background: #0b0d14;
+    width: 6px; /* был 12px – в 2 раза тоньше */
+    background: transparent;
 }
 
 .user-app::-webkit-scrollbar-track,
@@ -780,15 +800,15 @@
 
 .user-app::-webkit-scrollbar-thumb,
 .resident-detail-page::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #555b6b 0%, #2b2f3d 100%);
-    border-radius: 12px;
-    border: 2px solid #0b0d14;
-    box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.35);
+    background: rgba(120, 120, 120, 0.35);
+    border-radius: 999px;
+    border: none;
+    box-shadow: none;
 }
 
 .user-app::-webkit-scrollbar-thumb:hover,
 .resident-detail-page::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #7a80a1 0%, #3a3f52 100%);
+    background: rgba(160, 160, 160, 0.5);
 }
 
 /* User Bills (Мои счета) */
@@ -829,6 +849,95 @@
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+}
+
+.user-bills-status-multiselect {
+    position: relative;
+    display: inline-block;
+    min-width: 260px;
+    max-width: 360px;
+}
+
+.status-multiselect-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    border-radius: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(10, 12, 20, 0.9);
+    color: #f5f7ff;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.status-multiselect-toggle i {
+    font-size: 0.9rem;
+}
+
+.status-multiselect-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    border-radius: 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #1e2330;
+    box-shadow: var(--shadow-lg);
+    padding: 0.6rem 0.75rem;
+    display: none;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 50;
+}
+
+.user-bills-status-multiselect.open .status-multiselect-dropdown {
+    display: block;
+}
+
+.status-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: #e4e6f0;
+    cursor: pointer;
+    padding: 0.15rem 0;
+}
+
+.status-checkbox input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    margin: 0;
+    /* убираем системный стиль галочки */
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: transparent;
+    display: inline-block;
+    position: relative;
+}
+
+.status-checkbox input[type="checkbox"]:checked {
+    border-color: #2562ff;
+    background: linear-gradient(135deg, #2562ff 0%, #24c6dc 100%);
+}
+
+.status-checkbox input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 1px;
+    width: 6px;
+    height: 10px;
+    border: 2px solid #ffffff;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg);
 }
 
 .user-bills-filter-group label {
@@ -935,7 +1044,24 @@
 }
 
 .user-appeals-list-card {
-    max-height: 100%;
+    /* Делаем карточку почти на весь экран, чтобы было видно больше заявок */
+    max-height: calc(100vh - 260px);
+    min-height: 420px;
+    overflow-y: auto;
+    /* Скрываем / делаем невидимым скролл, но оставляем прокрутку */
+    scrollbar-width: none;          /* Firefox */
+}
+
+.user-appeals-list-card::-webkit-scrollbar {
+    width: 0;                       /* Chrome/Safari: невидимый скроллбар */
+}
+
+.user-appeals-list-card::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.user-appeals-list-card::-webkit-scrollbar-thumb {
+    background: transparent;
 }
 
 .user-appeals-list {
@@ -1056,12 +1182,26 @@
     min-width: 90px;
 }
 
+.user-appeal-modal-text {
+    margin-top: 0.75rem;
+    padding: 1.1rem 1rem 0.9rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.35);
+    position: relative;
+}
+
 .user-appeal-modal-text .label {
-    display: block;
+    display: inline-block;
     font-size: 0.8rem;
     text-transform: uppercase;
-    color: var(--text-secondary);
-    margin-bottom: 0.25rem;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.7);
+    padding: 0 0.5rem;
+    position: absolute;
+    top: -0.55rem;   /* чуть выше рамки, но не слишком высоко */
+    left: 1.4rem;
+    background: #181b23; /* цвет фона модального окна, чтобы текст был вне рамки */
 }
 
 .user-appeal-modal-text p {
@@ -2174,6 +2314,13 @@ body[data-theme="dark"] .user-bills-section select option {
     gap: 1.5rem;
 }
 
+.payment-amount-label {
+    margin-top: 0.25rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.75);
+}
+
 .order-header {
     display: flex;
     align-items: center;
@@ -2226,6 +2373,12 @@ body[data-theme="dark"] .user-bills-section select option {
     font-size: 0.9rem;
     color: var(--text-primary);
     font-weight: 500;
+}
+
+.detail-value.invoice-link {
+    color: #2f9bff; /* более яркий синий для кликабельного текста */
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 .detail-value.discount {

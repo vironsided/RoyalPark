@@ -134,6 +134,7 @@
         <!-- Middle Column: Credit Card Form -->
         <div class="payment-middle-column">
             <h3 class="payment-section-title">Оплата банковской картой</h3>
+            <p class="payment-amount-label">Сумма к оплате: <span id="paymentAmountLabel">0,00 ₼</span></p>
             
             <!-- Card Preview with 3D Flip -->
             <div class="card-preview-container" id="cardPreviewContainer" onclick="flipPreviewCard()">
@@ -240,9 +241,9 @@
             </form>
         </div>
 
-        <!-- Right Column: Order Summary -->
+        <!-- Right Column: Payment Details -->
         <div class="payment-right-column">
-            <h3 class="payment-section-title">Сводка заказа</h3>
+            <h3 class="payment-section-title">Детали оплаты</h3>
             
             <div class="order-summary">
                 <div class="order-header">
@@ -257,34 +258,35 @@
 
                 <div class="order-details">
                     <div class="order-detail-item">
-                        <span class="detail-label">Дата доставки</span>
-                        <span class="detail-value" id="deliveryTime">11 янв 2025 10:00</span>
+                        <span class="detail-label">Тип платежа</span>
+                        <span class="detail-value" id="paymentType">—</span>
                     </div>
 
                     <div class="order-detail-item">
-                        <span class="detail-label">Комиссия</span>
-                        <span class="detail-value discount">-140,00 ₼</span>
+                        <span class="detail-label">Резидент</span>
+                        <span class="detail-value" id="paymentResident">—</span>
                     </div>
+
+                    <div class="order-detail-item">
+                        <span class="detail-label">Период</span>
+                        <span class="detail-value" id="paymentDate">—</span>
+                    </div>
+
+                    <!-- <div class="order-detail-item">
+                        <span class="detail-label">Комиссия</span>
+                        <span class="detail-value" id="paymentCommission">0,00 ₼</span>
+                    </div> -->
 
                     <div class="order-detail-item">
                         <span class="detail-label">Счёт</span>
-                        <span class="detail-value" id="invoiceNumber">000-1234-rp-001</span>
-                    </div>
-
-                    <div class="order-detail-item">
-                        <span class="detail-label">Скидка</span>
-                        <span class="detail-value">10%</span>
+                        <span class="detail-value" id="invoiceNumber">—</span>
                     </div>
                 </div>
 
                 <div class="order-totals">
-                    <div class="order-total-item">
-                        <span class="total-label">Подитог</span>
-                        <span class="total-value" id="subtotal">0,00 ₼</span>
-                    </div>
                     <div class="order-total-item final">
                         <span class="total-label">Итого</span>
-                        <span class="total-value" id="total">0,00 ₼</span>
+                        <span class="total-value" id="total"></span>
                     </div>
                 </div>
             </div>
@@ -293,50 +295,53 @@
 </section>
 
 <script>
-// API Configuration
-const API_BASE = window.BACKEND_API_BASE || 'http://localhost:8000';
-const BIN_LOOKUP_URL = `${API_BASE}/api/payment/bin-lookup`;
+// API Configuration (используем var, чтобы избежать ошибок при повторной загрузке через SPA)
+var API_BASE = window.BACKEND_API_BASE || 'http://localhost:8000';
+var BIN_LOOKUP_URL = API_BASE + '/api/payment/bin-lookup';
 
 // Current card data
-let currentCardData = {
+var currentCardData = {
     bin: null,
     bank: null,
     scheme: null,
     country: null
 };
 
-// Card styles for different banks
-const bankStyles = {
-    default: {
-        gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        logo: 'MC'
-    },
-    'sberbank': {
-        gradient: 'linear-gradient(135deg, #21a038 0%, #16802a 100%)',
-        logo: 'СБЕР'
-    },
-    'vtb': {
-        gradient: 'linear-gradient(135deg, #003d82 0%, #001f4d 100%)',
-        logo: 'ВТБ'
-    },
-    'gazprombank': {
-        gradient: 'linear-gradient(135deg, #003366 0%, #001a33 100%)',
-        logo: 'ГПБ'
-    },
-    'alfabank': {
-        gradient: 'linear-gradient(135deg, #ef3124 0%, #cc2619 100%)',
-        logo: 'АЛЬФА'
-    },
-    'tinkoff': {
-        gradient: 'linear-gradient(135deg, #ffdd2d 0%, #ffcd02 100%)',
-        logo: 'ТИНЬ',
-        textColor: '#000'
-    },
-    'raiffeisen': {
-        gradient: 'linear-gradient(135deg, #ffcc00 0%, #ff9900 100%)',
-        logo: 'РБ'
-    }
-};
+// Card styles for different banks (один экземпляр на всё приложение)
+if (!window.bankStyles) {
+    window.bankStyles = {
+        default: {
+            gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            logo: 'MC'
+        },
+        'sberbank': {
+            gradient: 'linear-gradient(135deg, #21a038 0%, #16802a 100%)',
+            logo: 'СБЕР'
+        },
+        'vtb': {
+            gradient: 'linear-gradient(135deg, #003d82 0%, #001f4d 100%)',
+            logo: 'ВТБ'
+        },
+        'gazprombank': {
+            gradient: 'linear-gradient(135deg, #003366 0%, #001a33 100%)',
+            logo: 'ГПБ'
+        },
+        'alfabank': {
+            gradient: 'linear-gradient(135deg, #ef3124 0%, #cc2619 100%)',
+            logo: 'АЛЬФА'
+        },
+        'tinkoff': {
+            gradient: 'linear-gradient(135deg, #ffdd2d 0%, #ffcd02 100%)',
+            logo: 'ТИНЬ',
+            textColor: '#000'
+        },
+        'raiffeisen': {
+            gradient: 'linear-gradient(135deg, #ffcc00 0%, #ff9900 100%)',
+            logo: 'РБ'
+        }
+    };
+}
+var bankStyles = window.bankStyles;
 
 // Fetch BIN data from backend proxy (приоритет: API BINTable)
 async function fetchBINData(bin) {
@@ -689,8 +694,361 @@ document.getElementById('cardCvvInput')?.addEventListener('input', function(e) {
     }
 });
 
-// Initialize card preview
-document.addEventListener('DOMContentLoaded', function() {
+// -------------------------------
+// Инициализация данных оплаты
+// -------------------------------
+
+// Fallback: получить сводку дашборда с backend
+async function loadDashboardSummaryForPayment(scope) {
+    try {
+        const resp = await fetch(`${API_BASE}/api/resident/dashboard`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        if (!resp.ok) {
+            console.warn('Failed to load dashboard summary for payment:', resp.status);
+            return null;
+        }
+        const data = await resp.json();
+        const summary = data.summary || {};
+        const amount = scope === 'all'
+            ? (summary.total_debt || 0)
+            : (summary.total_month || 0);
+        return { amount, summary };
+    } catch (err) {
+        console.error('Error loading dashboard summary for payment:', err);
+        return null;
+    }
+}
+
+// Загрузка связанных счетов резидента для показа в деталях оплаты
+async function loadPaymentInvoices(scope, residentCode) {
+    try {
+        const response = await fetch(`${API_BASE}/api/resident/invoices`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        if (!response.ok) {
+            console.warn('Failed to load resident invoices for payment details:', response.status);
+            return;
+        }
+
+        const data = await response.json();
+        const invoices = data.invoices || [];
+        if (!invoices.length) {
+            return;
+        }
+
+        const now = new Date();
+        const curYear = now.getFullYear();
+        const curMonth = now.getMonth() + 1;
+
+        let targetInvoices = invoices;
+        if (scope === 'month') {
+            const monthInvoices = invoices.filter(inv => inv.period_year === curYear && inv.period_month === curMonth);
+            if (monthInvoices.length) {
+                targetInvoices = monthInvoices;
+            }
+        }
+
+        // Подготовим список id выбранных счетов для страницы "Мои счета"
+        const targetInvoiceIds = (targetInvoices || [])
+            .map(inv => inv && inv.id)
+            .filter(id => id !== null && id !== undefined);
+        if (targetInvoiceIds.length) {
+            try {
+                sessionStorage.setItem('billsFilterInvoiceIds', JSON.stringify(targetInvoiceIds));
+                // При переходе со страницы оплаты хотим сразу показывать только счета в статусе ISSUED и PARTIAL
+                const statusesForBills = ['ISSUED', 'PARTIAL'];
+                sessionStorage.setItem('billsFilterStatuses', JSON.stringify(statusesForBills));
+            } catch (e) {
+                console.warn('Failed to store billsFilterInvoiceIds or billsFilterStatuses', e);
+            }
+        }
+
+        const invoiceNumberEl = document.getElementById('invoiceNumber');
+        const paymentResidentEl = document.getElementById('paymentResident');
+        const paymentDateEl = document.getElementById('paymentDate');
+        const totalEl = document.getElementById('total');
+        const amountLabelEl = document.getElementById('paymentAmountLabel');
+
+        const first = targetInvoices[0];
+
+        // Номер счёта
+        if (invoiceNumberEl) {
+            // Сбрасываем класс ссылки перед установкой
+            invoiceNumberEl.classList.remove('invoice-link');
+
+            if (targetInvoices.length === 1 && first) {
+                // Один счёт — делаем номер кликабельным и ведём на страницу просмотра счёта
+                invoiceNumberEl.textContent = first.number || `№${first.id}`;
+                invoiceNumberEl.style.cursor = 'pointer';
+                invoiceNumberEl.classList.add('invoice-link');
+                invoiceNumberEl.onclick = function () {
+                    const invId = first.id;
+                    if (!invId) return;
+                    try {
+                        // Для user/pages/invoice-view.html
+                        sessionStorage.setItem('currentInvoiceId', String(invId));
+                    } catch (e) {
+                        console.warn('Failed to store currentInvoiceId before navigation', e);
+                    }
+
+                    // Переход на маршрут invoice (user SPA)
+                    if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
+                        window.userSpaRouter.navigate('invoice', true);
+                    } else {
+                        // Fallback: обычный URL с hash и параметром id
+                        window.location.href = `/user/dashboard.html#invoice?id=${encodeURIComponent(invId)}`;
+                    }
+                };
+            } else {
+                // Несколько счетов — ведём на список счетов с фильтрацией
+                invoiceNumberEl.textContent = `Несколько счетов (${targetInvoices.length})`;
+                invoiceNumberEl.style.cursor = 'pointer';
+                invoiceNumberEl.classList.add('invoice-link');
+                invoiceNumberEl.onclick = function () {
+                    if (targetInvoiceIds.length) {
+                        try {
+                            sessionStorage.setItem('billsFilterInvoiceIds', JSON.stringify(targetInvoiceIds));
+                        } catch (e) {
+                            console.warn('Failed to store billsFilterInvoiceIds before navigation', e);
+                        }
+                    }
+                    if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
+                        window.userSpaRouter.navigate('bills', true);
+                    } else {
+                        window.location.href = '/user/dashboard.html#bills';
+                    }
+                };
+            }
+        }
+
+        // Резидент
+        if (paymentResidentEl) {
+            const codeFromInvoice = first?.resident_code;
+            if (codeFromInvoice) {
+                paymentResidentEl.textContent = codeFromInvoice;
+            } else if (residentCode) {
+                paymentResidentEl.textContent = residentCode;
+            }
+        }
+
+        // Период
+        if (paymentDateEl && targetInvoices.length > 0) {
+            if (scope === 'all' && targetInvoices.length > 1) {
+                // Для полного погашения долга показываем диапазон от первой до последней даты
+                const parseDate = (str) => {
+                    if (!str || typeof str !== 'string') return null;
+                    const parts = str.split('.');
+                    if (parts.length !== 3) return null;
+                    const [dd, mm, yyyy] = parts.map(p => parseInt(p, 10));
+                    if (!dd || !mm || !yyyy) return null;
+                    return new Date(yyyy, mm - 1, dd);
+                };
+
+                let minDate = null;
+                let maxDate = null;
+                let minText = null;
+                let maxText = null;
+
+                targetInvoices.forEach(inv => {
+                    const fromStr = inv?.period_dates?.from || null;
+                    const toStr = inv?.period_dates?.to || null;
+
+                    const fromDate = parseDate(fromStr || toStr);
+                    const toDate = parseDate(toStr || fromStr);
+
+                    if (fromDate) {
+                        if (!minDate || fromDate < minDate) {
+                            minDate = fromDate;
+                            minText = fromStr || toStr;
+                        }
+                    }
+                    if (toDate) {
+                        if (!maxDate || toDate > maxDate) {
+                            maxDate = toDate;
+                            maxText = toStr || fromStr;
+                        }
+                    }
+                });
+
+                if (minText && maxText) {
+                    paymentDateEl.textContent = `${minText} — ${maxText}`;
+                } else {
+                    const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+                    let minYear = null, minMonth = null, maxYear = null, maxMonth = null;
+                    targetInvoices.forEach(inv => {
+                        if (inv.period_year && inv.period_month) {
+                            const y = inv.period_year;
+                            const m = inv.period_month;
+                            if (minYear === null || y < minYear || (y === minYear && m < minMonth)) {
+                                minYear = y;
+                                minMonth = m;
+                            }
+                            if (maxYear === null || y > maxYear || (y === maxYear && m > maxMonth)) {
+                                maxYear = y;
+                                maxMonth = m;
+                            }
+                        }
+                    });
+                    if (minYear !== null && maxYear !== null) {
+                        const minTextMonth = monthNames[minMonth - 1] || minMonth;
+                        const maxTextMonth = monthNames[maxMonth - 1] || maxMonth;
+                        if (minYear === maxYear && minMonth === maxMonth) {
+                            paymentDateEl.textContent = `${minTextMonth} ${minYear}`;
+                        } else {
+                            paymentDateEl.textContent = `${minTextMonth} ${minYear} — ${maxTextMonth} ${maxYear}`;
+                        }
+                    }
+                }
+            } else if (first) {
+                if (first.period_dates && first.period_dates.from && first.period_dates.to) {
+                    paymentDateEl.textContent = `${first.period_dates.from} — ${first.period_dates.to}`;
+                } else if (first.period_year && first.period_month) {
+                    const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+                    const mName = monthNames[first.period_month - 1] || first.period_month;
+                    paymentDateEl.textContent = `${mName} ${first.period_year}`;
+                }
+            }
+        }
+
+        // Сумма по инвойсам как дополнительная гарантия
+        if (totalEl && amountLabelEl && targetInvoices.length > 0) {
+            let sumAmount = 0;
+            // Для пользователя важно видеть сумму К ОПЛАТЕ (остаток), а не общий номинал счетов
+            // Поэтому и для 'all', и для 'month' используем remaining_amount, если он есть
+            sumAmount = targetInvoices.reduce(
+                (acc, inv) => acc + (inv.remaining_amount ?? inv.amount_total ?? 0),
+                0
+            );
+
+            const formatted = new Intl.NumberFormat('ru-RU', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(sumAmount) + ' ₼';
+
+            totalEl.textContent = formatted;
+            amountLabelEl.textContent = formatted;
+        }
+    } catch (error) {
+        console.error('Error loading payment-related invoices:', error);
+    }
+}
+
+// Форматирование текущей даты/времени для возможного использования
+function formatPaymentDateNow() {
+    const now = new Date();
+    return now.toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// Главная инициализация страницы оплаты
+async function initPaymentPage() {
+    // Изначально очищаем превью карты
     updateCardPreview('', '', '', null);
-});
+
+    try {
+        const scope = sessionStorage.getItem('paymentScope') || 'month';
+        let amountRaw = sessionStorage.getItem('paymentAmount');
+        let amount = amountRaw ? parseFloat(amountRaw) : 0;
+        const scopeLabelStored = sessionStorage.getItem('paymentScopeLabel');
+        const residentCodeStored = sessionStorage.getItem('paymentResidentCode');
+        const paymentSummaryRaw = sessionStorage.getItem('paymentSummary');
+        let paymentSummary = null;
+        if (paymentSummaryRaw) {
+            try {
+                paymentSummary = JSON.parse(paymentSummaryRaw);
+            } catch (e) {
+                console.warn('Failed to parse paymentSummary from sessionStorage', e);
+            }
+        }
+
+        const totalEl = document.getElementById('total');
+        const subtitleEl = document.querySelector('.order-subtitle');
+        const amountLabelEl = document.getElementById('paymentAmountLabel');
+        const paymentTypeEl = document.getElementById('paymentType');
+        const paymentResidentEl = document.getElementById('paymentResident');
+        const paymentDateEl = document.getElementById('paymentDate');
+        const paymentCommissionEl = document.getElementById('paymentCommission');
+
+        // Если сумма из sessionStorage отсутствует или равна 0, пробуем взять её из summary/бэкенда
+        if (!amount || Number.isNaN(amount)) {
+            if (paymentSummary) {
+                amount = scope === 'all'
+                    ? (paymentSummary.total_debt || 0)
+                    : (paymentSummary.total_month || 0);
+            }
+            if (!amount || Number.isNaN(amount)) {
+                const fallback = await loadDashboardSummaryForPayment(scope);
+                if (fallback && typeof fallback.amount === 'number') {
+                    amount = fallback.amount;
+                }
+            }
+        }
+
+        const formattedAmount = new Intl.NumberFormat('ru-RU', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount || 0) + ' ₼';
+
+        if (totalEl) {
+            totalEl.textContent = formattedAmount;
+        }
+        if (amountLabelEl) {
+            amountLabelEl.textContent = formattedAmount;
+        }
+
+        if (subtitleEl) {
+            if (scope === 'all') {
+                subtitleEl.textContent = 'Оплата всего долга';
+            } else {
+                subtitleEl.textContent = 'Оплата за текущий месяц';
+            }
+        }
+
+        if (paymentTypeEl) {
+            const defaultScopeText = scope === 'all'
+                ? 'Полное погашение долга по счетам'
+                : 'Оплата счетов за текущий месяц';
+            paymentTypeEl.textContent = scopeLabelStored || defaultScopeText;
+        }
+
+        if (paymentResidentEl) {
+            paymentResidentEl.textContent = residentCodeStored || '—';
+        }
+
+        // Загрузить данные по счетам с backend, чтобы дополнить детали оплаты
+        loadPaymentInvoices(scope, residentCodeStored || null);
+
+        if (paymentCommissionEl) {
+            paymentCommissionEl.textContent = '0,00 ₼';
+        }
+        // paymentDateEl заполняется в loadPaymentInvoices, но при полном отсутствии данных
+        if (paymentDateEl && !paymentDateEl.textContent) {
+            paymentDateEl.textContent = formatPaymentDateNow();
+        }
+    } catch (err) {
+        console.error('Error initializing payment summary:', err);
+    }
+}
+
+// Инициализируем страницу как при обычной загрузке, так и при загрузке через SPA
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPaymentPage);
+} else {
+    initPaymentPage();
+}
 </script>

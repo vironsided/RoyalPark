@@ -259,9 +259,18 @@ def get_resident_invoice_detail(
     payments = []
     for app in apps:
         p = app.payment
+        # received_at в БД может быть как datetime, так и date.
+        # Защищаемся от AttributeError: 'datetime.date' object has no attribute 'date'
+        received = p.received_at
+        if isinstance(received, datetime):
+            date_value = received.date()
+        else:
+            # date или None – отдаём как есть
+            date_value = received
+
         payments.append({
             "id": app.id,
-            "date": p.received_at.date() if p.received_at else None,
+            "date": date_value,
             "method": p.method.value,
             "amount": float(app.amount_applied),
             "payment_id": p.id,
@@ -563,6 +572,8 @@ class DashboardSummary(BaseModel):
     total_pay_now: float
     unpaid_invoices_count: int = 0
     monthly_kwh: float = 0.0
+    monthly_water_m3: float = 0.0
+    monthly_gas_m3: float = 0.0
     active_notifications_count: int = 0
 
 
@@ -570,6 +581,30 @@ class ResidentDashboardResponse(BaseModel):
     user: dict
     residents: List[ResidentDashboardData]
     summary: DashboardSummary
+
+
+# --------- Appeals (resident requests) API, reusing Notification model ---------
+
+
+class ResidentAppeal(BaseModel):
+    id: int
+    resident_id: int
+    resident_code: str
+    message: str
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ResidentAppealCreate(BaseModel):
+    resident_id: int
+    message: str
+
+
+class ResidentAppealUpdate(BaseModel):
+    message: str
 
 
 def _get_resident_user(request: Request, db: Session) -> Optional[User]:
@@ -581,6 +616,157 @@ def _get_resident_user(request: Request, db: Session) -> Optional[User]:
     if not user or user.role != RoleEnum.RESIDENT or not user.is_active:
         return None
     return user
+
+
+@router.get("/appeals", response_model=List[ResidentAppeal])
+def get_resident_appeals(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    List recent appeals (notifications) for current resident user.
+    """
+    user = _get_resident_user(request, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    notifications = (
+        db.query(Notification)
+        .join(Resident, Resident.id == Notification.resident_id)
+        .filter(Notification.user_id == user.id)
+        .order_by(Notification.created_at.desc())
+        .limit(50)
+        .all()
+    )
+
+    result: List[ResidentAppeal] = []
+    for notif in notifications:
+        block_name = notif.resident.block.name if notif.resident and notif.resident.block else ""
+        unit_number = notif.resident.unit_number if notif.resident else ""
+        resident_code = f"{block_name} / {unit_number}" if block_name and unit_number else unit_number or block_name or ""
+        result.append(
+            ResidentAppeal(
+                id=notif.id,
+                resident_id=notif.resident_id or 0,
+                resident_code=resident_code,
+                message=notif.message,
+                status=notif.status.value,
+                created_at=notif.created_at,
+            )
+        )
+
+    return result
+
+
+@router.post("/appeals", response_model=ResidentAppeal)
+def create_resident_appeal(
+    data: ResidentAppealCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Create new appeal from current resident user.
+    """
+    user = _get_resident_user(request, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    message = (data.message or "").strip()
+    if len(message) < 5:
+        raise HTTPException(status_code=400, detail="Message is too short")
+
+    resident = db.get(Resident, data.resident_id)
+    if not resident or resident not in (user.resident_links or []):
+        raise HTTPException(status_code=403, detail="Invalid resident")
+
+    notif = Notification(
+        user_id=user.id,
+        resident_id=resident.id,
+        message=message,
+        status=NotificationStatus.UNREAD,
+    )
+    db.add(notif)
+    db.commit()
+    db.refresh(notif)
+
+    block_name = resident.block.name if resident.block else ""
+    resident_code = f"{block_name} / {resident.unit_number}" if block_name else resident.unit_number
+
+    return ResidentAppeal(
+        id=notif.id,
+        resident_id=notif.resident_id or 0,
+        resident_code=resident_code,
+        message=notif.message,
+        status=notif.status.value,
+        created_at=notif.created_at,
+    )
+
+
+@router.put("/appeals/{appeal_id}", response_model=ResidentAppeal)
+def update_resident_appeal(
+    appeal_id: int,
+    data: ResidentAppealUpdate,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Update appeal text for current resident user (only while UNREAD).
+    """
+    user = _get_resident_user(request, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    notif = db.get(Notification, appeal_id)
+    if not notif or notif.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Appeal not found")
+
+    if notif.status != NotificationStatus.UNREAD:
+        raise HTTPException(status_code=400, detail="Cannot edit read appeal")
+
+    message = (data.message or "").strip()
+    if len(message) < 5:
+        raise HTTPException(status_code=400, detail="Message is too short")
+
+    notif.message = message
+    db.commit()
+    db.refresh(notif)
+
+    resident = notif.resident
+    block_name = resident.block.name if resident and resident.block else ""
+    unit_number = resident.unit_number if resident else ""
+    resident_code = f"{block_name} / {unit_number}" if block_name and unit_number else unit_number or block_name or ""
+
+    return ResidentAppeal(
+        id=notif.id,
+        resident_id=notif.resident_id or 0,
+        resident_code=resident_code,
+        message=notif.message,
+        status=notif.status.value,
+        created_at=notif.created_at,
+    )
+
+
+@router.delete("/appeals/{appeal_id}")
+def delete_resident_appeal(
+    appeal_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Delete appeal for current resident user.
+    """
+    user = _get_resident_user(request, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    notif = db.get(Notification, appeal_id)
+    if not notif or notif.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Appeal not found")
+
+    db.delete(notif)
+    db.commit()
+
+    return {"ok": True}
 
 
 @router.get("/dashboard", response_model=ResidentDashboardResponse)
@@ -736,8 +922,10 @@ def get_resident_dashboard(
                 if inv.status not in [InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL, InvoiceStatus.DRAFT]:
                     unpaid_count += 1
 
-    # Calculate monthly kWh consumption
+    # Calculate monthly utility consumptions (electricity, water, gas)
     monthly_kwh = Decimal("0")
+    monthly_water_m3 = Decimal("0")
+    monthly_gas_m3 = Decimal("0")
     if resident_ids:
         today = datetime.utcnow()
         month_start = datetime(today.year, today.month, 1)
@@ -745,7 +933,9 @@ def get_resident_dashboard(
                              (1 if today.month == 12 else today.month + 1), 1)
         
         from ..models import MeterType
-        readings = (
+        
+        # Electricity consumption
+        electric_readings = (
             db.query(MeterReading)
             .join(ResidentMeter, ResidentMeter.id == MeterReading.resident_meter_id)
             .filter(
@@ -756,7 +946,35 @@ def get_resident_dashboard(
             )
             .all()
         )
-        monthly_kwh = sum(Decimal(str(rd.consumption or 0)) for rd in readings)
+        monthly_kwh = sum(Decimal(str(rd.consumption or 0)) for rd in electric_readings)
+        
+        # Water consumption
+        water_readings = (
+            db.query(MeterReading)
+            .join(ResidentMeter, ResidentMeter.id == MeterReading.resident_meter_id)
+            .filter(
+                ResidentMeter.resident_id.in_(resident_ids),
+                ResidentMeter.meter_type == MeterType.WATER,
+                MeterReading.reading_date >= month_start,
+                MeterReading.reading_date < month_end
+            )
+            .all()
+        )
+        monthly_water_m3 = sum(Decimal(str(rd.consumption or 0)) for rd in water_readings)
+        
+        # Gas consumption
+        gas_readings = (
+            db.query(MeterReading)
+            .join(ResidentMeter, ResidentMeter.id == MeterReading.resident_meter_id)
+            .filter(
+                ResidentMeter.resident_id.in_(resident_ids),
+                ResidentMeter.meter_type == MeterType.GAS,
+                MeterReading.reading_date >= month_start,
+                MeterReading.reading_date < month_end
+            )
+            .all()
+        )
+        monthly_gas_m3 = sum(Decimal(str(rd.consumption or 0)) for rd in gas_readings)
 
     # Count active notifications
     active_notifications = 0
@@ -805,6 +1023,8 @@ def get_resident_dashboard(
             total_pay_now=float(total_pay),
             unpaid_invoices_count=unpaid_count,
             monthly_kwh=float(monthly_kwh),
+            monthly_water_m3=float(monthly_water_m3),
+            monthly_gas_m3=float(monthly_gas_m3),
             active_notifications_count=active_notifications,
         ),
     )

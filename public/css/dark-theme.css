@@ -44,7 +44,7 @@
 
 /* Common Dark Mode Styles */
 [data-theme="dark"] .card,
-[data-theme="dark"] .stat-card,
+[data-theme="dark"] .stat-card:not(.solid-purple):not(.solid-orange):not(.solid-blue):not(.solid-red):not(.solid-green):not(.solid-yellow),
 [data-theme="dark"] .chart-card,
 [data-theme="dark"] .activity-card,
 [data-theme="dark"] .bill-card,
@@ -56,7 +56,7 @@
 }
 
 [data-theme="dark"] .card:hover,
-[data-theme="dark"] .stat-card:hover,
+[data-theme="dark"] .stat-card:not(.solid-purple):not(.solid-orange):not(.solid-blue):not(.solid-red):not(.solid-green):not(.solid-yellow):hover,
 [data-theme="dark"] .chart-card:hover,
 [data-theme="dark"] .activity-card:hover,
 [data-theme="dark"] .bill-card:hover,
@@ -64,6 +64,31 @@
 [data-theme="dark"] .report-card:hover,
 [data-theme="dark"] .meter-card:hover {
     border-color: #667eea;
+}
+
+/* Icons in colored stat cards - colored backgrounds */
+[data-theme="dark"] .stat-card.solid-purple .stat-icon {
+    background: linear-gradient(135deg, #a55eea 0%, #8854d0 100%) !important;
+}
+
+[data-theme="dark"] .stat-card.solid-orange .stat-icon {
+    background: linear-gradient(135deg, #f5a623 0%, #e8830c 100%) !important;
+}
+
+[data-theme="dark"] .stat-card.solid-blue .stat-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #2e86de 100%) !important;
+}
+
+[data-theme="dark"] .stat-card.solid-red .stat-icon {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5253 100%) !important;
+}
+
+[data-theme="dark"] .stat-card.solid-green .stat-icon {
+    background: linear-gradient(135deg, #38ef7d 0%, #11998e 100%) !important;
+}
+
+[data-theme="dark"] .stat-card.solid-yellow .stat-icon {
+    background: linear-gradient(135deg, #f5af19 0%, #f12711 100%) !important;
 }
 
 [data-theme="dark"] .card-header {

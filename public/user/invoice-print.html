@@ -67,7 +67,8 @@
             <tbody id="paymentsTable"><!-- наполняется из JS --></tbody>
         </table>
         <p style="margin-top: 6px; font-size: 13px;">
-            <span data-i18n="user_invoice_print_payments_summary">Оплачено: <strong>10.00</strong>, Остаток: <strong>29990.00</strong> из <strong>30000.00</strong></span>
+            <!-- Текст будет подставлен из JS с учётом текущего языка -->
+            <span id="invoicePaymentsSummary"></span>
         </p>
 
         <!-- Основная таблица с позициями счёта (как в админском шаблоне, но с данными пользователя) -->
@@ -163,15 +164,23 @@
                     const invoiceData = await response.json();
                     
                     // Transform API data to print format
+                    const totalAmount = Number(invoiceData.amount_total ?? 0);
+                    const paidAmount = Number(invoiceData.paid_amount ?? 0);
+                    const remainingAmount = Number(
+                        invoiceData.remaining_amount !== undefined && invoiceData.remaining_amount !== null
+                            ? invoiceData.remaining_amount
+                            : totalAmount - paidAmount
+                    );
+
                     const invoice = {
                         number: invoiceData.number || `#${invoiceData.id}`,
                         resident: invoiceData.resident_code || '—',
                         period: formatPeriod(invoiceData),
                         status: invoiceData.status,
                         dueDate: invoiceData.due_date,
-                        total: invoiceData.amount_total,
-                        paid: invoiceData.paid_amount,
-                        remaining: invoiceData.remaining_amount,
+                        total: totalAmount,
+                        paid: paidAmount,
+                        remaining: remainingAmount,
                         payments: (invoiceData.payments || []).map(p => ({
                             date: p.date,
                             method: p.method,
@@ -232,16 +241,23 @@
                     }
                 }
                 
-                // Update payments summary
-                const summaryEl = document.querySelector('p[data-i18n="user_invoice_print_payments_summary"]');
-                if (summaryEl && invoice.paid !== undefined && invoice.remaining !== undefined) {
-                    summaryEl.innerHTML = `
-                        <span data-i18n="user_invoice_print_payments_summary">
-                            Оплачено: <strong>${invoice.paid.toFixed(2)}</strong>, 
-                            Остаток: <strong>${invoice.remaining.toFixed(2)}</strong> из 
-                            <strong>${invoice.total.toFixed(2)}</strong>
-                        </span>
-                    `;
+                // Update payments summary (use i18n template with {paid}, {remaining}, {total})
+                const summarySpan = document.getElementById('invoicePaymentsSummary');
+                if (summarySpan) {
+                    const lang = (window.i18n && window.i18n.currentLanguage) || localStorage.getItem('language') || 'ru';
+                    const dict = (window.translations && window.translations[lang]) || {};
+                    let template = dict.user_invoice_print_payments_summary || summarySpan.textContent || '';
+
+                    const paidStr = (Number.isFinite(invoice.paid) ? invoice.paid : 0).toFixed(2);
+                    const remainingStr = (Number.isFinite(invoice.remaining) ? invoice.remaining : 0).toFixed(2);
+                    const totalStr = (Number.isFinite(invoice.total) ? invoice.total : 0).toFixed(2);
+
+                    template = template
+                        .replace('{paid}', `<strong>${paidStr}</strong>`)
+                        .replace('{remaining}', `<strong>${remainingStr}</strong>`)
+                        .replace('{total}', `<strong>${totalStr}</strong>`);
+
+                    summarySpan.innerHTML = template;
                 }
 
                 // Таблица позиций

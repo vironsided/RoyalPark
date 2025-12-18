@@ -357,14 +357,24 @@ function updateDashboardUI(data) {
         }
 
         // Update progress bar
+        const progressBar = document.querySelector('.resident-progress-bar');
         const progressFill = document.querySelector('.resident-progress-fill');
-        if (progressFill && firstResident) {
+        if (progressBar && progressFill && firstResident) {
             const percentage = firstResident.month_total > 0 
                 ? (firstResident.month_paid / firstResident.month_total) * 100 
                 : 0;
             progressFill.style.width = `${Math.min(percentage, 100)}%`;
-            progressFill.querySelector('span').textContent = 
-                `${formatCurrency(firstResident.month_paid)} / ${formatCurrency(firstResident.month_total)}`;
+
+            // Показываем короткий формат "оплачено/за месяц", например 0/112, по центру полосы
+            const paidShort = Math.round(firstResident.month_paid || 0);
+            const totalShort = Math.round(firstResident.month_total || 0);
+            let progressTextSpan = progressBar.querySelector('.resident-progress-text');
+            if (!progressTextSpan) {
+                progressTextSpan = document.createElement('span');
+                progressTextSpan.className = 'resident-progress-text';
+                progressBar.appendChild(progressTextSpan);
+            }
+            progressTextSpan.textContent = `${paidShort}/${totalShort}`;
         }
 
         // Update detailed stats in resident card (use first resident's data)
@@ -385,28 +395,39 @@ function updateDashboardUI(data) {
 function updateStatsGrid(data) {
     const summary = data.summary || {};
     
-    // 1. Баланс (Balance) - используем total_advance
-    const balanceCard = document.querySelector('.stat-card.solid-blue .stat-value');
-    if (balanceCard) {
-        balanceCard.textContent = formatCurrency(summary.total_advance || 0);
+    // 1. Неоплаченных счета (Unpaid bills)
+    const unpaidCountEl = document.getElementById('stat-unpaid-count');
+    const unpaidStatusEl = document.getElementById('stat-unpaid-status');
+    if (unpaidCountEl) {
+        unpaidCountEl.textContent = (summary.unpaid_invoices_count || 0).toString();
+    }
+    if (unpaidStatusEl) {
+        if (summary.unpaid_invoices_count > 0) {
+            unpaidStatusEl.classList.add('negative');
+            unpaidStatusEl.classList.remove('positive');
+        } else {
+            unpaidStatusEl.classList.remove('negative');
+            unpaidStatusEl.classList.add('positive');
+            unpaidStatusEl.textContent = 'Всё оплачено';
+        }
     }
     
-    // 2. Неоплаченных счета (Unpaid bills) - используем из summary
-    const unpaidCard = document.querySelector('.stat-card.solid-orange .stat-value');
-    if (unpaidCard) {
-        unpaidCard.textContent = (summary.unpaid_invoices_count || 0).toString();
+    // 2. Электричество (кВт⋅ч за месяц)
+    const electricityEl = document.getElementById('stat-electricity');
+    if (electricityEl) {
+        electricityEl.textContent = Math.round(summary.monthly_kwh || 0).toString();
     }
     
-    // 3. кВт·ч за месяц - используем из summary
-    const kwhCard = document.querySelector('.stat-card.solid-green .stat-value');
-    if (kwhCard) {
-        kwhCard.textContent = Math.round(summary.monthly_kwh || 0).toString();
+    // 3. Вода (м³ за месяц)
+    const waterEl = document.getElementById('stat-water');
+    if (waterEl) {
+        waterEl.textContent = (summary.monthly_water_m3 || 0).toFixed(1);
     }
     
-    // 4. Активная заявка - используем из summary
-    const activeRequestCard = document.querySelector('.stat-card.solid-red .stat-value');
-    if (activeRequestCard) {
-        activeRequestCard.textContent = (summary.active_notifications_count || 0).toString();
+    // 4. Газ (м³ за месяц)
+    const gasEl = document.getElementById('stat-gas');
+    if (gasEl) {
+        gasEl.textContent = (summary.monthly_gas_m3 || 0).toFixed(1);
     }
 }
 
@@ -423,7 +444,7 @@ async function loadInvoices(residentIds) {
         
         for (const residentId of residentIds) {
             const response = await fetch(
-                `${API_BASE_URL}/api/invoices/public?resident_id=${residentId}&per_page=10`,
+                `${API_BASE_URL}/api/invoices?resident_id=${residentId}&per_page=10`,
                 {
                     method: 'GET',
                     credentials: 'include',
@@ -543,15 +564,76 @@ function formatCurrency(amount) {
 
 // Setup action buttons
 function setupActionButtons() {
-    // Handle "Погасить из аванса" (Pay from advance) button
+    // Все клики обрабатываем через делегирование
     document.addEventListener('click', async (e) => {
+        // Нужны данные дашборда для сумм
+        const summary = window.dashboardData?.summary || {};
+
+        // "Погасить из аванса" (Pay from advance)
         const payFromAdvanceBtn = e.target.closest('[data-action="pay-from-advance"]');
         if (payFromAdvanceBtn && window.dashboardData && window.dashboardData.residents.length > 0) {
             e.preventDefault();
             const residentId = window.dashboardData.residents[0].id; // Use first resident for now
             await applyAdvance(residentId);
+            return;
+        }
+
+        // "Оплатить за месяц" — оплачиваем только текущий месяц
+        const payMonthBtn = e.target.closest('[data-action="pay-month"]');
+        if (payMonthBtn && window.dashboardData) {
+            e.preventDefault();
+            const amount = summary.total_month || 0;
+            startPaymentFlow('month', amount, summary);
+            return;
+        }
+
+        // "Оплатить всё" — полное погашение долга по всем счетам
+        const payAllBtn = e.target.closest('[data-action="pay-all"]');
+        if (payAllBtn && window.dashboardData) {
+            e.preventDefault();
+            const amount = summary.total_debt || 0;
+            startPaymentFlow('all', amount, summary);
+            return;
         }
     });
+}
+
+// Запуск цепочки оплаты: сохраняем параметры и переходим на страницу оплаты
+function startPaymentFlow(scope, amount, summaryFromDashboard) {
+    // Код резидента для отображения на странице оплаты
+    const residentTagEl = document.querySelector('.resident-tag');
+    const residentCode = residentTagEl ? residentTagEl.textContent.trim() : '';
+
+    // Человеко-понятный текст типа платежа
+    let scopeLabel;
+    if (scope === 'all') {
+        scopeLabel = 'Полное погашение долга по счетам';
+    } else {
+        scopeLabel = 'Оплата счетов за текущий месяц';
+    }
+
+    // Сохраняем данные в sessionStorage, чтобы страница оплаты могла их использовать
+    try {
+        sessionStorage.setItem('paymentScope', scope);
+        sessionStorage.setItem('paymentAmount', String(amount || 0));
+        sessionStorage.setItem('paymentScopeLabel', scopeLabel);
+        if (summaryFromDashboard && typeof summaryFromDashboard === 'object') {
+            sessionStorage.setItem('paymentSummary', JSON.stringify(summaryFromDashboard));
+        }
+        if (residentCode) {
+            sessionStorage.setItem('paymentResidentCode', residentCode);
+        }
+    } catch (err) {
+        console.warn('Failed to store payment data in sessionStorage', err);
+    }
+
+    // Переходим на SPA-маршрут "report" (страница оплаты)
+    if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
+        window.userSpaRouter.navigate('report', true);
+    } else {
+        // fallback — обычный переход по URL
+        window.location.href = '/user/dashboard.html#report';
+    }
 }
 
 // Apply advance payment

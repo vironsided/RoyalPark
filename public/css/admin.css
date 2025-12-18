@@ -164,6 +164,8 @@ html, body {
     background: transparent;
     overflow-y: auto;
     overflow-x: hidden;
+    scrollbar-width: thin; /* можно заменить на 'none', если хочешь вообще скрыть */
+    scrollbar-color: transparent transparent;
 }
 
 .sidebar::before {

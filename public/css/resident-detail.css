@@ -117,6 +117,7 @@ body.resident-detail-page .admin-container {
     background: var(--detail-card-bg);
     border: 1px solid var(--detail-border);
     border-radius: 20px;
+    overflow: hidden;
     padding: 1.5rem;
     box-shadow: var(--shadow-lg);
 }
@@ -167,64 +168,60 @@ body.resident-detail-page .admin-container {
     background: rgba(255, 255, 255, 0.15);
 }
 
-.resident-filter-card {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1.25rem;
-    align-items: center;
-}
-
-.date-range {
+/* Сетка фильтров - лейблы сверху, контролы снизу */
+.resident-filter-card.filter-grid {
     display: flex;
-    gap: 1rem;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1.5rem;
     flex-wrap: wrap;
 }
 
-.input-group {
+.filter-col {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
-    flex: 1;
+    gap: 0.4rem;
 }
 
-.input-group label {
+.filter-col label {
     font-size: 0.85rem;
     color: var(--text-secondary);
+    white-space: nowrap;
 }
 
-.input-group input {
+.filter-col input[type="date"] {
     border-radius: 12px;
     border: 1px solid var(--detail-border);
     background: rgba(255, 255, 255, 0.05);
     color: #fff;
     padding: 0.65rem 1rem;
+    min-width: 160px;
 }
 
-.filter-actions {
+.filter-col-buttons {
+    /* Центрируем по вертикали */
+}
+
+.filter-buttons-row {
     display: flex;
     gap: 0.75rem;
+    align-items: center;
 }
 
-.filter-actions .btn {
+.filter-buttons-row .btn {
     border-radius: 999px;
     padding: 0.65rem 1.5rem;
     font-weight: 600;
+    white-space: nowrap;
 }
 
-.quick-filter {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.quick-filter span {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
+.filter-col-quick {
+    margin-left: auto;
 }
 
 .quick-filter-buttons {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.5rem;
 }
 
@@ -233,10 +230,11 @@ body.resident-detail-page .admin-container {
     border: 1px solid rgba(255, 255, 255, 0.15);
     background: transparent;
     color: var(--text-primary);
-    padding: 0.45rem 1.15rem;
+    padding: 0.45rem 1rem;
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition-smooth);
+    white-space: nowrap;
 }
 
 .quick-filter-btn.active,
@@ -244,6 +242,40 @@ body.resident-detail-page .admin-container {
     background: linear-gradient(135deg, #2562ff 0%, #24c6dc 100%);
     border-color: transparent;
     color: #fff;
+}
+
+/* Адаптив для планшетов */
+@media (max-width: 1100px) {
+    .filter-col-quick {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+/* Адаптив для мобильных */
+@media (max-width: 768px) {
+    .resident-filter-card.filter-grid {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .filter-col {
+        width: 100%;
+    }
+    
+    .filter-col input[type="date"] {
+        width: 100%;
+        min-width: 0;
+    }
+    
+    .filter-buttons-row {
+        width: 100%;
+    }
+    
+    .quick-filter-buttons {
+        flex-wrap: wrap;
+    }
 }
 
 .meters-list {
@@ -291,23 +323,37 @@ body.resident-detail-page .admin-container {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.meter-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: fit-content;
 }
 
 .meter-row {
     display: grid;
-    grid-template-columns: repeat(6, minmax(120px, 1fr));
+    /* Все колонки одинакового размера */
+    grid-template-columns: repeat(6, 110px);
     gap: 0.5rem;
     padding: 0.75rem 1rem;
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.05);
+    min-width: 720px;
 }
 
 .meter-head span {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .meter-head-label {
@@ -334,21 +380,50 @@ body.resident-detail-page .admin-container {
     text-align: center;
     font-style: italic;
     color: var(--text-secondary);
+    min-width: auto !important;
+}
+
+/* Стилизация скроллбара для таблицы */
+.meter-table::-webkit-scrollbar {
+    height: 6px;
+}
+
+.meter-table::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.meter-table::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.meter-table::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 @media (max-width: 992px) {
-    .meter-row {
-        grid-template-columns: repeat(3, minmax(120px, 1fr));
+    .meter-table {
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
     }
 }
 
 @media (max-width: 640px) {
-    .meter-row {
-        grid-template-columns: repeat(2, minmax(110px, 1fr));
+    .meter-table {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 0.75rem;
+        margin: 0 -0.5rem;
+        padding: 0 0.5rem 0.75rem;
     }
-
-    .meter-head {
-        display: none;
+    
+    .meter-row {
+        font-size: 0.85rem;
+    }
+    
+    .meter-card-header {
+        flex-wrap: wrap;
     }
 }
 
