@@ -1,0 +1,2320 @@
+/* 🎨 USER DASHBOARD - Яркие сочные цвета 🎨 */
+
+/* Переопределяем цвета sidebar для user */
+.admin-container .sidebar,
+.user-app .sidebar {
+    background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: 100vh;
+}
+
+[data-theme="dark"] .admin-container .sidebar,
+[data-theme="dark"] .user-app .sidebar {
+    background: linear-gradient(180deg, #12141d 0%, #090b13 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.6);
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: 100vh;
+}
+
+/* Улучшенный скроллбар для sidebar в user-кабинете - копируем стили из admin панели */
+.user-app .sidebar::-webkit-scrollbar,
+[data-theme="dark"] .user-app .sidebar::-webkit-scrollbar,
+.admin-container .sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.user-app .sidebar::-webkit-scrollbar-track,
+[data-theme="dark"] .user-app .sidebar::-webkit-scrollbar-track,
+.admin-container .sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.user-app .sidebar::-webkit-scrollbar-thumb,
+[data-theme="dark"] .user-app .sidebar::-webkit-scrollbar-thumb,
+.admin-container .sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.user-app .sidebar::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .user-app .sidebar::-webkit-scrollbar-thumb:hover,
+.admin-container .sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Улучшенный скроллбар для свернутого сайдбара */
+.user-app .sidebar.collapsed::-webkit-scrollbar,
+[data-theme="dark"] .user-app .sidebar.collapsed::-webkit-scrollbar {
+    width: 4px;
+}
+
+.user-app .sidebar.collapsed::-webkit-scrollbar-thumb,
+[data-theme="dark"] .user-app .sidebar.collapsed::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+
+.user-app .sidebar.collapsed::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .user-app .sidebar.collapsed::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] .sidebar .nav-item {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+[data-theme="dark"] .sidebar .nav-item:hover,
+[data-theme="dark"] .sidebar .nav-item.active {
+    background: linear-gradient(135deg, #6a5bff 0%, #a75bff 100%);
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(109, 91, 255, 0.35);
+}
+
+/* Делаем шапку сайдбара тем же цветом, что и остальная часть в user-кабинете */
+.user-app .sidebar-header {
+    background: transparent;
+    /* убираем нижнюю линию у шапки сайдбара, чтобы не было разрыва с линией топ-бара */
+    border-bottom: none;
+}
+
+.main-content {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow: visible;
+    padding-top: 0;
+}
+
+/* Общий overlay для user-кабинета (фон + blur) */
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 2000; /* гарантированно выше контента */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Mobile layout tweaks specifically for user cabinet */
+@media (max-width: 768px) {
+    /* Управляем шириной сайдбара через класс collapsed, а не через .open */
+    body.user-app .sidebar {
+        width: 80px !important;
+        min-width: 80px !important;
+        max-width: 80px !important;
+    }
+
+    body.user-app .sidebar:not(.collapsed) {
+        width: 260px !important;
+        min-width: 260px !important;
+        max-width: 260px !important;
+    }
+
+    /* Контент сдвигается в зависимости от того, свернут сайдбар или нет */
+    body.user-app .sidebar ~ .main-content {
+        margin-left: 80px !important;
+        width: calc(100% - 80px) !important;
+        max-height: none !important;
+    }
+
+    body.user-app .sidebar:not(.collapsed) ~ .main-content {
+        margin-left: 260px !important;
+        width: calc(100% - 260px) !important;
+    }
+
+}
+
+.main-content .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--bg-secondary);
+    border-radius: 0;
+    box-shadow: var(--shadow-lg);
+    /* убираем отступ между топ-баром и контентом */
+    margin-bottom: 0;
+    padding: 0.75rem 1.25rem;
+}
+
+.main-content .dashboard-content {
+    flex: 1;
+}
+
+/* Убираем глобальные отступы dashboard-content для user-кабинета */
+.user-app .dashboard-content {
+    margin-top: 0 !important;
+    padding-top: 1.5rem !important; /* чуть-чуть воздуха над приветствием */
+}
+
+/* Responsive tweaks for top bar in user cabinet */
+@media (max-width: 768px) {
+    .top-bar {
+        /* сначала показываем панель действий, затем заголовок */
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+
+    .top-bar-actions {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    /* В мобильном режиме скрываем поиск, переключатель темы и языки —
+       остаются только колокольчик и профиль, остальные настройки есть в модале аккаунта */
+    .top-bar-actions .search-box {
+        display: none;
+    }
+
+    .top-bar-actions .theme-toggle,
+    .top-bar-actions .language-selector {
+        display: none !important;
+    }
+}
+
+[data-theme="dark"] .main-content .top-bar {
+    background: rgba(22, 24, 33, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .main-content .top-bar::after {
+    content: '';
+    position: absolute;
+    left: 1.5rem;
+    right: 1.5rem;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.15), rgba(255,255,255,0));
+    opacity: 0.5;
+}
+
+/* Для user-кабинета растягиваем линию топ-бара до самого бокового меню,
+   чтобы не было видимой «ступеньки» стыка */
+.user-app .main-content .top-bar::after {
+    /* в user-кабинете убираем линию совсем, чтобы не было «нестыковки» со стороны сайдбара */
+    content: none;
+}
+
+/* Collaborative Overview */
+.overview-collab {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (min-width: 992px) {
+    .overview-collab {
+        grid-template-columns: minmax(0, 1fr) 280px;
+        align-items: stretch;
+    }
+}
+
+.resident-card {
+    padding: 1.75rem;
+    border-radius: 1.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid rgba(90, 107, 77, 0.15);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+[data-theme="dark"] .resident-card {
+    background: #1e232f;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+}
+
+.resident-card-header {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+@media (min-width: 700px) {
+    .resident-card-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+}
+
+.resident-greeting {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.resident-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(79, 172, 254, 0.12);
+    color: #4facfe;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+[data-theme="dark"] .resident-tag {
+    background: rgba(79, 172, 254, 0.2);
+    color: #7ed2ff;
+}
+
+.resident-amount-box {
+    text-align: left;
+}
+
+@media (min-width: 700px) {
+    .resident-amount-box {
+        text-align: right;
+    }
+}
+
+.resident-amount-box span {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.resident-amount-box strong {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #63ffba;
+}
+
+.resident-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.resident-progress-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.resident-progress-bar {
+    height: 16px;
+    border-radius: 999px;
+    background: rgba(99, 255, 186, 0.15);
+    overflow: hidden;
+}
+
+.resident-progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #42e695 0%, #3bb2b8 100%);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+}
+
+.resident-stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.resident-stat-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.resident-stat-value {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.resident-stat-value.positive {
+    color: #63ffba;
+}
+
+.resident-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .resident-actions {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
+
+.resident-actions-left {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.resident-btn {
+    border: none;
+    border-radius: 0.9rem;
+    padding: 0.65rem 1.2rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.resident-btn.subtle {
+    background: rgba(255, 255, 255, 0.5);
+    color: #2c3e50;
+}
+
+.resident-btn.subtle:hover {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="dark"] .resident-btn.subtle {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e4e6eb;
+}
+
+[data-theme="dark"] .resident-btn.subtle:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.resident-btn.primary {
+    background: #2562ff;
+    color: white;
+    box-shadow: 0 10px 20px rgba(37, 98, 255, 0.25);
+}
+
+.resident-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 25px rgba(37, 98, 255, 0.35);
+}
+
+.resident-btn.success {
+    background: linear-gradient(135deg, #1dd1a1 0%, #10ac84 100%);
+    color: white;
+    box-shadow: 0 15px 25px rgba(16, 172, 132, 0.35);
+}
+
+.resident-btn.success:hover {
+    transform: translateY(-2px);
+}
+
+.resident-side-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.resident-summary-card {
+    padding: 1.5rem;
+    border-radius: 1.25rem;
+    background: var(--bg-secondary);
+    border: 1px solid rgba(90, 107, 77, 0.12);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+[data-theme="dark"] .resident-summary-card {
+    background: #1e232f;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.resident-summary-card.accent {
+    background: linear-gradient(135deg, #24c6dc 0%, #2af598 100%);
+    border-color: transparent;
+    color: white;
+}
+
+.summary-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.resident-summary-card.accent .summary-label {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.summary-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.resident-summary-card.accent .summary-value {
+    color: white;
+}
+
+/* Bills List */
+.bills-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.bill-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: var(--bg-secondary);
+    border-radius: 1rem;
+    transition: var(--transition-smooth);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.bill-item:hover {
+    background: var(--bg-primary);
+    border-color: rgba(79, 172, 254, 0.4);
+    transform: translateX(5px);
+    box-shadow: 0 8px 20px rgba(79, 172, 254, 0.25);
+}
+
+.bill-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.bill-icon.bill-pending {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+}
+
+.bill-icon.bill-paid {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(17, 153, 142, 0.3);
+}
+
+.bill-details {
+    flex: 1;
+}
+
+.bill-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.bill-date {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.bill-amount {
+    text-align: right;
+}
+
+.bill-sum {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+/* Quick Actions Buttons */
+.action-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    background: var(--bg-secondary);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    margin-bottom: 0.75rem;
+    position: relative;
+    overflow: hidden;
+    color: var(--text-primary);
+    --action-icon-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+[data-theme="dark"] .action-button {
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: var(--shadow-sm);
+}
+
+.action-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+    transition: var(--transition-smooth);
+    z-index: 0;
+    background: var(--action-icon-gradient);
+}
+
+.action-button.action-primary {
+    --action-icon-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.action-button.action-success {
+    --action-icon-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.action-button.action-warning {
+    --action-icon-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.action-button.action-info {
+    --action-icon-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.action-button:hover::before {
+    opacity: 1;
+}
+
+.action-button > * {
+    position: relative;
+    z-index: 1;
+}
+
+.action-button:hover {
+    border-color: transparent;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.action-button > i:first-child {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    border-radius: 1rem;
+    font-size: 1.5rem;
+    color: #ffffff;
+    z-index: 1;
+    overflow: visible;
+}
+
+.action-button > i:first-child::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--action-icon-gradient);
+    transform: rotate(-8deg);
+    transition: var(--transition-smooth);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.25);
+    z-index: -1;
+}
+
+.action-button:hover > i:first-child::after {
+    transform: rotate(-2deg) scale(1.02);
+}
+
+.action-button > div {
+    flex: 1;
+    text-align: left;
+}
+
+.action-title {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+    transition: var(--transition-smooth);
+}
+
+.action-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    transition: var(--transition-smooth);
+}
+
+.action-button:hover .action-title,
+.action-button:hover .action-subtitle {
+    color: white;
+}
+
+.action-button > i:last-child {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    transition: var(--transition-smooth);
+}
+
+.action-button:hover > i:last-child {
+    color: white;
+    transform: translateX(5px);
+}
+
+/* News Grid */
+.news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 1.5rem;
+}
+
+.news-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: 1rem;
+    transition: var(--transition-smooth);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .news-item {
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.news-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border-color: rgba(102, 126, 234, 0.4);
+}
+
+.news-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.news-item:nth-child(2) .news-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+}
+
+.news-item:nth-child(3) .news-icon {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    box-shadow: 0 4px 12px rgba(250, 112, 154, 0.3);
+}
+
+.news-content {
+    flex: 1;
+}
+
+.news-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.news-content p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+}
+
+.news-date {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.user-app,
+.resident-detail-page {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(120, 120, 120, 0.7) #0b0d14;
+}
+
+.user-app::-webkit-scrollbar,
+.resident-detail-page::-webkit-scrollbar {
+    width: 12px;
+    background: #0b0d14;
+}
+
+.user-app::-webkit-scrollbar-track,
+.resident-detail-page::-webkit-scrollbar-track {
+    background: #0b0d14;
+}
+
+.user-app::-webkit-scrollbar-thumb,
+.resident-detail-page::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #555b6b 0%, #2b2f3d 100%);
+    border-radius: 12px;
+    border: 2px solid #0b0d14;
+    box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.35);
+}
+
+.user-app::-webkit-scrollbar-thumb:hover,
+.resident-detail-page::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #7a80a1 0%, #3a3f52 100%);
+}
+
+/* User Bills (Мои счета) */
+.user-bills-section {
+    padding: 0 var(--spacing-lg) var(--spacing-lg);
+}
+
+.user-bills-card {
+    background: var(--bg-secondary);
+    border-radius: 1.5rem;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    padding: 1.75rem 2rem 2rem;
+}
+
+.user-bills-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    gap: 1.5rem;
+}
+
+.user-bills-header h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.user-bills-filters {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+}
+
+.user-bills-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.user-bills-filter-group label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.user-bills-filter-group select {
+    min-width: 180px;
+    border-radius: 0.9rem;
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--text-primary);
+    padding: 0.55rem 0.9rem;
+    font-size: 0.9rem;
+}
+
+.user-bills-filter-btn {
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: transparent;
+    color: var(--text-primary);
+    padding: 0.55rem 1.2rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.user-bills-filter-btn:hover {
+    background: linear-gradient(135deg, #2562ff 0%, #24c6dc 100%);
+    border-color: transparent;
+    color: #fff;
+}
+
+/* Appeals (Заявки) */
+.user-appeals-section {
+    padding: 0 var(--spacing-lg) var(--spacing-lg);
+}
+
+.user-appeals-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 1.5rem;
+}
+
+.user-appeals-card {
+    background: var(--bg-secondary);
+    border-radius: 1.5rem;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    padding: 1.75rem 2rem 2rem;
+}
+
+.user-appeals-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+}
+
+.user-appeals-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.user-appeals-field label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.user-appeals-field select,
+.user-appeals-field textarea {
+    width: 100%;
+    border-radius: 0.9rem;
+    border: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--text-primary);
+    padding: 0.55rem 0.9rem;
+    font-size: 0.9rem;
+    resize: vertical;
+}
+
+.user-appeals-field textarea::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.user-appeals-hint {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.user-appeals-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.user-appeals-list-card {
+    max-height: 100%;
+}
+
+.user-appeals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.user-appeal-item {
+    padding: 0.9rem 1rem;
+    border-radius: 1rem;
+    border: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.user-appeal-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.user-appeal-house {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.user-appeal-date {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.user-appeal-badge {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+.user-appeal-badge-read {
+    background: rgba(52, 199, 89, 0.18);
+    color: #34c759;
+}
+
+.user-appeal-badge-unread {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.user-appeals-empty {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 1.5rem 0.5rem;
+}
+
+/* Appeal modal */
+.user-appeal-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    z-index: 1200;
+    padding-top: 40px; /* небольшой отступ от верхнего края, чтобы модал не прилипал к топ-бару */
+}
+
+.user-appeal-modal-overlay.show {
+    display: flex;
+}
+
+.user-appeal-modal {
+    background: #1f2330;
+    color: var(--text-primary);
+    border-radius: 1rem;
+    width: min(520px, 90vw);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+}
+
+.user-appeal-modal-header,
+.user-appeal-modal-footer {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-appeal-modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: none;
+}
+
+.user-appeal-modal-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.user-appeal-modal-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    font-size: 0.95rem;
+}
+
+.user-appeal-modal-row span {
+    color: var(--text-secondary);
+    min-width: 90px;
+}
+
+.user-appeal-modal-text .label {
+    display: block;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.user-appeal-modal-text p {
+    margin: 0;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+.user-appeal-modal-close {
+    border: none;
+    background: transparent;
+    color: #fff;
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+
+.user-appeal-modal-edit textarea {
+    width: 100%;
+    border-radius: 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--text-primary);
+    padding: 0.55rem 0.9rem;
+    font-size: 0.9rem;
+    resize: vertical;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.user-appeal-modal-edit textarea:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 1px rgba(102, 126, 234, 0.8);
+    background: rgba(8, 12, 24, 0.9);
+}
+
+.user-appeal-modal-edit small {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 992px) {
+    .user-appeals-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Dark dropdown options inside user bills selects */
+[data-theme="dark"] .user-bills-section select,
+body[data-theme="dark"] .user-bills-section select {
+    background-color: rgba(255, 255, 255, 0.04);
+    color: #f6f7ff;
+}
+
+[data-theme="dark"] .user-bills-section select option,
+body[data-theme="dark"] .user-bills-section select option {
+    background-color: #1e222b;
+    color: #f6f7ff;
+}
+
+.user-bills-table-wrapper {
+    border-radius: 1.1rem;
+    border: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+}
+
+.user-bills-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.user-bills-table thead {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.user-bills-table th,
+.user-bills-table td {
+    padding: 0.85rem 1rem;
+    white-space: nowrap;
+}
+
+/* Мобильная адаптация "Мои счета" */
+@media (max-width: 768px) {
+    /* Заголовок и фильтры становятся вертикально один под другим */
+    .user-bills-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .user-bills-filters {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .user-bills-filter-group select {
+        min-width: 140px;
+    }
+
+    /* Таблица остаётся обычной, но при необходимости можно пролистывать по горизонтали */
+    .user-bills-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+.user-bills-table th {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+}
+
+.user-bills-table tbody tr {
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.user-bills-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.user-bill-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 56px;
+    padding: 0.25rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.user-bill-status.paid {
+    background: rgba(52, 199, 89, 0.18);
+    color: #34c759;
+}
+
+.user-bill-amount {
+    font-weight: 600;
+    color: #e55361;
+}
+
+.user-bill-paid {
+    display: block;
+    font-size: 0.8rem;
+    color: #f6c453;
+}
+
+.user-bill-remaining {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.user-bill-open-btn {
+    border-radius: 999px;
+    padding: 0.45rem 1.3rem;
+    border: none;
+    background: linear-gradient(135deg, #2562ff 0%, #24c6dc 100%);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.user-bill-open-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 25px rgba(37, 98, 255, 0.35);
+}
+
+.user-bill-pdf-btn {
+    margin-left: 0.5rem;
+    border-radius: 999px;
+    padding: 0.45rem 1.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.user-bill-pdf-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+/* User invoice view overrides (inside user dashboard SPA) */
+.user-app .invoice-view-page {
+    margin-top: 0;
+}
+
+.user-app .invoice-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+    .user-app .invoice-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .user-app .invoice-header h1 {
+        font-size: 1.4rem;
+    }
+
+    .user-app .invoice-header-actions {
+        display: flex;
+        gap: 8px;
+    }
+}
+
+.user-app .invoice-header h1 {
+    flex: 1;
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.user-app .invoice-pdf-btn {
+    border-radius: 999px;
+    padding: 0.4rem 1.4rem;
+}
+
+.user-app .invoice-header .btn-back {
+    border-radius: 999px;
+    padding-inline: 1.1rem;
+}
+
+.user-app .invoice-summary,
+.user-app .payments-section,
+.user-app .user-invoice-items {
+    border-radius: 16px;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+}
+
+.user-app .user-invoice-summary {
+    margin-top: 24px;
+}
+
+.user-app .user-invoice-payments {
+    margin-top: 32px;
+}
+
+.user-app .user-invoice-items {
+    margin-top: 32px;
+}
+
+/* Горизонтальный скролл для таблицы "Оплаты по счёту" в мобильном режиме */
+@media (max-width: 768px) {
+    .user-app .user-invoice-payments {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .user-app .user-invoice-payments .line-items-table {
+        min-width: 420px; /* чтобы появился скролл, если экран уже */
+    }
+}
+
+/* Import Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+/* Payment Page - New Design with Dark Background and Orbs */
+.user-payment-page {
+    padding: 2rem;
+    max-width: 1600px;
+    margin: 0 auto;
+    position: relative;
+    min-height: 100vh;
+    background: transparent;
+    overflow: hidden;
+}
+
+/* Ambient Background Orbs - Removed for transparent background */
+.user-payment-page::before {
+    display: none;
+}
+
+.user-payment-page::after {
+    display: none;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0) translateX(0); }
+    50% { transform: translateY(-20px) translateX(10px); }
+}
+
+.payment-container {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 0.9fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.payment-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem 0;
+    color: rgba(255, 255, 255, 0.9);
+    position: relative;
+    z-index: 1;
+}
+
+/* Left Column - Payment Methods */
+.payment-left-column {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Payment tabs removed - only credit card is available */
+
+/* Saved Cards */
+.saved-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* 3D Card Container for Saved Cards */
+.saved-card-wrapper {
+    perspective: 1000px;
+    width: 100%;
+    height: 250px;
+    cursor: pointer;
+    position: relative;
+}
+
+.saved-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform-style: preserve-3d;
+}
+
+.saved-card-wrapper.flipped .saved-card-inner {
+    transform: rotateY(180deg);
+}
+
+/* Используем card-preview стили внутри saved-card-wrapper */
+.saved-card-wrapper .card-preview,
+.saved-card-wrapper .card-preview-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.saved-card-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    border-radius: 20px;
+    color: white;
+    transform: rotateY(180deg);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow: visible;
+    
+    /* True Glassmorphism Effect */
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px) saturate(180%);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 
+        0 25px 45px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+        0 1px 2px rgba(255, 255, 255, 0.1) inset;
+}
+
+.saved-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: visible;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    
+    /* True Glassmorphism Effect */
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px) saturate(180%);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 
+        0 25px 45px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+        0 1px 2px rgba(255, 255, 255, 0.1) inset;
+}
+
+.saved-card-wrapper:hover .card-preview,
+.saved-card-wrapper:hover .card-preview-back,
+.saved-card-wrapper:hover .saved-card,
+.saved-card-wrapper:hover .saved-card-back {
+    box-shadow: 
+        0 30px 60px rgba(0, 0, 0, 0.4),
+        0 0 30px rgba(102, 126, 234, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.card-purple {
+    position: relative;
+}
+
+.card-purple::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.4) 100%);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 20px;
+}
+
+.card-purple::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -30%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    animation: pulse 8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.1); }
+}
+
+.card-red {
+    position: relative;
+}
+
+.card-red::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(240, 147, 251, 0.4) 0%, rgba(245, 87, 108, 0.4) 100%);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 20px;
+}
+
+.card-red::after {
+    content: '';
+    position: absolute;
+    top: -40%;
+    right: -25%;
+    width: 380px;
+    height: 380px;
+    background: radial-gradient(circle, rgba(240, 147, 251, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    animation: pulse 8s ease-in-out infinite;
+    animation-delay: -2s;
+}
+
+/* Card Header */
+.saved-card header,
+.card-preview header,
+.saved-card-back header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    position: relative;
+    z-index: 2;
+    margin-bottom: 20px;
+}
+
+.card-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.saved-card .logo,
+.card-preview .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Network Logo (VISA, Mastercard в правом верхнем углу) */
+.card-network-logo {
+    position: relative;
+    z-index: 2;
+}
+
+.visa-logo-small {
+    width: 50px;
+    height: 32px;
+    background: #1434cb;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mastercard-logo-small {
+    width: 50px;
+    height: 32px;
+    position: relative;
+}
+
+.mastercard-logo-small .mastercard-circle {
+    width: 22px;
+    height: 22px;
+    position: absolute;
+}
+
+.mastercard-logo-small .circle-red {
+    left: 0;
+    z-index: 1;
+}
+
+.mastercard-logo-small .circle-orange {
+    right: 0;
+    z-index: 2;
+}
+
+.mir-logo-small {
+    width: 50px;
+    height: 32px;
+    background: #00a651;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Mastercard Logo */
+.mastercard-logo {
+    position: relative;
+    width: 48px;
+    height: 30px;
+    flex-shrink: 0;
+}
+
+.mastercard-circle {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+}
+
+.mastercard-circle.circle-red {
+    background: #eb001b;
+    left: 0;
+    z-index: 1;
+}
+
+.mastercard-circle.circle-orange {
+    background: #f79e1b;
+    right: 0;
+    z-index: 2;
+    mix-blend-mode: normal;
+}
+
+/* Visa Logo */
+.visa-logo {
+    width: 48px;
+    height: 20px;
+    background: #1434cb;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+/* Mir Logo */
+.mir-logo {
+    width: 48px;
+    height: 24px;
+    background: #00a651;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+
+.saved-card header h5,
+.card-preview header h5 {
+    font-size: 16px;
+    font-weight: 500;
+    color: #fff;
+    margin: 0;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Chip */
+.saved-card .chip,
+.card-preview .chip {
+    width: 50px;
+    height: 40px;
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 30%, #ffd700 70%, #ffed4e 100%);
+    border-radius: 6px;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.saved-card .chip::before,
+.card-preview .chip::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    bottom: 6px;
+    border: 2px solid rgba(0, 0, 0, 0.25);
+    border-radius: 3px;
+}
+
+.saved-card .chip::after,
+.card-preview .chip::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+    border-radius: 1px;
+}
+
+/* Card Details */
+.saved-card .card-details,
+.card-preview .card-details,
+.saved-card-back .card-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    position: relative;
+    z-index: 2;
+    margin-top: auto;
+}
+
+.saved-card > *,
+.card-preview > * {
+    position: relative;
+    z-index: 2;
+}
+
+.saved-card .name-number,
+.card-preview .name-number {
+    flex: 1;
+}
+
+.saved-card h6,
+.card-preview h6 {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 11px;
+    font-weight: 400;
+    margin: 0 0 6px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.saved-card .name-number h5.number,
+.card-preview .name-number h5.number {
+    margin-top: 8px;
+    font-size: 20px;
+    letter-spacing: 3px;
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 15px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    font-family: 'Space Mono', monospace;
+}
+
+.card-holder-section {
+    margin-top: 10px;
+}
+
+.saved-card .name-number h5.name,
+.card-preview .name-number h5.name {
+    margin-top: 4px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #fff;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.saved-card .valid-date,
+.card-preview .valid-date {
+    text-align: right;
+}
+
+.saved-card .valid-date h5,
+.card-preview .valid-date h5 {
+    font-size: 16px;
+    font-weight: 400;
+    color: #fff;
+    margin: 0;
+}
+
+.add-card-btn {
+    padding: 1rem;
+    border: 2px dashed var(--border-color);
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.add-card-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--primary-color);
+}
+
+.add-card-btn i {
+    font-size: 1.2rem;
+}
+
+.payment-method-content {
+    padding: 1rem 0;
+}
+
+/* Middle Column - Credit Card Form */
+.payment-middle-column {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Card Preview */
+.card-preview-container {
+    margin-bottom: 1.5rem;
+    perspective: 1000px;
+    height: 250px;
+    position: relative;
+}
+
+.card-preview-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform-style: preserve-3d;
+}
+
+.card-preview-container.flipped .card-preview-wrapper {
+    transform: rotateY(180deg);
+}
+
+.card-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    border-radius: 20px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: visible;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    
+    /* True Glassmorphism Effect */
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px) saturate(180%);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 
+        0 25px 45px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+        0 1px 2px rgba(255, 255, 255, 0.1) inset;
+}
+
+.card-preview::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.4) 100%);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 20px;
+}
+
+.card-preview-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    border-radius: 20px;
+    color: white;
+    transform: rotateY(180deg);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow: visible;
+    
+    /* True Glassmorphism Effect */
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px) saturate(180%);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 
+        0 25px 45px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+        0 1px 2px rgba(255, 255, 255, 0.1) inset;
+}
+
+.card-preview-back::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.4) 100%);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 20px;
+}
+
+.card-preview::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -30%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    animation: pulse 8s ease-in-out infinite;
+}
+
+/* Card Back Styles */
+.saved-card-back.card-purple::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.4) 100%);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 20px;
+}
+
+.saved-card-back.card-red::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(240, 147, 251, 0.4) 0%, rgba(245, 87, 108, 0.4) 100%);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 20px;
+}
+
+.magnetic-strip {
+    height: 50px;
+    background: #000;
+    width: 100%;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    position: relative;
+    z-index: 2;
+}
+
+.signature-area {
+    background: rgba(255, 255, 255, 0.9);
+    height: 40px;
+    width: 85%;
+    margin: 0 auto 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 15px;
+    position: relative;
+    z-index: 2;
+}
+
+.cvv-display {
+    color: #333;
+    font-family: 'Space Mono', monospace;
+    font-weight: bold;
+    font-size: 1rem;
+    letter-spacing: 2px;
+}
+
+/* Card preview uses same styles as saved-card */
+
+.card-bank-info {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    min-height: 1.2rem;
+}
+
+.card-type-logos {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    align-items: center;
+}
+
+.card-type-logo-text {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.payment-card-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.payment-card-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.payment-card-form label {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.card-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.card-number-input,
+.card-name-input,
+.card-exp-input,
+.card-cvv-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.card-number-input {
+    padding-right: 3rem;
+}
+
+.card-input-icon {
+    position: absolute;
+    right: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    opacity: 0.7;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.checkbox-group {
+    margin-top: 0.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: normal;
+}
+
+.save-card-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.pay-button {
+    margin-top: 1rem;
+    padding: 0.9rem 2rem;
+    background: #2c2c2c;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pay-button:hover {
+    background: #3a3a3a;
+}
+
+/* Right Column - Order Summary */
+.payment-right-column {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.order-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.order-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.order-logo {
+    width: 48px;
+    height: 48px;
+    background: var(--primary-color);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.order-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.order-subtitle {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.order-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.order-detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detail-label {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.detail-value {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.detail-value.discount {
+    color: #4ade80;
+}
+
+.order-totals {
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.order-total-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.order-total-item.final {
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.total-label {
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.total-value {
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.order-total-item.final .total-label,
+.order-total-item.final .total-value {
+    font-size: 1.1rem;
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+    .payment-container {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .payment-right-column {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 992px) {
+    .payment-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .payment-right-column {
+        grid-column: 1;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .news-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-button {
+        padding: 1rem;
+    }
+    
+    .action-button > i:first-child {
+        font-size: 1.5rem;
+    }
+}
+
+/* NEW ADDED CSS */
+
+/* .users-table-container {
+    background: rgba(36, 40, 49, 0.95) !important;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+} */
+
+/* END ADDED CSS */

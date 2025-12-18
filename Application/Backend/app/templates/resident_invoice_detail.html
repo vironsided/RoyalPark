@@ -1,0 +1,121 @@
+{#-----------------------------------------------------------------------------
+  Template: app/templates/resident_invoice_detail.html
+  Author: Mamedli Ayaz
+  Purpose: ЛК жителя — детальная страница счёта (read-only)
+-----------------------------------------------------------------------------#}
+{% extends "resident_base.html" %}
+{% block title %}Счёт {{ inv.number or inv.id }}{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <a class="btn btn-outline-secondary btn-sm" href="/resident/invoices">← К списку счетов</a>
+  <h4 class="mb-0">Счёт: {{ inv.number or (inv.period_year ~ '-' ~ '%02d'|format(inv.period_month) ~ '/' ~ inv.id) }}</h4>
+  <a class="btn btn-outline-secondary btn-sm" href="/invoices/{{ inv.id }}/print" target="_blank">PDF</a>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="text-secondary small">Дом</div>
+        <div class="fw-semibold">{{ inv.resident.block.name }} / {{ inv.resident.unit_number }}</div>
+      </div>
+      <div class="col-md-2">
+        <div class="text-secondary small">Период</div>
+        <div class="fw-semibold">
+        {% if period_str %}
+          {{ period_str }}
+        {% else %}
+          {{ inv.period_year }}-{{ "%02d"|format(inv.period_month) }}
+        {% endif %}
+        </div>
+        <!-- <div class="fw-semibold">{{ inv.period_year }}-{{ "%02d"|format(inv.period_month) }}</div> -->
+      </div>
+      <div class="col-md-2">
+        <div class="text-secondary small">Статус</div>
+        <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ inv.status.value }}</span>
+      </div>
+      <div class="col-md-2">
+        <div class="text-secondary small">Срок оплаты</div>
+        <div class="fw-semibold">{{ inv.due_date or '—' }}</div>
+      </div>
+      <div class="col-md-2 text-end">
+        <div class="text-secondary small">Итого</div>
+        <div class="fw-semibold text-danger">{{ '%.2f'|format(inv.amount_total) }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Оплаты по счёту #}
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <h6 class="mb-0">Оплаты по счёту</h6>
+      <div class="small text-secondary">
+        Оплачено: <span class="fw-semibold">{{ '%.2f'|format(paid_total) }}</span>
+        · Остаток: <span class="fw-semibold">{{ '%.2f'|format(left_total) }}</span>
+        из <span class="fw-semibold">{{ '%.2f'|format(inv.amount_total) }}</span>
+      </div>
+    </div>
+
+    {% if apps %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th style="width: 140px;">Дата</th>
+              <th style="width: 120px;">Метод</th>
+              <th class="text-end" style="width: 140px;">Сумма</th>
+              <th>Комментарий</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in apps %}
+              <tr>
+                <td>{{ a.payment.received_at }}</td>
+                <td>{{ a.payment.method.value }}</td>
+                <td class="text-end">{{ '%.2f'|format(a.amount_applied) }}</td>
+                <td class="text-secondary">{{ a.payment.comment or '—' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-secondary">Оплаты по этому счёту отсутствуют.</div>
+    {% endif %}
+  </div>
+</div>
+
+{# Строки счёта #}
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-dark table-striped align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Описание</th>
+            <th class="text-end">Начислено</th>
+            <th class="text-end">НДС</th>
+            <th class="text-end">Итого</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ln in inv.lines %}
+            <tr>
+              <td>{{ ln.description }}</td>
+              <td class="text-end">{{ '%.2f'|format(ln.amount_net) }}</td>
+              <td class="text-end">{{ '%.2f'|format(ln.amount_vat) }}</td>
+              <td class="text-end text-danger">{{ '%.2f'|format(ln.amount_total) }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="text-secondary">Строк нет</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

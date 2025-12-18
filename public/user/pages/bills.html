@@ -1,0 +1,217 @@
+<section id="bills" class="user-bills-section">
+    <div class="user-bills-card">
+        <div class="user-bills-header">
+            <h2 data-i18n="user_bills_title">Мои счета</h2>
+            <div class="user-bills-filters">
+                <div class="user-bills-filter-group">
+                    <label for="userBillsStatus" data-i18n="user_bills_status_label">Статус</label>
+                    <select id="userBillsStatus">
+                        <option value="all" data-i18n="user_bills_status_all">Все</option>
+                        <option value="DRAFT">DRAFT</option>
+                        <option value="ISSUED">ISSUED</option>
+                        <option value="PARTIAL">PARTIAL</option>
+                        <option value="PAID">PAID</option>
+                        <option value="OVERPAID">OVERPAID</option>
+                        <option value="CANCELED">CANCELED</option>
+                    </select>
+                </div>
+                <button class="user-bills-filter-btn">
+                    <i class="bi bi-funnel"></i>
+                    <span data-i18n="user_bills_filter_button">Фильтр</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="user-bills-table-wrapper">
+            <table class="user-bills-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="user_bills_th_period">Период</th>
+                        <th data-i18n="user_bills_th_house">Дом</th>
+                        <th data-i18n="user_bills_th_number">№</th>
+                        <th data-i18n="user_bills_th_status">Статус</th>
+                        <th data-i18n="user_bills_th_total">Итого</th>
+                        <th data-i18n="user_bills_th_paid_remaining">Оплачено / Остаток</th>
+                        <th data-i18n="user_bills_th_due_date">Срок оплаты</th>
+                        <th data-i18n="user_bills_th_actions">Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="billsTableBody">
+                    <!-- Data will be loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<script>
+    (function() {
+        'use strict';
+        const API_BASE_URL = 'http://localhost:8000';
+        
+        // Wait for DOM to be ready
+        function initBillsPage() {
+            const statusSelect = document.getElementById('userBillsStatus');
+            const filterBtn = document.querySelector('.user-bills-filter-btn');
+            const tableBody = document.getElementById('billsTableBody');
+            
+            if (!statusSelect || !filterBtn || !tableBody) {
+                console.error('Required elements not found');
+                return;
+            }
+            
+            // Load invoices from backend
+            async function loadInvoices(status = null) {
+            try {
+                const params = new URLSearchParams();
+                if (status && status !== 'all') {
+                    params.append('status', status);
+                }
+                
+                const url = `${API_BASE_URL}/api/resident/invoices${params.toString() ? '?' + params.toString() : ''}`;
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                renderInvoices(data.invoices || []);
+            } catch (error) {
+                console.error('Error loading invoices:', error);
+                tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Не удалось загрузить данные. Проверьте подключение к серверу.</td></tr>';
+                }
+            }
+
+            // Render invoices in table
+            function renderInvoices(invoices) {
+            if (!invoices || invoices.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Счетов не найдено</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = invoices.map(inv => {
+                // Format period
+                const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+                    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+                let periodText = `${monthNames[inv.period_month - 1]} ${inv.period_year}`;
+                if (inv.period_dates && inv.period_dates.from && inv.period_dates.to) {
+                    periodText = `${inv.period_dates.from} - ${inv.period_dates.to}`;
+                } else if (inv.period_dates && inv.period_dates.to) {
+                    periodText = inv.period_dates.to;
+                }
+
+                // Format status
+                const statusClass = getStatusClass(inv.status);
+                const statusText = inv.status;
+
+                // Format amounts
+                const totalFormatted = formatCurrency(inv.amount_total);
+                const paidFormatted = formatCurrency(inv.paid_amount);
+                const remainingFormatted = formatCurrency(inv.remaining_amount);
+
+                // Format due date
+                const dueDateText = inv.due_date 
+                    ? new Date(inv.due_date).toLocaleDateString('ru-RU')
+                    : '—';
+
+                // Invoice number
+                const invoiceNumber = inv.number || '—';
+
+                return `
+                    <tr>
+                        <td>${periodText}</td>
+                        <td>${inv.resident_code}</td>
+                        <td>${invoiceNumber}</td>
+                        <td><span class="user-bill-status ${statusClass}">${statusText}</span></td>
+                        <td class="user-bill-amount">${totalFormatted}</td>
+                        <td>
+                            <span class="user-bill-paid">Оплачено ${paidFormatted}</span>
+                            <span class="user-bill-remaining">Остаток ${remainingFormatted}</span>
+                        </td>
+                        <td>${dueDateText}</td>
+                        <td>
+                            <button class="user-bill-open-btn" data-user-route-target="invoice" data-invoice-id="${inv.id}" data-i18n="user_bills_open_btn">Открыть</button>
+                            <button class="user-bill-pdf-btn" type="button" data-invoice-id="${inv.id}">PDF</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            }
+
+            // Get CSS class for status
+            function getStatusClass(status) {
+            const statusMap = {
+                'PAID': 'paid',
+                'ISSUED': 'issued',
+                'PARTIAL': 'partial',
+                'DRAFT': 'draft',
+                'OVERPAID': 'overpaid',
+                'CANCELED': 'canceled'
+            };
+            return statusMap[status] || '';
+            }
+
+            // Format currency
+            function formatCurrency(amount) {
+            return new Intl.NumberFormat('ru-RU', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+            }
+
+            // Handle filter button click
+            filterBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const status = statusSelect.value;
+                console.log('Filter button clicked, status:', status);
+                loadInvoices(status);
+            });
+
+            // Handle status change - apply filter immediately
+            statusSelect.addEventListener('change', () => {
+                const status = statusSelect.value;
+                console.log('Status changed to:', status);
+                loadInvoices(status);
+            });
+
+            // Handle PDF button clicks (using event delegation)
+            document.addEventListener('click', (e) => {
+                const pdfBtn = e.target.closest('.user-bill-pdf-btn');
+                if (pdfBtn) {
+                    e.preventDefault();
+                    const invoiceId = pdfBtn.getAttribute('data-invoice-id');
+                    if (invoiceId) {
+                        // Store invoice ID in sessionStorage for print page
+                        sessionStorage.setItem('printInvoiceId', invoiceId);
+                        sessionStorage.setItem('currentInvoiceId', invoiceId);
+                        // Open print page with invoice ID in URL
+                        window.open(`/user/invoice-print.html?id=${invoiceId}`, '_blank', 'noopener');
+                    }
+                }
+            });
+
+            // Load initial data
+            loadInvoices();
+        }
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initBillsPage);
+        } else {
+            // DOM already loaded
+            setTimeout(initBillsPage, 100);
+        }
+    })();
+</script>

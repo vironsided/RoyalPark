@@ -1,0 +1,1691 @@
+<link rel="stylesheet" href="/admin/content_css/tenants.css">
+<div class="content-wrapper">
+    <!-- <div class="stats-grid">
+                    <div class="stat-card solid-blue">
+                        <div class="stat-icon blue">
+                            <svg width="40" height="40" fill="white">
+                                <use href="/images/icons.svg#icon-users"></use>
+                            </svg>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">1,850</div>
+                            <div class="stat-label">Всего жителей</div>
+                            <div class="stat-change positive">↑ 12% за месяц</div>
+                        </div>
+                    </div> -->
+
+    <!-- Tenant action confirmation modal -->
+    <div class="modal-overlay" id="tenantActionModal">
+        <div class="confirm-modal">
+            <div class="confirm-modal-body">
+                <h3 id="tenantActionTitle">Подтверждение</h3>
+                <p id="tenantActionMessage"></p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeTenantActionModal()">Отмена</button>
+                <button type="button" class="btn btn-danger" id="tenantActionConfirm"
+                    onclick="confirmTenantAction()">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- <div class="stat-card solid-green">
+                        <div class="stat-icon green">
+                            <svg width="40" height="40" fill="white">
+                                <use href="/images/icons.svg#icon-apartments"></use>
+                            </svg>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">420</div>
+                            <div class="stat-label">Квартир заселено</div>
+                            <div class="stat-change positive">↑ 15 новых</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-orange">
+                        <div class="stat-icon orange">
+                            <svg width="40" height="40" fill="white">
+                                <use href="/images/icons.svg#icon-personnel"></use>
+                            </svg>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">780</div>
+                            <div class="stat-label">Взрослых</div>
+                            <div class="stat-change positive">↑ 5% за месяц</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-red">
+                        <div class="stat-icon purple">
+                            <svg width="40" height="40" fill="white">
+                                <use href="/images/icons.svg#icon-users"></use>
+                            </svg>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">520</div>
+                            <div class="stat-label">Детей</div>
+                            <div class="stat-change negative">↓ 2% за месяц</div>
+                        </div>
+                    </div> -->
+</div>
+
+<!-- Filters -->
+<div class="filters-container">
+    <div class="filter-row">
+        <div class="filter-group">
+            <label>Поиск</label>
+            <input type="text" id="filterSearch" placeholder="Логин, ФИО, телефон, e-mail">
+        </div>
+        <div class="filter-group">
+            <label>Блок</label>
+            <select id="filterBlock">
+                <option value="all">Все блоки</option>
+                <option value="A">Блок A</option>
+                <option value="B">Блок B</option>
+                <option value="K">Блок K</option>
+                <option value="X">Блок X</option>
+                <option value="Z">Блок Z</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Номер дома</label>
+            <input type="text" id="filterHouse" placeholder="Например, 205 или 101-105">
+        </div>
+        <div class="filter-actions">
+            <button class="btn btn-outline-secondary" onclick="applyFilters()" style="height: 42px;">
+                <i class="bi bi-funnel"></i> Фильтр
+            </button>
+            <button class="btn btn-primary" onclick="openCreateModal()" style="height: 42px;">
+                <i class="bi bi-plus-lg"></i> Создать жителя
+            </button>
+        </div>
+    </div>
+</div>
+
+<div style="position: relative;">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3>Список жителей (проживающих)</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover tenants-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Логин</th>
+                            <th>ФИО</th>
+                            <th>Телефон</th>
+                            <th>E-mail</th>
+                            <th>Последний вход</th>
+                            <th>Пароль</th>
+                            <th>Дома</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tenantsTableBody"></tbody>
+                </table>
+            </div>
+
+
+        </div>
+        <!-- Pagination -->
+        <div class="table-pagination">
+            <div class="pagination-controls" id="tenantPaginationControls">
+                <button class="btn-pagination" onclick="goToTenantPage('prev')" disabled id="tenantPrevBtn">
+                    <i class="bi bi-chevron-double-left"></i>
+                </button>
+                <div id="tenantPageButtons" class="pagination-pages"></div>
+                <button class="btn-pagination" onclick="goToTenantPage('next')" disabled id="tenantNextBtn">
+                    <i class="bi bi-chevron-double-right"></i>
+                </button>
+            </div>
+            <div class="pagination-info">
+                <span>Стр. <span id="tenantCurrentPage">1</span> из <span id="tenantTotalPages">1</span> · всего <span
+                        id="tenantTotalItems">0</span></span>
+            </div>
+            <div class="pagination-per-page">
+                <span>На</span>
+                <span>странице:</span>
+                <div class="custom-pag-select" id="customTenantItemsPerPage">
+                    <select id="tenantItemsPerPage" onchange="changeTenantItemsPerPage()" style="display: none;">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <div class="select-btn">
+                        <span class="select-text">25</span>
+                        <span class="arrow">▾</span>
+                    </div>
+                    <div class="select-options" style="background: rgba(36, 40, 49, 0.95) !important">
+                        <div class="select-option" data-value="10">10</div>
+                        <div class="select-option selected" data-value="25">25</div>
+                        <div class="select-option" data-value="50">50</div>
+                        <div class="select-option" data-value="100">100</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- QR Code Modal -->
+<div class="modal-overlay" id="qrModal">
+    <div class="modal-content qr-modal-content">
+        <div class="modal-header">
+            <h2>QR-код для жителя</h2>
+            <button class="modal-close" onclick="closeQRModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body qr-modal-body">
+            <div id="qrCodeContainer" style="text-align: center; padding: 20px;">
+                <canvas id="qrCanvas" style="max-width: 100%; height: auto;"></canvas>
+            </div>
+            <p style="text-align: center; color: #666; margin-top: 15px;">
+                Житель должен отсканировать этот QR-код для установки пароля
+            </p>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="printQRCode()">Print</button>
+            <button class="btn btn-secondary" onclick="closeQRModal()">Закрыть</button>
+        </div>
+    </div>
+</div>
+
+<!-- Create Tenant Modal -->
+<div class="modal-overlay" id="createTenantModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Создать жителя</h2>
+            <button class="modal-close" onclick="closeCreateModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <form id="createTenantForm" onsubmit="createTenant(event)">
+            <!-- Personal Information -->
+            <div class="form-section">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Логин</label>
+                        <input type="text" id="tenantLogin" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>ФИО</label>
+                        <input type="text" id="tenantName" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Телефон</label>
+                        <input type="tel" id="tenantPhone" placeholder="+994">
+                    </div>
+
+                    <div class="form-group">
+                        <label>E-mail</label>
+                        <input type="email" id="tenantEmail">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Комментарий</label>
+                    <textarea id="tenantComment" rows="2"></textarea>
+                </div>
+            </div>
+
+            <!-- Residents Selection -->
+            <div class="form-section">
+                <div class="residents-section">
+                    <div class="residents-header">
+                        <div class="residents-filter-group">
+                            <label>Фильтр по блоку</label>
+                            <select id="blockFilter" onchange="filterResidents()"
+                                style="padding: 8px 12px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 6px; font-size: 0.9rem; min-width: 150px; background: rgba(255, 255, 255, 0.05); color: #fefefe;">
+                                <option value="all">Все</option>
+                                <option value="A">Блок A</option>
+                                <option value="B">Блок B</option>
+                                <option value="K">Блок K</option>
+                                <option value="X">Блок X</option>
+                                <option value="Z">Блок Z</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="residents-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Блок</th>
+                                    <th>№</th>
+                                    <th>Выбрать</th>
+                                </tr>
+                            </thead>
+                            <tbody id="residentsListBody">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Загрузка...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="selectedResidentInfo" class="selected-info" style="display: none;">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <strong>Выбраны резиденты:</strong> <span id="selectedResidentText"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">
+                    Отмена
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Создать
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- jsPDF library for PDF generation -->
+<script src="../../js/jsPDF.js"></script>
+<script>
+    // Функция для динамической загрузки jsPDF (резервный вариант)
+    window.loadJSPDFLibrary = function () {
+        return new Promise((resolve, reject) => {
+            // Проверяем, не загружена ли уже библиотека
+            const checkLibrary = () => {
+                if (typeof window.jspdf !== 'undefined') {
+                    if (window.jspdf.jsPDF || typeof window.jspdf === 'function') {
+                        return true;
+                    }
+                }
+                if (typeof window.jsPDF !== 'undefined') {
+                    return true;
+                }
+                return false;
+            };
+
+            if (checkLibrary()) {
+                resolve();
+                return;
+            }
+
+            // Проверяем, не загружается ли уже скрипт
+            const existingScript = document.querySelector('script[src*="jspdf"]');
+            if (existingScript) {
+                // Ждем загрузки существующего скрипта
+                const checkInterval = setInterval(() => {
+                    if (checkLibrary()) {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 100);
+
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+                    if (!checkLibrary()) {
+                        reject(new Error('jsPDF не загрузилась в течение 5 секунд'));
+                    }
+                }, 5000);
+                return;
+            }
+
+            // Загружаем библиотеку
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+            script.onload = () => {
+                // Ждем немного, чтобы библиотека инициализировалась
+                let attempts = 0;
+                const maxAttempts = 50; // 5 секунд
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    if (checkLibrary()) {
+                        clearInterval(checkInterval);
+                        resolve();
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(checkInterval);
+                        reject(new Error('jsPDF не инициализировалась после загрузки'));
+                    }
+                }, 100);
+            };
+            script.onerror = () => reject(new Error('Не удалось загрузить jsPDF'));
+            document.head.appendChild(script);
+        });
+    };
+
+    // Предзагружаем библиотеку при загрузке страницы
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', window.loadJSPDFLibrary);
+    } else {
+        window.loadJSPDFLibrary();
+    }
+</script>
+
+<script>
+    // Глобальные функции для страницы Жители
+    (function () {
+        'use strict';
+
+        const API_BASE = 'http://localhost:8000';
+        let tenantsData = [];
+        let blocks = [];
+        let residents = [];
+        let selectedResidentIds = new Set();
+        let isEditMode = false;
+        let editingTenantId = null;
+        let pendingAction = { type: null, tenantId: null };
+
+        // Pagination state
+        let paginationState = {
+            currentPage: 1,
+            itemsPerPage: 25,
+            totalItems: 0,
+            totalPages: 1
+        };
+
+        // Сохраняем данные текущего жителя для печати QR
+        let currentQRUserData = {
+            username: null,
+            tempPassword: null,
+            qrUrl: null,
+            homes: [] // Массив объектов {block: 'A', number: '205'}
+        };
+
+        // Load tenants on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(() => {
+                initCustomTenantPaginationDropdown();
+                loadTenants();
+                loadBlocksAndResidents();
+            }, 100);
+        });
+
+        // Load tenants from API
+        window.loadTenants = async function loadTenants() {
+            const tbody = document.getElementById('tenantsTableBody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">Загрузка...</td></tr>';
+            }
+
+            try {
+                const searchTerm = document.getElementById('filterSearch')?.value.trim();
+                const blockId = document.getElementById('filterBlock')?.value;
+                const unitNumber = document.getElementById('filterHouse')?.value.trim();
+
+                const params = new URLSearchParams();
+                params.append('page', paginationState.currentPage);
+                params.append('per_page', paginationState.itemsPerPage);
+
+                if (searchTerm) params.append('q', searchTerm);
+                if (blockId && blockId !== 'all') {
+                    // Try to find block in current blocks array
+                    let block = blocks.find(b => b.name === blockId);
+                    // If blocks array is empty, we'll get blocks from API response
+                    // and then apply filter on next load
+                    if (block) {
+                        params.append('block_id', block.id);
+                    }
+                }
+                if (unitNumber) params.append('unit_number', unitNumber);
+
+                let url = `${API_BASE}/api/tenants?${params.toString()}`;
+
+                console.log('Loading tenants from:', url);
+
+                let response = await fetch(url, { credentials: 'include' });
+                console.log('Response status:', response.status, response.statusText);
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        url = url.replace('/api/tenants?', '/api/tenants/public?');
+                        console.log('Trying public endpoint:', url);
+                        try {
+                            response = await fetch(url);
+                            console.log('Public response status:', response.status, response.statusText);
+                            if (!response.ok) {
+                                let errorMessage = `HTTP ${response.status}`;
+                                try {
+                                    const errorData = await response.json();
+                                    errorMessage = errorData.detail || JSON.stringify(errorData);
+                                } catch (e) {
+                                    const errorText = await response.text().catch(() => '');
+                                    if (errorText) {
+                                        try {
+                                            const errorJson = JSON.parse(errorText);
+                                            errorMessage = errorJson.detail || errorText;
+                                        } catch {
+                                            errorMessage = errorText;
+                                        }
+                                    }
+                                }
+                                throw new Error(errorMessage);
+                            }
+                        } catch (fetchError) {
+                            if (fetchError.message && !fetchError.message.includes('HTTP') && !fetchError.message.includes('CORS')) {
+                                throw fetchError;
+                            }
+                            console.error('CORS or network error:', fetchError);
+                            throw new Error('Ошибка подключения к серверу. Убедитесь, что backend запущен на порту 8000 и перезапущен после изменений.');
+                        }
+                    } else {
+                        let errorMessage = `HTTP ${response.status}`;
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.detail || JSON.stringify(errorData);
+                        } catch (e) {
+                            const errorText = await response.text().catch(() => '');
+                            if (errorText) {
+                                try {
+                                    const errorJson = JSON.parse(errorText);
+                                    errorMessage = errorJson.detail || errorText;
+                                } catch {
+                                    errorMessage = errorText;
+                                }
+                            }
+                        }
+                        throw new Error(errorMessage);
+                    }
+                }
+
+                const data = await response.json();
+                console.log('Tenants data received:', data);
+
+                // Handle paginated response
+                const pagination = data.pagination || {};
+                tenantsData = (data.tenants || []).map(t => ({
+                    id: t.id,
+                    login: t.username,
+                    name: t.full_name || '',
+                    phone: t.phone || '',
+                    email: t.email || '',
+                    lastLogin: t.last_login ? new Date(t.last_login).toLocaleString('ru-RU') : '—',
+                    passwordStatus: t.require_password_change && t.temp_password ? `временный: ${t.temp_password}` : (t.require_password_change ? 'сброшен' : 'установлен'),
+                    tempPassword: t.temp_password || null,
+                    require_password_change: t.require_password_change || false,
+                    temp_password_plain: t.temp_password || null,
+                    comment: t.comment || '',
+                    residentIds: t.resident_ids || [],
+                    homes: (t.homes || []).map(h => ({
+                        block: h.block_name,
+                        number: h.unit_number,
+                        count: 1
+                    }))
+                }));
+
+                blocks = data.blocks || [];
+                residents = data.residents || [];
+
+                // Update pagination state
+                paginationState.totalItems = pagination.total || 0;
+                paginationState.totalPages = pagination.last_page || 1;
+                paginationState.currentPage = pagination.page || 1;
+
+                console.log('Processed tenants:', tenantsData.length);
+                console.log('Processed blocks:', blocks.length);
+                console.log('Processed residents:', residents.length);
+
+                populateTenantsTable(tenantsData);
+                updateBlocksFilter();
+                updatePaginationUI();
+            } catch (error) {
+                console.error('Error loading tenants:', error);
+                if (typeof showError === 'function') {
+                    showError('Ошибка загрузки жителей: ' + error.message);
+                }
+            }
+        };
+
+        // Load blocks and residents for modal
+        window.loadBlocksAndResidents = async function loadBlocksAndResidents() {
+            try {
+                let url = `${API_BASE}/api/blocks`;
+                let response = await fetch(url, { credentials: 'include' });
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        url = `${API_BASE}/api/blocks/public`;
+                        response = await fetch(url);
+                    }
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                }
+                const blocksData = await response.json();
+                blocks = Array.isArray(blocksData) ? blocksData : (blocksData.blocks || []);
+
+                url = `${API_BASE}/api/residents`;
+                response = await fetch(url, { credentials: 'include' });
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        url = `${API_BASE}/api/residents/public`;
+                        response = await fetch(url);
+                    }
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                }
+                const residentsData = await response.json();
+                residents = Array.isArray(residentsData) ? residentsData : (residentsData.residents || []);
+
+                console.log('Loaded blocks for modal:', blocks.length);
+                console.log('Loaded residents for modal:', residents.length);
+
+                populateResidentsList();
+                updateBlocksFilter();
+            } catch (error) {
+                console.error('Error loading blocks/residents:', error);
+            }
+        };
+
+        // Update blocks filter dropdown
+        function updateBlocksFilter() {
+            const filterBlock = document.getElementById('filterBlock');
+            if (!filterBlock) return;
+
+            // Проверяем, есть ли сохраненный фильтр по блоку из sessionStorage
+            const savedBlockName = sessionStorage.getItem('filterBlockByName');
+            let currentValue = filterBlock.value;
+            let filterApplied = false;
+
+            // Если есть сохраненный фильтр и блок существует в списке, используем его
+            if (savedBlockName) {
+                const blockExists = blocks.some(b => b.name === savedBlockName);
+                if (blockExists) {
+                    currentValue = savedBlockName;
+                    filterApplied = true;
+                }
+            }
+
+            filterBlock.innerHTML = '<option value="all">Все блоки</option>';
+            blocks.forEach(block => {
+                const option = document.createElement('option');
+                option.value = block.name;
+                option.textContent = `Блок ${block.name}`;
+                filterBlock.appendChild(option);
+            });
+
+            // Устанавливаем значение фильтра
+            if (currentValue && currentValue !== 'all') {
+                filterBlock.value = currentValue;
+                // Очищаем sessionStorage только если фильтр был успешно применен
+                if (filterApplied && savedBlockName) {
+                    sessionStorage.removeItem('filterBlockByName');
+                }
+            } else {
+                filterBlock.value = currentValue || 'all';
+                // Если фильтр не был применен, но был сохранен, очищаем sessionStorage
+                if (savedBlockName && !filterApplied) {
+                    sessionStorage.removeItem('filterBlockByName');
+                }
+            }
+        }
+
+        function populateTenantsTable(rows) {
+            const tbody = document.getElementById('tenantsTableBody');
+            if (!tbody) return;
+
+            if (!rows.length) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted">Пока нет жителей</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = rows.map(tenant => {
+                // Формируем список домов для tooltip
+                const homesList = tenant.homes && tenant.homes.length > 0
+                    ? tenant.homes.map(home => `${home.block} / ${home.number}`).join(', ')
+                    : 'Нет домов';
+                const homesCount = tenant.homes ? tenant.homes.length : 0;
+                const homesDisplay = homesCount > 0
+                    ? `<span class="tenant-homes-count" title="${homesList}">${homesCount}</span>`
+                    : '<span class="text-muted">—</span>';
+
+                // Формируем badge для пароля
+                const passwordBadge = tenant.passwordStatus.includes('временный:')
+                    ? `<span class="tenant-password-badge temp-password">${tenant.passwordStatus}</span>`
+                    : `<span class="tenant-password-badge">${tenant.passwordStatus}</span>`;
+
+                return `
+                <tr data-tenant-id="${tenant.id}">
+                    <td>${tenant.id}</td>
+                    <td>${tenant.login}</td>
+                    <td>${tenant.name || '—'}</td>
+                    <td>${tenant.phone || '—'}</td>
+                    <td>${tenant.email ? `<a class="tenant-email" href="mailto:${tenant.email}">${tenant.email}</a>` : '—'}</td>
+                    <td><div class="tenant-last-login">${tenant.lastLogin || '—'}</div></td>
+                    <td>${passwordBadge}</td>
+                    <td><div class="tenant-homes">${homesDisplay}</div></td>
+                    <td>
+                        <div class="tenant-actions">
+                            <button class="action-btn edit" onclick="openEditTenant(${tenant.id})">Редактировать</button>
+                            <button class="action-btn reset" onclick="openTenantActionModal('reset', ${tenant.id})">Сброс пароля</button>
+                            <button class="action-btn delete" onclick="openTenantActionModal('delete', ${tenant.id})">Удалить</button>
+                                            ${tenant.require_password_change && tenant.temp_password_plain ? `
+                            <button class="btn-user-action btn-qr-user" onclick="showQRCodeForTenant(${tenant.id}, '${tenant.login}', '${tenant.temp_password_plain}')">QR</button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+            }).join('');
+        }
+
+        // Pagination Functions
+        function buildTenantPageList(current, total) {
+            if (total <= 5) {
+                return Array.from({ length: total }, (_, i) => i + 1);
+            }
+            const pages = new Set([1, total]);
+            if (current <= 3) {
+                [2, 3, 4, 5].forEach(p => pages.add(p));
+            } else if (current >= total - 2) {
+                [total - 1, total - 2, total - 3, total - 4].forEach(p => pages.add(p));
+            } else {
+                [current - 2, current - 1, current, current + 1, current + 2].forEach(p => pages.add(p));
+            }
+            const sorted = Array.from(pages).filter(p => p >= 1 && p <= total).sort((a, b) => a - b);
+            const result = [];
+            for (let i = 0; i < sorted.length; i++) {
+                const page = sorted[i];
+                result.push(page);
+                const next = sorted[i + 1];
+                if (next && next - page > 1) {
+                    result.push('dots');
+                }
+            }
+            return result;
+        }
+
+        function updatePaginationUI() {
+            const currentPageEl = document.getElementById('tenantCurrentPage');
+            const totalPagesEl = document.getElementById('tenantTotalPages');
+            const totalItemsEl = document.getElementById('tenantTotalItems');
+            const prevBtn = document.getElementById('tenantPrevBtn');
+            const nextBtn = document.getElementById('tenantNextBtn');
+            const pagesContainer = document.getElementById('tenantPageButtons');
+
+            if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
+            if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
+            if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
+            if (prevBtn) prevBtn.disabled = paginationState.currentPage <= 1;
+            if (nextBtn) nextBtn.disabled = paginationState.currentPage >= paginationState.totalPages;
+
+            if (!pagesContainer) return;
+            pagesContainer.innerHTML = '';
+
+            const pages = buildTenantPageList(paginationState.currentPage, paginationState.totalPages);
+            pages.forEach(p => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-pagination';
+
+                if (p === 'dots') {
+                    btn.textContent = '...';
+                    btn.disabled = true;
+                    btn.classList.add('dots');
+                } else {
+                    btn.textContent = p;
+                    if (p > paginationState.totalPages) {
+                        btn.disabled = true;
+                    } else {
+                        btn.onclick = () => {
+                            if (p !== paginationState.currentPage) {
+                                goToTenantPage(p);
+                            }
+                        };
+                    }
+                    if (p === paginationState.currentPage) {
+                        btn.classList.add('active');
+                        btn.setAttribute('aria-current', 'page');
+                    }
+                }
+
+                pagesContainer.appendChild(btn);
+            });
+        }
+
+        window.goToTenantPage = function (page) {
+            if (page === 'prev') {
+                if (paginationState.currentPage > 1) {
+                    paginationState.currentPage--;
+                    loadTenants();
+                }
+            } else if (page === 'next') {
+                if (paginationState.currentPage < paginationState.totalPages) {
+                    paginationState.currentPage++;
+                    loadTenants();
+                }
+            } else if (typeof page === 'number') {
+                paginationState.currentPage = page;
+                loadTenants();
+            }
+        };
+
+        window.changeTenantItemsPerPage = function () {
+            const select = document.getElementById('tenantItemsPerPage');
+            if (select) {
+                paginationState.itemsPerPage = parseInt(select.value);
+                paginationState.currentPage = 1;
+                loadTenants();
+                updateCustomTenantPaginationDropdown();
+            }
+        };
+
+        function updateCustomTenantPaginationDropdown() {
+            const select = document.getElementById('tenantItemsPerPage');
+            const customSelect = document.getElementById('customTenantItemsPerPage');
+            if (!select || !customSelect) return;
+
+            const value = select.value;
+            const selectText = customSelect.querySelector('.select-text');
+            const options = customSelect.querySelectorAll('.select-option');
+
+            if (selectText) selectText.textContent = value;
+            options.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.getAttribute('data-value') === value) {
+                    opt.classList.add('selected');
+                }
+            });
+        }
+
+        function initCustomTenantPaginationDropdown() {
+            const customSelect = document.getElementById('customTenantItemsPerPage');
+            if (!customSelect) {
+                console.warn('initCustomTenantPaginationDropdown: customSelect not found');
+                return;
+            }
+
+            const selectBtn = customSelect.querySelector('.select-btn');
+            const selectOptions = customSelect.querySelector('.select-options');
+            if (!selectBtn || !selectOptions) {
+                console.warn('initCustomTenantPaginationDropdown: selectBtn or selectOptions not found');
+                return;
+            }
+
+            const options = selectOptions.querySelectorAll('.select-option');
+
+            // Удаляем старые обработчики, если они есть (предотвращаем дублирование)
+            if (selectBtn._clickHandler) {
+                selectBtn.removeEventListener('click', selectBtn._clickHandler);
+            }
+
+            // Создаем новый обработчик для кнопки
+            selectBtn._clickHandler = function (e) {
+                e.stopPropagation();
+                customSelect.classList.toggle('open');
+            };
+            selectBtn.addEventListener('click', selectBtn._clickHandler);
+
+            // Удаляем старые обработчики с опций
+            options.forEach(opt => {
+                if (opt._clickHandler) {
+                    opt.removeEventListener('click', opt._clickHandler);
+                }
+
+                // Создаем новый обработчик для опции
+                opt._clickHandler = function () {
+                    const value = this.getAttribute('data-value');
+                    const select = document.getElementById('tenantItemsPerPage');
+                    if (select) {
+                        select.value = value;
+                        changeTenantItemsPerPage();
+                    }
+                    customSelect.classList.remove('open');
+                };
+                opt.addEventListener('click', opt._clickHandler);
+            });
+
+            // Удаляем старый обработчик клика вне селекта, если есть
+            if (window._tenantPaginationOutsideClickHandler) {
+                document.removeEventListener('click', window._tenantPaginationOutsideClickHandler);
+            }
+
+            // Создаем новый обработчик клика вне селекта
+            window._tenantPaginationOutsideClickHandler = function (e) {
+                if (!customSelect.contains(e.target)) {
+                    customSelect.classList.remove('open');
+                }
+            };
+            document.addEventListener('click', window._tenantPaginationOutsideClickHandler);
+
+            updateCustomTenantPaginationDropdown();
+        }
+
+        // Filter Functions
+        window.applyFilters = function (options = {}) {
+            paginationState.currentPage = 1; // Reset to first page on filter apply
+            loadTenants();
+            if (!options.silent && typeof showSuccess === 'function') {
+                showSuccess('Фильтры применены!');
+            }
+        };
+
+        window.clearFilters = function () {
+            document.getElementById('filterSearch').value = '';
+            document.getElementById('filterBlock').value = 'all';
+            document.getElementById('filterHouse').value = '';
+            paginationState.currentPage = 1; // Reset to first page on filter clear
+            paginationState.itemsPerPage = 25; // Reset items per page
+            updateCustomTenantPaginationDropdown(); // Update custom dropdown UI
+            loadTenants();
+            if (typeof showSuccess === 'function') {
+                showSuccess('Фильтры очищены!');
+            }
+        };
+
+        // Modal Functions
+        window.openCreateModal = function (mode = 'create') {
+            const modal = document.getElementById('createTenantModal');
+            if (modal) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+            setTenantModalMode(mode);
+
+            // Load residents list if not loaded
+            if (residents.length === 0) {
+                loadBlocksAndResidents();
+            } else {
+                populateResidentsList();
+            }
+        };
+
+        window.closeCreateModal = function () {
+            const modal = document.getElementById('createTenantModal');
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+
+            const form = document.getElementById('createTenantForm');
+            if (form) form.reset();
+
+            selectedResidentIds.clear();
+            editingTenantId = null;
+            isEditMode = false;
+
+            const selectedInfo = document.getElementById('selectedResidentInfo');
+            if (selectedInfo) {
+                selectedInfo.style.display = 'none';
+                document.getElementById('selectedResidentText').textContent = '';
+            }
+
+            // Remove selected class from all rows
+            document.querySelectorAll('#residentsListBody tr').forEach(row => {
+                row.classList.remove('selected');
+                const checkbox = row.querySelector('input[type="checkbox"]');
+                if (checkbox) checkbox.checked = false;
+            });
+
+            // Reset block filter
+            const blockFilter = document.getElementById('blockFilter');
+            if (blockFilter) blockFilter.value = 'all';
+
+            if (typeof window.filterResidents === 'function') {
+                window.filterResidents();
+            }
+
+            setTenantModalMode('create');
+        };
+
+        // Residents Filter
+        window.filterResidents = function () {
+            const blockFilter = document.getElementById('blockFilter');
+            if (!blockFilter) return;
+
+            const blockValue = blockFilter.value;
+            const rows = document.querySelectorAll('#residentsListBody tr');
+
+            rows.forEach(row => {
+                const blockCell = row.cells[1]?.textContent;
+
+                if (blockValue === 'all' || blockCell === blockValue) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        };
+
+        // Select Residents (multi-select)
+        window.toggleResidentSelection = function (id, block, number, checkbox) {
+            if (checkbox.checked) {
+                selectedResidentIds.add(id);
+                checkbox.closest('tr').classList.add('selected');
+            } else {
+                selectedResidentIds.delete(id);
+                checkbox.closest('tr').classList.remove('selected');
+            }
+            updateSelectedResidentsInfo();
+        };
+
+        function updateSelectedResidentsInfo() {
+            const selectedText = document.getElementById('selectedResidentText');
+            const selectedInfo = document.getElementById('selectedResidentInfo');
+
+            if (!selectedText || !selectedInfo) return;
+
+            if (selectedResidentIds.size === 0) {
+                selectedInfo.style.display = 'none';
+                selectedText.textContent = '';
+                return;
+            }
+
+            selectedInfo.style.display = 'block';
+            selectedText.textContent = `${selectedResidentIds.size} шт. (ID: ${Array.from(selectedResidentIds).join(', ')})`;
+        }
+
+        // Populate residents list in modal
+        function populateResidentsList() {
+            const tbody = document.getElementById('residentsListBody');
+            if (!tbody) return;
+
+            if (!residents || residents.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Нет резидентов</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = residents.map(resident => `
+            <tr>
+                <td>${resident.id}</td>
+                <td>${resident.block_name || '—'}</td>
+                <td>${resident.unit_number || '—'}</td>
+                <td>
+                    <label class="resident-checkbox">
+                        <input type="checkbox" 
+                               onchange="toggleResidentSelection(${resident.id}, '${resident.block_name || ''}', '${resident.unit_number || ''}', this)" 
+                               hidden>
+                        <span>Выбрать</span>
+                    </label>
+                </td>
+            </tr>
+        `).join('');
+
+            // Update checkboxes if editing
+            if (isEditMode && editingTenantId) {
+                document.querySelectorAll('#residentsListBody tr').forEach(row => {
+                    const checkbox = row.querySelector('input[type="checkbox"]');
+                    if (!checkbox) return;
+                    const residentId = parseInt(row.cells[0]?.textContent, 10);
+                    const isSelected = selectedResidentIds.has(residentId);
+                    checkbox.checked = isSelected;
+                    if (isSelected) {
+                        row.classList.add('selected');
+                    }
+                });
+            }
+        }
+
+        function setTenantModalMode(mode) {
+            const title = document.querySelector('#createTenantModal h2');
+            const submitBtn = document.querySelector('#createTenantForm button[type="submit"]');
+            if (!title || !submitBtn) return;
+
+            if (mode === 'edit') {
+                isEditMode = true;
+                submitBtn.textContent = 'Сохранить';
+                title.textContent = 'Редактировать жителя';
+            } else {
+                isEditMode = false;
+                editingTenantId = null;
+                submitBtn.textContent = 'Создать';
+                title.textContent = 'Создать жителя';
+            }
+        }
+
+        // Create Tenant Function
+        window.createTenant = async function (event) {
+            event.preventDefault();
+
+            const isEditing = isEditMode && editingTenantId !== null;
+            const residentIds = Array.from(selectedResidentIds);
+
+            if (!isEditing && residentIds.length === 0) {
+                if (typeof showError === 'function') {
+                    showError('Выберите хотя бы один дом для жителя');
+                }
+                return;
+            }
+
+            const formData = {
+                username: document.getElementById('tenantLogin').value.trim(),
+                full_name: document.getElementById('tenantName').value.trim() || null,
+                phone: document.getElementById('tenantPhone').value.trim() || null,
+                email: document.getElementById('tenantEmail').value.trim() || null,
+                comment: document.getElementById('tenantComment').value.trim() || null,
+                resident_ids: residentIds
+            };
+
+            if (!formData.username) {
+                if (typeof showError === 'function') {
+                    showError('Логин обязателен');
+                }
+                return;
+            }
+
+            try {
+                let url, method;
+                if (isEditing) {
+                    url = `${API_BASE}/api/tenants/${editingTenantId}`;
+                    method = 'PUT';
+                } else {
+                    url = `${API_BASE}/api/tenants`;
+                    method = 'POST';
+                }
+
+                let response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        url = isEditing
+                            ? `${API_BASE}/api/tenants/${editingTenantId}/public`
+                            : `${API_BASE}/api/tenants/public`;
+                        response = await fetch(url, {
+                            method: method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(formData)
+                        });
+                        if (!response.ok) {
+                            let errorMessage = `HTTP ${response.status}`;
+                            try {
+                                const errorData = await response.json();
+                                if (errorData.detail) {
+                                    if (typeof errorData.detail === 'string') {
+                                        errorMessage = errorData.detail;
+                                    } else {
+                                        errorMessage = JSON.stringify(errorData.detail);
+                                    }
+                                } else {
+                                    errorMessage = JSON.stringify(errorData);
+                                }
+                            } catch (e) {
+                                const errorText = await response.text();
+                                if (errorText) {
+                                    try {
+                                        const errorJson = JSON.parse(errorText);
+                                        errorMessage = errorJson.detail || errorText;
+                                    } catch {
+                                        errorMessage = errorText || errorMessage;
+                                    }
+                                }
+                            }
+                            throw new Error(errorMessage);
+                        }
+                    } else {
+                        let errorMessage = `HTTP ${response.status}`;
+                        try {
+                            const errorData = await response.json();
+                            if (errorData.detail) {
+                                if (typeof errorData.detail === 'string') {
+                                    errorMessage = errorData.detail;
+                                } else {
+                                    errorMessage = JSON.stringify(errorData.detail);
+                                }
+                            } else {
+                                errorMessage = JSON.stringify(errorData);
+                            }
+                        } catch (e) {
+                            const errorText = await response.text();
+                            if (errorText) {
+                                try {
+                                    const errorJson = JSON.parse(errorText);
+                                    errorMessage = errorJson.detail || errorText;
+                                } catch {
+                                    errorMessage = errorText || errorMessage;
+                                }
+                            }
+                        }
+                        throw new Error(errorMessage);
+                    }
+                }
+
+                const result = await response.json();
+
+                if (typeof showSuccess === 'function') {
+                    showSuccess(isEditing
+                        ? `Житель "${formData.full_name || formData.username}" успешно обновлён!`
+                        : `Житель "${formData.full_name || formData.username}" успешно создан! Логин: ${formData.username}`);
+                }
+
+                window.closeCreateModal();
+                await loadTenants();
+            } catch (error) {
+                console.error('Error saving tenant:', error);
+                if (typeof showError === 'function') {
+                    let errorMsg = error.message || 'Неизвестная ошибка';
+                    // Если ошибка содержит JSON, попробуем распарсить
+                    if (errorMsg.includes('{') && errorMsg.includes('}')) {
+                        try {
+                            const errorJson = JSON.parse(errorMsg);
+                            errorMsg = errorJson.detail || errorMsg;
+                        } catch (e) {
+                            // Оставляем как есть
+                        }
+                    }
+                    // Переводим известные ошибки на русский
+                    if (errorMsg.includes('Username already exists')) {
+                        errorMsg = 'Пользователь с таким логином уже существует';
+                    } else if (errorMsg.includes('Username is required')) {
+                        errorMsg = 'Логин обязателен для заполнения';
+                    } else if (errorMsg.includes('CORS') || errorMsg.includes('Failed to fetch')) {
+                        errorMsg = 'Ошибка подключения к серверу. Убедитесь, что backend запущен и перезапущен после изменений.';
+                    }
+                    showError('Ошибка сохранения: ' + errorMsg);
+                }
+            }
+        };
+
+        window.openEditTenant = async function (id) {
+            try {
+                let url = `${API_BASE}/api/tenants/${id}`;
+                let response = await fetch(url, { credentials: 'include' });
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        url = `${API_BASE}/api/tenants/${id}/public`;
+                        response = await fetch(url);
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                }
+
+                const tenant = await response.json();
+
+                editingTenantId = id;
+                setTenantModalMode('edit');
+
+                document.getElementById('tenantLogin').value = tenant.username || '';
+                document.getElementById('tenantName').value = tenant.full_name || '';
+                document.getElementById('tenantPhone').value = tenant.phone || '';
+                document.getElementById('tenantEmail').value = tenant.email || '';
+                document.getElementById('tenantComment').value = tenant.comment || '';
+
+                selectedResidentIds = new Set(tenant.resident_ids || []);
+                updateSelectedResidentsInfo();
+
+                // Ensure residents list is populated
+                if (residents.length === 0) {
+                    await loadBlocksAndResidents();
+                }
+
+                // Sync checkboxes
+                setTimeout(() => {
+                    document.querySelectorAll('#residentsListBody tr').forEach(row => {
+                        row.classList.remove('selected');
+                        const checkbox = row.querySelector('input[type="checkbox"]');
+                        if (!checkbox) return;
+                        const residentId = parseInt(row.cells[0]?.textContent, 10);
+                        const isSelected = selectedResidentIds.has(residentId);
+                        checkbox.checked = isSelected;
+                        if (isSelected) {
+                            row.classList.add('selected');
+                        }
+                    });
+                }, 100);
+
+                window.openCreateModal('edit');
+            } catch (error) {
+                console.error('Error loading tenant:', error);
+                if (typeof showError === 'function') {
+                    showError('Ошибка загрузки данных жителя: ' + error.message);
+                }
+            }
+        };
+
+        window.openTenantActionModal = function (type, tenantId) {
+            const tenant = tenantsData.find(t => t.id === tenantId);
+            if (!tenant) return;
+
+            pendingAction = { type, tenantId };
+
+            const modal = document.getElementById('tenantActionModal');
+            const titleEl = document.getElementById('tenantActionTitle');
+            const messageEl = document.getElementById('tenantActionMessage');
+            const confirmBtn = document.getElementById('tenantActionConfirm');
+
+            if (!modal || !titleEl || !messageEl || !confirmBtn) return;
+
+            if (type === 'reset') {
+                titleEl.textContent = 'Сброс пароля';
+                messageEl.textContent = `Вы уверены, что хотите сбросить пароль для "${tenant.name}"? Ему будет отправлена ссылка для установки нового пароля.`;
+                confirmBtn.textContent = 'Сбросить';
+                confirmBtn.className = 'btn btn-warning';
+            } else if (type === 'delete') {
+                titleEl.textContent = 'Удаление жителя';
+                messageEl.textContent = `Это действие нельзя отменить. Удалить "${tenant.name}" (логин: ${tenant.login})?`;
+                confirmBtn.textContent = 'Удалить';
+                confirmBtn.className = 'btn btn-danger';
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeTenantActionModal = function () {
+            const modal = document.getElementById('tenantActionModal');
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+            pendingAction = { type: null, tenantId: null };
+        };
+
+        window.confirmTenantAction = async function () {
+            const { type, tenantId } = pendingAction;
+            if (!type || !tenantId) {
+                window.closeTenantActionModal();
+                return;
+            }
+
+            const tenant = tenantsData.find(t => t.id === tenantId);
+            if (!tenant) {
+                window.closeTenantActionModal();
+                return;
+            }
+
+            try {
+                let url, method;
+                if (type === 'reset') {
+                    url = `${API_BASE}/api/tenants/${tenantId}/reset`;
+                    method = 'POST';
+                } else if (type === 'delete') {
+                    url = `${API_BASE}/api/tenants/${tenantId}`;
+                    method = 'DELETE';
+                } else {
+                    window.closeTenantActionModal();
+                    return;
+                }
+
+                let response = await fetch(url, { method, credentials: 'include' });
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        url = type === 'reset'
+                            ? `${API_BASE}/api/tenants/${tenantId}/reset/public`
+                            : `${API_BASE}/api/tenants/${tenantId}/public`;
+                        response = await fetch(url, { method });
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                }
+
+                if (type === 'reset') {
+                    if (typeof showSuccess === 'function') {
+                        showSuccess(`Пароль для "${tenant.name}" успешно сброшен`);
+                    }
+                } else if (type === 'delete') {
+                    if (typeof showSuccess === 'function') {
+                        showSuccess(`Житель "${tenant.name}" успешно удалён`);
+                    }
+                }
+
+                await loadTenants();
+                window.closeTenantActionModal();
+            } catch (error) {
+                console.error('Error performing tenant action:', error);
+                if (typeof showError === 'function') {
+                    showError('Ошибка: ' + error.message);
+                }
+            }
+        };
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Close modal on overlay click
+            const modal = document.getElementById('createTenantModal');
+            if (modal) {
+                modal.addEventListener('click', function (e) {
+                    if (e.target === this) {
+                        window.closeCreateModal();
+                    }
+                });
+            }
+
+            // Close modal on Escape key
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('createTenantModal');
+                    if (modal && modal.classList.contains('active')) {
+                        window.closeCreateModal();
+                    }
+                }
+            });
+        }
+
+        // Initialize
+        setupEventListeners();
+
+        // QR Code Functions
+        function generateQRCodeImage(qrUrl, canvas) {
+            const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl)}`;
+
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+
+            img.onload = function () {
+                const ctx = canvas.getContext('2d');
+                canvas.width = 300;
+                canvas.height = 300;
+                ctx.drawImage(img, 0, 0);
+
+                const modal = document.getElementById('qrModal');
+                if (modal) {
+                    modal.classList.add('active');
+                }
+            };
+
+            img.onerror = function () {
+                const ctx = canvas.getContext('2d');
+                canvas.width = 300;
+                canvas.height = 300;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, 300, 300);
+                ctx.fillStyle = '#000000';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('QR Code URL:', 150, 140);
+                ctx.fillText(qrUrl, 150, 160, 280);
+
+                const modal = document.getElementById('qrModal');
+                if (modal) {
+                    modal.classList.add('active');
+                }
+            };
+
+            img.src = apiUrl;
+        }
+
+        window.showQRCodeForTenant = async function (tenantId, username, tempPassword) {
+            try {
+                // Находим жителя в данных, чтобы получить информацию о домах
+                const tenant = tenantsData.find(t => t.id === tenantId);
+                const homes = tenant ? (tenant.homes || []) : [];
+
+                // Создаем QR токен через API (используем публичный endpoint для tenants)
+                let resp = await fetch(`${API_BASE}/api/qr/tenants/${tenantId}/qr-token/public`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (!resp.ok) {
+                    // Если endpoint для tenants не существует, пробуем через users
+                    resp = await fetch(`${API_BASE}/api/qr/users/${tenantId}/qr-token/public`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    if (!resp.ok) {
+                        const errorText = await resp.text();
+                        throw new Error(`Failed to generate QR token: ${resp.status} - ${errorText}`);
+                    }
+                }
+
+                const data = await resp.json();
+                const qrToken = data.token;
+
+                // Формируем URL для QR-кода
+                const frontendUrl = window.location.origin || 'http://localhost:3000';
+                const qrUrl = `${frontendUrl}/qr-password-setup?token=${qrToken}`;
+
+                // Сохраняем данные для печати
+                currentQRUserData = {
+                    username: username,
+                    tempPassword: tempPassword,
+                    qrUrl: qrUrl,
+                    homes: homes || []
+                };
+
+                // Получаем canvas для QR-кода
+                const canvas = document.getElementById('qrCanvas');
+                if (!canvas) {
+                    console.error('QR canvas not found');
+                    if (window.showError) {
+                        showError('❌ Элемент для QR-кода не найден');
+                    } else {
+                        alert('Элемент для QR-кода не найден');
+                    }
+                    return;
+                }
+
+                // Генерируем QR-код через API
+                generateQRCodeImage(qrUrl, canvas);
+            } catch (e) {
+                console.error('Show QR error:', e);
+                if (window.showError) {
+                    showError('❌ Не удалось создать QR-код');
+                } else {
+                    alert('Не удалось создать QR-код');
+                }
+            }
+        };
+
+        window.closeQRModal = function () {
+            const modal = document.getElementById('qrModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        };
+
+        // Print QR Code to PDF (копируем из users.html)
+        window.printQRCode = function () {
+            if (!currentQRUserData.username || !currentQRUserData.tempPassword) {
+                if (window.showError) {
+                    showError('❌ Нет данных для печати');
+                } else {
+                    alert('Нет данных для печати');
+                }
+                return;
+            }
+
+            try {
+                let jsPDFClass;
+
+                if (typeof window.jspdf !== 'undefined') {
+                    if (window.jspdf.jsPDF) {
+                        jsPDFClass = window.jspdf.jsPDF;
+                    } else if (typeof window.jspdf === 'function') {
+                        jsPDFClass = window.jspdf;
+                    } else if (window.jspdf.default && window.jspdf.default.jsPDF) {
+                        jsPDFClass = window.jspdf.default.jsPDF;
+                    }
+                }
+
+                if (!jsPDFClass && typeof window.jsPDF !== 'undefined') {
+                    jsPDFClass = window.jsPDF;
+                }
+
+                if (!jsPDFClass) {
+                    window.loadJSPDFLibrary().then(() => {
+                        setTimeout(() => window.printQRCode(), 200);
+                    }).catch((err) => {
+                        console.error('Failed to load jsPDF:', err);
+                        if (window.showError) {
+                            showError('❌ Библиотека для генерации PDF не загружена. Попробуйте обновить страницу.');
+                        } else {
+                            alert('Библиотека для генерации PDF не загружена. Попробуйте обновить страницу.');
+                        }
+                    });
+                    return;
+                }
+
+                const doc = new jsPDFClass();
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const margin = 20;
+                const contentWidth = pageWidth - (margin * 2);
+
+                function createTextImage(text, fontSize, isBold, maxWidth) {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = maxWidth || 500;
+                    canvas.height = fontSize * 2;
+                    ctx.fillStyle = '#000000';
+                    ctx.font = `${isBold ? 'bold' : 'normal'} ${fontSize}px Arial, sans-serif`;
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'top';
+                    ctx.fillText(text, 0, 0);
+                    return canvas.toDataURL('image/png');
+                }
+
+                const titleText = 'QR-код для установки пароля';
+                const titleImg = createTextImage(titleText, 20, true, 500);
+                const titleWidth = 100;
+                const titleHeight = 10;
+                doc.addImage(titleImg, 'PNG', (pageWidth - titleWidth) / 2, margin, titleWidth, titleHeight);
+
+                let yPos = margin + 25;
+                const labelSize = 12;
+                const valueSize = 12;
+
+                const loginLabelImg = createTextImage('Логин жителя:', labelSize, false, 200);
+                doc.addImage(loginLabelImg, 'PNG', margin, yPos, 50, 5);
+
+                const loginValueImg = createTextImage(currentQRUserData.username, valueSize, true, 200);
+                doc.addImage(loginValueImg, 'PNG', margin + 55, yPos, 50, 5);
+
+                yPos += 12;
+
+                const passwordLabelImg = createTextImage('Временный пароль:', labelSize, false, 200);
+                doc.addImage(passwordLabelImg, 'PNG', margin, yPos, 50, 5);
+
+                const passwordValueImg = createTextImage(currentQRUserData.tempPassword, valueSize, true, 200);
+                doc.addImage(passwordValueImg, 'PNG', margin + 55, yPos, 50, 5);
+
+                // Добавляем информацию о блоках и номерах домов
+                if (currentQRUserData.homes && currentQRUserData.homes.length > 0) {
+                    yPos += 12;
+
+                    // Если один дом - показываем на одной строке, если несколько - каждый на отдельной строке
+                    if (currentQRUserData.homes.length === 1) {
+                        // Один дом - на одной строке
+                        const home = currentQRUserData.homes[0];
+                        const homesLabelImg = createTextImage('Дом:', labelSize, false, 200);
+                        doc.addImage(homesLabelImg, 'PNG', margin, yPos, 30, 5);
+
+                        const homeText = `Блок ${home.block || '—'} / ${home.number || '—'}`;
+                        const homeValueImg = createTextImage(homeText, valueSize, true, 200);
+                        doc.addImage(homeValueImg, 'PNG', margin + 35, yPos, 50, 5);
+                    } else {
+                        // Несколько домов - каждый на отдельной строке
+                        const homesLabelImg = createTextImage('Дома:', labelSize, false, 200);
+                        doc.addImage(homesLabelImg, 'PNG', margin, yPos, 30, 5);
+
+                        // Отображаем каждый дом на отдельной строке
+                        currentQRUserData.homes.forEach((home, index) => {
+                            const homeText = `${index + 1}. Блок ${home.block || '—'} / ${home.number || '—'}`;
+                            const homeValueImg = createTextImage(homeText, valueSize, true, 200);
+                            doc.addImage(homeValueImg, 'PNG', margin + 35, yPos, 60, 5);
+                            yPos += 10; // Переходим на следующую строку
+                        });
+
+                        // Возвращаем yPos на одну строку назад, так как последний дом уже добавлен
+                        yPos -= 10;
+                    }
+                }
+
+                const canvas = document.getElementById('qrCanvas');
+                if (canvas) {
+                    try {
+                        const imgData = canvas.toDataURL('image/png');
+                        const qrSize = 80;
+                        const qrX = (pageWidth - qrSize) / 2;
+                        const qrY = yPos + 20;
+                        doc.addImage(imgData, 'PNG', qrX, qrY, qrSize, qrSize);
+
+                        yPos = qrY + qrSize + 15;
+                        const instructionText1 = 'Житель должен отсканировать этот QR-код';
+                        const instructionText2 = 'для установки пароля';
+                        const instructionImg1 = createTextImage(instructionText1, 10, false, 400);
+                        const instructionImg2 = createTextImage(instructionText2, 10, false, 400);
+                        const instructionWidth = 80;
+                        const instructionHeight = 5;
+                        doc.addImage(instructionImg1, 'PNG', (pageWidth - instructionWidth) / 2, yPos, instructionWidth, instructionHeight);
+                        doc.addImage(instructionImg2, 'PNG', (pageWidth - instructionWidth) / 2, yPos + 6, instructionWidth, instructionHeight);
+                    } catch (e) {
+                        console.error('Error adding QR image to PDF:', e);
+                        yPos += 20;
+                        doc.setFontSize(10);
+                        doc.setFont('helvetica', 'normal');
+                        doc.text('QR URL:', margin, yPos);
+                        doc.text(currentQRUserData.qrUrl, margin, yPos + 10, { maxWidth: contentWidth });
+                    }
+                }
+
+                const date = new Date().toLocaleString('ru-RU');
+                const footerText = `Сгенерировано: ${date}`;
+                const footerImg = createTextImage(footerText, 8, false, 400);
+                doc.addImage(footerImg, 'PNG', (pageWidth - 80) / 2, pageHeight - 10, 80, 4);
+
+                const filename = `QR_${currentQRUserData.username}_${Date.now()}.pdf`;
+                doc.save(filename);
+
+                if (window.showSuccess) {
+                    showSuccess('✅ PDF файл успешно создан');
+                }
+            } catch (e) {
+                console.error('Print QR error:', e);
+                if (window.showError) {
+                    showError('❌ Не удалось создать PDF файл');
+                } else {
+                    alert('Не удалось создать PDF файл');
+                }
+            }
+        };
+
+        // Close modal on overlay click and Escape key
+        document.addEventListener('DOMContentLoaded', function () {
+            const qrModal = document.getElementById('qrModal');
+            if (qrModal) {
+                qrModal.addEventListener('click', function (e) {
+                    if (e.target === qrModal) {
+                        closeQRModal();
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    closeQRModal();
+                }
+            });
+        });
+
+        // Re-initialize when SPA content loads
+        // Удаляем старый обработчик, если он существует
+        if (window._tenantsContentLoadedHandler) {
+            window.removeEventListener('spa:contentLoaded', window._tenantsContentLoadedHandler);
+        }
+
+        window._tenantsContentLoadedHandler = async function (e) {
+            if (e.detail && e.detail.route === '/tenants') {
+                // Инициализируем кастомный селект пагинации после загрузки DOM
+                setTimeout(() => {
+                    initCustomTenantPaginationDropdown();
+                }, 150);
+
+                // Загружаем блоки и резидентов
+                await loadBlocksAndResidents();
+
+                // Обновляем фильтр блоков (он проверит sessionStorage и применит фильтр, если нужно)
+                updateBlocksFilter();
+
+                // Загружаем жителей (с примененным фильтром, если он был установлен)
+                loadTenants();
+            }
+        };
+
+        window.addEventListener('spa:contentLoaded', window._tenantsContentLoadedHandler);
+
+    })();
+
+</script>

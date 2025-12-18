@@ -1,0 +1,167 @@
+{#-----------------------------------------------------------------------------
+  Template: app/templates/payments.html
+  Author: Mamedli Ayaz
+  Purpose: Список платежей (админ)
+-----------------------------------------------------------------------------#}
+{% extends "base.html" %}
+{% block title %}Платежи{% endblock %}
+{% block content %}
+
+{% set err = request.query_params.get('error') %}
+{% set ok  = request.query_params.get('ok') %}
+{% if err %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    Ошибка: {{ err }}
+    <button type="button" class="btn btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% elif ok == 'created' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Платеж создан.
+    <button type="button" class="btn btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% elif ok == 'saved' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Распределение сохранено.
+    <button type="button" class="btn btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+<h4 class="mb-3">Платежи</h4>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form class="row g-2 align-items-end" method="get" action="{{ request.url_for('payments_list') }}">
+      <div class="col-md-3">
+        <label class="form-label">Резидент</label>
+        <select name="resident_id" class="form-select">
+          <option value="">Все</option>
+          {% for r in residents %}
+            <option value="{{ r.id }}" {{ 'selected' if resident_id|string == r.id|string }}>
+              {{ r.block.name }} / {{ r.unit_number }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Метод</label>
+        <select name="method" class="form-select">
+          <option value="">Все</option>
+          {% for m in PaymentMethod %}
+            <option value="{{ m.value }}" {{ 'selected' if method==m.value }}>{{ m.value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">От</label>
+        <input type="date" name="date_from" value="{{ date_from }}" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">До</label>
+        <input type="date" name="date_to" value="{{ date_to }}" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Поиск</label>
+        <input name="q" value="{{ q }}" class="form-control" placeholder="№ чека / комментарий">
+      </div>
+      <div class="col-12 d-flex gap-2">
+        <button class="btn btn-outline-secondary">Фильтр</button>
+        {% if resident_id or method or date_from or date_to or q %}
+          <a class="btn btn-outline-warning" href="{{ request.url_for('payments_list') }}">Очистить</a>
+        {% endif %}
+        <a class="btn btn-primary ms-auto" href="{{ request.url_for('payment_create_form') }}">Принять платеж</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-dark table-striped align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Дата</th>
+            <th>Резидент</th>
+            <th>Сумма</th>
+            <th>Метод</th>
+            <th>Остаток</th>
+            <th>Ссылка</th>
+            <th class="text-end" style="width:160px;">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in items %}
+            <tr>
+              <td>{{ p.received_at }}</td>
+              <td>{{ p.resident.block.name }} / {{ p.resident.unit_number }}</td>
+              <td class="text-danger fw-semibold">{{ '%.2f'|format(p.amount_total) }}</td>
+              <td>{{ p.method.value }}</td>
+              <td>
+                {% set lo = p.leftover %}
+                {% if lo and lo > 0 %}
+                  <span class="badge bg-success-subtle text-success-emphasis">Аванс {{ '%.2f'|format(lo) }}</span>
+                {% else %}
+                  {{ '%.2f'|format(lo) }}
+                {% endif %}
+              </td>
+              <td class="text-secondary">{{ p.reference or '—' }}</td>
+              <td class="text-end">
+                <a class="btn btn-sm btn-outline-info" href="{{ url_for('payment_detail', payment_id=p.id) if url_for is defined else ('/payments/' ~ p.id) }}">Открыть</a>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="7" class="text-secondary">Платежей пока нет</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
+      <nav aria-label="Навигация по страницам">
+        <ul class="pagination pagination-sm mb-0">
+          {% macro page_url(p) -%}
+            {{ request.url_for('payments_list') }}?page={{ p }}&per_page={{ per_page }}
+            {% if resident_id %}&resident_id={{ resident_id }}{% endif %}
+            {% if method %}&method={{ method }}{% endif %}
+            {% if date_from %}&date_from={{ date_from }}{% endif %}
+            {% if date_to %}&date_to={{ date_to }}{% endif %}
+            {% if q %}&q={{ q|urlencode }}{% endif %}
+          {%- endmacro %}
+          <li class="page-item {{ 'disabled' if page<=1 }}"><a class="page-link" href="{{ page_url(page-1) }}">«</a></li>
+          {% for p in pages %}
+            <li class="page-item {{ 'active' if p==page }}"><a class="page-link" href="{{ page_url(p) }}">{{ p }}</a></li>
+          {% endfor %}
+          <li class="page-item {{ 'disabled' if page>=last_page }}"><a class="page-link" href="{{ page_url(page+1) }}">»</a></li>
+          <li class="page-item disabled ms-2">
+            <span class="page-link bg-transparent border-0 text-secondary">Стр. {{ page }} из {{ last_page }} · всего {{ total }}</span>
+          </li>
+        </ul>
+      </nav>
+
+      {% set PPO = per_page_options if per_page_options is defined and per_page_options else [25, 50, 100] %}
+      <form class="d-flex align-items-center gap-2" method="get" action="{{ request.url_for('payments_list') }}">
+        <input type="hidden" name="page" value="1">
+        {% if resident_id %}<input type="hidden" name="resident_id" value="{{ resident_id }}">{% endif %}
+        {% if method %}<input type="hidden" name="method" value="{{ method }}">{% endif %}
+        {% if date_from %}<input type="hidden" name="date_from" value="{{ date_from }}">{% endif %}
+        {% if date_to %}<input type="hidden" name="date_to" value="{{ date_to }}">{% endif %}
+        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+        <label class="text-secondary small mb-0" for="pp">На странице:</label>
+        <select id="pp" name="per_page" class="form-select form-select-sm" onchange="this.form.submit()">
+          {% for opt in PPO %}
+            <option value="{{ opt }}" {{ 'selected' if per_page|int==opt }}>{{ opt }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.addEventListener('DOMContentLoaded', function () {
+    const alerts = document.querySelectorAll('.alert');
+    setTimeout(() => alerts.forEach(a => { if (a.classList.contains('show')) bootstrap.Alert.getOrCreateInstance(a).close(); }), 5000);
+  });
+</script>
+
+{% endblock %}

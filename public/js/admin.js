@@ -1,0 +1,780 @@
+// Admin Dashboard JavaScript
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Check authentication
+    checkAuth();
+
+    // Initialize sidebar toggle
+    initSidebarToggle();
+
+    // Initialize navigation - DISABLED to allow normal page navigation
+    // initNavigation();
+
+    // Initialize charts
+    initCharts();
+
+    // Load dashboard data
+    loadDashboardData();
+    
+    // Add modern animations and effects
+    addCardAnimations();
+    initSmoothScroll();
+    addRippleEffect();
+    // initPlanTooltip вызывается автоматически через IIFE при готовности DOM
+    initPlanLegendNavigation();
+    
+    // Add loading complete class for animations
+    setTimeout(() => {
+        document.body.classList.add('loaded');
+    }, 100);
+});
+
+window.addEventListener('spa:contentLoaded', function(e) {
+    setTimeout(() => {
+        const planOverlay = document.querySelector('.plan-overlay');
+        if (planOverlay || (e.detail && e.detail.route === '/blocks')) {
+            // 3. При SPA-переходе — просто сбрасываем текущее состояние, НЕ переинициализируя слушатели
+            const tooltip = document.getElementById('planTooltip');
+            if (tooltip) {
+                tooltip.classList.add('hidden');
+                tooltip.classList.remove('visible');
+            }
+            // Сбрасываем текущую область через глобальную переменную
+            window.currentArea = null;
+        }
+    }, 200);
+    // initPlanLegendNavigation можно вызывать, так как она проверяет существование элементов
+    initPlanLegendNavigation();
+});
+
+// Check if user is authenticated and has admin role
+function checkAuth() {
+    // DISABLED - allow access without authentication for development
+    // const authToken = localStorage.getItem('authToken');
+    // const userRole = localStorage.getItem('userRole');
+
+    // if (!authToken || userRole !== 'admin') {
+    //     window.location.href = '/';
+    //     return;
+    // }
+
+    // Set user info
+    const username = localStorage.getItem('username') || 'Admin';
+    const userNameEl = document.querySelector('.user-name');
+    const userAvatarEl = document.querySelector('.user-avatar');
+    
+    if (userNameEl) {
+        userNameEl.textContent = username;
+    }
+    
+    if (userAvatarEl) {
+        userAvatarEl.textContent = username.substring(0, 2).toUpperCase();
+    }
+}
+
+// Sidebar toggle functionality - DISABLED to avoid conflicts with inline script
+// The sidebar toggle is now handled in index.html inline script
+function initSidebarToggle() {
+    // This function is disabled to prevent conflicts
+    // Sidebar toggle is handled in admin/index.html inline script
+    console.log('initSidebarToggle called but disabled - using inline script handler instead');
+    
+    // Only handle ESC key for sidebar toggle (if not already handled)
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        // ESC key to toggle sidebar - only if not already handled
+        const escHandler = function(e) {
+            if (e.key === 'Escape' && window.innerWidth > 768) {
+                const isCollapsed = sidebar.classList.contains('collapsed');
+                sidebar.classList.toggle('collapsed');
+                localStorage.setItem('sidebarCollapsed', !isCollapsed);
+            }
+        };
+        
+        // Check if ESC handler already exists
+        document.addEventListener('keydown', escHandler);
+    }
+}
+
+// Navigation functionality
+function initNavigation() {
+    const navItems = document.querySelectorAll('.nav-item');
+
+    navItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Remove active class from all items
+            navItems.forEach(navItem => navItem.classList.remove('active'));
+            
+            // Add active class to clicked item
+            this.classList.add('active');
+
+            // Get the href and load corresponding content
+            const href = this.getAttribute('href');
+            loadContent(href);
+        });
+    });
+}
+
+// Load content based on navigation
+function loadContent(section) {
+    // Полностью отключаем legacy-обновление заголовков.
+    // Сейчас всю навигацию и заголовки контролирует SPA Router (spa-router.js),
+    // поэтому эта функция должна НИЧЕГО не менять, иначе заголовок может
+    // мигать "Панель управления" при переходах между страницами.
+    console.log('Sidebar Toggle Script: loadContent() is legacy and is now a no-op in SPA mode.', section);
+    return;
+    
+    // Update page title
+    const pageTitle = document.querySelector('.page-title h1');
+    const breadcrumb = document.querySelector('.breadcrumb-item:last-child');
+    
+    const sectionNames = {
+        '#dashboard': 'Панель управления',
+        '#analytics': 'Аналитика',
+        '#reports': 'Отчеты',
+        '#users': 'Пользователи',
+        '#buildings': 'Здания',
+        '#apartments': 'Квартиры',
+        '#meters': 'Счетчики',
+        '#payments': 'Платежи',
+        '#invoices': 'Счета',
+        '#debts': 'Задолженности',
+        '#maintenance': 'Заявки на ремонт',
+        '#inspections': 'Проверки',
+        '#staff': 'Персонал',
+        '#settings': 'Настройки',
+        '#logs': 'Логи',
+        '#backup': 'Резервное копирование'
+    };
+
+    if (pageTitle && sectionNames[section]) {
+        pageTitle.textContent = sectionNames[section];
+    }
+    
+    if (breadcrumb && sectionNames[section]) {
+        breadcrumb.textContent = sectionNames[section];
+    }
+
+    // TODO: Load actual content from FastAPI backend
+    // This will be connected to your backend API
+}
+
+// Initialize charts with Chart.js
+function initCharts() {
+    // Chart buttons
+    const chartBtns = document.querySelectorAll('.chart-btn');
+    
+    chartBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            chartBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Update chart data based on selected period
+            console.log('Chart period changed to:', this.textContent);
+            updateChartData(this.textContent);
+        });
+    });
+
+    // Initialize Chart.js
+    initPaymentChart();
+}
+
+// Create a beautiful gradient chart
+function initPaymentChart() {
+    const chartPlaceholder = document.querySelector('.chart-placeholder');
+    
+    if (!chartPlaceholder) return;
+    
+    // Replace placeholder with canvas
+    const canvas = document.createElement('canvas');
+    canvas.id = 'paymentChart';
+    canvas.style.maxHeight = '300px';
+    chartPlaceholder.innerHTML = '';
+    chartPlaceholder.appendChild(canvas);
+    chartPlaceholder.style.background = 'transparent';
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Create gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(102, 126, 234, 0.8)');
+    gradient.addColorStop(1, 'rgba(118, 75, 162, 0.1)');
+    
+    // Sample data
+    const data = {
+        labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+        datasets: [{
+            label: 'Платежи',
+            data: [12000, 19000, 15000, 25000, 22000, 18000, 24000],
+            backgroundColor: gradient,
+            borderColor: 'rgba(102, 126, 234, 1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#fff',
+            pointBorderColor: 'rgba(102, 126, 234, 1)',
+            pointBorderWidth: 3,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            pointHoverBackgroundColor: 'rgba(102, 126, 234, 1)',
+            pointHoverBorderColor: '#fff',
+            pointHoverBorderWidth: 3
+        }]
+    };
+    
+    const config = {
+        type: 'line',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(102, 126, 234, 1)',
+                    borderWidth: 2,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return '₼' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '₼' + value.toLocaleString();
+                        },
+                        color: '#6c757d'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#6c757d'
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            }
+        }
+    };
+    
+    window.paymentChart = new Chart(ctx, config);
+}
+
+// Update chart data based on period
+function updateChartData(period) {
+    if (!window.paymentChart) return;
+    
+    let newData, newLabels;
+    
+    if (period === 'Неделя') {
+        newLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+        newData = [12000, 19000, 15000, 25000, 22000, 18000, 24000];
+    } else if (period === 'Месяц') {
+        newLabels = ['Нед 1', 'Нед 2', 'Нед 3', 'Нед 4'];
+        newData = [85000, 92000, 88000, 95000];
+    } else if (period === 'Год') {
+        newLabels = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+        newData = [320000, 340000, 330000, 360000, 350000, 380000, 390000, 370000, 385000, 395000, 400000, 420000];
+    }
+    
+    window.paymentChart.data.labels = newLabels;
+    window.paymentChart.data.datasets[0].data = newData;
+    window.paymentChart.update('active');
+}
+
+// Load dashboard data
+async function loadDashboardData() {
+    try {
+        // TODO: Fetch data from FastAPI backend
+        // const response = await fetch('FASTAPI_URL/api/dashboard/stats', {
+        //     headers: {
+        //         'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        //     }
+        // });
+        // const data = await response.json();
+        
+        // For now, using placeholder data
+        // console.log('Dashboard data loaded (placeholder)');
+        
+        // Update stats with real data when backend is ready
+        updateStats({
+            totalUsers: data.totalUsers,
+            totalBuildings: data.totalBuildings,
+            monthlyPayments: data.monthlyPayments,
+            activeRequests: data.activeRequests
+        });
+
+    } catch (error) {
+        //console.error('Error loading dashboard data:', error);
+    }
+}
+
+// Update statistics with animated counters
+function updateStats(data) {
+    console.log('Updating stats with:', data);
+    
+    // Animate counter numbers
+    animateValue('.stat-card:nth-child(1) .stat-value', 0, data.totalUsers, 2000);
+    animateValue('.stat-card:nth-child(2) .stat-value', 0, data.totalBuildings, 2000);
+    animateValue('.stat-card:nth-child(4) .stat-value', 0, data.activeRequests, 2000);
+}
+
+// Animate counter from start to end
+function animateValue(selector, start, end, duration) {
+    const element = document.querySelector(selector);
+    if (!element) return;
+    
+    const range = end - start;
+    const increment = range / (duration / 16); // 60fps
+    let current = start;
+    
+    const timer = setInterval(() => {
+        current += increment;
+        if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+            current = end;
+            clearInterval(timer);
+        }
+        
+        // Format number with separators
+        const formatted = Math.floor(current).toLocaleString('ru-RU');
+        element.textContent = formatted;
+    }, 16);
+}
+
+// Add entrance animations to cards
+function addCardAnimations() {
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+    
+    // Observe all cards
+    const cards = document.querySelectorAll('.stat-card, .chart-card, .activity-card, .card');
+    cards.forEach(card => {
+        observer.observe(card);
+    });
+}
+
+// Add smooth scroll behavior
+function initSmoothScroll() {
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            const href = this.getAttribute('href');
+            if (href === '#' || !href) return;
+            
+            e.preventDefault();
+            const target = document.querySelector(href);
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+}
+
+// Add ripple effect to buttons
+function addRippleEffect() {
+    const buttons = document.querySelectorAll('.nav-item, .chart-btn, button');
+    
+    buttons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.classList.add('ripple');
+            
+            this.appendChild(ripple);
+            
+            setTimeout(() => ripple.remove(), 600);
+        });
+    });
+}
+
+// Interactive plan tooltip for Blocks page
+(function() {
+    // 1. Предотвращаем повторную инициализацию
+    if (window.__tooltipInitialized) {
+        return;
+    }
+    window.__tooltipInitialized = true;
+    
+    // Инициализируем кеш для SVG overlay при первой загрузке
+    if (!window.__cachedPlanOverlay) {
+        // Сохраняем SVG overlay в кеш при первой загрузке страницы
+        const initCache = () => {
+            const overlay = document.querySelector('.plan-overlay');
+            if (overlay && !window.__cachedPlanOverlay) {
+                window.__cachedPlanOverlay = overlay.cloneNode(true);
+            }
+        };
+        
+        // Пытаемся сохранить в кеш сразу, если DOM готов
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initCache);
+        } else {
+            setTimeout(initCache, 100);
+        }
+    }
+
+    let currentArea = null;
+    let tooltip = null;
+    let titleEl = null;
+    let descEl = null;
+
+    function ensurePlanTooltipElement() {
+        // Проверяем существующий элемент
+        if (window.planTooltipElement && document.body && document.body.contains(window.planTooltipElement)) {
+            return window.planTooltipElement;
+        }
+        
+        // Убеждаемся что body готов
+        if (!document.body) {
+            console.warn('initPlanTooltip: document.body not ready');
+            return null;
+        }
+        
+        const tooltipEl = document.createElement('div');
+        tooltipEl.id = 'planTooltip';
+        tooltipEl.className = 'plan-tooltip hidden';
+        tooltipEl.style.cssText = 'position: fixed; z-index: 10000; pointer-events: none;';
+        tooltipEl.innerHTML = `
+            <div class="tooltip-title-row">
+                <span class="tooltip-dot"></span>
+                <span class="tooltip-title">Зона</span>
+            </div>
+            <div class="tooltip-desc">Информация уточняется.</div>
+        `;
+        
+        document.body.appendChild(tooltipEl);
+        window.planTooltipElement = tooltipEl;
+        return tooltipEl;
+    }
+
+    // Функция для проверки класса элемента (работает с SVG и обычными элементами)
+    function hasClass(element, className) {
+        if (!element) return false;
+        // Для SVG элементов используем getAttribute
+        if (element.tagName && ['svg', 'polygon', 'path', 'circle', 'rect'].includes(element.tagName.toLowerCase())) {
+            const classAttr = element.getAttribute('class') || '';
+            return classAttr.split(/\s+/).includes(className);
+        }
+        // Для обычных элементов используем classList
+        if (element.classList) {
+            return element.classList.contains(className);
+        }
+        return false;
+    }
+
+    // Функция для получения полигона из события
+    function getPolygonFromEvent(event) {
+        let target = event.target;
+        if (!target) return null;
+        
+        // Проверяем сам элемент
+        if (hasClass(target, 'plan-area')) {
+            return target;
+        }
+        
+        // Для SVG элементов closest может не работать, проверяем вручную
+        if (target.tagName && target.tagName.toLowerCase() === 'polygon' && hasClass(target, 'plan-area')) {
+            return target;
+        }
+        
+        // Проверяем родительские элементы (на случай вложенных элементов)
+        if (target.closest) {
+            try {
+                const closest = target.closest('.plan-area');
+                if (closest) return closest;
+            } catch (e) {
+                // closest может не работать для SVG в некоторых браузерах
+            }
+        }
+        
+        // Для SVG: проверяем родительские элементы вручную
+        let parent = target.parentElement || target.parentNode;
+        let depth = 0;
+        while (parent && depth < 10) {
+            if (hasClass(parent, 'plan-area')) {
+                return parent;
+            }
+            parent = parent.parentElement || parent.parentNode;
+            depth++;
+        }
+        
+        return null;
+    }
+
+    // Обработчик входа мыши
+    function handleEnter(event) {
+        const polygon = getPolygonFromEvent(event);
+        if (!polygon) {
+            if (currentArea && tooltip) {
+                tooltip.classList.add('hidden');
+                tooltip.classList.remove('visible');
+                currentArea = null;
+                window.currentArea = null;
+            }
+            return;
+        }
+
+        // Инициализируем tooltip при первом использовании
+        if (!tooltip) {
+            tooltip = ensurePlanTooltipElement();
+            if (!tooltip) {
+                console.warn('initPlanTooltip: failed to create tooltip element');
+                return;
+            }
+            titleEl = tooltip.querySelector('.tooltip-title');
+            descEl = tooltip.querySelector('.tooltip-desc');
+            if (!titleEl || !descEl) {
+                console.warn('initPlanTooltip: failed to find tooltip elements');
+                return;
+            }
+        }
+
+        currentArea = polygon;
+        window.currentArea = currentArea;
+        
+        // Получаем данные из data-атрибутов (для SVG используем getAttribute)
+        const label = polygon.dataset?.blockLabel || polygon.getAttribute('data-block-label') || 'Зона';
+        const info = polygon.dataset?.blockInfo || polygon.getAttribute('data-block-info') || 'Информация уточняется.';
+        
+        if (titleEl) titleEl.textContent = label;
+
+        // Если в data-block-info передан HTML (начинается с '<'),
+        // рендерим как HTML (например, список этажей/квартир/жителей/заселённости),
+        // иначе выводим как обычный текст.
+        if (info && info.trim().startsWith('<')) {
+            if (descEl) descEl.innerHTML = info;
+        } else {
+            if (descEl) descEl.textContent = info;
+        }
+
+        if (tooltip) {
+            // Убеждаемся что tooltip видим и правильно позиционирован
+            tooltip.style.display = '';
+            tooltip.style.visibility = 'visible';
+            tooltip.style.opacity = '1';
+            tooltip.classList.remove('hidden');
+            tooltip.classList.add('visible');
+            
+            // Позиционируем tooltip сразу
+            tooltip.style.left = `${event.clientX}px`;
+            tooltip.style.top = `${event.clientY - 16}px`;
+        }
+    }
+
+    // Обработчик движения мыши
+    function moveTooltip(event) {
+        if (!currentArea || !tooltip) return;
+        
+        tooltip.style.left = `${event.clientX}px`;
+        tooltip.style.top = `${event.clientY - 16}px`;
+    }
+
+    // Обработчик выхода мыши
+    function handleLeave(event) {
+        const polygon = getPolygonFromEvent(event);
+        if (!polygon || polygon === currentArea) {
+            if (tooltip) {
+                tooltip.classList.add('hidden');
+                tooltip.classList.remove('visible');
+            }
+            currentArea = null;
+            window.currentArea = null;
+        }
+    }
+
+    // Инициализация: навешиваем делегированные обработчики на document (БЕЗ capture)
+    // Выполняется один раз при загрузке скрипта
+    document.addEventListener('mouseover', handleEnter, { passive: true });
+    document.addEventListener('mousemove', moveTooltip, { passive: true });
+    document.addEventListener('mouseout', handleLeave, { passive: true });
+    
+    // Отладочная функция для проверки работы tooltip
+    window.debugPlanTooltip = function() {
+        console.log('=== Plan Tooltip Debug ===');
+        console.log('Tooltip initialized:', window.__tooltipInitialized);
+        console.log('Current area:', currentArea);
+        console.log('Tooltip element:', tooltip);
+        console.log('Cached overlay:', window.__cachedPlanOverlay ? 'exists' : 'not found');
+        const overlays = document.querySelectorAll('.plan-overlay');
+        console.log('Overlays in DOM:', overlays.length);
+        const polygons = document.querySelectorAll('.plan-area');
+        console.log('Polygons in DOM:', polygons.length);
+        if (polygons.length > 0) {
+            console.log('First polygon:', polygons[0]);
+            console.log('First polygon classes:', polygons[0].getAttribute('class'));
+            console.log('First polygon data:', {
+                blockCode: polygons[0].getAttribute('data-block-code'),
+                blockLabel: polygons[0].getAttribute('data-block-label'),
+                blockInfo: polygons[0].getAttribute('data-block-info')
+            });
+        }
+        const tooltipEl = document.getElementById('planTooltip');
+        if (tooltipEl) {
+            console.log('Tooltip element found:', tooltipEl);
+            console.log('Tooltip classes:', tooltipEl.className);
+            console.log('Tooltip style:', tooltipEl.style.cssText);
+        } else {
+            console.log('Tooltip element NOT found in DOM');
+        }
+    };
+
+    // Экспортируем функцию для внешнего использования (пустая, так как уже инициализировано)
+    window.initPlanTooltip = function() {
+        // Функция уже инициализирована, ничего не делаем
+        console.log('initPlanTooltip: already initialized via IIFE');
+    };
+})();
+
+// Навигация по плану по клику на легенду блоков
+function initPlanLegendNavigation() {
+    const planFrame = document.querySelector('.plan-image-frame');
+    const legendItems = document.querySelectorAll('.plan-legend span[data-block-code]');
+    const areas = document.querySelectorAll('.plan-area[data-block-code]');
+    
+    if (!planFrame || !legendItems.length || !areas.length) {
+        return;
+    }
+    
+    const areaByCode = {};
+    areas.forEach(area => {
+        const code = (area.dataset.blockCode || '').toUpperCase();
+        if (code) {
+            areaByCode[code] = area;
+        }
+    });
+    
+    legendItems.forEach(item => {
+        if (item.dataset.planLegendBound === 'true') return;
+        item.dataset.planLegendBound = 'true';
+        item.style.cursor = 'pointer';
+        
+        item.addEventListener('click', () => {
+            const code = (item.dataset.blockCode || '').toUpperCase();
+            const targetArea = areaByCode[code];
+            
+            // Плавно скроллим к плану
+            planFrame.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+            
+            // Кратко подсвечиваем нужный блок
+            if (targetArea) {
+                targetArea.classList.add('highlight');
+                setTimeout(() => {
+                    targetArea.classList.remove('highlight');
+                }, 1200);
+            }
+        });
+    });
+}
+
+// Add CSS for ripple effect dynamically
+const rippleStyle = document.createElement('style');
+rippleStyle.textContent = `
+    .ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.6);
+        transform: scale(0);
+        animation: ripple-animation 0.6s ease-out;
+        pointer-events: none;
+    }
+    
+    @keyframes ripple-animation {
+        to {
+            transform: scale(2);
+            opacity: 0;
+        }
+    }
+    
+    button, .nav-item, .chart-btn {
+        position: relative;
+        overflow: hidden;
+    }
+`;
+document.head.appendChild(rippleStyle);
+
+// Logout functionality
+function logout() {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('username');
+    window.location.href = '/';
+}
+
+// Add logout button event listener
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.logout-btn')) {
+        logout();
+    }
+});
+
+// Search functionality
+const searchInput = document.querySelector('.search-box input');
+if (searchInput) {
+    searchInput.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        console.log('Searching for:', searchTerm);
+        
+        // TODO: Implement search functionality
+        // This will search through users, buildings, apartments, etc.
+    });
+}
+
+// Notification button
+const notificationBtn = document.querySelector('.notification-btn');
+if (notificationBtn) {
+    notificationBtn.addEventListener('click', function() {
+        console.log('Show notifications');
+        // TODO: Show notifications dropdown
+    });
+}
+
+// Auto-refresh data every 30 seconds
+setInterval(() => {
+    loadDashboardData();
+}, 30000);

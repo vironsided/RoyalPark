@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoyalPark - Личный кабинет</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏢%3C/text%3E%3C/svg%3E">
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/user.css">
+    <link rel="stylesheet" href="/css/resident-detail.css">
+    <link rel="stylesheet" href="/css/dark-theme.css">
+</head>
+<body class="user-app">
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-text">
+                        <h2>RoyalPark</h2>
+                        <p>Личный кабинет</p>
+                    </div>
+                </div>
+                <button class="toggle-sidebar" id="toggleSidebar">
+                    <svg width="20" height="20" fill="currentColor">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <a href="/user/dashboard.html" class="nav-item active" data-user-route="dashboard">
+                        <span class="nav-icon"><i class="bi bi-house-door"></i></span>
+                        <span class="nav-text" data-i18n="user_nav_user_home">Главная</span>
+                    </a>
+                    <a href="/user/dashboard.html#bills" class="nav-item" data-user-route="bills">
+                        <span class="nav-icon"><i class="bi bi-receipt"></i></span>
+                        <span class="nav-text" data-i18n="user_nav_user_bills">Мои счета</span>
+                        <span class="nav-badge">3</span>
+                    </a>
+                    <a href="/user/dashboard.html#report" class="nav-item" data-user-route="report">
+                        <span class="nav-icon"><i class="bi bi-cash-coin"></i></span>
+                        <span class="nav-text" data-i18n="user_nav_user_report">Оплатить счета</span>
+                    </a>
+                    <a href="#payments" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-credit-card"></i></span>
+                        <span class="nav-text">Платежи</span>
+                    </a>
+                    <a href="#meters" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-speedometer"></i></span>
+                        <span class="nav-text">Счетчики</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title" data-i18n="nav_maintenance">ОБСЛУЖИВАНИЕ</div>
+                    <a href="/user/dashboard.html#appeals" class="nav-item" data-user-route="appeals">
+                        <span class="nav-icon"><i class="bi bi-tools"></i></span>
+                        <span class="nav-text" data-i18n="user_nav_user_requests">Заявки</span>
+                    </a>
+                    <a href="#documents" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-file-earmark-text"></i></span>
+                        <span class="nav-text" data-i18n="user_nav_user_documents">Документы</span>
+                    </a>
+                    <a href="#news" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-newspaper"></i></span>
+                        <span class="nav-text" data-i18n="user_nav_user_news">Новости</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title" data-i18n="settings">Настройки</div>
+                    <a href="#profile" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-person-circle"></i></span>
+                        <span class="nav-text" data-i18n="nav_profile">Профиль</span>
+                    </a>
+                    <a href="#notifications" class="nav-item">
+                        <span class="nav-icon"><i class="bi bi-bell"></i></span>
+                        <span class="nav-text" data-i18n="user_nav_notifications">Уведомления</span>
+                    </a>
+                    <a href="#" class="nav-item logout-btn">
+                        <span class="nav-icon"><i class="bi bi-box-arrow-right"></i></span>
+                        <span class="nav-text" data-i18n="logout">Выход</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1 data-i18n="user_dashboard_welcome">Добро пожаловать!</h1>
+                    <div class="page-breadcrumb">
+                        <span class="breadcrumb-item">
+                            <i class="bi bi-house-door"></i> <span data-i18n="home">Главная</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="top-bar-actions">
+                    <button class="notification-btn">
+                        <i class="bi bi-bell-fill"></i>
+                        <span class="notification-badge">2</span>
+                    </button>
+
+                    <!-- Кнопка темы создаётся автоматически в theme.js и будет стоять здесь,
+                         перед переключателем языка (language-selector из i18n.js) -->
+
+                    <div class="user-profile" id="accountProfileBtn">
+                        <div class="user-avatar">ПО</div>
+                        <div class="user-info">
+                            <div class="user-name">Пользователь</div>
+                            <div class="user-role"><span data-i18n="user_apartment_label">Квартира</span> #205</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content" id="userSpaContent">
+                <!-- Collaborative Overview -->
+                <div class="overview-collab">
+                    <div class="resident-card">
+                        <div class="resident-card-header">
+                            <div>
+                                <p class="resident-greeting"><span data-i18n="user_greeting_prefix">Здравствуйте,</span> Vusal Guleli Teymurov</p>
+                                <span class="resident-tag" data-i18n="user_resident_tag">Резидент X / 2</span>
+                            </div>
+                            <div class="resident-amount-box">
+                                <span data-i18n="user_to_pay_month">К оплате за месяц</span>
+                                <strong>0.00</strong>
+                            </div>
+                        </div>
+
+                        <div class="resident-progress">
+                            <div class="resident-progress-labels">
+                                <span data-i18n="user_for_month">За месяц</span>
+                                <span data-i18n="user_paid_short">Оплачено</span>
+                            </div>
+                            <div class="resident-progress-bar">
+                                <div class="resident-progress-fill" style="width: 65%;">
+                                    <span>10.00 / 0.50</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="resident-stats-row">
+                            <div>
+                                <span class="resident-stat-label" data-i18n="user_debt">Долг по счетам</span>
+                                <span class="resident-stat-value">0.00</span>
+                            </div>
+                            <div>
+                                <span class="resident-stat-label" data-i18n="user_advance">Аванс</span>
+                                <span class="resident-stat-value positive">70.00</span>
+                            </div>
+                            <div>
+                                <span class="resident-stat-label" data-i18n="user_to_pay_now">К оплате сейчас</span>
+                                <span class="resident-stat-value">0.00</span>
+                            </div>
+                        </div>
+
+                        <div class="resident-actions">
+                            <div class="resident-actions-left">
+                                <button class="resident-btn subtle" data-user-route-target="resident" data-resident-id data-i18n="user_btn_details">Подробнее</button>
+                                <button class="resident-btn subtle" data-user-route-target="bills" data-i18n="user_btn_my_bills">Мои счета</button>
+                                <button class="resident-btn primary" data-user-route-target="report" data-i18n="user_btn_report_payment">Оплатить счета</button>
+                            </div>
+                            <button class="resident-btn success" data-action="pay-from-advance" data-i18n="user_btn_pay_from_advance">Погасить из аванса</button>
+                        </div>
+                    </div>
+
+                    <div class="resident-side-cards">
+                        <div class="resident-summary-card">
+                            <span class="summary-label" data-i18n="user_debt">Долг по счетам</span>
+                            <span class="summary-value">0.00</span>
+                        </div>
+                        <div class="resident-summary-card accent">
+                            <span class="summary-label" data-i18n="user_advance">Аванс</span>
+                            <span class="summary-value">70.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card solid-blue">
+                        <div class="stat-icon blue">
+                            <i class="bi bi-wallet2"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">₼5,200</div>
+                            <div class="stat-label" data-i18n="user_balance">Баланс</div>
+                            <div class="stat-change positive" data-i18n="status_paid">Оплачено</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-orange">
+                        <div class="stat-icon orange">
+                            <i class="bi bi-receipt-cutoff"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">3</div>
+                            <div class="stat-label" data-i18n="user_unpaid_bills">Неоплаченных счета</div>
+                            <div class="stat-change negative" data-i18n="user_requires_payment">Требует оплаты</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-green">
+                        <div class="stat-icon green">
+                            <i class="bi bi-speedometer2"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">324</div>
+                            <div class="stat-label" data-i18n="user_kwh_per_month">кВт⋅ч за месяц</div>
+                            <div class="stat-change positive" data-i18n="user_energy_change_month">-12% за месяц</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card solid-red">
+                        <div class="stat-icon purple">
+                            <i class="bi bi-tools"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value">1</div>
+                            <div class="stat-label" data-i18n="user_active_request">Активная заявка</div>
+                            <div class="stat-change positive" data-i18n="status_processing">В обработке</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Grid -->
+                <div class="content-grid">
+                    <!-- Bills -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title" data-i18n="user_last_bills">Последние счета</h3>
+                        </div>
+                        <div class="bills-list">
+                            <div class="bill-item">
+                                <div class="bill-icon bill-pending">
+                                    <i class="bi bi-lightning-charge"></i>
+                                </div>
+                                <div class="bill-details">
+                                    <div class="bill-title" data-i18n="user_bill_electricity">Электроэнергия</div>
+                                    <div class="bill-date" data-i18n="month_october_2024">Октябрь 2024</div>
+                                </div>
+                                <div class="bill-amount">
+                                    <div class="bill-sum">₼180.50</div>
+                                    <span class="badge badge-warning" data-i18n="user_to_pay_status">К оплате</span>
+                                </div>
+                            </div>
+
+                            <div class="bill-item">
+                                <div class="bill-icon bill-pending">
+                                    <i class="bi bi-droplet"></i>
+                                </div>
+                                <div class="bill-details">
+                                    <div class="bill-title" data-i18n="user_bill_water">Водоснабжение</div>
+                                    <div class="bill-date" data-i18n="month_october_2024">Октябрь 2024</div>
+                                </div>
+                                <div class="bill-amount">
+                                    <div class="bill-sum">₼45.20</div>
+                                    <span class="badge badge-warning" data-i18n="user_to_pay_status">К оплате</span>
+                                </div>
+                            </div>
+
+                            <div class="bill-item">
+                                <div class="bill-icon bill-pending">
+                                    <i class="bi bi-fire"></i>
+                                </div>
+                                <div class="bill-details">
+                                    <div class="bill-title" data-i18n="user_bill_heating">Отопление</div>
+                                    <div class="bill-date" data-i18n="month_october_2024">Октябрь 2024</div>
+                                </div>
+                                <div class="bill-amount">
+                                    <div class="bill-sum">₼120.00</div>
+                                    <span class="badge badge-warning" data-i18n="user_to_pay_status">К оплате</span>
+                                </div>
+                            </div>
+
+                            <div class="bill-item">
+                                <div class="bill-icon bill-paid">
+                                    <i class="bi bi-check-circle"></i>
+                                </div>
+                                <div class="bill-details">
+                                    <div class="bill-title" data-i18n="user_bill_utilities">Коммунальные услуги</div>
+                                    <div class="bill-date" data-i18n="month_september_2024">Сентябрь 2024</div>
+                                </div>
+                                <div class="bill-amount">
+                                    <div class="bill-sum">₼320.00</div>
+                                    <span class="badge badge-success" data-i18n="status_paid">Оплачено</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="activity-card">
+                        <h3 class="chart-title" data-i18n="user_quick_actions">Быстрые действия</h3>
+                        
+                        <button class="action-button action-primary">
+                            <i class="bi bi-credit-card"></i>
+                            <div>
+                                <div class="action-title" data-i18n="user_quick_pay_bills">Оплатить счета</div>
+                                <div class="action-subtitle">3 неоплаченных</div>
+                            </div>
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+
+                        <button class="action-button action-success">
+                            <i class="bi bi-speedometer"></i>
+                            <div>
+                                <div class="action-title" data-i18n="user_quick_meters">Показания счетчиков</div>
+                                <div class="action-subtitle" data-i18n="user_quick_send_data">Отправить данные</div>
+                            </div>
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+
+                        <button class="action-button action-warning">
+                            <i class="bi bi-tools"></i>
+                            <div>
+                                <div class="action-title" data-i18n="user_quick_new_request">Новая заявка</div>
+                                <div class="action-subtitle" data-i18n="user_quick_report_problem">Сообщить о проблеме</div>
+                            </div>
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+
+                        <button class="action-button action-info">
+                            <i class="bi bi-file-earmark-text"></i>
+                            <div>
+                                <div class="action-title" data-i18n="user_quick_documents">Документы</div>
+                                <div class="action-subtitle" data-i18n="user_quick_view_all">Посмотреть все</div>
+                            </div>
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- News Section -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3><i class="bi bi-newspaper"></i> <span data-i18n="user_news_title">Новости и объявления</span></h3>
+                    </div>
+                    <div class="news-grid">
+                        <div class="news-item">
+                            <div class="news-icon"><i class="bi bi-megaphone"></i></div>
+                            <div class="news-content">
+                                <h4 data-i18n="user_news_1_title">Плановое отключение воды</h4>
+                                <p data-i18n="user_news_1_text">20 октября с 10:00 до 16:00 будет производиться плановое отключение холодной воды.</p>
+                                <span class="news-date"><i class="bi bi-calendar"></i> 15.10.2024</span>
+                            </div>
+                        </div>
+
+                        <div class="news-item">
+                            <div class="news-icon"><i class="bi bi-info-circle"></i></div>
+                            <div class="news-content">
+                                <h4 data-i18n="user_news_2_title">Новая система оплаты</h4>
+                                <p data-i18n="user_news_2_text">Теперь вы можете оплатить счета через мобильное приложение.</p>
+                                <span class="news-date"><i class="bi bi-calendar"></i> 10.10.2024</span>
+                            </div>
+                        </div>
+
+                        <div class="news-item">
+                            <div class="news-icon"><i class="bi bi-star"></i></div>
+                            <div class="news-content">
+                                <h4 data-i18n="user_news_3_title">Улучшение сервиса</h4>
+                                <p data-i18n="user_news_3_text">Мы обновили наш личный кабинет для вашего удобства!</p>
+                                <span class="news-date"><i class="bi bi-calendar"></i> 05.10.2024</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Theme Management -->
+    <script src="/js/theme.js"></script>
+    
+    <!-- Language Management -->
+    <script src="/js/i18n.js"></script>
+    <script src="/js/i18n-auto.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="/js/user.js"></script>
+    <script src="/js/user-spa.js"></script>
+    
+    <!-- Account Settings Modal -->
+    <div class="account-modal-overlay" id="accountModal">
+        <div class="account-modal">
+            <div class="account-modal-header">
+                <h2>Настройки аккаунта</h2>
+                <button class="account-modal-close" id="accountModalClose">&times;</button>
+            </div>
+            <div class="account-modal-body">
+                <!-- Tabs -->
+                <div class="account-tabs">
+                    <button class="account-tab-btn active" data-tab="profile">Профиль</button>
+                    <button class="account-tab-btn" data-tab="password">Пароль</button>
+                </div>
+
+                <!-- Profile tab -->
+                <div class="account-tab-panel active" id="accountTabProfile">
+                    <div class="account-profile-grid">
+                        <div class="account-profile-form">
+                            <div class="account-form-group">
+                                <label>Ф.И.О.</label>
+                                <input type="text" id="accountFullName" placeholder="Введите Ф.И.О.">
+                            </div>
+                            <div class="account-form-row">
+                                <div class="account-form-group">
+                                    <label>Телефон</label>
+                                    <input type="tel" id="accountPhoneInput" placeholder="Номер телефона">
+                                </div>
+                                <div class="account-form-group">
+                                    <label>E-mail</label>
+                                    <input type="email" id="accountEmailInput" placeholder="E-mail">
+                                </div>
+                            </div>
+                            <div class="account-form-row">
+                                <div class="account-form-group">
+                                    <label>Язык интерфейса</label>
+                                    <select id="accountLanguage">
+                                        <option value="ru">Русский</option>
+                                        <option value="az">Azərbaycan</option>
+                                        <option value="en">English</option>
+                                    </select>
+                                </div>
+                                <div class="account-form-group">
+                                    <label>Тема оформления</label>
+                                    <select id="accountTheme">
+                                        <option value="light">Светлая</option>
+                                        <option value="dark">Тёмная</option>
+                                        <option value="auto">Автоматически</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <p class="account-hint">PNG/JPG/WebP, до 4 МБ.</p>
+                        </div>
+
+                        <div class="account-profile-avatar">
+                            <div class="account-avatar-large" id="accountModalAvatar">ПО</div>
+                            <div class="account-form-group">
+                                <label for="accountAvatarInput">Аватар</label>
+                                <input type="file" id="accountAvatarInput" accept="image/*">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Password tab -->
+                <div class="account-tab-panel" id="accountTabPassword">
+                    <div class="account-info-section">
+                        <div class="account-form-group">
+                            <label>Текущий пароль</label>
+                            <input type="password" id="currentPassword" placeholder="Введите текущий пароль">
+                        </div>
+                        <div class="account-form-group">
+                            <label>Новый пароль</label>
+                            <input type="password" id="newPassword" placeholder="Введите новый пароль">
+                        </div>
+                        <div class="account-form-group">
+                            <label>Подтвердите пароль</label>
+                            <input type="password" id="confirmPassword" placeholder="Подтвердите новый пароль">
+                        </div>
+                        <button class="account-btn account-btn-primary" type="button" id="changePasswordBtn">Изменить пароль</button>
+                    </div>
+                </div>
+            </div>
+            <div class="account-modal-footer">
+                <button class="account-btn account-btn-secondary" id="accountModalCancel">Отмена</button>
+                <button class="account-btn account-btn-primary" id="accountModalSave">Сохранить изменения</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/js/notifications.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const accountProfileBtn = document.getElementById('accountProfileBtn');
+            const accountModal = document.getElementById('accountModal');
+            const accountModalClose = document.getElementById('accountModalClose');
+            const accountModalCancel = document.getElementById('accountModalCancel');
+            const accountModalSave = document.getElementById('accountModalSave');
+            
+            let initialAccountState = null;
+            
+            function getAccountState() {
+                const fullName = document.getElementById('accountFullName')?.value || '';
+                const phone = document.getElementById('accountPhoneInput')?.value || '';
+                const email = document.getElementById('accountEmailInput')?.value || '';
+                const lang = document.getElementById('accountLanguage')?.value || '';
+                const theme = document.getElementById('accountTheme')?.value || '';
+                const currentPassword = document.getElementById('currentPassword')?.value || '';
+                const newPassword = document.getElementById('newPassword')?.value || '';
+                const confirmPassword = document.getElementById('confirmPassword')?.value || '';
+                const avatar = document.getElementById('accountAvatarInput')?.value ? 'has-file' : '';
+                
+                return {
+                    fullName,
+                    phone,
+                    email,
+                    lang,
+                    theme,
+                    currentPassword,
+                    newPassword,
+                    confirmPassword,
+                    avatar
+                };
+            }
+            
+            function hasUnsavedAccountChanges() {
+                if (!initialAccountState) return false;
+                const currentState = getAccountState();
+                return Object.keys(initialAccountState).some(
+                    key => initialAccountState[key] !== currentState[key]
+                );
+            }
+            
+            function requestCloseAccountModal() {
+                if (!hasUnsavedAccountChanges()) {
+                    closeAccountModal();
+                    return;
+                }
+                
+                const message = 'Вы уверены, что хотите отменить изменения? Все несохранённые данные будут потеряны.';
+                
+                if (window.showConfirm) {
+                    showConfirm(message, () => {
+                        closeAccountModal();
+                    });
+                } else {
+                    if (confirm(message)) {
+                        closeAccountModal();
+                    }
+                }
+            }
+            
+            // Load user profile from backend
+            async function loadUserProfile() {
+                try {
+                    const response = await fetch('http://localhost:8000/api/users/me/public', {
+                        method: 'GET',
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            window.location.href = '/login.html';
+                            return;
+                        }
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const user = await response.json();
+                    
+                    // Fill form fields
+                    const fullNameInput = document.getElementById('accountFullName');
+                    const phoneInput = document.getElementById('accountPhoneInput');
+                    const emailInput = document.getElementById('accountEmailInput');
+                    const avatarPreview = document.getElementById('accountModalAvatar');
+                    
+                    if (fullNameInput) fullNameInput.value = user.full_name || '';
+                    if (phoneInput) phoneInput.value = user.phone || '';
+                    if (emailInput) emailInput.value = user.email || '';
+                    
+                    // Update avatar
+                    if (avatarPreview) {
+                        if (user.avatar_path) {
+                            avatarPreview.style.backgroundImage = `url('http://localhost:8000${user.avatar_path}')`;
+                            avatarPreview.style.backgroundSize = 'cover';
+                            avatarPreview.style.backgroundPosition = 'center';
+                            avatarPreview.textContent = '';
+                        } else {
+                            // Show initials
+                            const initials = (user.full_name || user.username || 'ПО')
+                                .split(' ')
+                                .map(n => n[0])
+                                .join('')
+                                .toUpperCase()
+                                .substring(0, 2);
+                            avatarPreview.style.backgroundImage = '';
+                            avatarPreview.textContent = initials;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading user profile:', error);
+                    if (window.showError) {
+                        showError('Не удалось загрузить данные профиля');
+                    }
+                }
+            }
+
+            function openAccountModal() {
+                if (accountModal) {
+                    accountModal.classList.add('show');
+                    document.body.style.overflow = 'hidden';
+                    const savedLang = localStorage.getItem('language') || 'ru';
+                    const savedTheme = localStorage.getItem('theme') || 'dark';
+                    const langSelect = document.getElementById('accountLanguage');
+                    const themeSelect = document.getElementById('accountTheme');
+                    if (langSelect) langSelect.value = savedLang;
+                    if (themeSelect) themeSelect.value = savedTheme;
+                    
+                    // Load user profile from backend
+                    loadUserProfile();
+                    
+                    // Сохраняем начальное состояние полей, чтобы отследить изменения
+                    setTimeout(() => {
+                        initialAccountState = getAccountState();
+                    }, 300);
+                }
+            }
+            
+            function closeAccountModal() {
+                if (accountModal) {
+                    accountModal.classList.remove('show');
+                    document.body.style.overflow = '';
+                }
+            }
+            
+            if (accountProfileBtn) {
+                accountProfileBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    openAccountModal();
+                });
+            }
+            
+            if (accountModalClose) accountModalClose.addEventListener('click', requestCloseAccountModal);
+            if (accountModalCancel) accountModalCancel.addEventListener('click', requestCloseAccountModal);
+            
+            if (accountModal) {
+                accountModal.addEventListener('click', function(e) {
+                    if (e.target === accountModal) requestCloseAccountModal();
+                });
+            }
+            
+            // Tabs switching
+            const tabButtons = document.querySelectorAll('.account-tab-btn');
+            const tabPanels = document.querySelectorAll('.account-tab-panel');
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const target = btn.getAttribute('data-tab');
+                    tabButtons.forEach(b => b.classList.remove('active'));
+                    tabPanels.forEach(panel => panel.classList.remove('active'));
+                    btn.classList.add('active');
+                    const panel = document.getElementById(
+                        target === 'profile' ? 'accountTabProfile' : 'accountTabPassword'
+                    );
+                    if (panel) panel.classList.add('active');
+                });
+            });
+
+            // Avatar preview
+            const avatarInput = document.getElementById('accountAvatarInput');
+            const avatarPreview = document.getElementById('accountModalAvatar');
+            if (avatarInput && avatarPreview) {
+                avatarInput.addEventListener('change', function () {
+                    const file = this.files && this.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        avatarPreview.style.backgroundImage = `url('${e.target.result}')`;
+                        avatarPreview.style.backgroundSize = 'cover';
+                        avatarPreview.style.backgroundPosition = 'center';
+                        avatarPreview.textContent = '';
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            // Change password function
+            async function changePassword(currentPassword, newPassword, confirmPassword) {
+                try {
+                    const response = await fetch('http://localhost:8000/api/users/me/change-password/public', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            current_password: currentPassword,
+                            new_password: newPassword,
+                            confirm_password: confirmPassword
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ detail: 'Ошибка при изменении пароля' }));
+                        throw new Error(errorData.detail || 'Ошибка при изменении пароля');
+                    }
+
+                    const result = await response.json();
+                    return result;
+                } catch (error) {
+                    console.error('Error changing password:', error);
+                    throw error;
+                }
+            }
+
+            const changePasswordBtn = document.getElementById('changePasswordBtn');
+            
+            if (changePasswordBtn) {
+                changePasswordBtn.addEventListener('click', async function() {
+                    const currentPassword = document.getElementById('currentPassword')?.value || '';
+                    const newPassword = document.getElementById('newPassword')?.value || '';
+                    const confirmPassword = document.getElementById('confirmPassword')?.value || '';
+                    
+                    if (!currentPassword || !newPassword || !confirmPassword) {
+                        if (window.showError) {
+                            showError('Пожалуйста, заполните все поля пароля.');
+                        } else {
+                            alert('Пожалуйста, заполните все поля пароля.');
+                        }
+                        return;
+                    }
+                    
+                    if (newPassword !== confirmPassword) {
+                        if (window.showError) {
+                            showError('Пароли не совпадают!');
+                        } else {
+                            alert('Пароли не совпадают!');
+                        }
+                        return;
+                    }
+                    
+                    if (newPassword.length < 6) {
+                        if (window.showError) {
+                            showError('Пароль должен быть не менее 6 символов!');
+                        } else {
+                            alert('Пароль должен быть не менее 6 символов!');
+                        }
+                        return;
+                    }
+                    
+                    // Disable button during request
+                    changePasswordBtn.disabled = true;
+                    changePasswordBtn.textContent = 'Изменение...';
+                    
+                    try {
+                        await changePassword(currentPassword, newPassword, confirmPassword);
+                        
+                        if (window.showSuccess) {
+                            showSuccess('Пароль успешно изменён!');
+                        } else {
+                            alert('Пароль успешно изменён!');
+                        }
+                        
+                        document.getElementById('currentPassword').value = '';
+                        document.getElementById('newPassword').value = '';
+                        document.getElementById('confirmPassword').value = '';
+                    } catch (error) {
+                        if (window.showError) {
+                            showError(error.message || 'Ошибка при изменении пароля');
+                        } else {
+                            alert(error.message || 'Ошибка при изменении пароля');
+                        }
+                    } finally {
+                        changePasswordBtn.disabled = false;
+                        changePasswordBtn.textContent = 'Изменить пароль';
+                    }
+                });
+            }
+            
+            // Save profile function
+            async function saveUserProfile() {
+                try {
+                    const fullName = document.getElementById('accountFullName')?.value || '';
+                    const phone = document.getElementById('accountPhoneInput')?.value || '';
+                    const email = document.getElementById('accountEmailInput')?.value || '';
+                    const avatarInput = document.getElementById('accountAvatarInput');
+                    
+                    const formData = new FormData();
+                    formData.append('full_name', fullName);
+                    formData.append('phone', phone);
+                    formData.append('email', email);
+                    
+                    if (avatarInput && avatarInput.files && avatarInput.files[0]) {
+                        formData.append('avatar', avatarInput.files[0]);
+                    }
+                    
+                    const response = await fetch('http://localhost:8000/api/users/me/public', {
+                        method: 'PUT',
+                        credentials: 'include',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            window.location.href = '/login.html';
+                            return;
+                        }
+                        const errorData = await response.json().catch(() => ({ detail: 'Ошибка при сохранении профиля' }));
+                        throw new Error(errorData.detail || 'Ошибка при сохранении профиля');
+                    }
+
+                    const user = await response.json();
+                    return user;
+                } catch (error) {
+                    console.error('Error saving profile:', error);
+                    throw error;
+                }
+            }
+
+            if (accountModalSave) {
+                accountModalSave.addEventListener('click', async function() {
+                    const langSelect = document.getElementById('accountLanguage');
+                    const themeSelect = document.getElementById('accountTheme');
+                    
+                    // Disable button during request
+                    accountModalSave.disabled = true;
+                    const originalText = accountModalSave.textContent;
+                    accountModalSave.textContent = 'Сохранение...';
+                    
+                    try {
+                        // Save profile to backend
+                        await saveUserProfile();
+                        
+                        // Save language and theme to localStorage
+                        if (langSelect) {
+                            const lang = langSelect.value;
+                            localStorage.setItem('language', lang);
+                            if (window.i18n) {
+                                if (typeof window.i18n.changeLanguage === 'function') {
+                                    window.i18n.changeLanguage(lang);
+                                } else if (typeof window.i18n.applyLanguage === 'function') {
+                                    window.i18n.applyLanguage(lang);
+                                }
+                            }
+                        }
+                        
+                        if (themeSelect && themeSelect.value !== 'auto') {
+                            localStorage.setItem('theme', themeSelect.value);
+                            document.documentElement.setAttribute('data-theme', themeSelect.value);
+                        }
+                        
+                        if (window.showSuccess) {
+                            showSuccess('Настройки сохранены!');
+                        } else {
+                            alert('Настройки сохранены!');
+                        }
+                        
+                        // Clear password fields
+                        document.getElementById('currentPassword').value = '';
+                        document.getElementById('newPassword').value = '';
+                        document.getElementById('confirmPassword').value = '';
+                        
+                        closeAccountModal();
+                        
+                        // Reload page to update UI with new settings
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 350);
+                    } catch (error) {
+                        if (window.showError) {
+                            showError(error.message || 'Ошибка при сохранении профиля');
+                        } else {
+                            alert(error.message || 'Ошибка при сохранении профиля');
+                        }
+                    } finally {
+                        accountModalSave.disabled = false;
+                        accountModalSave.textContent = originalText;
+                    }
+                });
+            }
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && accountModal && accountModal.classList.contains('show')) {
+                    requestCloseAccountModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

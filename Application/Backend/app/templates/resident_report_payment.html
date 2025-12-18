@@ -1,0 +1,57 @@
+{% extends "resident_base.html" %}
+{% block title %}Сообщить об оплате{% endblock %}
+{% block content %}
+
+<h4 class="mb-3">Сообщить об оплате</h4>
+
+<div class="card">
+  <div class="card-body">
+    <form method="post" action="/resident/report-payment" class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Дом</label>
+        <select name="resident_id" class="form-select" required>
+          {% for r in residents %}
+            <option value="{{ r.id }}" {{ 'selected' if (preselect is defined and preselect==r.id) }}>
+              {{ r.block.name }} / {{ r.unit_number }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Дата оплаты</label>
+        <input type="date" name="received_at" class="form-control" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Сумма</label>
+        <input type="number" name="amount_total" step="0.01" min="0.01" class="form-control" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Метод</label>
+        <select name="method" class="form-select">
+          <option value="TRANSFER">TRANSFER</option>
+          <option value="CARD">CARD</option>
+          <option value="CASH">CASH</option>
+          <option value="ONLINE">ONLINE</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">№/Референс</label>
+        <input name="reference" class="form-control" placeholder="номер квитанции/перевода">
+      </div>
+      <div class="col-md-8">
+        <label class="form-label">Комментарий</label>
+        <input name="comment" class="form-control" placeholder="любая доп. информация">
+      </div>
+
+      <div class="col-12 d-flex justify-content-end gap-2">
+        <a class="btn btn-outline-secondary" href="/resident/invoices">Отмена</a>
+        <button class="btn btn-primary">Отправить</button>
+      </div>
+    </form>
+    <div class="form-text mt-2">
+      После отправки оператор проверит информацию и применит платёж к вашим счетам.
+    </div>
+  </div>
+</div>
+
+{% endblock %}

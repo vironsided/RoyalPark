@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Подробно: Показатели{% endblock %}
+{% block content %}
+
+{# ---------- Вспомогательные макросы ---------- #}
+{% macro meter_label(mt) -%}
+  {%- if mt == 'ELECTRIC' -%}Электричество
+  {%- elif mt == 'GAS' -%}Газ
+  {%- elif mt == 'WATER' -%}Вода
+  {%- elif mt == 'SEWERAGE' -%}Канализация
+  {%- elif mt == 'SERVICE' -%}Сервис
+  {%- elif mt == 'RENT' -%}Аренда
+  {%- elif mt == 'CONSTRUCTION' -%}Строительство
+  {%- else -%}Неизвестно
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro unit_label(mt) -%}
+  {%- if mt == 'ELECTRIC' -%}кВт·ч
+  {%- elif mt in ['GAS','WATER','SEWERAGE'] -%}м³
+  {%- elif mt in ['SERVICE','RENT','CONSTRUCTION'] -%}мес.
+  {%- else -%}—
+  {%- endif -%}
+{%- endmacro %}
+
+{# ---------- Верхняя панель ---------- #}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <a href="{{ request.url_for('list_readings') }}" class="btn btn-outline-secondary">
+    ← Назад
+  </a>
+  <h4 class="mb-0">Резидент: {{ resident.block.name }} / {{ resident.unit_number }}</h4>
+  <div></div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+
+    {% for m in meters %}
+      {% set mt = m.meter_type.value %}
+      {% set unit = unit_label(mt) %}
+      {% set show_serial = (mt not in ['SERVICE','RENT','CONSTRUCTION']) and (m.serial_number and m.serial_number|length>0) %}
+
+      {# ---------- Шапка секции счётчика ---------- #}
+      <div class="d-flex align-items-center justify-content-between mt-3 mb-2 pb-1 border-bottom">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span class="badge bg-secondary-subtle text-secondary-emphasis">
+            {{ meter_label(mt) }}
+          </span>
+          {% if show_serial %}
+            <span class="text-secondary">№ {{ m.serial_number }}</span>
+          {% endif %}
+          <span class="text-secondary">тариф: {{ m.tariff.name }}</span>
+        </div>
+        <span class="badge bg-secondary">{{ unit }}</span>
+      </div>
+
+      {# ---------- Таблица истории ---------- #}
+      <div class="table-responsive">
+        <table class="table table-dark table-striped align-middle mb-3">
+          <thead>
+            <tr>
+              <th style="width: 180px;">Дата</th>
+              <th class="text-end">Показание, {{ unit }}</th>
+              <th class="text-end">Расход, {{ unit }}</th>
+              <th class="text-end">Начислено</th>
+              <th class="text-center" style="width:110px;">НДС, %</th>
+              <th>Комментарий</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for rd in history[m.id] %}
+            <tr>
+              <td>{{ rd.reading_date.strftime('%Y-%m-%d') }}</td>
+              <td class="text-end">{{ '%.3f'|format(rd.value) }}</td>
+              <td class="text-end">{{ '%.3f'|format(rd.consumption) }}</td>
+              <td class="text-end text-danger fw-semibold">{{ '%.2f'|format(rd.amount_total) }}</td>
+              <td class="text-center">{{ rd.vat_percent }}</td>
+              <td>{{ rd.note or '—' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="text-secondary">Нет записей</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endfor %}
+
+  </div>
+</div>
+
+{% endblock %}

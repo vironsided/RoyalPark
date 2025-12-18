@@ -1,0 +1,113 @@
+{#-----------------------------------------------------------------------------
+  Template: app/templates/resident_invoices.html
+  Author: Mamedli Ayaz
+  Purpose: ЛК жителя — список его счетов
+-----------------------------------------------------------------------------#}
+{% extends "resident_base.html" %}
+{% block title %}Мои счета{% endblock %}
+{% block content %}
+
+{% set ok = request.query_params.get('ok') %}
+{% if ok == 'payment_reported' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Спасибо! Ваша информация об оплате отправлена на проверку.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h4 class="mb-0">Мои счета</h4>
+  <a class="btn btn-outline-primary btn-sm" href="/resident/report-payment">Сообщить об оплате</a>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form class="row g-2 align-items-end" method="get" action="/resident/invoices">
+      <div class="col-md-3">
+        <label class="form-label">Статус</label>
+        <select name="status_val" class="form-select">
+          <option value="" {{ 'selected' if not status_val }}>Все</option>
+          {% for s in InvoiceStatus %}
+            <option value="{{ s.value }}" {{ 'selected' if status_val==s.value }}>{{ s.value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-9 d-flex gap-2 justify-content-end">
+        <button class="btn btn-outline-secondary">Фильтр</button>
+        {% if status_val %}<a class="btn btn-outline-warning" href="/resident/invoices">Очистить</a>{% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-dark table-striped align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Период</th>
+            <th>Дом</th>
+            <th>№</th>
+            <th>Статус</th>
+            <th class="text-end">Итого</th>
+            <th class="text-end">Оплачено / Остаток</th>
+            <th>Срок оплаты</th>
+            <th class="text-end" style="width:220px;">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in items %}
+            {% set paid = (paid_map.get(inv.id) if paid_map is defined else 0) | float %}
+            {% set total = (inv.amount_total or 0) | float %}
+            {% set left  = (total - paid) %}
+            <tr>
+              <td>
+                <!-- Период из period_map, если есть, иначе из inv.period_year и inv.period_month -->
+                {% set p = period_map.get(inv.id) if period_map is defined else None %}
+                {% if p %}
+                  {% set start = p.get('start') %}
+                  {% set end = p.get('end') %}
+                  {% if start and start != end %}
+                    {{ start }} - {{ end }}
+                  {% else %}
+                    {{ end or start }}
+                  {% endif %}
+                {% else %}
+                  {{ inv.period_year }}-{{ "%02d"|format(inv.period_month) }}
+                {% endif %}
+              </td>
+              <!-- <td>{{ inv.period_year }}-{{ "%02d"|format(inv.period_month) }}</td> -->
+              <td>{{ inv.resident.block.name }} / {{ inv.resident.unit_number }}</td>
+              <td>{{ inv.number or '—' }}</td>
+              <td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ inv.status.value }}</span></td>
+              <td class="text-end text-danger fw-semibold">{{ '%.2f'|format(inv.amount_total) }}</td>
+              <td class="text-end">
+                {% if total > 0 %}
+                  {% if left <= 0 %}
+                    <span class="badge bg-success-subtle text-success-emphasis">Оплачено {{ '%.2f'|format(total) }} / Остаток 0.00</span>
+                  {% elif paid > 0 %}
+                    <span class="badge bg-warning-subtle text-warning-emphasis">Оплачено {{ '%.2f'|format(paid) }} / Остаток {{ '%.2f'|format(left) }}</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Оплачено 0.00 / Остаток {{ '%.2f'|format(total) }}</span>
+                  {% endif %}
+                {% endif %}
+              </td>
+              <td>{{ inv.due_date or '—' }}</td>
+              <td class="text-end">
+                <div class="d-inline-flex gap-2">
+                  <a class="btn btn-sm btn-outline-info" href="/resident/invoice/{{ inv.id }}">Открыть</a>
+                  <a class="btn btn-sm btn-outline-secondary" href="/invoices/{{ inv.id }}/print" target="_blank">PDF</a>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="8" class="text-secondary">Счета не найдены</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

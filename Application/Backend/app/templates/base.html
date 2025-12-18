@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ru" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Админка{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/custom.css" rel="stylesheet">
+</head>
+<body>
+
+{% set path = request.url.path %}
+{% set auth_page = (path == '/login') or (path == '/force-change-password') %}
+
+<div class="container-fluid">
+    <div class="row">
+
+        {# ЛЕВОЕ МЕНЮ: показываем только НЕ на auth-страницах #}
+        {% if not auth_page %}
+        <nav class="col-12 col-md-3 col-lg-2 border-end py-3 d-flex flex-column min-vh-100">
+            <h6 class="px-3 mb-3 text-muted">
+                Навигация для {{ (user.username if user else (actor.username if actor else 'гость')) }}
+            </h6>
+
+
+            {% set current = user if user else actor if actor else None %}
+
+            <ul class="nav nav-pills flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if path == '/' %}active{% endif %}" href="/">Dashboard</a>
+                </li>
+
+                {% if current and current.role in ['ROOT','ADMIN'] %}
+                <li class="nav-item">
+                    <a class="nav-link {% if path.startswith('/blocks') %}active{% endif %}" href="/blocks">Блоки</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if path.startswith('/tariffs') %}active{% endif %}" href="/tariffs">Тарифы</a>
+                </li>
+                {% endif %}
+
+                {% if current and current.role in ['ROOT','ADMIN','OPERATOR'] %}
+                <li class="nav-item">
+                    <a class="nav-link {% if path.startswith('/residents') %}active{% endif %}" href="/residents">Резиденты</a>
+                </li>
+                {% endif %}
+                {% if current and current.role in ['ROOT','ADMIN','OPERATOR'] %}
+                <li class="nav-item">
+                    <a class="nav-link {% if path.startswith('/users') %}active{% endif %}" href="/users">Пользователи</a>
+                </li>
+                {% endif %}
+                {% if current and current.role in ['ROOT','ADMIN','OPERATOR'] %}
+                <li class="nav-item">
+                    <a class="nav-link {% if path.startswith('/tenants') %}active{% endif %}" href="/tenants">Жители</a>
+                </li>
+                {% endif %}
+
+                {% if current and current.role in ['ROOT','ADMIN','OPERATOR'] %}
+                <li class="nav-item">
+                    <a class="nav-link {% if path.startswith('/readings') %}active{% endif %}" href="/readings">Показатели</a>
+                </li>
+                {% endif %}
+                {% if current and current.role in ['ROOT','ADMIN','OPERATOR'] %}
+                <li class="nav-item">
+                  <a class="nav-link {% if path.startswith('/invoices') %}active{% endif %}" href="/invoices">
+                    Счета
+                  </a>
+                </li>
+                {% endif %}
+                {% if current and current.role in ['ROOT','ADMIN','OPERATOR'] %}
+                <li class="nav-item">
+                  <a class="nav-link {% if path.startswith('/payments') %}active{% endif %}" href="/payments">Платежи</a>
+                </li>
+                {% endif %}
+                {% if current and current.role in ['ROOT','ADMIN','OPERATOR'] %}
+                <li class="nav-item">
+                  <a class="nav-link {% if path.startswith('/notifications') %}active{% endif %}" href="/notifications">
+                    Обращения
+                  </a>
+                </li>
+                {% endif %}
+            </ul>
+
+
+            <div class="mt-auto px-3 pt-3 border-top">
+                <a href="/logout" class="btn btn-outline-danger w-100">Выход</a>
+            </div>
+        </nav>
+        {% endif %}
+
+        {# ПРАВАЯ ЧАСТЬ: один-единственный block content, а обёртку меняем условно #}
+        <main class="{% if auth_page %}col-12{% else %}col-12 col-md-9 col-lg-10{% endif %} py-3
+                 {% if auth_page %} d-flex align-items-center justify-content-center min-vh-100{% endif %}">
+            {% if auth_page %}
+            <div class="w-100" style="max-width:520px;">{% endif %}
+
+                {% block content %}{% endblock %}
+
+                {% if auth_page %}
+            </div>
+            {% endif %}
+        </main>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+{% extends "resident_base.html" %}
+{% block title %}Обращение{% endblock %}
+{% block content %}
+
+{% set err = request.query_params.get('error') %}
+{% if err == 'message_short' %}
+  <div class="alert alert-warning">Опишите проблему подробнее (не менее 5 символов).</div>
+{% elif err == 'bad_resident' %}
+  <div class="alert alert-warning">Выберите один из ваших домов.</div>
+{% elif err == 'notfound' %}
+  <div class="alert alert-warning">Обращение не найдено.</div>
+{% elif err == 'edit_forbidden' %}
+  <div class="alert alert-warning">Нельзя редактировать сообщение после прочтения оператором.</div>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title mb-3">Сообщить о проблеме</h5>
+        {% if not residents %}
+          <p class="text-secondary mb-0">У вас пока нет привязанных домов. Обратитесь к оператору, чтобы добавить дом.</p>
+        {% else %}
+          <form method="post" action="/resident/notifications" class="row g-3">
+            <div class="col-12">
+              <label class="form-label" for="resident_id">Дом</label>
+              <select class="form-select" id="resident_id" name="resident_id" required>
+                {% for r in residents %}
+                  <option value="{{ r.id }}">{{ r.block.name }} / {{ r.unit_number }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="message">Опишите проблему</label>
+              <textarea class="form-control" id="message" name="message" rows="6"
+                        minlength="5" maxlength="2000" required
+                        placeholder="Например: в доме 12Б не работает уличное освещение..."></textarea>
+              <div class="form-text text-secondary">Максимум 2000 символов.</div>
+            </div>
+            <div class="col-12 d-flex justify-content-end">
+              <button class="btn btn-primary">Отправить</button>
+            </div>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title mb-3">Недавние обращения</h5>
+        {% if notifications %}
+          <div class="list-group list-group-flush overflow-auto" style="max-height: 420px;">
+            {% for n in notifications %}
+              {% set payload = {
+                "id": n.id,
+                "block": n.resident.block.name if n.resident else None,
+                "unit": n.resident.unit_number if n.resident else None,
+                "created": n.created_at.strftime('%d.%m.%Y %H:%M'),
+                "status": n.status.value,
+                "message": n.message,
+                "can_edit": (n.status == NotificationStatus.UNREAD)
+              } %}
+              <div class="list-group-item bg-transparent text-white">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                  <div>
+                    <div class="fw-semibold">{{ payload.block or '—' }} / {{ payload.unit or '—' }}</div>
+                    <div class="small text-secondary">{{ payload.created }}</div>
+                  </div>
+                  {% if n.status == NotificationStatus.UNREAD %}
+                    <span class="badge bg-warning text-dark">не прочитано</span>
+                  {% else %}
+                    <span class="badge bg-success">прочитано</span>
+                  {% endif %}
+                </div>
+                <!-- <div class="small text-secondary mt-2">
+                  {{ n.message[:140] ~ ('…' if n.message|length > 140 else '') }}
+                </div> -->
+                <div class="mt-2 d-flex gap-2 flex-wrap">
+                  <button type="button"
+                          class="btn btn-sm btn-outline-info js-view"
+                          data-payload='{{ payload|tojson|e }}'>
+                    Просмотр
+                  </button>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-secondary mb-0">Пока нет отправленных обращений.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="residentNotificationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Обращение</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <dl class="row">
+          <dt class="col-sm-4">Дом</dt>
+          <dd class="col-sm-8" id="modalResidentInfo">—</dd>
+          <dt class="col-sm-4">Создано</dt>
+          <dd class="col-sm-8" id="modalCreatedAt">—</dd>
+          <dt class="col-sm-4">Статус</dt>
+          <dd class="col-sm-8" id="modalStatusText">—</dd>
+        </dl>
+        <div id="modalMessagePreview" class="mb-3 text-break"></div>
+
+        <form method="post" id="notificationEditForm" class="d-none">
+          <div class="mb-3">
+            <label class="form-label" for="modalMessageInput">Изменить текст обращения</label>
+            <textarea class="form-control" id="modalMessageInput" name="message" rows="5" minlength="5" maxlength="2000" required></textarea>
+            <div class="form-text text-secondary">Можно редактировать до прочтения оператором.</div>
+          </div>
+          <div class="d-flex justify-content-end">
+            <button class="btn btn-primary">Сохранить</button>
+          </div>
+        </form>
+
+        <form method="post" id="notificationDeleteForm" class="mt-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="text-secondary small">Удаление без возможности восстановления.</span>
+            <button class="btn btn-outline-danger btn-sm" onclick="return confirm('Удалить это обращение?')">Удалить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const modalEl = document.getElementById('residentNotificationModal');
+  if (!modalEl) return;
+  const modal = new bootstrap.Modal(modalEl);
+  const residentInfo = document.getElementById('modalResidentInfo');
+  const createdAt = document.getElementById('modalCreatedAt');
+  const statusText = document.getElementById('modalStatusText');
+  const messagePreview = document.getElementById('modalMessagePreview');
+  const editForm = document.getElementById('notificationEditForm');
+  const deleteForm = document.getElementById('notificationDeleteForm');
+  const messageInput = document.getElementById('modalMessageInput');
+
+  document.querySelectorAll('.js-view').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const payload = JSON.parse(btn.dataset.payload || '{}');
+      residentInfo.textContent = `${payload.block ?? '—'} / ${payload.unit ?? '—'}`;
+      createdAt.textContent = payload.created ?? '—';
+      const statusLabel = payload.status === 'UNREAD' ? 'Не прочитано' : 'Прочитано';
+      statusText.textContent = statusLabel;
+      messagePreview.textContent = payload.message || '';
+
+      deleteForm.action = `/resident/notifications/${payload.id}/delete`;
+
+      if (payload.can_edit) {
+        editForm.classList.remove('d-none');
+        editForm.action = `/resident/notifications/${payload.id}/update`;
+        messageInput.value = payload.message || '';
+      } else {
+        editForm.classList.add('d-none');
+        editForm.removeAttribute('action');
+        messageInput.value = '';
+      }
+
+      modal.show();
+    });
+  });
+});
+</script>
+
+{% endblock %}
+

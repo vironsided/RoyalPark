@@ -1,0 +1,784 @@
+<link rel="stylesheet" href="/admin/content_css/logs.css">
+<div class="content-wrapper">
+    <div style="position: relative;">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3>История действий (логи показаний)</h3>
+            </div>
+            
+            <!-- Filters Section -->
+            <div class="card-body">
+                <div class="logs-filters mb-4">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Действие</label>
+                            <select id="filterAction" class="form-select">
+                                <option value="">Все</option>
+                                <option value="CREATE">Создание</option>
+                                <option value="UPDATE">Обновление</option>
+                                <option value="DELETE">Удаление</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Резидент</label>
+                            <select id="filterResident" class="form-select">
+                                <option value="">Все</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Пользователь</label>
+                            <select id="filterUser" class="form-select">
+                                <option value="">Все</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-12">
+                            <button class="btn btn-primary" onclick="applyFilters()">
+                                <i class="bi bi-funnel"></i> Применить фильтры
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                                <i class="bi bi-x-circle"></i> Очистить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Table -->
+                <div class="table-responsive">
+                    <table class="table logs-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>ДАТА/ВРЕМЯ</th>
+                                <th>ДЕЙСТВИЕ</th>
+                                <th>РЕЗИДЕНТ</th>
+                                <th>СЧЁТЧИК</th>
+                                <th>ПОЛЬЗОВАТЕЛЬ</th>
+                                <th>ДЕТАЛИ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsTableBody">
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">Загрузка...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                
+            </div>
+                    <!-- Pagination -->
+        <div class="table-pagination">
+            <div class="pagination-controls" id="logPaginationControls">
+                    <button class="btn-pagination" onclick="goToLogPage('prev')" disabled id="logPrevBtn">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </button>
+                <div id="logPageButtons" class="pagination-pages"></div>
+                    <button class="btn-pagination" onclick="goToLogPage('next')" disabled id="logNextBtn">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </button>
+                </div>
+                <div class="pagination-info">
+                    <span>Стр. <span id="logCurrentPage">1</span> из <span id="logTotalPages">1</span> · всего <span id="logTotalItems">0</span></span>
+                </div>
+                <div class="pagination-per-page">
+                    <span>На</span>
+                    <span>странице:</span>
+                    <div class="custom-pag-select" id="customLogItemsPerPage">
+                        <select id="logItemsPerPage" onchange="changeLogItemsPerPage()" style="display: none;">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <div class="select-btn">
+                            <span class="select-text">25</span>
+                            <span class="arrow">▾</span>
+                        </div>
+                        <div class="select-options" style="background: rgba(36, 40, 49, 0.95) !important">
+                            <div class="select-option" data-value="10">10</div>
+                            <div class="select-option selected" data-value="25">25</div>
+                            <div class="select-option" data-value="50">50</div>
+                            <div class="select-option" data-value="100">100</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+    
+    const API_BASE = 'http://localhost:8000';
+    
+    // Pagination state
+    let paginationState = {
+        currentPage: 1,
+        itemsPerPage: 25,
+        totalItems: 0,
+        totalPages: 1
+    };
+    
+    let residents = [];
+    let users = [];
+    
+    // Загрузка списков для фильтров
+    async function loadFilterData() {
+        try {
+            // Загружаем резидентов
+            const residentsResp = await fetch(`${API_BASE}/api/residents/public`, { credentials: 'include' }).catch(() => 
+                fetch(`${API_BASE}/api/residents`, { credentials: 'include' })
+            );
+            if (residentsResp.ok) {
+                const residentsData = await residentsResp.json();
+                residents = Array.isArray(residentsData) ? residentsData : (residentsData.residents || []);
+                
+                const residentSelect = document.getElementById('filterResident');
+                if (residentSelect) {
+                    residents.forEach(r => {
+                        const option = document.createElement('option');
+                        option.value = r.id;
+                        option.textContent = `${r.block_name || ''}/${r.unit_number || ''}`;
+                        residentSelect.appendChild(option);
+                    });
+                }
+            }
+            
+            // Загружаем пользователей
+            const usersResp = await fetch(`${API_BASE}/api/users/public`, { credentials: 'include' }).catch(() => 
+                fetch(`${API_BASE}/api/users`, { credentials: 'include' })
+            );
+            if (usersResp.ok) {
+                const usersData = await usersResp.json();
+                users = Array.isArray(usersData) ? usersData : (usersData.users || []);
+                
+                const userSelect = document.getElementById('filterUser');
+                if (userSelect) {
+                    users.forEach(u => {
+                        const option = document.createElement('option');
+                        option.value = u.id;
+                        option.textContent = u.username || u.full_name || `User ${u.id}`;
+                        userSelect.appendChild(option);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error loading filter data:', error);
+        }
+    }
+    
+    // Загрузка логов
+    async function loadLogs() {
+        const tbody = document.getElementById('logsTableBody');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Загрузка...</td></tr>';
+        }
+        
+        try {
+            const action = document.getElementById('filterAction')?.value || '';
+            const residentId = document.getElementById('filterResident')?.value || '';
+            const userId = document.getElementById('filterUser')?.value || '';
+            
+            const params = new URLSearchParams();
+            params.append('page', paginationState.currentPage);
+            params.append('per_page', paginationState.itemsPerPage);
+            if (action) params.append('action', action);
+            if (residentId) params.append('resident_id', residentId);
+            if (userId) params.append('user_id', userId);
+            
+            const url = `${API_BASE}/api/logs/reading-logs?${params.toString()}`;
+            console.log('Loading logs from:', url);
+            console.log('Pagination state:', paginationState);
+            
+            const response = await fetch(url, { credentials: 'include' }).catch(() => 
+                fetch(url)
+            );
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Logs loaded:', data);
+            console.log('Data structure:', {
+                hasLogs: !!data.logs,
+                hasTotal: !!data.total,
+                hasPage: !!data.page,
+                hasLastPage: !!data.last_page,
+                logsCount: data.logs?.length || 0
+            });
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Handle paginated response
+            if (data.logs && Array.isArray(data.logs)) {
+                // Update pagination state
+                paginationState.totalItems = data.total || 0;
+                paginationState.totalPages = data.last_page || 1;
+                paginationState.currentPage = data.page || 1;
+                
+                renderLogs(data.logs);
+                updatePaginationUI();
+            } else {
+                // Fallback for non-paginated response
+                console.warn('Unexpected data format:', data);
+                paginationState.totalItems = 0;
+                paginationState.totalPages = 1;
+                paginationState.currentPage = 1;
+                renderLogs([]);
+                updatePaginationUI();
+            }
+        } catch (error) {
+            console.error('Error loading logs:', error);
+            const tbody = document.getElementById('logsTableBody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Ошибка загрузки логов: ' + error.message + '</td></tr>';
+            }
+            // Reset pagination state on error
+            paginationState.totalItems = 0;
+            paginationState.totalPages = 1;
+            paginationState.currentPage = 1;
+            updatePaginationUI();
+        }
+    }
+    
+    function renderLogs(logs) {
+        const tbody = document.getElementById('logsTableBody');
+        if (!tbody) return;
+        
+        if (!logs.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Нет логов</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = logs.map(log => {
+            // Определяем класс бейджа для действия
+            let actionClass = 'badge-info';
+            if (log.action === 'СОЗДАНИЕ') {
+                actionClass = 'badge-success';
+            } else if (log.action === 'УДАЛЕНИЕ') {
+                actionClass = 'badge-danger';
+            } else if (log.action === 'ОБНОВЛЕНИЕ') {
+                actionClass = 'badge-warning';
+            }
+            
+            return `
+                <tr>
+                    <td>${log.id}</td>
+                    <td>${log.date_time}</td>
+                    <td><span class="badge ${actionClass}">${log.action}</span></td>
+                    <td>${log.resident}</td>
+                    <td>${log.meter}</td>
+                    <td>${log.user}</td>
+                    <td>${log.details}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    // Pagination Functions
+    function buildLogPageList(current, total) {
+        if (total <= 5) {
+            return Array.from({ length: total }, (_, i) => i + 1);
+        }
+        const pages = new Set([1, total]);
+        if (current <= 3) {
+            [2, 3, 4, 5].forEach(p => pages.add(p));
+        } else if (current >= total - 2) {
+            [total - 1, total - 2, total - 3, total - 4].forEach(p => pages.add(p));
+        } else {
+            [current - 2, current - 1, current, current + 1, current + 2].forEach(p => pages.add(p));
+        }
+        const sorted = Array.from(pages).filter(p => p >= 1 && p <= total).sort((a, b) => a - b);
+        const result = [];
+        for (let i = 0; i < sorted.length; i++) {
+            const page = sorted[i];
+            result.push(page);
+            const next = sorted[i + 1];
+            if (next && next - page > 1) {
+                result.push('dots');
+            }
+        }
+        return result;
+    }
+
+    function updatePaginationUI() {
+        const currentPageEl = document.getElementById('logCurrentPage');
+        const totalPagesEl = document.getElementById('logTotalPages');
+        const totalItemsEl = document.getElementById('logTotalItems');
+        const prevBtn = document.getElementById('logPrevBtn');
+        const nextBtn = document.getElementById('logNextBtn');
+        const pagesContainer = document.getElementById('logPageButtons');
+        
+        if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
+        if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
+        if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
+        if (prevBtn) prevBtn.disabled = paginationState.currentPage <= 1;
+        if (nextBtn) nextBtn.disabled = paginationState.currentPage >= paginationState.totalPages;
+
+        if (!pagesContainer) return;
+        pagesContainer.innerHTML = '';
+
+        const pages = buildLogPageList(paginationState.currentPage, paginationState.totalPages);
+        pages.forEach(p => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-pagination';
+
+            if (p === 'dots') {
+                btn.textContent = '...';
+                btn.disabled = true;
+                btn.classList.add('dots');
+            } else {
+                btn.textContent = p;
+                if (p > paginationState.totalPages) {
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => {
+                        if (p !== paginationState.currentPage) {
+                            goToLogPage(p);
+                        }
+                    };
+                }
+                if (p === paginationState.currentPage) {
+                    btn.classList.add('active');
+                    btn.setAttribute('aria-current', 'page');
+                }
+            }
+
+            pagesContainer.appendChild(btn);
+        });
+    }
+    
+    window.goToLogPage = function(page) {
+        console.log('goToLogPage called with:', page, 'Current state:', paginationState);
+        if (page === 'prev') {
+            if (paginationState.currentPage > 1) {
+                paginationState.currentPage--;
+                console.log('Going to previous page:', paginationState.currentPage);
+                loadLogs();
+            }
+        } else if (page === 'next') {
+            if (paginationState.currentPage < paginationState.totalPages) {
+                paginationState.currentPage++;
+                console.log('Going to next page:', paginationState.currentPage);
+                loadLogs();
+            }
+        } else if (typeof page === 'number' && page >= 1 && page <= paginationState.totalPages) {
+            paginationState.currentPage = page;
+            console.log('Going to page:', paginationState.currentPage);
+            loadLogs();
+        } else {
+            console.warn('Invalid page number:', page);
+        }
+    };
+    
+    window.changeLogItemsPerPage = function() {
+        const select = document.getElementById('logItemsPerPage');
+        if (select) {
+            const newValue = parseInt(select.value);
+            console.log('changeLogItemsPerPage called, new value:', newValue);
+            paginationState.itemsPerPage = newValue;
+            paginationState.currentPage = 1;
+            loadLogs();
+            updateCustomLogPaginationDropdown();
+        } else {
+            console.error('logItemsPerPage select not found');
+        }
+    };
+    
+    function updateCustomLogPaginationDropdown() {
+        const select = document.getElementById('logItemsPerPage');
+        const customSelect = document.getElementById('customLogItemsPerPage');
+        if (!select || !customSelect) {
+            console.warn('updateCustomLogPaginationDropdown: select or customSelect not found');
+            return;
+        }
+        
+        // Sync select value with paginationState
+        const currentValue = paginationState.itemsPerPage.toString();
+        if (select.value !== currentValue) {
+            select.value = currentValue;
+        }
+        
+        const selectText = customSelect.querySelector('.select-text');
+        const options = customSelect.querySelectorAll('.select-option');
+        
+        if (selectText) {
+            selectText.textContent = currentValue;
+            console.log('Updated select text to:', currentValue);
+        }
+        
+        options.forEach(opt => {
+            opt.classList.remove('selected');
+            if (opt.getAttribute('data-value') === currentValue) {
+                opt.classList.add('selected');
+            }
+        });
+    }
+    
+    function initCustomLogPaginationDropdown() {
+        const customSelect = document.getElementById('customLogItemsPerPage');
+        if (!customSelect || customSelect.dataset.initialized === 'true') return;
+        customSelect.dataset.initialized = 'true';
+        
+        const nativeSelect = document.getElementById('logItemsPerPage');
+        const selectBtn = customSelect.querySelector('.select-btn');
+        const selectText = customSelect.querySelector('.select-text');
+        const options = customSelect.querySelectorAll('.select-option');
+        
+        if (nativeSelect) {
+            const selectedValue = nativeSelect.value;
+            if (selectText) selectText.textContent = selectedValue;
+            options.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.value === selectedValue) {
+                    opt.classList.add('selected');
+                }
+            });
+        }
+        
+        if (selectBtn) {
+            selectBtn.onclick = function(e) {
+                e.stopPropagation();
+                customSelect.classList.toggle('open');
+            };
+        }
+        
+        options.forEach(option => {
+            option.onclick = function(e) {
+                e.stopPropagation();
+                const value = option.dataset.value;
+                if (nativeSelect) {
+                    nativeSelect.value = value;
+                    nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                if (selectText) selectText.textContent = value;
+                options.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                customSelect.classList.remove('open');
+            };
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!customSelect.contains(e.target)) {
+                customSelect.classList.remove('open');
+            }
+        });
+    }
+    
+    window.applyFilters = function() {
+        paginationState.currentPage = 1;
+        loadLogs();
+    };
+    
+    window.clearFilters = function() {
+        document.getElementById('filterAction').value = '';
+        document.getElementById('filterResident').value = '';
+        document.getElementById('filterUser').value = '';
+        paginationState.currentPage = 1;
+        paginationState.itemsPerPage = 25;
+        const select = document.getElementById('logItemsPerPage');
+        if (select) {
+            select.value = '25';
+            updateCustomLogPaginationDropdown();
+        }
+        loadLogs();
+    };
+    
+    // Инициализация
+    async function initLogsPage() {
+        initCustomLogPaginationDropdown();
+        await loadFilterData();
+        await loadLogs();
+    }
+    
+    // Инициализация при загрузке страницы
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLogsPage);
+    } else {
+        initLogsPage();
+    }
+    
+    // Также инициализируем при SPA загрузке
+    if (window._logsContentLoadedHandler) {
+        window.removeEventListener('spa:contentLoaded', window._logsContentLoadedHandler);
+    }
+    
+    window._logsContentLoadedHandler = function(e) {
+        const route = e.detail?.route || window.location.hash.split('?')[0].slice(1);
+        if (route === '/logs' || route.startsWith('/logs')) {
+            console.log('Loading logs from spa:contentLoaded');
+            setTimeout(() => {
+                initLogsPage();
+            }, 100);
+        }
+    };
+    
+    window.addEventListener('spa:contentLoaded', window._logsContentLoadedHandler);
+    
+})();
+</script>
+
+<style>
+.logs-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.logs-table thead th {
+    background-color: rgba(102, 126, 234, 0.1);
+    color: var(--text-primary);
+    font-weight: 600;
+    padding: 12px;
+    text-align: left;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+.logs-table tbody td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.logs-table tbody tr:hover {
+    background-color: rgba(102, 126, 234, 0.05);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-success {
+    background-color: #10b981;
+    color: white;
+}
+
+.badge-danger {
+    background-color: #ef4444;
+    color: white;
+}
+
+.badge-warning {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.badge-info {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.logs-filters {
+    background-color: rgba(255, 255, 255, 0.02);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.logs-filters .form-label {
+    color: var(--text-primary);
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.logs-filters .form-select {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    color: var(--text-primary);
+}
+
+/* Улучшенные стили для select в темной теме */
+[data-theme="dark"] .logs-filters .form-select {
+    background-color: #2d3139 !important;
+    border: 1px solid #3a3f4a !important;
+    color: #e4e6eb !important;
+}
+
+/* Улучшенные стили для select в светлой теме */
+[data-theme="light"] .logs-filters .form-select,
+body:not([data-theme]) .logs-filters .form-select {
+    background-color: #ffffff !important;
+    border: 1px solid #d4e0d4 !important;
+    color: #5a6b4d !important;
+}
+
+.logs-filters .form-select:focus {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(102, 126, 234, 0.5);
+    color: var(--text-primary);
+}
+
+/* Стили для опций в выпадающих списках */
+.logs-filters .form-select option {
+    background-color: #2d3139;
+    color: #e4e6eb;
+    padding: 8px 12px;
+}
+
+/* Для светлой темы */
+[data-theme="light"] .logs-filters .form-select option,
+body:not([data-theme]) .logs-filters .form-select option {
+    background-color: #ffffff;
+    color: #5a6b4d;
+}
+
+/* Для темной темы */
+[data-theme="dark"] .logs-filters .form-select option {
+    background-color: #2d3139;
+    color: #e4e6eb;
+}
+
+/* Стили для выбранной опции при наведении */
+.logs-filters .form-select option:hover,
+.logs-filters .form-select option:checked {
+    background-color: rgba(102, 126, 234, 0.3);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .logs-filters .form-select option:hover,
+[data-theme="dark"] .logs-filters .form-select option:checked {
+    background-color: rgba(102, 126, 234, 0.5);
+    color: #ffffff;
+}
+
+/* Pagination styles */
+.table-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-top: none !important;
+    border-radius: 0 0 15px 15px;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-pagination {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.btn-pagination:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.btn-pagination:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-pagination.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.pagination-info {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+.pagination-per-page {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+/* Custom dropdown for pagination */
+.custom-pag-select {
+    position: relative;
+    display: inline-block;
+    min-width: 60px;
+}
+
+.custom-pag-select .select-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    min-width: 60px;
+    user-select: none;
+}
+
+.custom-pag-select .select-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.custom-pag-select .select-options {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    background: #1f2432 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+    overflow: hidden;
+    display: none;
+    z-index: 10000;
+    min-width: 100%;
+}
+
+.custom-pag-select.open .select-options {
+    display: block;
+}
+
+.custom-pag-select .select-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: #f6f7ff !important;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    background: #1f2432 !important;
+}
+
+.custom-pag-select .select-option:hover {
+    background: #3b4261 !important;
+    color: #ffffff !important;
+}
+
+.custom-pag-select .select-option.selected {
+    background: #667eea !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+</style>

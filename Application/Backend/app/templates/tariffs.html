@@ -1,0 +1,603 @@
+{#-----------------------------------------------------------------------------
+  Template: app/templates/tariffs.html
+  Author: Mamedli Ayaz
+  Created: 2025-10-25
+
+  Purpose:
+    - Управление тарифами (список, фильтры, создание/редактирование/удаление).
+    - Модальное окно с редактором многоступенчатых интервалов.
+
+  Conventions:
+    - PRG: POST → Redirect → GET; флеш-сообщения через query (?ok=..., ?error=...).
+    - Пути генерируем через request.url_for('<endpoint_name>') — меньше шансов сломать маршрутизацию.
+    - Старайся держать единицы измерения привязанными к типу счётчика.
+
+  Notes:
+    - Если внедрим CSRF — добавим hidden-токен в форму модалки.
+-----------------------------------------------------------------------------#}
+
+{% extends "base.html" %}
+{% block title %}Тарифы{% endblock %}
+{% block content %}
+
+{# Локальные переменные для query-параметров (флеш-сообщения/фильтры) #}
+{% set ok = request.query_params.get('ok') %}
+{% set error = request.query_params.get('error') %}
+
+<h4 class="mb-3">Тарифы</h4>
+
+{#--------------------------- Флеш-сообщения ---------------------------------#}
+{% if error %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    Ошибка: {{ error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif ok == 'created' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Тариф создан.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif ok == 'updated' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Тариф обновлён.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif ok == 'deleted' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Тариф удалён.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% endif %}
+
+{#--------------------------- Фильтры + Создать ------------------------------#}
+<form class="row g-2 align-items-end mb-3"
+      method="get"
+      action="{{ request.url_for('list_tariffs') }}"
+      autocomplete="off">
+  <div class="col-md-3">
+    <label class="form-label" for="filter_meter">Назначение</label>
+    <select name="meter" id="filter_meter" class="form-select">
+      <option value="" {{ 'selected' if not meter }}>Все</option>
+      <option value="ELECTRIC" {{ 'selected' if meter=='ELECTRIC' }}>Электричество</option>
+      <option value="GAS"      {{ 'selected' if meter=='GAS' }}>Газ</option>
+      <option value="WATER"    {{ 'selected' if meter=='WATER' }}>Вода</option>
+      <option value="SEWERAGE" {{ 'selected' if meter=='SEWERAGE' }}>Канализация</option>
+      <option value="SERVICE" {{ 'selected' if meter=='SERVICE' }}>Сервис</option>
+      <option value="RENT" {{ 'selected' if meter=='RENT' }}>Аренда</option>
+      <option value="CONSTRUCTION" {{ 'selected' if meter=='CONSTRUCTION' }}>Строительные услуги</option>
+    </select>
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label" for="filter_ctype">Тип клиента</label>
+    <select name="ctype" id="filter_ctype" class="form-select">
+      <option value="" {{ 'selected' if not ctype }}>Все</option>
+      <option value="INDIVIDUAL" {{ 'selected' if ctype=='INDIVIDUAL' }}>Индивидуальный</option>
+      <option value="LEGAL"      {{ 'selected' if ctype=='LEGAL' }}>Юр. лицо</option>
+    </select>
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label" for="filter_q">Поиск</label>
+    <input name="q" id="filter_q" value="{{ q or '' }}" class="form-control" placeholder="Название тарифа">
+  </div>
+
+  <div class="col-md-3 d-flex gap-2">
+    <button class="btn btn-outline-secondary w-100" type="submit">Фильтр</button>
+    <a class="btn btn-outline-warning w-100" href="{{ request.url_for('list_tariffs') }}">Очистить</a>
+    <button type="button"
+            class="btn btn-primary w-100"
+            data-bs-toggle="modal"
+            data-bs-target="#tariffModal"
+            data-action="tariff-create">
+      Создать
+    </button>
+  </div>
+</form>
+
+{#--------------------------- Таблица тарифов --------------------------------#}
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-dark table-striped align-middle mb-0">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Название</th>
+            <th>Назначение</th>
+            <th>Тип клиента</th>
+            <th>НДС, %</th>
+            <th>Ступени</th>
+            <th class="text-end" style="width: 260px;">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if not tariffs %}
+            <tr>
+              <td colspan="7" class="text-secondary">Пока нет тарифов</td>
+            </tr>
+          {% else %}
+            {% for t in tariffs %}
+              <tr>
+                <td>{{ t.id }}</td>
+                <td>{{ t.name }}</td>
+                <td>
+                  {% if t.meter_type == MeterType.ELECTRIC %}Электричество
+                  {% elif t.meter_type == MeterType.GAS %}Газ
+                  {% elif t.meter_type == MeterType.WATER %}Ввода
+                  {% elif t.meter_type == MeterType.SEWERAGE %}Канализация
+                  {% elif t.meter_type == MeterType.SERVICE %}Сервис
+                  {% elif t.meter_type == MeterType.RENT %}Аренда
+                  {% elif t.meter_type == MeterType.CONSTRUCTION %}Строительные услуги
+                  {% endif %}
+
+                </td>
+                <td>
+                  {% if t.customer_type == CustomerType.INDIVIDUAL %}Индивидуальный
+                  {% else %}Юр. лицо{% endif %}
+                </td>
+                <td>{{ t.vat_percent }}</td>
+                <td class="text-break">
+                  {# Краткая сводка ступеней с единицами в зависимости от типа счётчика #}
+                  {% if t.meter_type == MeterType.CONSTRUCTION %}
+                    {% for s in t.steps %}
+                      {% set start = s.from_date.strftime('%d.%m.%Y') if s.from_date else '—' %}
+                      {% set end = s.to_date.strftime('%d.%m.%Y') if s.to_date else '—' %}
+                      от {{ start }} до {{ end }}: {{ s.price }}
+                      {% if not loop.last %} | {% endif %}
+                    {% endfor %}
+                  {% else %}
+                    {% if t.meter_type == MeterType.ELECTRIC %}
+                      {% set unit = 'кВт·ч' %}
+                    {% elif t.meter_type == MeterType.GAS or t.meter_type == MeterType.WATER or t.meter_type == MeterType.SEWERAGE %}
+                      {% set unit = 'м³' %}
+                    {% else %}
+                      {% set unit = 'фикс' %}
+                    {% endif %}
+                    {% for s in t.steps %}
+                      {% if s.to_value is none %}
+                        {{ s.from_value }}+: {{ s.price }} / {{ unit }}
+                      {% else %}
+                        {{ s.from_value }}–{{ s.to_value }}: {{ s.price }} / {{ unit }}
+                      {% endif %}
+                      {% if not loop.last %} | {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="d-flex gap-2 justify-content-end">
+                    <button class="btn btn-sm btn-outline-info"
+                            data-bs-toggle="modal"
+                            data-bs-target="#tariffModal"
+                            data-action="tariff-edit"
+                            data-tariff-id="{{ t.id }}">
+                      Редактировать
+                    </button>
+                    <form method="post"
+                          action="{{ request.url_for('delete_tariff', tariff_id=t.id) }}"
+                          onsubmit="return confirm('Удалить тариф «{{ t.name }}»?')">
+                      <button class="btn btn-sm btn-outline-danger" type="submit">Удалить</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{#------------------- Модалка: Создать / Редактировать тариф -----------------#}
+<div class="modal fade" id="tariffModal" tabindex="-1" aria-labelledby="tariffModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <form method="post" id="tariffForm" novalidate>
+        <div class="modal-header">
+          <h5 class="modal-title" id="tariffModalTitle">Создать тариф</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          <div id="tariffAlert" class="alert alert-danger d-none" role="alert"></div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="t_name">Название тарифа</label>
+              <input name="name" id="t_name" class="form-control" required maxlength="120">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="t_meter">Для чего</label>
+              <select name="meter_type" id="t_meter" class="form-select" required>
+                <option value="ELECTRIC">Электричество</option>
+                <option value="GAS">Газ</option>
+                <option value="WATER">Вода</option>
+                <option value="SEWERAGE">Канализация</option>
+                <option value="SERVICE">Сервис</option>
+                <option value="RENT">Аренда</option>
+                <option value="CONSTRUCTION">Строительные услуги</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="t_customer">Тип тарифа</label>
+              <select name="customer_type" id="t_customer" class="form-select" required>
+                <option value="INDIVIDUAL">Индивидуальный</option>
+                <option value="LEGAL">Юр. лицо</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="t_vat">НДС, %</label>
+              <input type="number" name="vat_percent" id="t_vat" class="form-control" min="0" max="100" value="0" required>
+            </div>
+          </div>
+
+          <hr class="my-3">
+
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Ступени</h6>
+            <button class="btn btn-sm btn-outline-primary" type="button" data-action="tariff-add-step">
+              Добавить ступень
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-sm align-middle" id="stepsTable">
+              <thead>
+                <tr>
+                  <th style="width:22%;" id="stepsHeaderFrom">ОТ (вкл.)</th>
+                  <th style="width:22%;" id="stepsHeaderTo">ДО (искл.)</th>
+                  <th style="width:16%;">Ед. изм.</th>
+                  <th style="width:22%;">Цена</th>
+                  <th style="width:18%;">Удалить</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <input type="hidden" name="steps_json" id="steps_json">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary" id="tariffSubmitBtn">Создать</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{#------------------------ JS: Логика модалки и ступеней ---------------------#}
+<script>
+  // Авто-скрытие флеш-алертов через 5 секунд
+  window.addEventListener('DOMContentLoaded', function () {
+    const alerts = document.querySelectorAll('.alert');
+    setTimeout(() => alerts.forEach(a => {
+      if (a.classList.contains('show')) {
+        const bsAlert = bootstrap.Alert.getOrCreateInstance(a);
+        bsAlert.close();
+      }
+    }), 5000);
+
+    const createBtn = document.querySelector('[data-action="tariff-create"]');
+    if (createBtn) {
+      createBtn.addEventListener('click', () => TariffModal.openCreate());
+    }
+    document.querySelectorAll('[data-action="tariff-edit"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.tariffId;
+        if (id) TariffModal.openEdit(Number(id));
+      });
+    });
+    const addStepBtn = document.querySelector('[data-action="tariff-add-step"]');
+    if (addStepBtn) {
+      addStepBtn.addEventListener('click', () => TariffModal.addStep());
+    }
+  });
+
+  // Модуль для работы с формой тарифов
+  const TariffModal = (function () {
+    const form = document.getElementById('tariffForm');
+    const title = document.getElementById('tariffModalTitle');
+    const submitBtn = document.getElementById('tariffSubmitBtn');
+    const alertBox = document.getElementById('tariffAlert');
+    const stepsTableBody = document.querySelector('#stepsTable tbody');
+    const stepsJsonInput = document.getElementById('steps_json');
+    const meterSelect = document.getElementById('t_meter');
+    const headerFrom = document.getElementById('stepsHeaderFrom');
+    const headerTo = document.getElementById('stepsHeaderTo');
+
+    const isConstruction = () => meterSelect.value === 'CONSTRUCTION';
+
+    // Текущая единица измерения по типу счётчика
+    function currentUnit() {
+      const v = meterSelect.value;
+      if (v === 'ELECTRIC') return 'кВт·ч';
+      if (v === 'GAS' || v === 'WATER' || v === 'SEWERAGE') return 'м³';
+      return 'Фикс цена';
+    }
+
+    // Сброс формы модалки
+    function reset() {
+      alertBox.classList.add('d-none');
+      alertBox.textContent = '';
+      form.reset();
+      stepsTableBody.innerHTML = '';
+      updateUnitsInTable();
+    }
+
+    // Установка action и текста кнопки сабмита
+    function setAction(url, submitText) {
+      form.setAttribute('action', url);
+      submitBtn.textContent = submitText;
+    }
+
+    // Ячейка с бейджем единиц измерения
+    function unitCell() {
+      const tdUnit = document.createElement('td');
+      const span = document.createElement('span');
+      span.className = 'badge bg-secondary-subtle text-secondary-emphasis';
+      span.textContent = currentUnit();
+      tdUnit.appendChild(span);
+      return tdUnit;
+    }
+
+    // Добавление строки ступени
+    function addStepRow(fromVal, toVal, priceVal) {
+      const tr = document.createElement('tr');
+      const dateMode = isConstruction();
+
+      // FROM
+      const tdFrom = document.createElement('td');
+      const inputFrom = document.createElement('input');
+      inputFrom.type = dateMode ? 'date' : 'number';
+      if (!dateMode) {
+        inputFrom.step = '0.0001';
+        inputFrom.min = '0';
+      }
+      inputFrom.className = 'form-control form-control-sm';
+      inputFrom.value = (fromVal ?? '');
+      inputFrom.setAttribute('aria-label', dateMode ? 'Дата начала' : 'От (включительно)');
+      tdFrom.appendChild(inputFrom);
+
+      // TO
+      const tdTo = document.createElement('td');
+      const inputTo = document.createElement('input');
+      inputTo.type = dateMode ? 'date' : 'number';
+      if (!dateMode) {
+        inputTo.step = '0.0001';
+        inputTo.min = '0';
+        inputTo.placeholder = '∞';
+      }
+      inputTo.className = 'form-control form-control-sm';
+      inputTo.setAttribute('aria-label', dateMode ? 'Дата окончания' : 'До (исключительно)');
+      if (toVal !== null && toVal !== undefined) inputTo.value = toVal;
+      tdTo.appendChild(inputTo);
+
+      // UNIT (display only)
+      const tdU = unitCell();
+
+      // PRICE
+      const tdPrice = document.createElement('td');
+      const inputPrice = document.createElement('input');
+      inputPrice.type = 'number';
+      inputPrice.step = '0.0001';
+      inputPrice.min = '0';
+      inputPrice.className = 'form-control form-control-sm';
+      inputPrice.value = (priceVal ?? '');
+      inputPrice.setAttribute('aria-label', 'Цена');
+      tdPrice.appendChild(inputPrice);
+
+      // DELETE
+      const tdDel = document.createElement('td');
+      const btnDel = document.createElement('button');
+      btnDel.type = 'button';
+      btnDel.className = 'btn btn-sm btn-outline-danger';
+      btnDel.textContent = 'Удалить';
+      btnDel.onclick = () => {
+        tr.remove();
+        fixFromValues();
+      };
+      tdDel.appendChild(btnDel);
+
+      tr.appendChild(tdFrom);
+      tr.appendChild(tdTo);
+      tr.appendChild(tdU);
+      tr.appendChild(tdPrice);
+      tr.appendChild(tdDel);
+      stepsTableBody.appendChild(tr);
+
+      fixFromValues();
+    }
+
+    // Правило непрерывности:
+    //   первая ступень: from = 0,
+    //   каждая следующая: from = previous.to,
+    //   только последняя может иметь пустой to (бесконечность).
+    function fixFromValues() {
+      if (isConstruction()) return;
+      const rows = stepsTableBody.querySelectorAll('tr');
+      rows.forEach((row, idx) => {
+        const inputs = row.querySelectorAll('input');
+        const fromInput = inputs[0];
+        const toInput = inputs[1];
+
+        if (idx === 0) {
+          if (!fromInput.value) fromInput.value = 0;
+        } else {
+          const prevTo = rows[idx - 1].querySelectorAll('input')[1].value;
+          fromInput.value = prevTo || '';
+        }
+
+        // отмечаем невалидность: у всех кроме последней to должен быть заполнен
+        if (idx < rows.length - 1 && !toInput.value) {
+          toInput.classList.add('is-invalid');
+        } else {
+          toInput.classList.remove('is-invalid');
+        }
+      });
+    }
+
+    // Обновить бейджи единиц во всех строках при смене типа счётчика
+    function refreshHeaderLabels() {
+      if (headerFrom) headerFrom.textContent = isConstruction() ? 'Дата от' : 'ОТ (вкл.)';
+      if (headerTo) headerTo.textContent = isConstruction() ? 'Дата до' : 'ДО (искл.)';
+    }
+
+    function updateUnitsInTable() {
+      const unit = currentUnit();
+      stepsTableBody.querySelectorAll('tr').forEach(tr => {
+        const badge = tr.querySelector('td:nth-child(3) span');
+        if (badge) badge.textContent = unit;
+      });
+      refreshHeaderLabels();
+    }
+
+    // Сборка и валидация массива ступеней перед отправкой формы
+    function collectSteps() {
+      const rows = stepsTableBody.querySelectorAll('tr');
+      if (!rows.length) throw new Error('Добавьте хотя бы одну ступень.');
+      if (isConstruction()) {
+        const steps = [];
+        rows.forEach(row => {
+          const inputs = row.querySelectorAll('input');
+          const fromDate = inputs[0].value;
+          const toDate = inputs[1].value;
+          const priceVal = inputs[2].value;
+          if (!fromDate || !toDate || !priceVal) {
+            throw new Error('Для строительных услуг заполните даты и цену.');
+          }
+          if (new Date(toDate) < new Date(fromDate)) {
+            throw new Error('Дата окончания должна быть позже даты начала.');
+          }
+          const priceNum = Number(priceVal);
+          if (priceNum < 0) {
+            throw new Error('Цена не может быть отрицательной.');
+          }
+          steps.push({ from_date: fromDate, to_date: toDate, price: priceNum });
+        });
+        return steps;
+      }
+
+      const steps = [];
+      for (let i = 0; i < rows.length; i++) {
+        const inputs = rows[i].querySelectorAll('input');
+        const f = inputs[0].value;
+        const t = inputs[1].value;
+        const p = inputs[2].value;
+
+        if (f === '' || p === '') {
+          throw new Error('Заполните все поля «ОТ» и «Цена».');
+        }
+        if (Number(f) < 0 || Number(p) < 0) {
+          throw new Error('Отрицательные значения не допускаются.');
+        }
+        if (t !== '' && Number(t) <= Number(f)) {
+          throw new Error('«ДО» должно быть больше, чем «ОТ».');
+        }
+        steps.push({from: Number(f), to: (t === '' ? null : Number(t)), price: Number(p)});
+      }
+      // Проверка непрерывности
+      for (let i = 0; i < steps.length - 1; i++) {
+        if (steps[i].to === null) {
+          throw new Error('Бесконечный диапазон допустим только у последней ступени.');
+        }
+        if (steps[i + 1].from !== steps[i].to) {
+          throw new Error('Ступени должны идти подряд (следующая начинается с «ДО» предыдущей).');
+        }
+      }
+      return steps;
+    }
+
+    // Сабмит формы модалки: сериализация ступеней в hidden input
+    form.addEventListener('submit', function (e) {
+      try {
+        const steps = collectSteps();
+        stepsJsonInput.value = JSON.stringify(steps);
+      } catch (err) {
+        e.preventDefault();
+        alertBox.textContent = (err && err.message) ? err.message : 'Проверьте корректность ступеней.';
+        alertBox.classList.remove('d-none');
+      }
+    });
+
+    function addInitialRow() {
+      stepsTableBody.innerHTML = '';
+      if (isConstruction()) {
+        addStepRow('', '', '');
+      } else {
+        addStepRow(0, '', '');
+      }
+      updateUnitsInTable();
+    }
+
+    meterSelect.addEventListener('change', () => {
+      addInitialRow();
+    });
+
+    // Публичный API модалки
+    return {
+      openCreate() {
+        reset();
+        title.textContent = 'Создать тариф';
+        // action на create
+        form.setAttribute('action', "{{ request.url_for('create_tariff') }}");
+        submitBtn.textContent = 'Создать';
+
+        // Первая ступень по умолчанию: от 0
+        addInitialRow();
+        refreshHeaderLabels();
+      },
+      async openEdit(id) {
+        reset();
+        title.textContent = 'Редактировать тариф';
+        // action на update
+        const updateUrl = "{{ request.url_for('update_tariff', tariff_id='__ID__') }}".replace('__ID__', String(id));
+        form.setAttribute('action', updateUrl);
+        submitBtn.textContent = 'Сохранить';
+
+        // Загружаем JSON тарифа
+        const jsonUrl = "{{ request.url_for('get_tariff_json', tariff_id='__ID__') }}".replace('__ID__', String(id));
+        const resp = await fetch(jsonUrl, { headers: { 'Accept': 'application/json' } });
+        if (!resp.ok) {
+          alertBox.textContent = 'Не удалось загрузить тариф.';
+          alertBox.classList.remove('d-none');
+          return;
+        }
+        const data = await resp.json();
+
+        // Заполняем поля
+        document.getElementById('t_name').value = data.name;
+        document.getElementById('t_meter').value = data.meter_type;
+        document.getElementById('t_customer').value = data.customer_type;
+        document.getElementById('t_vat').value = data.vat_percent;
+
+        // Ступени
+        if (data.meter_type === 'CONSTRUCTION') {
+          (data.steps || []).forEach(s => addStepRow(s.from_date || '', s.to_date || '', s.price));
+          if ((data.steps || []).length === 0) addStepRow('', '', '');
+        } else {
+          (data.steps || []).forEach(s => addStepRow(s.from, (s.to ?? ''), s.price));
+          if ((data.steps || []).length === 0) addStepRow(0, '', '');
+        }
+
+        updateUnitsInTable();
+      },
+      addStep() {
+        const rows = stepsTableBody.querySelectorAll('tr');
+        if (isConstruction()) {
+          addStepRow('', '', '');
+        } else {
+          if (rows.length === 0) {
+            addStepRow(0, '', '');
+          } else {
+            const prevTo = rows[rows.length - 1].querySelectorAll('input')[1].value;
+            addStepRow(prevTo || '', '', '');
+          }
+        }
+        updateUnitsInTable();
+      }
+    };
+  })();
+</script>
+
+{% endblock %}

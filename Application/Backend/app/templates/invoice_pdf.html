@@ -1,0 +1,83 @@
+{#-----------------------------------------------------------------------------
+  Template: app/templates/invoice_pdf.html
+  Author: Mamedli Ayaz
+  Purpose: Печатная версия счёта (HTML) — печать из браузера / сохранить в PDF
+-----------------------------------------------------------------------------#}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Счёт {{ inv.number or inv.id }}</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
+    h1,h2,h3,h4 { margin: 0 0 8px; }
+    .muted { color: #666; font-size: 12px; }
+    .row { display:flex; gap:24px; }
+    .col { flex:1; }
+    table { width:100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { border:1px solid #999; padding: 6px 8px; font-size: 14px; }
+    th { background:#eee; text-align:left; }
+    .right { text-align:right; }
+    .total { font-weight: 600; }
+    .stamp { margin-top: 40px; border-top: 1px dashed #aaa; padding-top: 8px; font-size: 12px; color: #555; }
+    @media print {
+      .noprint { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="noprint" style="text-align:right; margin-bottom:12px;">
+  <button onclick="window.print()">Печать</button>
+</div>
+
+<h2>Счёт на оплату</h2>
+<div class="muted">№ {{ inv.number or (inv.period_year ~ '-' ~ '%02d'|format(inv.period_month) ~ '/' ~ inv.id) }}</div>
+
+<div class="row" style="margin-top:12px;">
+  <div class="col">
+    <div><strong>Резидент:</strong> {{ resident.block.name }} / {{ resident.unit_number }}</div>
+    <div><strong>Период:</strong> {{ inv.period_year }}-{{ "%02d"|format(inv.period_month) }}</div>
+    <div><strong>Статус:</strong> {{ inv.status.value }}</div>
+  </div>
+  <div class="col">
+    <div><strong>Срок оплаты:</strong> {{ inv.due_date or '—' }}</div>
+    <div><strong>Сумма к оплате:</strong> {{ '%.2f'|format(inv.amount_total) }}</div>
+    {% if inv.notes %}<div><strong>Примечание:</strong> {{ inv.notes }}</div>{% endif %}
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Описание</th>
+      <th class="right">Начислено</th>
+      <th class="right">НДС</th>
+      <th class="right">Итого</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for ln in inv.lines %}
+      <tr>
+        <td>{{ ln.description }}</td>
+        <td class="right">{{ '%.2f'|format(ln.amount_net) }}</td>
+        <td class="right">{{ '%.2f'|format(ln.amount_vat) }}</td>
+        <td class="right total">{{ '%.2f'|format(ln.amount_total) }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4">Строк нет</td></tr>
+    {% endfor %}
+    <tr>
+      <td class="right total" colspan="3">Итого к оплате</td>
+      <td class="right total">{{ '%.2f'|format(inv.amount_total) }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="stamp">
+  Квитанция сгенерирована: {{ (request and request.headers.get('date')) or '' }} ·
+  Для печати нажмите кнопку сверху или используйте «Печать в PDF».
+</div>
+
+</body>
+</html>

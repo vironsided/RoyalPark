@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Уведомления{% endblock %}
+{% block content %}
+
+{% set err = request.query_params.get('error') %}
+{% set ok = request.query_params.get('ok') %}
+{% if ok == 'deleted' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Обращение удалено.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% elif err == 'notfound' %}
+  <div class="alert alert-warning alert-dismissible fade show" role="alert">
+    Обращение не найдено или уже удалено.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+  </div>
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">Обращения жителей</h4>
+  <form class="d-flex align-items-center gap-2" method="get" action="{{ request.url.path }}">
+    <label for="status_filter" class="text-secondary small mb-0">Статус:</label>
+    <select class="form-select form-select-sm" id="status_filter" name="status_filter" onchange="this.form.submit()">
+      <option value="all" {{ 'selected' if status_filter == 'ALL' else '' }}>Все</option>
+      <option value="UNREAD" {{ 'selected' if status_filter == 'UNREAD' else '' }}>Непрочитанные</option>
+      <option value="READ" {{ 'selected' if status_filter == 'READ' else '' }}>Прочитанные</option>
+    </select>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-dark table-striped align-middle mb-0" id="notificationsTable">
+        <thead>
+          <tr>
+            <th style="width:140px;">Создано</th>
+            <th>Блок</th>
+            <th>Дом</th>
+            <th>Житель</th>
+            <th>Телефон</th>
+            <th>E-mail</th>
+            <th style="width:140px;">Статус</th>
+            <th class="text-end" style="width:180px;">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for n in notifications %}
+            <tr data-id="{{ n.id }}">
+              <td>{{ n.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+              <td>{{ n.resident.block.name if n.resident and n.resident.block else '—' }}</td>
+              <td>{{ n.resident.unit_number if n.resident else '—' }}</td>
+              <td>{{ n.user.full_name or n.user.username }}</td>
+              <td>{{ n.user.phone or '—' }}</td>
+              <td>{{ n.user.email or '—' }}</td>
+              <td class="status-cell">
+                {% if n.status == NotificationStatus.UNREAD %}
+                  <span class="badge bg-warning text-dark">не прочитано</span>
+                {% else %}
+                  <span class="badge bg-success">прочитано</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <div class="d-flex gap-2 justify-content-end flex-wrap">
+                  <button type="button"
+                          class="btn btn-sm btn-outline-info js-view"
+                          data-id="{{ n.id }}">
+                    Просмотр
+                  </button>
+                  <form method="post"
+                        action="{{ request.url_for('notification_delete', notification_id=n.id) }}?status_filter={{ status_filter }}"
+                        onsubmit="return confirm('Удалить обращение №{{ n.id }}?')">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="8" class="text-secondary text-center py-4">Обращений пока нет</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="notificationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Обращение</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <dl class="row">
+          <dt class="col-sm-3">Дом</dt>
+          <dd class="col-sm-9" id="modalResident">—</dd>
+          <dt class="col-sm-3">Житель</dt>
+          <dd class="col-sm-9" id="modalUser">—</dd>
+          <dt class="col-sm-3">Контакты</dt>
+          <dd class="col-sm-9" id="modalContacts">—</dd>
+        </dl>
+        <hr>
+        <p id="modalMessage" class="mb-0 text-break"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const modalEl = document.getElementById('notificationModal');
+  const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
+
+  function setStatusRead(row) {
+    const cell = row.querySelector('.status-cell');
+    if (cell) {
+      cell.innerHTML = '<span class="badge bg-success">прочитано</span>';
+    }
+  }
+
+  document.querySelectorAll('.js-view').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      try {
+        const resp = await fetch(`/notifications/${id}/json`);
+        if (!resp.ok) throw new Error('Ошибка загрузки');
+        const data = await resp.json();
+        document.getElementById('modalResident').textContent =
+          `${data.resident.block ?? '—'} / ${data.resident.unit_number ?? '—'}`;
+        document.getElementById('modalUser').textContent = data.user.full_name || '—';
+        document.getElementById('modalContacts').textContent =
+          `${data.user.phone || '—'} / ${data.user.email || '—'}`;
+        document.getElementById('modalMessage').textContent = data.message;
+
+        const row = btn.closest('tr');
+        if (row) setStatusRead(row);
+
+        if (modal) modal.show();
+      } catch (err) {
+        alert(err.message || 'Не удалось открыть обращение');
+      }
+    });
+  });
+});
+</script>
+
+{% endblock %}
+

@@ -1,0 +1,696 @@
+<section class="user-bills-section user-payment-page">
+    <div class="payment-container">
+        <!-- Left Column: Saved Cards -->
+        <div class="payment-left-column">
+            <h3 class="payment-section-title">Выберите способ оплаты</h3>
+            
+            <!-- Saved Cards -->
+            <div class="saved-cards-container">
+                <div class="saved-card-wrapper" onclick="flipSavedCard(this)">
+                    <div class="saved-card-inner">
+                        <div class="card-preview">
+                            <header class="card-preview-header">
+                                <div class="card-header-left">
+                                    <div class="chip"></div>
+                                    <span class="logo">
+                                        <div class="mastercard-logo">
+                                            <span class="mastercard-circle circle-red"></span>
+                                            <span class="mastercard-circle circle-orange"></span>
+                                        </div>
+                                        <h5>Master Card</h5>
+                                    </span>
+                                </div>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="contactless-icon">
+                                        <i class="bi bi-wifi" style="transform: rotate(-90deg); font-size: 24px;"></i>
+                                    </div>
+                                    <div class="card-network-logo">
+                                        <div class="visa-logo-small">VISA</div>
+                                    </div>
+                                </div>
+                            </header>
+                            <div class="card-details">
+                                <div class="name-number">
+                                    <h6>Card Number</h6>
+                                    <h5 class="number">4985 3212 3456 7899</h5>
+                                    <div class="card-holder-section">
+                                        <h6>Card Holder name</h6>
+                                        <h5 class="name">ИВАН ИВАНОВ</h5>
+                                    </div>
+                                </div>
+                                <div class="valid-date">
+                                    <h6>Expiry Date</h6>
+                                    <h5>12/28</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-preview-back">
+                            <div class="magnetic-strip"></div>
+                            <div class="text-end pe-3 mb-2">
+                                <small style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Authorized Signature</small>
+                            </div>
+                            <div class="signature-area">
+                                <span class="cvv-display">468</span>
+                            </div>
+                            <div class="d-flex justify-content-between px-3 align-items-center mt-auto">
+                                <small style="color: rgba(255,255,255,0.6); font-size: 0.6rem; line-height: 1.2; max-width: 200px;">
+                                    This card is property of the issuer.
+                                </small>
+                                <div class="mastercard-logo">
+                                    <span class="mastercard-circle circle-red"></span>
+                                    <span class="mastercard-circle circle-orange"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="saved-card-wrapper" onclick="flipSavedCard(this)">
+                    <div class="saved-card-inner">
+                        <div class="card-preview">
+                            <header class="card-preview-header">
+                                <div class="card-header-left">
+                                    <div class="chip"></div>
+                                    <span class="logo">
+                                        <div class="mastercard-logo">
+                                            <span class="mastercard-circle circle-red"></span>
+                                            <span class="mastercard-circle circle-orange"></span>
+                                        </div>
+                                        <h5>Master Card</h5>
+                                    </span>
+                                </div>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="contactless-icon">
+                                        <i class="bi bi-wifi" style="transform: rotate(-90deg); font-size: 24px;"></i>
+                                    </div>
+                                    <div class="card-network-logo">
+                                        <div class="visa-logo-small">VISA</div>
+                                    </div>
+                                </div>
+                            </header>
+                            <div class="card-details">
+                                <div class="name-number">
+                                    <h6>Card Number</h6>
+                                    <h5 class="number">5282 3456 7890 1289</h5>
+                                    <div class="card-holder-section">
+                                        <h6>Card Holder name</h6>
+                                        <h5 class="name">ПЕТР ПЕТРОВ</h5>
+                                    </div>
+                                </div>
+                                <div class="valid-date">
+                                    <h6>Expiry Date</h6>
+                                    <h5>09/25</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-preview-back">
+                            <div class="magnetic-strip"></div>
+                            <div class="text-end pe-3 mb-2">
+                                <small style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Authorized Signature</small>
+                            </div>
+                            <div class="signature-area">
+                                <span class="cvv-display">789</span>
+                            </div>
+                            <div class="d-flex justify-content-between px-3 align-items-center mt-auto">
+                                <small style="color: rgba(255,255,255,0.6); font-size: 0.6rem; line-height: 1.2; max-width: 200px;">
+                                    This card is property of the issuer.
+                                </small>
+                                <div class="mastercard-logo">
+                                    <span class="mastercard-circle circle-red"></span>
+                                    <span class="mastercard-circle circle-orange"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="add-card-btn">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Добавить новую</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Middle Column: Credit Card Form -->
+        <div class="payment-middle-column">
+            <h3 class="payment-section-title">Оплата банковской картой</h3>
+            
+            <!-- Card Preview with 3D Flip -->
+            <div class="card-preview-container" id="cardPreviewContainer" onclick="flipPreviewCard()">
+                <div class="card-preview-wrapper">
+                    <div class="card-preview" id="cardPreview">
+                        <header class="card-preview-header">
+                            <div class="card-header-left">
+                                <div class="chip"></div>
+                                <span class="logo">
+                                    <div class="mastercard-logo" id="mastercardLogo">
+                                        <span class="mastercard-circle circle-red"></span>
+                                        <span class="mastercard-circle circle-orange"></span>
+                                    </div>
+                                    <h5 id="cardPreviewLogoText">Master Card</h5>
+                                </span>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="contactless-icon">
+                                    <i class="bi bi-wifi" style="transform: rotate(-90deg); font-size: 24px;"></i>
+                                </div>
+                                <div class="card-network-logo" id="cardPreviewNetwork">
+                                    <div class="visa-logo-small">VISA</div>
+                                </div>
+                            </div>
+                        </header>
+                        <div class="card-details">
+                            <div class="name-number">
+                                <h6>Card Number</h6>
+                                <h5 class="number" id="cardPreviewNumber">**** **** **** ****</h5>
+                                <div class="card-holder-section">
+                                    <h6>Card Holder name</h6>
+                                    <h5 class="name" id="cardPreviewName">ИМЯ ФАМИЛИЯ</h5>
+                                </div>
+                            </div>
+                            <div class="valid-date">
+                                <h6>Expiry Date</h6>
+                                <h5 id="cardPreviewExpiry">MM/YY</h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-preview-back" id="cardPreviewBack">
+                        <div class="magnetic-strip"></div>
+                        <div class="text-end pe-3 mb-2">
+                            <small style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Authorized Signature</small>
+                        </div>
+                        <div class="signature-area">
+                            <span class="cvv-display" id="cardPreviewCVV">***</span>
+                        </div>
+                        <div class="d-flex justify-content-between px-3 align-items-center mt-auto">
+                            <small style="color: rgba(255,255,255,0.6); font-size: 0.6rem; line-height: 1.2; max-width: 200px;">
+                                This card is property of the issuer.
+                            </small>
+                            <div class="mastercard-logo" id="cardPreviewBackLogo">
+                                <span class="mastercard-circle circle-red"></span>
+                                <span class="mastercard-circle circle-orange"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Type Logos -->
+            <div class="card-type-logos">
+                <div class="card-type-logo-text">Visa</div>
+                <div class="card-type-logo-text">Mastercard</div>
+                <div class="card-type-logo-text">Мир</div>
+            </div>
+
+            <form class="payment-card-form">
+                <div class="form-group">
+                    <label>Номер карты</label>
+                    <div class="card-input-wrapper">
+                        <input type="text" placeholder="2324 5566 6677 7898" maxlength="19" class="card-number-input" id="cardNumberInput">
+                        <div class="card-input-icon" id="cardInputIcon">MC</div>
+                    </div>
+                    <div class="card-bank-info" id="cardBankInfo"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Имя на карте</label>
+                    <input type="text" placeholder="Имя Фамилия" class="card-name-input" id="cardNameInput">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Срок действия</label>
+                        <input type="text" placeholder="11/25" class="card-exp-input" id="cardExpInput">
+                    </div>
+
+                    <div class="form-group">
+                        <label>CVV</label>
+                        <input type="text" placeholder="123" maxlength="4" class="card-cvv-input" id="cardCvvInput">
+                    </div>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" class="save-card-checkbox">
+                        <span>Сохранить карту</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="pay-button">Оплатить</button>
+            </form>
+        </div>
+
+        <!-- Right Column: Order Summary -->
+        <div class="payment-right-column">
+            <h3 class="payment-section-title">Сводка заказа</h3>
+            
+            <div class="order-summary">
+                <div class="order-header">
+                    <div class="order-logo">
+                        <i class="bi bi-building"></i>
+                    </div>
+                    <div class="order-info">
+                        <div class="order-title">RoyalPark Residence</div>
+                        <div class="order-subtitle">Оплата счёта</div>
+                    </div>
+                </div>
+
+                <div class="order-details">
+                    <div class="order-detail-item">
+                        <span class="detail-label">Дата доставки</span>
+                        <span class="detail-value" id="deliveryTime">11 янв 2025 10:00</span>
+                    </div>
+
+                    <div class="order-detail-item">
+                        <span class="detail-label">Комиссия</span>
+                        <span class="detail-value discount">-140,00 ₼</span>
+                    </div>
+
+                    <div class="order-detail-item">
+                        <span class="detail-label">Счёт</span>
+                        <span class="detail-value" id="invoiceNumber">000-1234-rp-001</span>
+                    </div>
+
+                    <div class="order-detail-item">
+                        <span class="detail-label">Скидка</span>
+                        <span class="detail-value">10%</span>
+                    </div>
+                </div>
+
+                <div class="order-totals">
+                    <div class="order-total-item">
+                        <span class="total-label">Подитог</span>
+                        <span class="total-value" id="subtotal">0,00 ₼</span>
+                    </div>
+                    <div class="order-total-item final">
+                        <span class="total-label">Итого</span>
+                        <span class="total-value" id="total">0,00 ₼</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+// API Configuration
+const API_BASE = window.BACKEND_API_BASE || 'http://localhost:8000';
+const BIN_LOOKUP_URL = `${API_BASE}/api/payment/bin-lookup`;
+
+// Current card data
+let currentCardData = {
+    bin: null,
+    bank: null,
+    scheme: null,
+    country: null
+};
+
+// Card styles for different banks
+const bankStyles = {
+    default: {
+        gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        logo: 'MC'
+    },
+    'sberbank': {
+        gradient: 'linear-gradient(135deg, #21a038 0%, #16802a 100%)',
+        logo: 'СБЕР'
+    },
+    'vtb': {
+        gradient: 'linear-gradient(135deg, #003d82 0%, #001f4d 100%)',
+        logo: 'ВТБ'
+    },
+    'gazprombank': {
+        gradient: 'linear-gradient(135deg, #003366 0%, #001a33 100%)',
+        logo: 'ГПБ'
+    },
+    'alfabank': {
+        gradient: 'linear-gradient(135deg, #ef3124 0%, #cc2619 100%)',
+        logo: 'АЛЬФА'
+    },
+    'tinkoff': {
+        gradient: 'linear-gradient(135deg, #ffdd2d 0%, #ffcd02 100%)',
+        logo: 'ТИНЬ',
+        textColor: '#000'
+    },
+    'raiffeisen': {
+        gradient: 'linear-gradient(135deg, #ffcc00 0%, #ff9900 100%)',
+        logo: 'РБ'
+    }
+};
+
+// Fetch BIN data from backend proxy (приоритет: API BINTable)
+async function fetchBINData(bin) {
+    if (!bin || bin.length < 6) return null;
+    
+    const firstSix = bin.substring(0, 6);
+    
+    try {
+        const response = await fetch(`${BIN_LOOKUP_URL}?bin=${firstSix}`);
+        
+        if (!response.ok) {
+            console.warn('BIN lookup failed:', response.status);
+            // Fallback: определяем схему по номеру, если API недоступен
+            return determineSchemeByNumber(firstSix);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Приоритет отдаём данным из BINTable API
+            return {
+                bank: data.bank || null,
+                scheme: data.scheme || null,  // Схема из BINTable API
+                country: data.country || null,
+                type: data.type || null
+            };
+        }
+        
+        // Если API не вернул успешный результат, используем fallback
+        return determineSchemeByNumber(firstSix);
+    } catch (error) {
+        console.error('BIN lookup error:', error);
+        // Fallback: определяем схему по номеру при ошибке
+        return determineSchemeByNumber(firstSix);
+    }
+}
+
+// Определяем схему карты по номеру
+function determineSchemeByNumber(number) {
+    if (!number || number.length < 2) {
+        return { scheme: 'Unknown', logo: 'MC' };
+    }
+    
+    const firstDigit = number[0];
+    const firstTwo = number.substring(0, 2);
+    const firstFour = number.substring(0, 4);
+    
+    // Visa: начинается с 4
+    if (firstDigit === '4') {
+        return { scheme: 'Visa', logo: 'VISA' };
+    }
+    
+    // MasterCard: 51-55 или 2221-2720
+    if (firstTwo >= '51' && firstTwo <= '55') {
+        return { scheme: 'Mastercard', logo: 'MC' };
+    }
+    
+    // MasterCard новая серия: 2221-2720
+    const firstFourNum = parseInt(firstFour);
+    if (firstFourNum >= 2221 && firstFourNum <= 2720) {
+        return { scheme: 'Mastercard', logo: 'MC' };
+    }
+    
+    // Maestro: 50, 56-58, 67
+    if (firstTwo === '50' || 
+        (firstTwo >= '56' && firstTwo <= '58') || 
+        firstTwo === '67') {
+        return { scheme: 'Maestro', logo: 'MC' };
+    }
+    
+    // UnionPay: начинается с 62
+    if (firstTwo === '62') {
+        return { scheme: 'UnionPay', logo: 'UP' };
+    }
+    
+    // Mir: начинается с 2200-2204
+    const mirRange = parseInt(firstFour);
+    if (mirRange >= 2200 && mirRange <= 2204) {
+        return { scheme: 'Мир', logo: 'МИР' };
+    }
+    
+    // Дополнительная проверка для Mir: 2xxx (но не 2200-2204 уже обработано)
+    if (firstDigit === '2' && firstTwo !== '22' && firstTwo !== '23') {
+        // Другие варианты Mir
+        if (firstTwo >= '24' && firstTwo <= '27') {
+            // Проверяем, не попали ли в MasterCard диапазон
+            if (!(firstFourNum >= 2221 && firstFourNum <= 2720)) {
+                return { scheme: 'Мир', logo: 'МИР' };
+            }
+        }
+    }
+    
+    return { scheme: 'Unknown', logo: 'MC' };
+}
+
+// Get bank style
+function getBankStyle(bankName) {
+    if (!bankName) return bankStyles.default;
+    
+    const bankLower = bankName.toLowerCase();
+    
+    // Поиск по ключевым словам в названии банка
+    if (bankLower.includes('sber') || bankLower.includes('сбер')) {
+        return bankStyles.sberbank;
+    } else if (bankLower.includes('vtb') || bankLower.includes('втб')) {
+        return bankStyles.vtb;
+    } else if (bankLower.includes('gazprom') || bankLower.includes('газпром')) {
+        return bankStyles.gazprombank;
+    } else if (bankLower.includes('alfa') || bankLower.includes('альфа')) {
+        return bankStyles.alfabank;
+    } else if (bankLower.includes('tinkoff') || bankLower.includes('тинькофф')) {
+        return bankStyles.tinkoff;
+    } else if (bankLower.includes('raiffeisen') || bankLower.includes('райффайзен')) {
+        return bankStyles.raiffeisen;
+    } else if (bankLower.includes('abb') || bankLower.includes('azerbaijan') || bankLower.includes('beynəlxalq')) {
+        return bankStyles.abb;
+    }
+    
+    return bankStyles.default;
+}
+
+// Update card preview
+function updateCardPreview(cardNumber, cardName, cardExp, cardData) {
+    const preview = document.getElementById('cardPreview');
+    const previewNumber = document.getElementById('cardPreviewNumber');
+    const previewName = document.getElementById('cardPreviewName');
+    const previewExpiry = document.getElementById('cardPreviewExpiry');
+    const previewLogoText = document.getElementById('cardPreviewLogoText');
+    const mastercardLogo = document.getElementById('mastercardLogo');
+    const cardPreviewNetwork = document.getElementById('cardPreviewNetwork');
+    const cardInputIcon = document.getElementById('cardInputIcon');
+    const cardBankInfo = document.getElementById('cardBankInfo');
+    
+    // Update card number
+    if (cardNumber) {
+        // Убираем пробелы и форматируем строго по 4 цифры
+        const digitsOnly = cardNumber.replace(/\s/g, '');
+        const formatted = digitsOnly.replace(/(.{4})/g, '$1 ').trim();
+        previewNumber.textContent = formatted || '**** **** **** ****';
+    } else {
+        previewNumber.textContent = '**** **** **** ****';
+    }
+    
+    // Update name
+    previewName.textContent = (cardName || 'ИМЯ ФАМИЛИЯ').toUpperCase();
+    
+    // Update expiry
+    previewExpiry.textContent = cardExp || 'MM/YY';
+    
+    // Определяем тип карты и логотип
+    let cardType = 'Master Card';
+    let showMastercardLogo = true;
+    
+    if (cardData?.scheme) {
+        const scheme = cardData.scheme.toLowerCase();
+        if (scheme === 'visa') {
+            cardType = 'Visa';
+            showMastercardLogo = false;
+        } else if (scheme === 'мир' || scheme === 'mir') {
+            cardType = 'МИР';
+            showMastercardLogo = false;
+        } else if (scheme === 'mastercard') {
+            cardType = 'Master Card';
+            showMastercardLogo = true;
+        } else if (scheme === 'maestro') {
+            cardType = 'Maestro';
+            showMastercardLogo = false;
+        } else if (scheme === 'unionpay') {
+            cardType = 'UnionPay';
+            showMastercardLogo = false;
+        }
+    }
+    
+    // Показываем/скрываем логотип Mastercard и создаем другие логотипы
+    const logoContainer = preview.querySelector('.logo');
+    if (logoContainer) {
+        // Удаляем все существующие логотипы (кроме текста)
+        const existingLogos = logoContainer.querySelectorAll('.mastercard-logo, .visa-logo, .mir-logo');
+        existingLogos.forEach(logo => logo.remove());
+        
+        // Создаем нужный логотип
+        if (showMastercardLogo) {
+            const mcLogo = document.createElement('div');
+            mcLogo.className = 'mastercard-logo';
+            mcLogo.innerHTML = '<span class="mastercard-circle circle-red"></span><span class="mastercard-circle circle-orange"></span>';
+            logoContainer.insertBefore(mcLogo, previewLogoText);
+        } else if (cardType === 'Visa') {
+            const visaLogo = document.createElement('div');
+            visaLogo.className = 'visa-logo';
+            visaLogo.textContent = 'VISA';
+            logoContainer.insertBefore(visaLogo, previewLogoText);
+        } else if (cardType === 'МИР') {
+            const mirLogo = document.createElement('div');
+            mirLogo.className = 'mir-logo';
+            mirLogo.textContent = 'МИР';
+            logoContainer.insertBefore(mirLogo, previewLogoText);
+        }
+    }
+    
+    if (previewLogoText) {
+        previewLogoText.textContent = cardType;
+    }
+    if (cardInputIcon) {
+        cardInputIcon.textContent = cardType;
+    }
+    
+    // Обновляем логотип сети в правом верхнем углу
+    if (cardPreviewNetwork) {
+        if (cardType === 'Visa') {
+            cardPreviewNetwork.innerHTML = '<div class="visa-logo-small">VISA</div>';
+        } else if (cardType === 'Master Card') {
+            cardPreviewNetwork.innerHTML = '<div class="mastercard-logo-small"><span class="mastercard-circle circle-red"></span><span class="mastercard-circle circle-orange"></span></div>';
+        } else if (cardType === 'МИР') {
+            cardPreviewNetwork.innerHTML = '<div class="mir-logo-small">МИР</div>';
+        } else {
+            cardPreviewNetwork.innerHTML = '<div class="visa-logo-small">VISA</div>';
+        }
+    }
+    
+    // Update background based on bank or default beautiful gradient
+    const bankStyle = getBankStyle(cardData?.bank);
+    if (bankStyle && bankStyle.gradient) {
+        preview.style.background = bankStyle.gradient;
+    } else {
+        // Красивый градиент по умолчанию
+        preview.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    }
+    preview.style.color = 'white';
+    
+    // Show bank info
+    if (cardBankInfo && cardData?.bank) {
+        cardBankInfo.innerHTML = `<small>Банк: ${cardData.bank}${cardData.country ? ` (${cardData.country})` : ''}</small>`;
+    } else if (cardBankInfo) {
+        cardBankInfo.innerHTML = '';
+    }
+}
+
+// Card number formatting and BIN lookup
+document.getElementById('cardNumberInput')?.addEventListener('input', async function(e) {
+    let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+    // Форматируем строго по 4 цифры в группе (максимум 16 цифр для стандартной карты)
+    let formattedValue = value.replace(/(\d{4})(?=\d)/g, '$1 ');
+    // Ограничиваем до 19 символов (16 цифр + 3 пробела)
+    if (formattedValue.length > 19) {
+        formattedValue = formattedValue.substring(0, 19);
+    }
+    e.target.value = formattedValue;
+    
+    // Update preview
+    const cardName = document.getElementById('cardNameInput').value;
+    const cardExp = document.getElementById('cardExpInput').value;
+    updateCardPreview(formattedValue, cardName, cardExp, currentCardData);
+    
+    // Для первых 2-4 цифр используем быстрый fallback для предварительного определения
+    let fallbackScheme = null;
+    if (value.length >= 2 && value.length < 6) {
+        const tempScheme = determineSchemeByNumber(value);
+        if (tempScheme) {
+            fallbackScheme = tempScheme.scheme;
+            currentCardData.scheme = fallbackScheme;
+            updateCardPreview(formattedValue, cardName, cardExp, currentCardData);
+        }
+        return; // Выходим, так как для BIN lookup нужно минимум 6 цифр
+    }
+    
+    // Lookup BIN через API BINTable (приоритетный источник) если есть минимум 6 цифр
+    if (value.length >= 6) {
+        const bin = value.substring(0, 6);
+        if (bin !== currentCardData.bin) {
+            currentCardData.bin = bin;
+            
+            // Запрашиваем данные через BINTable API (приоритет)
+            const binData = await fetchBINData(value);
+            
+            if (binData) {
+                // Используем данные из API BINTable (схема, банк, страна)
+                currentCardData = { 
+                    ...currentCardData, 
+                    bank: binData.bank || null,
+                    scheme: binData.scheme || null,  // Схема из API имеет приоритет
+                    country: binData.country || null,
+                    type: binData.type || null
+                };
+            } else {
+                // Если API не вернул данных, используем fallback определение
+                const fallbackData = determineSchemeByNumber(value);
+                currentCardData = {
+                    ...currentCardData,
+                    bank: null,
+                    scheme: fallbackData?.scheme || null,
+                    country: null,
+                    type: null
+                };
+            }
+            
+            updateCardPreview(formattedValue, cardName, cardExp, currentCardData);
+        }
+    } else if (value.length === 0) {
+        // Если поле очищено, сбрасываем данные
+        currentCardData = { bin: null, bank: null, scheme: null, country: null };
+        updateCardPreview(formattedValue, cardName, cardExp, null);
+    }
+});
+
+// Card name input
+document.getElementById('cardNameInput')?.addEventListener('input', function(e) {
+    const cardNumber = document.getElementById('cardNumberInput').value;
+    const cardExp = document.getElementById('cardExpInput').value;
+    updateCardPreview(cardNumber, e.target.value, cardExp, currentCardData);
+});
+
+// Exp date formatting (MM/YY)
+document.getElementById('cardExpInput')?.addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length >= 2) {
+        value = value.substring(0, 2) + '/' + value.substring(2, 4);
+    }
+    e.target.value = value;
+    
+    const cardNumber = document.getElementById('cardNumberInput').value;
+    const cardName = document.getElementById('cardNameInput').value;
+    updateCardPreview(cardNumber, cardName, value, currentCardData);
+});
+
+// CVV formatting
+document.getElementById('cardCvvInput')?.addEventListener('input', function(e) {
+    e.target.value = e.target.value.replace(/\D/g, '');
+});
+
+// Flip card functions
+function flipSavedCard(element) {
+    if (element) {
+        element.classList.toggle('flipped');
+    }
+}
+
+function flipPreviewCard() {
+    const container = document.getElementById('cardPreviewContainer');
+    if (container) {
+        container.classList.toggle('flipped');
+    }
+}
+
+// Update CVV on card back
+document.getElementById('cardCvvInput')?.addEventListener('input', function(e) {
+    const cvv = e.target.value.replace(/\D/g, '');
+    const cvvDisplay = document.getElementById('cardPreviewCVV');
+    if (cvvDisplay) {
+        cvvDisplay.textContent = cvv || '***';
+    }
+});
+
+// Initialize card preview
+document.addEventListener('DOMContentLoaded', function() {
+    updateCardPreview('', '', '', null);
+});
+</script>

@@ -1,0 +1,979 @@
+<link rel="stylesheet" href="/admin/content_css/payment.css">
+<div class="content-wrapper payments-page">
+    <!-- Filters Section -->
+    <div class="payments-filters">
+        <div class="payments-filters-row">
+            <div class="payments-filters-group">
+                <label>Резидент</label>
+                <select id="filterResident">
+                    <option value="all">Все</option>
+                    <option value="1">Резидент 1</option>
+                    <option value="2">Резидент 2</option>
+                </select>
+        </div>
+
+            <div class="payments-filters-group">
+                <label>Метод</label>
+                <select id="filterMethod">
+                    <option value="all">Все</option>
+                    <option value="CASH">Наличные</option>
+                    <option value="CARD">CARD</option>
+                    <option value="TRANSFER">Банк</option>
+                    <option value="ONLINE">Онлайн</option>
+                </select>
+            </div>
+            
+            <div class="payments-filters-group">
+                <label>От</label>
+                <div class="date-input-wrapper">
+                    <input type="date" style="border-radius: 8px !important;" id="filterDateFrom">
+                    <button type="button" class="btn-calendar" onclick="openDatePicker('filterDateFrom')" title="Открыть календарь">
+                        <i class="bi bi-calendar"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="payments-filters-group">
+                <label>До</label>
+                <div class="date-input-wrapper">
+                    <input type="date" style="border-radius: 8px !important;" id="filterDateTo">
+                    <button type="button" class="btn-calendar" onclick="openDatePicker('filterDateTo')" title="Открыть календарь">
+                        <i class="bi bi-calendar"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="payments-filters-group">
+                <label>Поиск</label>
+                <input type="text" id="filterSearch" placeholder="№ чека / комментарий">
+            </div>
+        </div>
+        
+        <div class="payments-filters-actions">
+            <button class="btn-filter" onclick="applyPaymentFilters()">
+                <i class="bi bi-funnel"></i> Фильтр
+            </button>
+            <button class="btn-accept-payment" onclick="acceptPayment()">
+                Принять платеж
+            </button>
+        </div>
+    </div>
+
+    <div style="position: relative;">
+        <!-- Payments Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Резидент</th>
+                            <th>Сумма</th>
+                            <th>Метод</th>
+                            <th>Остаток</th>
+                            <th>Ссылка</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentsTable"></tbody>
+                </table>
+            </div>
+
+            
+        </div>
+            <!-- Pagination -->
+    <div class="table-pagination">
+        <div class="pagination-controls" id="paymentPaginationControls">
+            <button class="btn-pagination" onclick="goToPaymentPage('prev')" disabled id="paymentPrevBtn">
+                <i class="bi bi-chevron-double-left"></i>
+            </button>
+            <div id="paymentPageButtons" class="pagination-pages"></div>
+            <button class="btn-pagination" onclick="goToPaymentPage('next')" disabled id="paymentNextBtn">
+                <i class="bi bi-chevron-double-right"></i>
+            </button>
+        </div>
+        <div class="pagination-info">
+            <span>Стр. <span id="paymentCurrentPage">1</span> из <span id="paymentTotalPages">1</span> · всего <span id="paymentTotalItems">0</span></span>
+        </div>
+        <div class="pagination-per-page">
+            <span>На</span>
+            <span>странице:</span>
+            <div class="custom-pag-select" id="customPaymentItemsPerPage">
+                <select id="paymentItemsPerPage" onchange="changePaymentItemsPerPage()" style="display: none;">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <div class="select-btn">
+                    <span class="select-text">25</span>
+                    <span class="arrow">▾</span>
+        </div>
+                <div class="select-options" style="background: rgba(36, 40, 49, 0.95) !important">
+                    <div class="select-option" data-value="10">10</div>
+                    <div class="select-option selected" data-value="25">25</div>
+                    <div class="select-option" data-value="50">50</div>
+                    <div class="select-option" data-value="100">100</div>
+        </div>
+        </div>
+        </div>
+    </div>
+    </div>
+    </div>
+</div>
+
+<!-- Accept Payment Modal -->
+<div class="accept-payment-modal-overlay" id="acceptPaymentModal">
+    <div class="accept-payment-modal">
+        <div class="accept-payment-modal-header">
+            <h3>Принять платеж</h3>
+            <button class="accept-payment-modal-close" onclick="closeAcceptPaymentModal()" type="button">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="accept-payment-modal-body">
+            <form id="acceptPaymentForm" onsubmit="savePayment(event)">
+                <div class="accept-payment-form-row">
+                    <div class="accept-payment-form-group">
+                        <label for="paymentResident">Резидент</label>
+                        <select id="paymentResident" required>
+                            <option value="1">X / 2</option>
+                            <option value="2">Резидент 2</option>
+                            <option value="3">Резидент 3</option>
+                        </select>
+                    </div>
+                    <div class="accept-payment-form-group">
+                        <label for="paymentDate">Дата поступления</label>
+                        <div class="accept-payment-date-wrapper">
+                            <input type="date" id="paymentDate" required>
+                            <button type="button" class="btn-calendar" onclick="openDatePicker('paymentDate')" title="Открыть календарь">
+                                <i class="bi bi-calendar"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="accept-payment-form-group">
+                        <label for="paymentAmount">Сумма</label>
+                        <input type="number" id="paymentAmount" step="0.01" min="0" placeholder="0.00" required>
+                    </div>
+                    <div class="accept-payment-form-group">
+                        <label for="paymentMethod">Метод</label>
+                        <select id="paymentMethod" required>
+                            <option value="CASH" selected>CASH</option>
+                            <option value="CARD">CARD</option>
+                            <option value="TRANSFER">Банк</option>
+                            <option value="ONLINE">Онлайн</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="accept-payment-form-row">
+                    <div class="accept-payment-form-group">
+                        <label for="paymentReference">№/Референс</label>
+                        <input type="text" id="paymentReference" placeholder="">
+                    </div>
+                    <div class="accept-payment-form-group">
+                        <label for="paymentComment">Комментарий</label>
+                        <input type="text" id="paymentComment" placeholder="">
+                    </div>
+                </div>
+                <div class="accept-payment-form-row">
+                    <div class="accept-payment-form-group full-width">
+                        <label for="paymentCheckNumber">номер чека/платёжки</label>
+                        <input type="text" id="paymentCheckNumber" placeholder="">
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="accept-payment-modal-footer">
+            <button type="button" class="btn-modal-cancel" onclick="closeAcceptPaymentModal()">Отмена</button>
+            <button type="button" class="btn-modal-save" onclick="savePayment(event)">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+    const API_BASE = 'http://localhost:8000';
+    const methodLabels = {
+        'CASH': 'Наличные',
+        'CARD': 'CARD',
+        'TRANSFER': 'Банк',
+        'ONLINE': 'Онлайн'
+    };
+    
+    let residents = [];
+    let paymentsData = {
+        items: [],
+        total: 0,
+        page: 1,
+        per_page: 25,
+        last_page: 1
+    };
+    
+    // Pagination state
+    let paginationState = {
+        currentPage: 1,
+        itemsPerPage: 25,
+        totalItems: 0,
+        totalPages: 1
+    };
+    
+    // Load payments from API
+    async function loadPayments() {
+        const tbody = document.getElementById('paymentsTable');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Загрузка...</td></tr>';
+        }
+        
+        const params = new URLSearchParams();
+        params.append('page', paginationState.currentPage);
+        params.append('per_page', paginationState.itemsPerPage);
+        
+        const residentId = document.getElementById('filterResident')?.value;
+        if (residentId && residentId !== 'all') {
+            params.append('resident_id', residentId);
+        }
+        
+        const method = document.getElementById('filterMethod')?.value;
+        if (method && method !== 'all') {
+            params.append('method', method);
+        }
+        
+        const dateFrom = document.getElementById('filterDateFrom')?.value;
+        if (dateFrom) {
+            params.append('date_from', dateFrom);
+        }
+        
+        const dateTo = document.getElementById('filterDateTo')?.value;
+        if (dateTo) {
+            params.append('date_to', dateTo);
+        }
+        
+        const search = document.getElementById('filterSearch')?.value.trim();
+        if (search) {
+            params.append('q', search);
+        }
+        
+        try {
+            let response = await fetch(`${API_BASE}/api/payments?${params.toString()}`, { credentials: 'include' });
+            if (!response.ok && response.status === 401) {
+                response = await fetch(`${API_BASE}/api/payments/public?${params.toString()}`);
+            }
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            paymentsData = data;
+            paginationState.totalItems = data.total;
+            paginationState.totalPages = data.last_page;
+            paginationState.currentPage = data.page;
+            
+            renderTable();
+        } catch (error) {
+            console.error('Error loading payments:', error);
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Ошибка загрузки данных</td></tr>';
+            }
+            if (typeof showError === 'function') {
+                showError('Ошибка загрузки платежей: ' + error.message);
+            }
+        }
+    }
+    
+    // Render table function
+    function renderTable() {
+        const tbody = document.getElementById('paymentsTable');
+        if (!tbody) return;
+        
+        const payments = paymentsData.items || [];
+        
+        if (payments.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Нет данных по текущим фильтрам</td></tr>';
+        } else {
+            tbody.innerHTML = payments.map(p => {
+                const date = p.received_at || '—';
+                const resident = p.resident_code || '—';
+                const amount = typeof p.amount_total === 'number' ? p.amount_total.toFixed(2) : (p.amount_total || '0.00');
+                const method = methodLabels[p.method] || p.method || '—';
+                const leftover = typeof p.leftover === 'number' ? p.leftover.toFixed(2) : '0.00';
+                const reference = p.reference || '—';
+                
+                return `<tr>
+                    <td>${date}</td>
+                    <td><strong>${resident}</strong></td>
+                    <td class="amount-red">${amount} ₼</td>
+                    <td>${method}</td>
+                    <td>
+                        ${parseFloat(leftover) > 0 ? `<span class="badge-advance">Аванс ${leftover}</span>` : '0.00'}
+                    </td>
+                    <td>${reference}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewPayment(${p.id})">Открыть</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+        
+        updatePaginationUI();
+    }
+    
+    function buildPaymentPageList(current, total) {
+        if (total <= 5) {
+            return Array.from({ length: total }, (_, i) => i + 1);
+        }
+        const pages = new Set([1, total]);
+        if (current <= 3) {
+            [2, 3, 4, 5].forEach(p => pages.add(p));
+        } else if (current >= total - 2) {
+            [total - 1, total - 2, total - 3, total - 4].forEach(p => pages.add(p));
+        } else {
+            [current - 2, current - 1, current, current + 1, current + 2].forEach(p => pages.add(p));
+        }
+        const sorted = Array.from(pages).filter(p => p >= 1 && p <= total).sort((a, b) => a - b);
+        const result = [];
+        for (let i = 0; i < sorted.length; i++) {
+            const page = sorted[i];
+            result.push(page);
+            const next = sorted[i + 1];
+            if (next && next - page > 1) {
+                result.push('dots');
+            }
+        }
+        return result;
+    }
+
+    // Update pagination UI
+    function updatePaginationUI() {
+        const currentPageEl = document.getElementById('paymentCurrentPage');
+        const totalPagesEl = document.getElementById('paymentTotalPages');
+        const totalItemsEl = document.getElementById('paymentTotalItems');
+        const prevBtn = document.getElementById('paymentPrevBtn');
+        const nextBtn = document.getElementById('paymentNextBtn');
+        const pagesContainer = document.getElementById('paymentPageButtons');
+        
+        if (currentPageEl) currentPageEl.textContent = paginationState.currentPage;
+        if (totalPagesEl) totalPagesEl.textContent = paginationState.totalPages;
+        if (totalItemsEl) totalItemsEl.textContent = paginationState.totalItems;
+        if (prevBtn) prevBtn.disabled = paginationState.currentPage <= 1;
+        if (nextBtn) nextBtn.disabled = paginationState.currentPage >= paginationState.totalPages;
+
+        if (!pagesContainer) return;
+        pagesContainer.innerHTML = '';
+
+        const pages = buildPaymentPageList(paginationState.currentPage, paginationState.totalPages);
+        pages.forEach(p => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-pagination';
+
+            if (p === 'dots') {
+                btn.textContent = '...';
+                btn.disabled = true;
+                btn.classList.add('dots');
+            } else {
+                btn.textContent = p;
+                if (p > paginationState.totalPages) {
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => {
+                        if (p !== paginationState.currentPage) {
+                            goToPaymentPage(p);
+                        }
+                    };
+                }
+                if (p === paginationState.currentPage) {
+                    btn.classList.add('active');
+                    btn.setAttribute('aria-current', 'page');
+                }
+            }
+
+            pagesContainer.appendChild(btn);
+        });
+    }
+    
+    // Pagination functions
+    window.goToPaymentPage = function(page) {
+        if (page === 'prev') {
+            if (paginationState.currentPage > 1) {
+                paginationState.currentPage--;
+                loadPayments();
+            }
+        } else if (page === 'next') {
+            if (paginationState.currentPage < paginationState.totalPages) {
+                paginationState.currentPage++;
+                loadPayments();
+            }
+        } else if (typeof page === 'number') {
+            paginationState.currentPage = page;
+            loadPayments();
+        }
+    };
+    
+    window.changePaymentItemsPerPage = function() {
+        const select = document.getElementById('paymentItemsPerPage');
+        if (select) {
+            paginationState.itemsPerPage = parseInt(select.value);
+            paginationState.currentPage = 1;
+            loadPayments();
+            updateCustomPaginationDropdown();
+        }
+    };
+    
+    // Filter functions
+    window.applyPaymentFilters = function() {
+        paginationState.currentPage = 1;
+        loadPayments();
+    };
+    
+    // Load residents for filters and modal (учитываем пагинацию API)
+    async function loadResidents() {
+        try {
+            const perPage = 100;
+            let page = 1;
+            let allResidents = [];
+            let lastPage = 1;
+
+            while (page <= lastPage) {
+                let url = `${API_BASE}/api/residents?per_page=${perPage}&page=${page}`;
+                let response = await fetch(url, { credentials: 'include' });
+
+                if (!response.ok && response.status === 401) {
+                    // Публичная версия, если нет авторизации
+                    url = `${API_BASE}/api/residents/public?per_page=${perPage}&page=${page}`;
+                    response = await fetch(url);
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const items = Array.isArray(data) ? data : (data.items || data.residents || []);
+                allResidents = allResidents.concat(items);
+
+                const pagination = data.pagination || {};
+                lastPage = pagination.last_page || 1;
+                page += 1;
+            }
+
+            residents = allResidents;
+            console.log('Loaded residents for payments:', residents.length);
+
+            // Populate filter dropdown
+            const filterResident = document.getElementById('filterResident');
+            if (filterResident) {
+                filterResident.innerHTML = '<option value="all">Все</option>' +
+                    residents.map(r => `<option value="${r.id}">${r.block_name} / ${r.unit_number}</option>`).join('');
+            }
+
+            // Populate modal dropdown
+            const paymentResident = document.getElementById('paymentResident');
+            if (paymentResident) {
+                paymentResident.innerHTML = '<option value="">Выберите резидента</option>' +
+                    residents.map(r => `<option value="${r.id}">${r.block_name} / ${r.unit_number}</option>`).join('');
+            }
+        } catch (error) {
+            console.error('Error loading residents:', error);
+            residents = [];
+        }
+    }
+    
+    window.acceptPayment = function() {
+        const modal = document.getElementById('acceptPaymentModal');
+        if (modal) {
+            modal.classList.add('show');
+            
+            // Set default date to today
+            const dateInput = document.getElementById('paymentDate');
+            if (dateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+            }
+            
+            // Reset form
+            const form = document.getElementById('acceptPaymentForm');
+            if (form) {
+                form.reset();
+                // Set default values
+                if (dateInput) {
+                    const today = new Date().toISOString().split('T')[0];
+                    dateInput.value = today;
+                }
+                const residentSelect = document.getElementById('paymentResident');
+                if (residentSelect) {
+                    residentSelect.value = '';
+                }
+                const methodSelect = document.getElementById('paymentMethod');
+                if (methodSelect) {
+                    methodSelect.value = 'CASH';
+                }
+            }
+        }
+    };
+    
+    window.closeAcceptPaymentModal = function() {
+        const modal = document.getElementById('acceptPaymentModal');
+        if (modal) {
+            modal.classList.remove('show');
+        }
+    };
+    
+    window.savePayment = async function(event) {
+        if (event) {
+            event.preventDefault();
+        }
+        
+        const form = document.getElementById('acceptPaymentForm');
+        if (!form) return;
+        
+        // Get form values
+        const residentId = parseInt(document.getElementById('paymentResident').value);
+        const date = document.getElementById('paymentDate').value;
+        const amount = parseFloat(document.getElementById('paymentAmount').value);
+        const method = document.getElementById('paymentMethod').value;
+        const reference = document.getElementById('paymentReference').value.trim();
+        const comment = document.getElementById('paymentComment').value.trim();
+        const checkNumber = document.getElementById('paymentCheckNumber').value.trim();
+        
+        // Validate required fields
+        if (!residentId || !date || !amount || !method) {
+            if (typeof showWarning === 'function') {
+                showWarning('Пожалуйста, заполните все обязательные поля!');
+            }
+            return;
+        }
+        
+        if (amount <= 0) {
+            if (typeof showWarning === 'function') {
+                showWarning('Сумма должна быть больше нуля!');
+            }
+            return;
+        }
+        
+        // Create payment object
+        const paymentData = {
+            resident_id: residentId,
+            received_at: date,
+            amount_total: amount,
+            method: method,
+            reference: reference || checkNumber || null,
+            comment: comment || null
+        };
+        
+        try {
+            let response = await fetch(`${API_BASE}/api/payments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(paymentData),
+                credentials: 'include'
+            });
+            
+            if (!response.ok && response.status === 401) {
+                response = await fetch(`${API_BASE}/api/payments/public`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(paymentData)
+                });
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            // Close modal
+            closeAcceptPaymentModal();
+            
+            // Reload payments
+            loadPayments();
+            
+            // Show success message
+            if (typeof showSuccess === 'function') {
+                showSuccess('Платеж успешно принят!');
+            }
+            
+            // Open payment view
+            if (result.id) {
+                setTimeout(() => {
+                    viewPayment(result.id);
+                }, 500);
+            }
+        } catch (error) {
+            console.error('Error saving payment:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка сохранения платежа: ' + error.message);
+            }
+        }
+    };
+    
+    // Close modal on overlay click
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('acceptPaymentModal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeAcceptPaymentModal();
+                }
+            });
+        }
+    });
+    
+    window.viewPayment = function(id) {
+        console.log('Opening payment view for ID:', id);
+        
+        // Store payment ID for payment-view.html
+        window.__currentPaymentId = id;
+        
+        // Загрузить страницу просмотра через fetch и вставить в SPA контейнер
+        const viewUrl = `/admin/content/payment-view.html?id=${id}`;
+        const contentContainer = document.getElementById('spa-content');
+        
+        if (!contentContainer) {
+            console.error('SPA content container not found');
+            window.location.href = viewUrl;
+            return;
+        }
+        
+        // Показать состояние загрузки
+        contentContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: rgba(255,255,255,0.8);"><i class="bi bi-hourglass-split" style="font-size: 2rem; margin-bottom: 10px;"></i><p>Загрузка...</p></div>';
+        
+        // Загрузить контент
+        fetch(viewUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(html => {
+                // Вставить контент
+                contentContainer.innerHTML = html;
+                
+                // Выполнить скрипты из загруженного контента
+                const scripts = contentContainer.querySelectorAll('script');
+                scripts.forEach(oldScript => {
+                    const newScript = document.createElement('script');
+                    Array.from(oldScript.attributes).forEach(attr => {
+                        newScript.setAttribute(attr.name, attr.value);
+                    });
+                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                });
+                
+                // Обновить заголовок страницы и breadcrumb
+                updatePageHeaderForPaymentView(id);
+                
+                // Обновить URL в браузере через hash (для SPA роутера)
+                window.location.hash = `#/payment-view?id=${id}`;
+                
+                // Скроллить наверх
+                contentContainer.scrollTop = 0;
+                
+                console.log('Payment view loaded successfully');
+            })
+            .catch(error => {
+                console.error('Error loading payment view:', error);
+                contentContainer.innerHTML = `<div style="padding: 40px; text-align: center; color: #ff6b6b;"><p>Ошибка загрузки страницы: ${error.message}</p><button onclick="window.location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px;">Перезагрузить</button></div>`;
+            });
+    };
+    
+    // Функция для обновления заголовка и breadcrumb при открытии просмотра платежа
+    function updatePageHeaderForPaymentView(paymentId) {
+        const pageTitle = document.querySelector('.page-title');
+        const breadcrumb = document.querySelector('.breadcrumb');
+        
+        if (pageTitle) {
+            pageTitle.textContent = 'Платежи';
+        }
+        
+        if (breadcrumb) {
+            breadcrumb.innerHTML = '<a href="#/dashboard">Главная</a> / <a href="#/payments">Финансы</a> / Платежи';
+        }
+    }
+    
+    window.openDatePicker = function(inputId) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            if (input.showPicker && typeof input.showPicker === 'function') {
+                input.showPicker().catch(err => {
+                    input.focus();
+                    input.click();
+                });
+            } else {
+                input.focus();
+                input.click();
+            }
+        }
+    };
+    
+    // Initialize custom pagination dropdown
+    function updateCustomPaginationDropdown() {
+        const customSelect = document.getElementById('customPaymentItemsPerPage');
+        if (!customSelect) return;
+        
+        const nativeSelect = document.getElementById('paymentItemsPerPage');
+        const selectText = customSelect.querySelector('.select-text');
+        const options = customSelect.querySelectorAll('.select-option');
+        
+        if (nativeSelect && selectText) {
+            const selectedValue = nativeSelect.value;
+            selectText.textContent = selectedValue;
+            options.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.value === selectedValue) {
+                    opt.classList.add('selected');
+                }
+            });
+        }
+    }
+    
+    function initCustomPaginationDropdown() {
+        const customSelect = document.getElementById('customPaymentItemsPerPage');
+        if (!customSelect || customSelect.dataset.initialized === 'true') return;
+        customSelect.dataset.initialized = 'true';
+        
+        const nativeSelect = document.getElementById('paymentItemsPerPage');
+        const selectBtn = customSelect.querySelector('.select-btn');
+        const selectText = customSelect.querySelector('.select-text');
+        const options = customSelect.querySelectorAll('.select-option');
+        
+        if (nativeSelect) {
+            const selectedValue = nativeSelect.value;
+            selectText.textContent = selectedValue;
+            options.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.value === selectedValue) {
+                    opt.classList.add('selected');
+                }
+            });
+        }
+        
+        selectBtn.onclick = function(e) {
+            e.stopPropagation();
+            customSelect.classList.toggle('open');
+        };
+        
+        options.forEach(option => {
+            option.onclick = function(e) {
+                e.stopPropagation();
+                const value = option.dataset.value;
+                if (nativeSelect) {
+                    nativeSelect.value = value;
+                    nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                selectText.textContent = value;
+                options.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                customSelect.classList.remove('open');
+            };
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!customSelect.contains(e.target)) {
+                customSelect.classList.remove('open');
+            }
+        });
+    }
+    
+    // Инициализация фильтров (БЕЗ автоматического применения)
+    // Фильтрация происходит ТОЛЬКО при нажатии на кнопку "Фильтр" или Enter в поле поиска
+    function initFilters() {
+        // Убираем все автоматические обработчики событий (onchange, oninput)
+        // Фильтрация будет происходить только при нажатии на кнопку "Фильтр"
+        
+        // Добавляем обработчик Enter для поля поиска (удобство для пользователя)
+        const searchInput = document.getElementById('filterSearch');
+        if (searchInput) {
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    applyPaymentFilters();
+                }
+            });
+        }
+        
+        // Инициализируем только pagination dropdown
+        setTimeout(() => {
+            initCustomPaginationDropdown();
+        }, 500);
+    }
+    
+    // ПРИНУДИТЕЛЬНО ПРИМЕНИТЬ СЕРЫЙ ФОН В DARK THEME
+    function applyDarkThemeStyles() {
+        if (document.documentElement.getAttribute('data-theme') === 'dark' || 
+            document.body.getAttribute('data-theme') === 'dark') {
+            const filtersSection = document.querySelector('.payments-filters');
+            
+            if (filtersSection) {
+                filtersSection.style.setProperty('background', '#242831', 'important');
+                filtersSection.style.setProperty('background-color', '#242831', 'important');
+                filtersSection.style.setProperty('border', 'none', 'important');
+                filtersSection.style.setProperty('color', '#e4e6eb', 'important');
+            }
+
+            // Применить темный фон к карточке таблицы
+            const card = document.querySelector('.payments-page .card');
+            if (card) {
+                card.style.setProperty('background', 'rgba(36, 40, 49, 0.95)', 'important');
+                card.style.setProperty('background-color', 'rgba(36, 40, 49, 0.95)', 'important');
+                // card.style.setProperty('border', 'none', 'important');
+                card.style.setProperty('box-shadow', 'none', 'important');
+                card.style.setProperty('-webkit-box-shadow', 'none', 'important');
+            }
+
+            const cardBody = document.querySelector('.payments-page .card-body');
+            if (cardBody) {
+                cardBody.style.setProperty('background', 'transparent', 'important');
+                cardBody.style.setProperty('color', '#e4e6eb', 'important');
+            }
+
+            // Скрыть границу и фон у .content-wrapper.payments-page
+            const contentWrapper = document.querySelector('.content-wrapper.payments-page');
+            if (contentWrapper) {
+                contentWrapper.style.setProperty('border', 'none', 'important');
+                contentWrapper.style.setProperty('border-width', '0', 'important');
+                contentWrapper.style.setProperty('outline', 'none', 'important');
+                contentWrapper.style.setProperty('box-shadow', 'none', 'important');
+                contentWrapper.style.setProperty('background', 'transparent', 'important');
+                contentWrapper.style.setProperty('background-color', 'transparent', 'important');
+                contentWrapper.style.setProperty('backdrop-filter', 'none', 'important');
+                contentWrapper.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
+            }
+
+            // Применить серый фон к select и option элементам
+            const selectElements = document.querySelectorAll('.payments-filters-group select');
+            selectElements.forEach(select => {
+                select.style.setProperty('background', 'rgba(255, 255, 255, 0.05)', 'important');
+                select.style.setProperty('background-color', 'rgba(255, 255, 255, 0.05)', 'important');
+                select.style.setProperty('color', '#fefefe', 'important');
+                
+                // Применить стили к option элементам
+                const options = select.querySelectorAll('option');
+                options.forEach(option => {
+                    option.style.setProperty('background', '#242831', 'important');
+                    option.style.setProperty('background-color', '#242831', 'important');
+                    option.style.setProperty('color', '#f6f7ff', 'important');
+                });
+            });
+
+            // Инъекция CSS для белого плейсхолдера date input
+            const dateInputStyleId = 'payments-date-input-placeholder-white';
+            if (!document.getElementById(dateInputStyleId)) {
+                const style = document.createElement('style');
+                style.id = dateInputStyleId;
+                style.textContent = `
+                    [data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-text,
+                    [data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-month-field,
+                    [data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-day-field,
+                    [data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-year-field,
+                    body[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-text,
+                    body[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-month-field,
+                    body[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-day-field,
+                    body[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-year-field,
+                    html[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-text,
+                    html[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-month-field,
+                    html[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-day-field,
+                    html[data-theme="dark"] .date-input-wrapper input[type="date"]::-webkit-datetime-edit-year-field {
+                        color: #ffffff !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+    }
+    
+    // Функция для скрытия границы у content-wrapper
+    function hideContentWrapperBorder() {
+        const contentWrapper = document.querySelector('.content-wrapper.payments-page');
+        if (contentWrapper) {
+            contentWrapper.style.setProperty('border', 'none', 'important');
+            contentWrapper.style.setProperty('border-width', '0', 'important');
+            contentWrapper.style.setProperty('outline', 'none', 'important');
+            contentWrapper.style.setProperty('box-shadow', 'none', 'important');
+            contentWrapper.style.setProperty('background', 'transparent', 'important');
+            contentWrapper.style.setProperty('background-color', 'transparent', 'important');
+            contentWrapper.style.setProperty('background-image', 'none', 'important');
+            contentWrapper.style.setProperty('backdrop-filter', 'none', 'important');
+            contentWrapper.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
+        }
+    }
+    
+    // Применить сразу
+    applyDarkThemeStyles();
+    hideContentWrapperBorder();
+    
+    // Применить после загрузки DOM
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            applyDarkThemeStyles();
+            setTimeout(hideContentWrapperBorder, 100);
+            setTimeout(hideContentWrapperBorder, 500);
+            setTimeout(hideContentWrapperBorder, 1000);
+        });
+    }
+    
+    // Применить с задержкой на случай, если стили загружаются асинхронно
+    setTimeout(() => {
+        applyDarkThemeStyles();
+        hideContentWrapperBorder();
+    }, 100);
+    setTimeout(() => {
+        applyDarkThemeStyles();
+        hideContentWrapperBorder();
+    }, 500);
+    setTimeout(() => {
+        applyDarkThemeStyles();
+        hideContentWrapperBorder();
+    }, 1000);
+
+    // Повторно применять стили при открытии select (для выпадающих списков)
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectElements = document.querySelectorAll('.payments-filters-group select');
+        selectElements.forEach(select => {
+            select.addEventListener('mousedown', function() {
+                setTimeout(applyDarkThemeStyles, 10);
+            });
+            select.addEventListener('focus', function() {
+                setTimeout(applyDarkThemeStyles, 10);
+            });
+            select.addEventListener('change', function() {
+                setTimeout(applyDarkThemeStyles, 10);
+            });
+        });
+    });
+    
+    // Initialize on page load
+    function initPaymentsPage() {
+        loadResidents().then(() => {
+            loadPayments();
+            initFilters();
+        });
+    }
+    
+    // Listen for SPA content loaded event
+    // Удаляем старый обработчик, если он существует
+    if (window._paymentsContentLoadedHandler) {
+        document.removeEventListener('spa:contentLoaded', window._paymentsContentLoadedHandler);
+    }
+    
+    window._paymentsContentLoadedHandler = function() {
+        initPaymentsPage();
+    };
+    
+    document.addEventListener('spa:contentLoaded', window._paymentsContentLoadedHandler);
+    
+    // Initial load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPaymentsPage);
+    } else {
+        initPaymentsPage();
+    }
+})();
+</script>

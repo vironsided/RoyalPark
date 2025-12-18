@@ -1,0 +1,180 @@
+{#-----------------------------------------------------------------------------
+  Template: app/templates/payment_detail.html
+  Author: Mamedli Ayaz
+  Purpose: Карточка платежа + автораспределение и ручное распределение
+-----------------------------------------------------------------------------#}
+{% extends "base.html" %}
+{% block title %}Платеж #{{ p.id }}{% endblock %}
+{% block content %}
+
+{% set err = request.query_params.get('error') %}
+{% set ok  = request.query_params.get('ok') %}
+{% if err %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    Ошибка: {{ err }}
+    <button type="button" class="btn btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% elif ok == 'saved' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Распределение сохранено.
+    <button type="button" class="btn btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <a class="btn btn-outline-secondary" href="{{ url_for('payments_list') if url_for is defined else '/payments' }}">← Назад</a>
+  <h4 class="mb-0">Платеж #{{ p.id }}</h4>
+  <div></div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="text-secondary small">Резидент</div>
+        <div class="fw-semibold">{{ p.resident.block.name }} / {{ p.resident.unit_number }}</div>
+      </div>
+      <div class="col-md-2">
+        <div class="text-secondary small">Дата</div>
+        <div class="fw-semibold">{{ p.received_at }}</div>
+      </div>
+      <div class="col-md-2">
+        <div class="text-secondary small">Метод</div>
+        <div class="fw-semibold">{{ p.method.value }}</div>
+      </div>
+      <div class="col-md-2">
+        <div class="text-secondary small">Сумма</div>
+        <div class="fw-semibold text-danger">{{ '%.2f'|format(p.amount_total) }}</div>
+      </div>
+      <div class="col-md-2">
+        <div class="text-secondary small">Остаток</div>
+        {% if p.leftover and p.leftover > 0 %}
+          <span class="badge bg-success-subtle text-success-emphasis">Аванс {{ '%.2f'|format(p.leftover) }}</span>
+        {% else %}
+          <div class="fw-semibold">{{ '%.2f'|format(p.leftover) }}</div>
+        {% endif %}
+      </div>
+      <div class="col-12">
+        <div class="text-secondary small">Ссылка / Комментарий</div>
+        <div class="text-secondary">{{ p.reference or '—' }}{% if p.comment %} · {{ p.comment }}{% endif %}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# распределение и список применений оставлены без изменений #}
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between">
+      <h6 class="mb-0">Распределение по счетам</h6>
+      <button class="btn btn-sm btn-outline-primary" type="button" onclick="autoApply()">Автораспределить</button>
+    </div>
+    <div class="table-responsive mt-2">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>Счёт (период)</th>
+            <th class="text-end">Сумма</th>
+            <th class="text-end">Осталось оплатить</th>
+            <th class="text-end" style="width:180px;">Применить</th>
+          </tr>
+        </thead>
+        <tbody id="appsBody">
+          {% for it in open_invoices %}
+            <tr data-invoice-id="{{ it.inv.id }}" data-left="{{ '%.2f'|format(it.left) }}">
+              <td>
+                <a href="{{ url_for('invoice_detail', invoice_id=it.inv.id) if url_for is defined else ('/invoices/' ~ it.inv.id) }}" target="_blank">
+                  {{ it.inv.number or (it.inv.period_year ~ '-' ~ '%02d'|format(it.inv.period_month) ~ '/' ~ it.inv.id) }}
+                </a>
+              </td>
+              <td class="text-end">{{ '%.2f'|format(it.inv.amount_total) }}</td>
+              <td class="text-end">{{ '%.2f'|format(it.left) }}</td>
+              <td class="text-end">
+                <input class="form-control form-control-sm text-end apply-input" type="number" step="0.01" min="0" max="{{ '%.2f'|format(it.left) }}" placeholder="0.00">
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="text-secondary">Нет открытых счетов</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <form class="d-flex gap-2 mt-2" method="post" action="{{ url_for('payment_save_applications', payment_id=p.id) if url_for is defined else ('/payments/' ~ p.id ~ '/applications') }}" onsubmit="return packApps()">
+      <input type="hidden" name="data_json" id="apps_json">
+      <button class="btn btn-primary">Сохранить распределение</button>
+    </form>
+  </div>
+</div>
+
+{% if p.applications %}
+<div class="card">
+  <div class="card-body">
+    <h6>Применения</h6>
+    <div class="table-responsive mt-2">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>Счёт</th>
+            <th class="text-end">Сумма</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in p.applications %}
+            <tr>
+              <td>
+                <a href="{{ url_for('invoice_detail', invoice_id=a.invoice.id) if url_for is defined else ('/invoices/' ~ a.invoice.id) }}" target="_blank">
+                  {{ a.invoice.number or (a.invoice.period_year ~ '-' ~ '%02d'|format(a.invoice.period_month) ~ '/' ~ a.invoice.id) }}
+                </a>
+              </td>
+              <td class="text-end">{{ '%.2f'|format(a.amount_applied) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<script>
+  async function autoApply(){
+    const url = "{{ url_for('payment_auto_apply', payment_id=p.id) if url_for is defined else ('/payments/' ~ p.id ~ '/auto-apply') }}";
+    const resp = await fetch(url, {method:'POST'});
+    const data = await resp.json();
+    if(!data.ok){ alert('Не удалось рассчитать план.'); return; }
+    const plan = data.plan || [];
+    const body = document.getElementById('appsBody');
+    body.querySelectorAll('.apply-input').forEach(i => i.value = '');
+    plan.forEach(row => {
+      const tr = body.querySelector(`tr[data-invoice-id="${row.invoice_id}"]`);
+      if (tr){
+        const inp = tr.querySelector('.apply-input');
+        inp.value = Number(row.amount).toFixed(2);
+      }
+    });
+  }
+
+  function packApps(){
+    const body = document.getElementById('appsBody');
+    const rows = body.querySelectorAll('tr[data-invoice-id]');
+    const arr = [];
+    rows.forEach(tr=>{
+      const invId = Number(tr.dataset.invoiceId);
+      const left = parseFloat(tr.dataset.left);
+      const inp = tr.querySelector('.apply-input');
+      const val = parseFloat(inp.value || '0');
+      if (val > 0){
+        if (val > left){ alert('Сумма больше остатка по счёту.'); arr.length=0; return false; }
+        arr.push({invoice_id: invId, amount: Number(val.toFixed(2))});
+      }
+    });
+    if (arr.length === 0){
+      if (!confirm('Вы не указали сумм к применению. Сохранить пустой план?')) return false;
+    }
+    document.getElementById('apps_json').value = JSON.stringify(arr);
+    return true;
+  }
+</script>
+
+{% endblock %}
