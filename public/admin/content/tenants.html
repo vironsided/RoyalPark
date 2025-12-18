@@ -443,55 +443,22 @@
                 console.log('Response status:', response.status, response.statusText);
 
                 if (!response.ok) {
-                    if (response.status === 401 || response.status === 403) {
-                        url = url.replace('/api/tenants?', '/api/tenants/public?');
-                        console.log('Trying public endpoint:', url);
-                        try {
-                            response = await fetch(url);
-                            console.log('Public response status:', response.status, response.statusText);
-                            if (!response.ok) {
-                                let errorMessage = `HTTP ${response.status}`;
-                                try {
-                                    const errorData = await response.json();
-                                    errorMessage = errorData.detail || JSON.stringify(errorData);
-                                } catch (e) {
-                                    const errorText = await response.text().catch(() => '');
-                                    if (errorText) {
-                                        try {
-                                            const errorJson = JSON.parse(errorText);
-                                            errorMessage = errorJson.detail || errorText;
-                                        } catch {
-                                            errorMessage = errorText;
-                                        }
-                                    }
-                                }
-                                throw new Error(errorMessage);
-                            }
-                        } catch (fetchError) {
-                            if (fetchError.message && !fetchError.message.includes('HTTP') && !fetchError.message.includes('CORS')) {
-                                throw fetchError;
-                            }
-                            console.error('CORS or network error:', fetchError);
-                            throw new Error('Ошибка подключения к серверу. Убедитесь, что backend запущен на порту 8000 и перезапущен после изменений.');
-                        }
-                    } else {
-                        let errorMessage = `HTTP ${response.status}`;
-                        try {
-                            const errorData = await response.json();
-                            errorMessage = errorData.detail || JSON.stringify(errorData);
-                        } catch (e) {
-                            const errorText = await response.text().catch(() => '');
-                            if (errorText) {
-                                try {
-                                    const errorJson = JSON.parse(errorText);
-                                    errorMessage = errorJson.detail || errorText;
-                                } catch {
-                                    errorMessage = errorText;
-                                }
+                    let errorMessage = `HTTP ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || JSON.stringify(errorData);
+                    } catch (e) {
+                        const errorText = await response.text().catch(() => '');
+                        if (errorText) {
+                            try {
+                                const errorJson = JSON.parse(errorText);
+                                errorMessage = errorJson.detail || errorText;
+                            } catch {
+                                errorMessage = errorText;
                             }
                         }
-                        throw new Error(errorMessage);
                     }
+                    throw new Error(errorMessage);
                 }
 
                 const data = await response.json();
@@ -547,25 +514,13 @@
             try {
                 let url = `${API_BASE}/api/blocks`;
                 let response = await fetch(url, { credentials: 'include' });
-                if (!response.ok) {
-                    if (response.status === 401 || response.status === 403) {
-                        url = `${API_BASE}/api/blocks/public`;
-                        response = await fetch(url);
-                    }
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const blocksData = await response.json();
                 blocks = Array.isArray(blocksData) ? blocksData : (blocksData.blocks || []);
 
                 url = `${API_BASE}/api/residents`;
                 response = await fetch(url, { credentials: 'include' });
-                if (!response.ok) {
-                    if (response.status === 401 || response.status === 403) {
-                        url = `${API_BASE}/api/residents/public`;
-                        response = await fetch(url);
-                    }
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const residentsData = await response.json();
                 residents = Array.isArray(residentsData) ? residentsData : (residentsData.residents || []);
 
@@ -1082,67 +1037,30 @@
                 });
 
                 if (!response.ok) {
-                    if (response.status === 401 || response.status === 403) {
-                        url = isEditing
-                            ? `${API_BASE}/api/tenants/${editingTenantId}/public`
-                            : `${API_BASE}/api/tenants/public`;
-                        response = await fetch(url, {
-                            method: method,
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(formData)
-                        });
-                        if (!response.ok) {
-                            let errorMessage = `HTTP ${response.status}`;
-                            try {
-                                const errorData = await response.json();
-                                if (errorData.detail) {
-                                    if (typeof errorData.detail === 'string') {
-                                        errorMessage = errorData.detail;
-                                    } else {
-                                        errorMessage = JSON.stringify(errorData.detail);
-                                    }
-                                } else {
-                                    errorMessage = JSON.stringify(errorData);
-                                }
-                            } catch (e) {
-                                const errorText = await response.text();
-                                if (errorText) {
-                                    try {
-                                        const errorJson = JSON.parse(errorText);
-                                        errorMessage = errorJson.detail || errorText;
-                                    } catch {
-                                        errorMessage = errorText || errorMessage;
-                                    }
-                                }
-                            }
-                            throw new Error(errorMessage);
-                        }
-                    } else {
-                        let errorMessage = `HTTP ${response.status}`;
-                        try {
-                            const errorData = await response.json();
-                            if (errorData.detail) {
-                                if (typeof errorData.detail === 'string') {
-                                    errorMessage = errorData.detail;
-                                } else {
-                                    errorMessage = JSON.stringify(errorData.detail);
-                                }
+                    let errorMessage = `HTTP ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.detail) {
+                            if (typeof errorData.detail === 'string') {
+                                errorMessage = errorData.detail;
                             } else {
-                                errorMessage = JSON.stringify(errorData);
+                                errorMessage = JSON.stringify(errorData.detail);
                             }
-                        } catch (e) {
-                            const errorText = await response.text();
-                            if (errorText) {
-                                try {
-                                    const errorJson = JSON.parse(errorText);
-                                    errorMessage = errorJson.detail || errorText;
-                                } catch {
-                                    errorMessage = errorText || errorMessage;
-                                }
+                        } else {
+                            errorMessage = JSON.stringify(errorData);
+                        }
+                    } catch (e) {
+                        const errorText = await response.text();
+                        if (errorText) {
+                            try {
+                                const errorJson = JSON.parse(errorText);
+                                errorMessage = errorJson.detail || errorText;
+                            } catch {
+                                errorMessage = errorText || errorMessage;
                             }
                         }
-                        throw new Error(errorMessage);
                     }
+                    throw new Error(errorMessage);
                 }
 
                 const result = await response.json();
@@ -1187,15 +1105,7 @@
                 let response = await fetch(url, { credentials: 'include' });
 
                 if (!response.ok) {
-                    if (response.status === 401 || response.status === 403) {
-                        url = `${API_BASE}/api/tenants/${id}/public`;
-                        response = await fetch(url);
-                        if (!response.ok) {
-                            throw new Error(`HTTP ${response.status}`);
-                        }
-                    } else {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
+                    throw new Error(`HTTP ${response.status}`);
                 }
 
                 const tenant = await response.json();
@@ -1308,17 +1218,7 @@
                 let response = await fetch(url, { method, credentials: 'include' });
 
                 if (!response.ok) {
-                    if (response.status === 401 || response.status === 403) {
-                        url = type === 'reset'
-                            ? `${API_BASE}/api/tenants/${tenantId}/reset/public`
-                            : `${API_BASE}/api/tenants/${tenantId}/public`;
-                        response = await fetch(url, { method });
-                        if (!response.ok) {
-                            throw new Error(`HTTP ${response.status}`);
-                        }
-                    } else {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
+                    throw new Error(`HTTP ${response.status}`);
                 }
 
                 if (type === 'reset') {
@@ -1413,21 +1313,15 @@
                 const tenant = tenantsData.find(t => t.id === tenantId);
                 const homes = tenant ? (tenant.homes || []) : [];
 
-                // Создаем QR токен через API (используем публичный endpoint для tenants)
-                let resp = await fetch(`${API_BASE}/api/qr/tenants/${tenantId}/qr-token/public`, {
+                // Создаем QR токен через API
+                let resp = await fetch(`${API_BASE}/api/qr/users/${tenantId}/qr-token`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
                 });
                 if (!resp.ok) {
-                    // Если endpoint для tenants не существует, пробуем через users
-                    resp = await fetch(`${API_BASE}/api/qr/users/${tenantId}/qr-token/public`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
-                    });
-                    if (!resp.ok) {
-                        const errorText = await resp.text();
-                        throw new Error(`Failed to generate QR token: ${resp.status} - ${errorText}`);
-                    }
+                    const errorText = await resp.text();
+                    throw new Error(`Failed to generate QR token: ${resp.status} - ${errorText}`);
                 }
 
                 const data = await resp.json();

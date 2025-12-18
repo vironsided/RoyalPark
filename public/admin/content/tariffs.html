@@ -194,34 +194,9 @@
     window.loadTariffs = async function () {
         try {
             console.log('Loading tariffs from API...');
-            let resp;
+            let resp = await fetch(`${API_BASE}/api/tariffs`, { credentials: 'include' });
 
-            // Сначала пробуем авторизованный endpoint
-            try {
-                resp = await fetch(`${API_BASE}/api/tariffs`, { credentials: 'include' });
-            } catch (networkError) {
-                console.warn('Network error on authorized endpoint, trying public:', networkError.message);
-                resp = await fetch(`${API_BASE}/api/tariffs/public`);
-            }
-
-            // Если получили 401/403, автоматически переключаемся на публичный endpoint
-            if (resp.status === 401 || resp.status === 403) {
-                console.warn('Not authorized (401/403), using public endpoint');
-                try {
-                    resp = await fetch(`${API_BASE}/api/tariffs/public`, {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                } catch (fetchError) {
-                    console.error('Error fetching public endpoint:', fetchError);
-                    throw new Error(`Failed to load tariffs: ${fetchError.message}`);
-                }
-            }
-
-            // Проверяем, что ответ успешный (после возможного переключения на публичный endpoint)
+            // Проверяем, что ответ успешный
             if (!resp.ok) {
                 const errorText = await resp.text().catch(() => 'Unknown error');
                 console.error('Failed to load tariffs:', resp.status, errorText);
@@ -424,9 +399,6 @@
             }
 
             let resp = await fetch(`${API_BASE}/api/tariffs?${params.toString()}`, { credentials: 'include' });
-            if (resp.status === 401) {
-                resp = await fetch(`${API_BASE}/api/tariffs/public?${params.toString()}`);
-            }
             if (!resp.ok) throw new Error('Failed to load tariffs');
             const tariffs = await resp.json();
 
@@ -879,14 +851,6 @@
                     credentials: 'include',
                     body: JSON.stringify(tariffData)
                 });
-                if (resp.status === 401) {
-                    console.warn('Not authorized, using public endpoint');
-                    resp = await fetch(`${API_BASE}/api/tariffs/${editingTariffId}/public`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(tariffData)
-                    });
-                }
             } else {
                 // Создание нового тарифа
                 resp = await fetch(`${API_BASE}/api/tariffs`, {
@@ -895,14 +859,6 @@
                     credentials: 'include',
                     body: JSON.stringify(tariffData)
                 });
-                if (resp.status === 401) {
-                    console.warn('Not authorized, using public endpoint');
-                    resp = await fetch(`${API_BASE}/api/tariffs/public`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(tariffData)
-                    });
-                }
             }
 
             if (!resp.ok) {
@@ -969,12 +925,6 @@
                 method: 'DELETE',
                 credentials: 'include'
             });
-            if (resp.status === 401) {
-                console.warn('Not authorized, using public endpoint');
-                resp = await fetch(`${API_BASE}/api/tariffs/${tariffId}/public`, {
-                    method: 'DELETE'
-                });
-            }
             if (!resp.ok) throw new Error('Failed to delete tariff');
 
             // Если удаляли редактируемый тариф, сбрасываем режим редактирования
@@ -1017,9 +967,6 @@
         // Загружаем полные данные тарифа из API
         try {
             let resp = await fetch(`${API_BASE}/api/tariffs/${tariffId}`, { credentials: 'include' });
-            if (resp.status === 401) {
-                resp = await fetch(`${API_BASE}/api/tariffs/${tariffId}/public`);
-            }
             if (!resp.ok) throw new Error('Failed to load tariff');
             const fullTariff = await resp.json();
 

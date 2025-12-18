@@ -194,37 +194,6 @@ def _list_invoices_internal(
     }
 
 
-@router.get("/public")
-def list_invoices_public(
-    db: Session = Depends(get_db),
-    block_id: Optional[str] = Query(None),
-    resident_id: Optional[str] = Query(None),
-    status: Optional[str] = Query(None),
-    year: Optional[str] = Query(None),
-    month: Optional[str] = Query(None),
-    q: Optional[str] = Query(None),
-    page: int = Query(1, ge=1),
-    per_page: int = Query(25, ge=1, le=200),
-):
-    """Public endpoint for testing."""
-    try:
-        block_id_i = _to_int(block_id)
-        resident_id_i = _to_int(resident_id)
-        year_i = _to_int(year)
-        month_i = _to_int(month)
-        
-        return _list_invoices_internal(
-            db, block_id_i, resident_id_i, status, year_i, month_i, q, page, per_page
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        import traceback
-        print(f"Error in list_invoices_public: {e}")
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
-
 @router.get("")
 def list_invoices_api(
     db: Session = Depends(get_db),
@@ -377,33 +346,6 @@ def _bulk_issue_internal(
         "count": cnt,
         "message": f"Выставлено счетов: {cnt}"
     }
-
-
-@router.post("/bulk-issue/public", response_model=BulkIssueResponse)
-def bulk_issue_public(
-    data: BulkIssueRequest,
-    db: Session = Depends(get_db),
-):
-    """Public endpoint for testing."""
-    print(f"=== DEBUG bulk_issue_public START ===")
-    print(f"Received request - action={data.action}, block_id={data.block_id}, due_date={data.due_date}")
-    try:
-        # Normalize block_id: if it's None or 0, set to None
-        block_id = data.block_id if data.block_id else None
-        result = _bulk_issue_internal(db, data.action, block_id, data.due_date)
-        print(f"DEBUG bulk_issue_public: Success - {result}")
-        print(f"=== DEBUG bulk_issue_public END (SUCCESS) ===")
-        return result
-    except HTTPException as he:
-        print(f"DEBUG bulk_issue_public: HTTPException - {he.status_code}: {he.detail}")
-        print(f"=== DEBUG bulk_issue_public END (HTTPException) ===")
-        raise
-    except Exception as e:
-        import traceback
-        print(f"ERROR in bulk_issue_public: {e}")
-        print(traceback.format_exc())
-        print(f"=== DEBUG bulk_issue_public END (ERROR) ===")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @router.post("/bulk-issue", response_model=BulkIssueResponse)
@@ -562,23 +504,6 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
     }
 
 
-@router.get("/{invoice_id}/public", response_model=InvoiceDetailOut)
-def get_invoice_detail_public(
-    invoice_id: int,
-    db: Session = Depends(get_db),
-):
-    """Public endpoint for getting invoice details."""
-    try:
-        return _get_invoice_detail_internal(db, invoice_id)
-    except HTTPException:
-        raise
-    except Exception as e:
-        import traceback
-        print(f"Error in get_invoice_detail_public: {e}")
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
-
 @router.get("/{invoice_id}", response_model=InvoiceDetailOut)
 def get_invoice_detail_api(
     invoice_id: int,
@@ -593,24 +518,6 @@ def get_invoice_detail_api(
 class InvoiceUpdateRequest(BaseModel):
     due_date: Optional[str] = None  # YYYY-MM-DD
     notes: Optional[str] = None
-
-
-@router.put("/{invoice_id}/public")
-def update_invoice_public(
-    invoice_id: int,
-    data: InvoiceUpdateRequest,
-    db: Session = Depends(get_db),
-):
-    """Public endpoint for updating invoice."""
-    try:
-        return _update_invoice_internal(db, invoice_id, data.due_date, data.notes)
-    except HTTPException:
-        raise
-    except Exception as e:
-        import traceback
-        print(f"Error in update_invoice_public: {e}")
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @router.put("/{invoice_id}")
@@ -681,24 +588,6 @@ class InvoiceCancelRequest(BaseModel):
     reason: str
 
 
-@router.post("/{invoice_id}/cancel/public")
-def cancel_invoice_public(
-    invoice_id: int,
-    data: InvoiceCancelRequest,
-    db: Session = Depends(get_db),
-):
-    """Public endpoint for canceling invoice."""
-    try:
-        return _cancel_invoice_internal(db, invoice_id, data.reason)
-    except HTTPException:
-        raise
-    except Exception as e:
-        import traceback
-        print(f"Error in cancel_invoice_public: {e}")
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
-
 @router.post("/{invoice_id}/cancel")
 def cancel_invoice_api(
     invoice_id: int,
@@ -735,24 +624,6 @@ def _cancel_invoice_internal(db: Session, invoice_id: int, reason: str):
 class InvoiceReissueRequest(BaseModel):
     due_date: Optional[str] = None  # YYYY-MM-DD
     comment: Optional[str] = None
-
-
-@router.post("/{invoice_id}/reissue/public")
-def reissue_invoice_public(
-    invoice_id: int,
-    data: InvoiceReissueRequest,
-    db: Session = Depends(get_db),
-):
-    """Public endpoint for reissuing invoice."""
-    try:
-        return _reissue_invoice_internal(db, invoice_id, data.due_date, data.comment)
-    except HTTPException:
-        raise
-    except Exception as e:
-        import traceback
-        print(f"Error in reissue_invoice_public: {e}")
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @router.post("/{invoice_id}/reissue")

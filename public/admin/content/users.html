@@ -221,13 +221,8 @@
                 params.append('page', paginationState.currentPage);
                 params.append('per_page', paginationState.itemsPerPage);
 
-                // Сначала пробуем с авторизацией
+                // Загружаем пользователей
                 let resp = await fetch(`${API_BASE}/api/users?${params.toString()}`, { credentials: 'include' });
-                // Если 401, пробуем временный публичный endpoint
-                if (resp.status === 401) {
-                    console.warn('Not authorized, using public endpoint');
-                    resp = await fetch(`${API_BASE}/api/users/public?${params.toString()}`);
-                }
                 if (!resp.ok) throw new Error(`Failed to load users: ${resp.status}`);
                 const data = await resp.json();
 
@@ -539,21 +534,6 @@
                         email: null
                     })
                 });
-                // Если 401, пробуем временный публичный endpoint
-                if (resp.status === 401) {
-                    console.warn('Not authorized, using public endpoint');
-                    resp = await fetch(`${API_BASE}/api/users/public`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            username: login,
-                            role: role,
-                            full_name: null,
-                            phone: null,
-                            email: null
-                        })
-                    });
-                }
                 if (!resp.ok) {
                     const errorText = await resp.text();
                     throw new Error(`Failed to create user: ${resp.status} - ${errorText}`);
@@ -600,12 +580,6 @@
                     method: 'POST',
                     credentials: 'include'
                 });
-                if (resp.status === 401) {
-                    console.warn('Not authorized, using public endpoint');
-                    resp = await fetch(`${API_BASE}/api/users/${userId}/reset/public`, {
-                        method: 'POST'
-                    });
-                }
                 if (!resp.ok) throw new Error('Failed to reset password');
                 const updated = await resp.json();
 
@@ -654,14 +628,6 @@
                     credentials: 'include',
                     body: JSON.stringify({ username: newName })
                 });
-                if (resp.status === 401) {
-                    console.warn('Not authorized, using public endpoint');
-                    resp = await fetch(`${API_BASE}/api/users/${userId}/public`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username: newName })
-                    });
-                }
                 if (!resp.ok) throw new Error('Failed to rename user');
                 // Reload current page to see updated name
                 await loadUsers();
@@ -728,10 +694,11 @@
         // Show QR Code
         window.showQRCode = async function (userId, username, tempPassword) {
             try {
-                // Создаем QR токен через API (используем публичный endpoint)
-                let resp = await fetch(`${API_BASE}/api/qr/users/${userId}/qr-token/public`, {
+                // Создаем QR токен через API
+                let resp = await fetch(`${API_BASE}/api/qr/users/${userId}/qr-token`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
                 });
                 if (!resp.ok) {
                     const errorText = await resp.text();
@@ -1022,12 +989,6 @@
                     method: 'DELETE',
                     credentials: 'include'
                 });
-                if (resp.status === 401) {
-                    console.warn('Not authorized, using public endpoint');
-                    resp = await fetch(`${API_BASE}/api/users/${userId}/public`, {
-                        method: 'DELETE'
-                    });
-                }
                 if (!resp.ok) throw new Error('Failed to delete user');
 
                 // Reload users first to get updated total

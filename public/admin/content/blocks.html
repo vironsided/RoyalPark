@@ -187,23 +187,21 @@
     async function loadBlocks() {
         try {
             let resp = await fetch(`${API_BASE}/api/blocks`, { credentials: 'include' });
-            if (resp.status === 401) {
-                console.warn('Not authorized, using public endpoint');
-                resp = await fetch(`${API_BASE}/api/blocks/public`);
-            }
             if (!resp.ok) throw new Error('Failed to load blocks');
             blocks = await resp.json();
             blocksLoaded = true; // Помечаем, что загрузка завершена
             renderBlocks();
             updateBlocksCount();
-            updateActiveResidentsCount(); // Обновляем счетчик активных домов
+            // Не вызываем updateActiveResidentsCount() здесь, так как residents может быть еще не загружен
+            // Это будет вызвано в loadResidents() после загрузки данных
         } catch (e) {
             console.error('Load blocks error:', e);
             blocks = [];
             blocksLoaded = true; // Помечаем, что загрузка завершена (даже при ошибке)
             renderBlocks(); // Показываем сообщение об отсутствии блоков только после завершения загрузки
             updateBlocksCount();
-            updateActiveResidentsCount(); // Обновляем счетчик активных домов даже при ошибке
+            // Не вызываем updateActiveResidentsCount() здесь, так как residents может быть еще не загружен
+            // Это будет вызвано в loadResidents() после загрузки данных
         }
     }
 
@@ -219,11 +217,6 @@
                 // Основной запрос
                 let url = `${API_BASE}/api/residents?per_page=${perPage}&page=${page}`;
                 let resp = await fetch(url, { credentials: 'include' });
-                if (resp.status === 401) {
-                    console.warn('Not authorized, using public endpoint');
-                    url = `${API_BASE}/api/residents/public?per_page=${perPage}&page=${page}`;
-                    resp = await fetch(url);
-                }
                 if (!resp.ok) throw new Error('Failed to load residents');
                 const data = await resp.json();
 
@@ -470,14 +463,6 @@
                 credentials: 'include',
                 body: JSON.stringify({ name: blockName })
             });
-            if (resp.status === 401) {
-                console.warn('Not authorized, using public endpoint');
-                resp = await fetch(`${API_BASE}/api/blocks/public`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: blockName })
-                });
-            }
             if (!resp.ok) {
                 const errorData = await resp.json().catch(() => ({ detail: 'Ошибка создания блока' }));
                 throw new Error(errorData.detail || 'Failed to create block');
@@ -548,14 +533,6 @@
                 credentials: 'include',
                 body: JSON.stringify({ name: newName })
             });
-            if (resp.status === 401) {
-                console.warn('Not authorized, using public endpoint');
-                resp = await fetch(`${API_BASE}/api/blocks/${selectedBlockId}/public`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: newName })
-                });
-            }
             if (!resp.ok) {
                 const errorData = await resp.json().catch(() => ({ detail: 'Ошибка переименования' }));
                 throw new Error(errorData.detail || 'Failed to rename block');
@@ -648,12 +625,6 @@
                 method: 'DELETE',
                 credentials: 'include'
             });
-            if (resp.status === 401) {
-                console.warn('Not authorized, using public endpoint');
-                resp = await fetch(`${API_BASE}/api/blocks/${selectedBlockId}/public`, {
-                    method: 'DELETE'
-                });
-            }
             if (!resp.ok) {
                 throw new Error('Failed to delete block');
             }
@@ -780,6 +751,10 @@
             loadBlocks(),
             loadResidents()
         ]);
+
+        // Обновляем счетчики после завершения обеих загрузок
+        updateActiveResidentsCount();
+        updateOccupancyPercentage();
 
         // Небольшая задержка для гарантии что DOM обновлен после SPA-перехода
         setTimeout(() => {

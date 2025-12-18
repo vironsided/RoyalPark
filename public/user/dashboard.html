@@ -499,7 +499,43 @@
     
     <script src="/js/notifications.js"></script>
     <script>
+        // Session validation - redirect to login if not authenticated
+        (async function checkSession() {
+            document.body.style.visibility = 'hidden';
+            try {
+                const response = await fetch('http://localhost:8000/api/auth/check', {
+                    credentials: 'include'
+                });
+                if (!response.ok) {
+                    window.location.replace('/login.html');
+                    return;
+                }
+                document.body.style.visibility = 'visible';
+            } catch (error) {
+                console.error('Session check failed:', error);
+                window.location.replace('/login.html');
+            }
+        })();
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Logout button handler
+            const logoutBtn = document.querySelector('.logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    try {
+                        await fetch('http://localhost:8000/api/auth/logout', {
+                            method: 'POST',
+                            credentials: 'include'
+                        });
+                    } catch (error) {
+                        console.error('Logout error:', error);
+                    }
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.replace('/login.html');
+                });
+            }
             const accountProfileBtn = document.getElementById('accountProfileBtn');
             const accountModal = document.getElementById('accountModal');
             const accountModalClose = document.getElementById('accountModalClose');
@@ -562,7 +598,7 @@
             // Load user profile from backend
             async function loadUserProfile() {
                 try {
-                    const response = await fetch('http://localhost:8000/api/users/me/public', {
+                    const response = await fetch('http://localhost:8000/api/users/me', {
                         method: 'GET',
                         credentials: 'include',
                         headers: {
@@ -698,7 +734,7 @@
             // Change password function
             async function changePassword(currentPassword, newPassword, confirmPassword) {
                 try {
-                    const response = await fetch('http://localhost:8000/api/users/me/change-password/public', {
+                    const response = await fetch('http://localhost:8000/api/users/me/change-password', {
                         method: 'POST',
                         credentials: 'include',
                         headers: {
@@ -805,7 +841,7 @@
                         formData.append('avatar', avatarInput.files[0]);
                     }
                     
-                    const response = await fetch('http://localhost:8000/api/users/me/public', {
+                    const response = await fetch('http://localhost:8000/api/users/me', {
                         method: 'PUT',
                         credentials: 'include',
                         body: formData

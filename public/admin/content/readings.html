@@ -333,22 +333,9 @@
             let response = await fetch(url, { credentials: 'include' });
             console.log('Response status:', response.status, response.statusText);
             if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    // Try public endpoint
-                    const publicUrl = url.replace('/api/readings?', '/api/readings/public?');
-                    console.log('Trying public endpoint:', publicUrl);
-                    response = await fetch(publicUrl, { credentials: 'include' });
-                    console.log('Public response status:', response.status, response.statusText);
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error('Public endpoint error:', errorText);
-                        throw new Error(`HTTP ${response.status}: ${errorText}`);
-                    }
-                } else {
-                    const errorText = await response.text();
-                    console.error('Endpoint error:', errorText);
-                    throw new Error(`HTTP ${response.status}: ${errorText}`);
-                }
+                const errorText = await response.text();
+                console.error('Endpoint error:', errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
 
             readingsData = await response.json();
@@ -948,13 +935,7 @@
                     console.log('Block not found in local array, loading from API...');
                     try {
                         let url = `${API_BASE}/api/blocks`;
-                        let response = await fetch(url);
-                        if (!response.ok) {
-                            if (response.status === 401 || response.status === 403) {
-                                url = `${API_BASE}/api/blocks/public`;
-                                response = await fetch(url);
-                            }
-                        }
+                        let response = await fetch(url, { credentials: 'include' });
                         if (response.ok) {
                             const blocksData = await response.json();
                             blocks = Array.isArray(blocksData) ? blocksData : (blocksData.items || []);
@@ -977,18 +958,9 @@
 
                 let url = `${API_BASE}/api/residents?block_id=${block.id}`;
                 console.log('Fetching residents from:', url);
-                let response = await fetch(url);
+                let response = await fetch(url, { credentials: 'include' });
                 if (!response.ok) {
-                    if (response.status === 401 || response.status === 403) {
-                        url = `${API_BASE}/api/residents/public?block_id=${block.id}`;
-                        console.log('Trying public endpoint:', url);
-                        response = await fetch(url);
-                        if (!response.ok) {
-                            throw new Error(`HTTP ${response.status}`);
-                        }
-                    } else {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
+                    throw new Error(`HTTP ${response.status}`);
                 }
 
                 const data = await response.json();
@@ -1106,15 +1078,7 @@
             let url = `${API_BASE}/api/readings/resident/${residentId}/history`;
             let response = await fetch(url, { credentials: 'include' });
             if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    url = `${API_BASE}/api/readings/resident/${residentId}/history/public`;
-                    response = await fetch(url, { credentials: 'include' });
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
-                }
+                throw new Error(`HTTP ${response.status}`);
             }
 
             const data = await response.json();
@@ -1342,49 +1306,19 @@
                 console.log('POST to:', url);
 
                 let response;
-                try {
-                    response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload),
-                        credentials: 'include' // Добавляем credentials для передачи сессии
-                    });
-                } catch (fetchError) {
-                    console.error('Fetch error:', fetchError);
-                    // Try public endpoint if main fails
-                    url = `${API_BASE}/api/readings/public`;
-                    console.log('Trying public endpoint:', url);
-                    response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload),
-                        credentials: 'include' // Добавляем credentials для передачи сессии
-                    });
-                }
+                response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    credentials: 'include'
+                });
 
                 console.log('Response status:', response.status, response.statusText);
 
                 if (!response.ok) {
-                    if (response.status === 401 || response.status === 403) {
-                        url = `${API_BASE}/api/readings/public`;
-                        console.log('Trying public endpoint:', url);
-                        response = await fetch(url, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload),
-                            credentials: 'include' // Добавляем credentials для передачи сессии
-                        });
-                        console.log('Public response status:', response.status, response.statusText);
-                        if (!response.ok) {
-                            const errorText = await response.text().catch(() => 'Unknown error');
-                            console.error('Public endpoint error:', errorText);
-                            throw new Error(errorText || `HTTP ${response.status}`);
-                        }
-                    } else {
-                        const errorText = await response.text().catch(() => 'Unknown error');
-                        console.error('Endpoint error:', errorText);
-                        throw new Error(errorText || `HTTP ${response.status}`);
-                    }
+                    const errorText = await response.text().catch(() => 'Unknown error');
+                    console.error('Endpoint error:', errorText);
+                    throw new Error(errorText || `HTTP ${response.status}`);
                 }
 
                 const result = await response.json();
@@ -1531,15 +1465,6 @@
             let url = `${API_BASE}/api/readings/resident/${residentId}/meters?date=${dateStr}`;
             const response = await fetch(url, { credentials: 'include' });
             if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    url = `${API_BASE}/api/readings/resident/${residentId}/meters/public?date=${dateStr}`;
-                    const publicResponse = await fetch(url, { credentials: 'include' });
-                    if (publicResponse.ok) {
-                        const data = await publicResponse.json();
-                        renderMeterTable(data.meters || []);
-                        return;
-                    }
-                }
                 throw new Error(`HTTP ${response.status}`);
             }
 
@@ -1845,18 +1770,7 @@
             });
 
             if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    url = `${API_BASE}/api/readings/meter/${meterId}/last/public`;
-                    response = await fetch(url, {
-                        method: 'DELETE',
-                        credentials: 'include'
-                    });
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
-                }
+                throw new Error(`HTTP ${response.status}`);
             }
 
             const data = await response.json();

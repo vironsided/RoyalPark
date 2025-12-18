@@ -88,6 +88,25 @@ def logout():
     return resp
 
 
+@router.post("/api/auth/logout")
+def api_logout():
+    """API endpoint for logout - clears the session cookie"""
+    response = JSONResponse(content={"success": True, "message": "Logged out successfully"})
+    clear_session(response)
+    return response
+
+
+@router.get("/api/auth/check")
+def check_session(user: User = Depends(get_current_user)):
+    """Check if current session is valid"""
+    return JSONResponse(content={
+        "authenticated": True,
+        "user_id": user.id,
+        "username": user.username,
+        "role": user.role.value
+    })
+
+
 @router.get("/force-change-password", response_class=HTMLResponse)
 def force_change_password_form(request: Request, user: User = Depends(get_current_user)):
     if not user.require_password_change:

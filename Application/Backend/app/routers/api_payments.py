@@ -197,46 +197,6 @@ def list_payments_api(
     )
 
 
-@router.get("/public")
-def list_payments_public(
-    resident_id: Optional[str] = Query(None),
-    method: Optional[str] = Query(None),
-    date_from: Optional[str] = Query(None),
-    date_to: Optional[str] = Query(None),
-    q: Optional[str] = Query(None),
-    page: int = Query(1, ge=1),
-    per_page: int = Query(25, ge=1, le=100),
-    db: Session = Depends(get_db),
-):
-    """Получить список платежей (публичный endpoint)."""
-    resident_id_i = _to_int(resident_id)
-    
-    date_from_d = None
-    if date_from:
-        try:
-            date_from_d = datetime.strptime(date_from, "%Y-%m-%d").date()
-        except Exception:
-            pass
-    
-    date_to_d = None
-    if date_to:
-        try:
-            date_to_d = datetime.strptime(date_to, "%Y-%m-%d").date()
-        except Exception:
-            pass
-    
-    return _list_payments_internal(
-        db=db,
-        resident_id=resident_id_i,
-        method=method,
-        date_from=date_from_d,
-        date_to=date_to_d,
-        q=q,
-        page=page,
-        per_page=per_page,
-    )
-
-
 @router.get("/{payment_id}")
 def get_payment_api(
     payment_id: int,
@@ -244,50 +204,6 @@ def get_payment_api(
     db: Session = Depends(get_db),
 ):
     """Получить детали платежа."""
-    p = db.get(Payment, payment_id)
-    if not p:
-        raise HTTPException(status_code=404, detail="Payment not found")
-    
-    resident = p.resident
-    block = db.get(Block, resident.block_id) if resident else None
-    
-    applied_total = float(p.applied_total)
-    leftover = float(p.leftover)
-    
-    return {
-        "id": p.id,
-        "resident_id": p.resident_id,
-        "resident_code": f"{block.name if block else ''} / {resident.unit_number}" if block else resident.unit_number,
-        "resident_info": f"Блок {block.name if block else ''}, №{resident.unit_number}" if block else f"№{resident.unit_number}",
-        "block_name": block.name if block else "",
-        "unit_number": resident.unit_number,
-        "received_at": p.received_at,
-        "amount_total": float(p.amount_total),
-        "method": p.method.value,
-        "reference": p.reference,
-        "comment": p.comment,
-        "created_at": p.created_at,
-        "applied_total": applied_total,
-        "leftover": leftover,
-        "applications": [
-            {
-                "id": app.id,
-                "invoice_id": app.invoice_id,
-                "invoice_number": app.invoice.number if app.invoice else None,
-                "invoice_period": f"{app.invoice.period_year}-{app.invoice.period_month:02d}" if app.invoice else None,
-                "amount_applied": float(app.amount_applied),
-            }
-            for app in p.applications
-        ]
-    }
-
-
-@router.get("/{payment_id}/public")
-def get_payment_public(
-    payment_id: int,
-    db: Session = Depends(get_db),
-):
-    """Получить детали платежа (публичный endpoint)."""
     p = db.get(Payment, payment_id)
     if not p:
         raise HTTPException(status_code=404, detail="Payment not found")

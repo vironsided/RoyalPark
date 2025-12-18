@@ -130,12 +130,10 @@
     async function loadFilterData() {
         try {
             // Загружаем резидентов
-            const residentsResp = await fetch(`${API_BASE}/api/residents/public`, { credentials: 'include' }).catch(() => 
-                fetch(`${API_BASE}/api/residents`, { credentials: 'include' })
-            );
+            const residentsResp = await fetch(`${API_BASE}/api/residents`, { credentials: 'include' });
             if (residentsResp.ok) {
                 const residentsData = await residentsResp.json();
-                residents = Array.isArray(residentsData) ? residentsData : (residentsData.residents || []);
+                residents = Array.isArray(residentsData) ? residentsData : (residentsData.residents || residentsData.items || []);
                 
                 const residentSelect = document.getElementById('filterResident');
                 if (residentSelect) {
@@ -149,12 +147,10 @@
             }
             
             // Загружаем пользователей
-            const usersResp = await fetch(`${API_BASE}/api/users/public`, { credentials: 'include' }).catch(() => 
-                fetch(`${API_BASE}/api/users`, { credentials: 'include' })
-            );
+            const usersResp = await fetch(`${API_BASE}/api/users`, { credentials: 'include' });
             if (usersResp.ok) {
                 const usersData = await usersResp.json();
-                users = Array.isArray(usersData) ? usersData : (usersData.users || []);
+                users = Array.isArray(usersData) ? usersData : (usersData.users || usersData.items || []);
                 
                 const userSelect = document.getElementById('filterUser');
                 if (userSelect) {

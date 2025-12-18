@@ -518,6 +518,29 @@
 
     <!-- Initialize Theme Toggle and Language Selector -->
     <script>
+        // Session validation - redirect to login if not authenticated
+        (async function checkSession() {
+            // Hide body until session is validated
+            document.body.style.visibility = 'hidden';
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/auth/check', {
+                    credentials: 'include'
+                });
+                if (!response.ok) {
+                    // Not authenticated, redirect to login
+                    window.location.replace('/login.html');
+                    return;
+                }
+                // Session valid, show the page
+                document.body.style.visibility = 'visible';
+            } catch (error) {
+                console.error('Session check failed:', error);
+                // On error, redirect to login for safety
+                window.location.replace('/login.html');
+            }
+        })();
+
         // Global function to hide plan tooltip from blocks page
         function hidePlanTooltip() {
             const tooltip = document.getElementById('planTooltip');
@@ -782,10 +805,20 @@
             // Logout Button Handler
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) {
-                logoutBtn.addEventListener('click', function (e) {
+                logoutBtn.addEventListener('click', async function (e) {
                     e.preventDefault();
 
-                    // Clear all session data
+                    try {
+                        // Call backend logout to clear session cookie
+                        await fetch('http://localhost:8000/api/auth/logout', {
+                            method: 'POST',
+                            credentials: 'include'
+                        });
+                    } catch (error) {
+                        console.error('Logout error:', error);
+                    }
+
+                    // Clear all local session data
                     localStorage.clear();
                     sessionStorage.clear();
 
@@ -1067,7 +1100,7 @@
 
             async function loadUserProfile() {
                 try {
-                    const response = await fetch(`${API_BASE}/api/users/me/public`, {
+                    const response = await fetch(`${API_BASE}/api/users/me`, {
                         credentials: 'include' // Отправляем cookies для сессии
                     });
                     if (!response.ok) {
@@ -1379,7 +1412,7 @@
                     }
 
                     try {
-                        const response = await fetch(`${API_BASE}/api/users/me/change-password/public`, {
+                        const response = await fetch(`${API_BASE}/api/users/me/change-password`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -1484,7 +1517,7 @@
                             formData.append('avatar', avatarInput.files[0]);
                         }
 
-                        const response = await fetch(`${API_BASE}/api/users/me/public`, {
+                        const response = await fetch(`${API_BASE}/api/users/me`, {
                             method: 'PUT',
                             credentials: 'include', // Отправляем cookies для сессии
                             body: formData

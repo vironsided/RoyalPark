@@ -121,14 +121,6 @@
                 let response = await fetch(url, { credentials: 'include' });
 
                 if (!response.ok) {
-                    if (response.status === 401 || response.status === 403) {
-                        console.log('Not authorized, using public endpoint');
-                        url = `${API_BASE}/api/payments/${id}/public`;
-                        response = await fetch(url);
-                    }
-                }
-
-                if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
@@ -152,14 +144,6 @@
             try {
                 let url = `${API_BASE}/api/payments/${paymentId}/open-invoices`;
                 let response = await fetch(url, { credentials: 'include' });
-
-                if (!response.ok) {
-                    if (response.status === 401 || response.status === 403) {
-                        console.log('Not authorized, using public endpoint for open invoices');
-                        url = `${API_BASE}/api/payments/${paymentId}/open-invoices/public`;
-                        response = await fetch(url);
-                    }
-                }
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -197,15 +181,37 @@
             }
         }
 
-        function renderPayment(payment) {
+        // Счетчик попыток для предотвращения бесконечного цикла
+        let renderPaymentAttempts = 0;
+        const MAX_RENDER_ATTEMPTS = 10;
+        const renderPaymentTimeout = null; // Для отслеживания таймера
+
+        function renderPayment(payment, attempt = 0) {
             // Проверяем, что необходимые элементы существуют в DOM
             const titleEl = document.getElementById('paymentTitle');
-            if (!titleEl) {
-                console.warn('Payment title element not found, DOM may not be ready yet');
+            const contentWrapper = document.querySelector('.payment-view-page');
+            
+            if (!titleEl || !contentWrapper) {
+                if (attempt >= MAX_RENDER_ATTEMPTS) {
+                    console.error('Payment title element not found after', MAX_RENDER_ATTEMPTS, 'attempts. Payment data:', payment);
+                    console.error('Available elements:', {
+                        titleEl: !!titleEl,
+                        contentWrapper: !!contentWrapper,
+                        documentReady: document.readyState
+                    });
+                    if (typeof showError === 'function') {
+                        showError('Ошибка: элементы страницы не найдены. Попробуйте обновить страницу.');
+                    }
+                    return;
+                }
+                console.warn('Payment title element not found, DOM may not be ready yet. Attempt:', attempt + 1);
                 // Повторяем попытку через небольшую задержку
-                setTimeout(() => renderPayment(payment), 100);
+                setTimeout(() => renderPayment(payment, attempt + 1), 100);
                 return;
             }
+
+            // Сбрасываем счетчик при успешной загрузке
+            renderPaymentAttempts = 0;
 
             // Update title
             if (titleEl) titleEl.textContent = `Платеж #${payment.id}`;
@@ -415,15 +421,9 @@
 
                 let response = await fetch(`${API_BASE}/api/payments/${currentPayment.id}/applications`, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    credentials: 'include'
                 });
-
-                if (!response.ok && response.status === 401) {
-                    response = await fetch(`${API_BASE}/api/payments/${currentPayment.id}/applications/public`, {
-                        method: 'POST',
-                        body: formData
-                    });
-                }
 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
@@ -463,14 +463,9 @@
 
             try {
                 let response = await fetch(`${API_BASE}/api/payments/${currentPayment.id}/auto-apply`, {
-                    method: 'POST'
+                    method: 'POST',
+                    credentials: 'include'
                 });
-
-                if (!response.ok && response.status === 401) {
-                    response = await fetch(`${API_BASE}/api/payments/${currentPayment.id}/auto-apply/public`, {
-                        method: 'POST'
-                    });
-                }
 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
@@ -522,102 +517,46 @@
             // Store invoice ID for invoice-view.html
             window.__currentInvoiceId = invoiceId;
 
-            // Загрузить страницу просмотра через fetch и вставить в SPA контейнер
-            const viewUrl = `/admin/content/invoice-view.html?id=${invoiceId}`;
-            const contentContainer = document.getElementById('spa-content');
-
-            if (!contentContainer) {
-                console.error('SPA content container not found');
-                window.location.href = viewUrl;
-                return;
+            // Use SPA router to navigate - this prevents double-load issues
+            if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+                window.spaRouter.navigate(`/invoice-view?id=${invoiceId}`);
+            } else {
+                // Fallback to direct hash navigation
+                window.location.hash = `#/invoice-view?id=${invoiceId}`;
             }
-
-            // Показать состояние загрузки
-            contentContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: rgba(255,255,255,0.8);"><i class="bi bi-hourglass-split" style="font-size: 2rem; margin-bottom: 10px;"></i><p>Загрузка...</p></div>';
-
-            // Загрузить контент
-            fetch(viewUrl)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.text();
-                })
-                .then(html => {
-                    // Вставить контент
-                    contentContainer.innerHTML = html;
-
-                    // Выполнить скрипты из загруженного контента
-                    const scripts = contentContainer.querySelectorAll('script');
-                    scripts.forEach(oldScript => {
-                        const newScript = document.createElement('script');
-                        Array.from(oldScript.attributes).forEach(attr => {
-                            newScript.setAttribute(attr.name, attr.value);
-                        });
-                        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                        oldScript.parentNode.replaceChild(newScript, oldScript);
-                    });
-
-                    // Обновить заголовок страницы и breadcrumb
-                    updatePageHeaderForInvoiceView(invoiceId);
-
-                    // Обновить URL в браузере через hash (для SPA роутера)
-                    window.location.hash = `#/invoice-view?id=${invoiceId}`;
-
-                    // Скроллить наверх
-                    contentContainer.scrollTop = 0;
-
-                    console.log('Invoice view loaded successfully');
-                })
-                .catch(error => {
-                    console.error('Error loading invoice view:', error);
-                    contentContainer.innerHTML = `<div style="padding: 40px; text-align: center; color: #ff6b6b;"><p>Ошибка загрузки страницы: ${error.message}</p><button onclick="window.location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px;">Перезагрузить</button></div>`;
-                });
         };
 
-        // Функция для обновления заголовка и breadcrumb при открытии просмотра счета
-        function updatePageHeaderForInvoiceView(invoiceId) {
-            // Правильно обновляем заголовок через page-title-container
-            const titleContainer = document.getElementById('page-title-container');
-            if (titleContainer) {
-                const h1 = titleContainer.querySelector('h1');
-                if (h1) {
-                    h1.textContent = 'Счета';
-                    // Удаляем любые inline стили, чтобы применились CSS стили
-                    h1.removeAttribute('style');
-                }
-
-                const breadcrumb = titleContainer.querySelector('.page-breadcrumb');
-            if (breadcrumb) {
-                    breadcrumb.innerHTML = `
-                        <span class="breadcrumb-item">
-                            <svg width="14" height="14" fill="currentColor" style="margin-right: 0.25rem; vertical-align: middle;">
-                                <use href="/images/icons.svg#icon-apartments"></use>
-                            </svg>
-                            Главная
-                        </span>
-                        <span>›</span>
-                        <span class="breadcrumb-item">Финансы</span>
-                        <span>›</span>
-                        <span class="breadcrumb-item">Счета</span>
-                    `;
+        // Проверка готовности DOM перед загрузкой платежа
+        function waitForDOM(callback, maxAttempts = 20, attempt = 0) {
+            const titleEl = document.getElementById('paymentTitle');
+            const contentWrapper = document.querySelector('.payment-view-page');
+            
+            if (titleEl && contentWrapper) {
+                callback();
+            } else if (attempt < maxAttempts) {
+                setTimeout(() => waitForDOM(callback, maxAttempts, attempt + 1), 50);
+            } else {
+                console.error('DOM elements not found after', maxAttempts, 'attempts');
+                if (typeof showError === 'function') {
+                    showError('Ошибка: элементы страницы не найдены. Попробуйте обновить страницу.');
                 }
             }
-
-            // Обновить title страницы
-            document.title = 'Счета - RoyalPark Admin';
         }
 
         // Load payment on page load
         function initPaymentView() {
-            if (paymentId) {
-                loadPayment(paymentId);
-            } else {
+            if (!paymentId) {
                 console.error('Payment ID not found');
                 if (typeof showError === 'function') {
                     showError('ID платежа не найден');
                 }
+                return;
             }
+
+            // Ждем готовности DOM перед загрузкой платежа
+            waitForDOM(() => {
+                loadPayment(paymentId);
+            });
         }
 
         // Listen for SPA content loaded event
@@ -627,19 +566,32 @@
         }
 
         window._paymentViewContentLoadedHandler = function () {
+            // Check if we're actually on the payment-view page
+            const route = window.spaRouter?.currentRoute || window.location.hash.replace('#', '');
+            if (!route.includes('payment-view')) {
+                return; // Not on payment-view page, skip
+            }
+            
             // Re-extract payment ID in case it changed
             const urlParams = new URLSearchParams(window.location.search);
             paymentId = urlParams.get('id') || window.__currentPaymentId || window.location.hash.split('/').pop() || window.location.hash.split('=').pop();
             if (paymentId) paymentId = parseInt(paymentId);
-            initPaymentView();
+            
+            // Небольшая задержка для гарантии, что DOM вставлен
+            setTimeout(() => {
+                initPaymentView();
+            }, 100);
         };
 
         document.addEventListener('spa:contentLoaded', window._paymentViewContentLoadedHandler);
 
+        // Инициализация при загрузке страницы
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initPaymentView);
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => initPaymentView(), 100);
+            });
         } else {
-            initPaymentView();
+            setTimeout(() => initPaymentView(), 100);
         }
     })();
 </script>

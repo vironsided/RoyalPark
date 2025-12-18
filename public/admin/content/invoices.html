@@ -319,34 +319,26 @@
             
             console.log('Loading invoices from:', url);
             
-            let response = await fetch(url);
+            let response = await fetch(url, { credentials: 'include' });
             console.log('Response status:', response.status, response.statusText);
             
             if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    url = url.replace('/api/invoices?', '/api/invoices/public?');
-                    console.log('Trying public endpoint:', url);
-                    response = await fetch(url);
-                    console.log('Public response status:', response.status, response.statusText);
-                }
-                if (!response.ok) {
-                    let errorMessage = `HTTP ${response.status}`;
-                    try {
-                        const errorData = await response.json();
-                        errorMessage = errorData.detail || JSON.stringify(errorData);
-                    } catch (e) {
-                        const errorText = await response.text().catch(() => '');
-                        if (errorText) {
-                            try {
-                                const errorJson = JSON.parse(errorText);
-                                errorMessage = errorJson.detail || errorText;
-                            } catch {
-                                errorMessage = errorText || errorMessage;
-                            }
+                let errorMessage = `HTTP ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.detail || JSON.stringify(errorData);
+                } catch (e) {
+                    const errorText = await response.text().catch(() => '');
+                    if (errorText) {
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            errorMessage = errorJson.detail || errorText;
+                        } catch {
+                            errorMessage = errorText || errorMessage;
                         }
                     }
-                    throw new Error(errorMessage);
                 }
+                throw new Error(errorMessage);
             }
             
             const data = await response.json();
@@ -648,66 +640,16 @@
     window.viewInvoice = function(id) {
         console.log('Opening invoice view for ID:', id);
         
-        // Загрузить страницу просмотра через fetch и вставить в SPA контейнер
-        const viewUrl = `/admin/content/invoice-view.html?id=${id}`;
-        const contentContainer = document.getElementById('spa-content');
+        // Store invoice ID for invoice-view.html
+        window.__currentInvoiceId = id;
         
-        if (!contentContainer) {
-            console.error('SPA content container not found');
-            window.location.href = viewUrl;
-            return;
+        // Use SPA router to navigate - this prevents double-load issues
+        if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+            window.spaRouter.navigate(`/invoice-view?id=${id}`);
+        } else {
+            // Fallback to direct hash navigation
+            window.location.hash = `#/invoice-view?id=${id}`;
         }
-        
-        // Показать состояние загрузки
-        contentContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: rgba(255,255,255,0.8);"><i class="bi bi-hourglass-split" style="font-size: 2rem; margin-bottom: 10px;"></i><p>Загрузка...</p></div>';
-        
-        // Загрузить контент
-        fetch(viewUrl)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.text();
-            })
-            .then(html => {
-                // Вставить контент
-                contentContainer.innerHTML = html;
-                
-                // Установить invoice ID в глобальную переменную ПЕРЕД выполнением скриптов
-                window.__currentInvoiceId = id;
-                
-                // Выполнить скрипты из загруженного контента
-                const scripts = contentContainer.querySelectorAll('script');
-                scripts.forEach(oldScript => {
-                    const newScript = document.createElement('script');
-                    Array.from(oldScript.attributes).forEach(attr => {
-                        newScript.setAttribute(attr.name, attr.value);
-                    });
-                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                    oldScript.parentNode.replaceChild(newScript, oldScript);
-                });
-                
-                // Обновить заголовок страницы и breadcrumb
-                updatePageHeaderForInvoiceView(id);
-                
-                // Обновить URL в браузере через hash (для SPA роутера)
-                window.location.hash = `#/invoice-view?id=${id}`;
-                
-                // Вызвать событие для инициализации после загрузки
-                setTimeout(() => {
-                    const event = new CustomEvent('spa:contentLoaded', { detail: { invoiceId: id } });
-                    document.dispatchEvent(event);
-                }, 100);
-                
-                // Скроллить наверх
-                contentContainer.scrollTop = 0;
-                
-                console.log('Invoice view loaded successfully');
-            })
-            .catch(error => {
-                console.error('Error loading invoice view:', error);
-                contentContainer.innerHTML = `<div style="padding: 40px; text-align: center; color: #ff6b6b;"><p>Ошибка загрузки страницы: ${error.message}</p><button onclick="window.location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px;">Перезагрузить</button></div>`;
-            });
     };
     
     window.printInvoice = function(id) {
@@ -721,38 +663,6 @@
         const printUrl = `/admin/content/invoice-print.html?id=${id}`;
         window.open(printUrl, '_blank');
     };
-    
-    // Функция для обновления заголовка и breadcrumb при открытии просмотра счета
-    function updatePageHeaderForInvoiceView(invoiceId) {
-        // Обновить заголовок страницы
-        const titleContainer = document.getElementById('page-title-container');
-        if (titleContainer) {
-            const h1 = titleContainer.querySelector('h1');
-            if (h1) {
-                h1.textContent = 'Счета';
-                // Удаляем любые inline стили, чтобы применились CSS стили
-                h1.removeAttribute('style');
-            }
-            
-            // Обновить breadcrumb
-            const breadcrumbContainer = titleContainer.querySelector('.page-breadcrumb');
-            if (breadcrumbContainer) {
-                breadcrumbContainer.innerHTML = `
-                    <span class="breadcrumb-item">
-                        <svg width="14" height="14" fill="currentColor" style="margin-right: 0.25rem; vertical-align: middle;">
-                            <use href="/images/icons.svg#icon-apartments"></use>
-                        </svg>
-                        Финансы
-                    </span>
-                    <span>›</span>
-                    <span class="breadcrumb-item">Счета</span>
-                `;
-            }
-        }
-        
-        // Обновить title страницы
-        document.title = 'Счета - RoyalPark Admin';
-    }
     
     // Update custom pagination dropdown display
     function updateCustomInvoicePaginationDropdown() {
@@ -839,14 +749,23 @@
         document.removeEventListener('spa:contentLoaded', window._invoicesContentLoadedHandler);
     }
     
-    window._invoicesContentLoadedHandler = function() {
-        console.log('spa:contentLoaded - calling loadInvoices()');
-        setTimeout(() => {
-            loadInvoices();
+    window._invoicesContentLoadedHandler = function(e) {
+        // Проверяем, что мы действительно на странице счетов
+        const detail = e?.detail || {};
+        const route = detail.route || window.location.hash.split('?')[0].replace('#', '');
+        
+        // Вызываем loadInvoices только если мы на странице /invoices
+        if (route === '/invoices') {
+            console.log('spa:contentLoaded - calling loadInvoices()');
             setTimeout(() => {
-                initCustomInvoicePaginationDropdown();
-            }, 200);
-        }, 100);
+                loadInvoices();
+                setTimeout(() => {
+                    initCustomInvoicePaginationDropdown();
+                }, 200);
+            }, 100);
+        } else {
+            console.log('spa:contentLoaded - not on invoices page, route:', route);
+        }
     };
     
     document.addEventListener('spa:contentLoaded', window._invoicesContentLoadedHandler);
@@ -936,38 +855,27 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                credentials: 'include'
             });
             
             if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    url = `${API_BASE}/api/invoices/bulk-issue/public`;
-                    response = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(payload)
-                    });
-                }
-                if (!response.ok) {
-                    let errorMessage = `HTTP ${response.status}`;
-                    try {
-                        const errorData = await response.json();
-                        errorMessage = errorData.detail || JSON.stringify(errorData);
-                    } catch (e) {
-                        const errorText = await response.text().catch(() => '');
-                        if (errorText) {
-                            try {
-                                const errorJson = JSON.parse(errorText);
-                                errorMessage = errorJson.detail || errorText;
-                            } catch {
-                                errorMessage = errorText || errorMessage;
-                            }
+                let errorMessage = `HTTP ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.detail || JSON.stringify(errorData);
+                } catch (e) {
+                    const errorText = await response.text().catch(() => '');
+                    if (errorText) {
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            errorMessage = errorJson.detail || errorText;
+                        } catch {
+                            errorMessage = errorText || errorMessage;
                         }
                     }
-                    throw new Error(errorMessage);
                 }
+                throw new Error(errorMessage);
             }
             
             const data = await response.json();
@@ -1046,38 +954,27 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                credentials: 'include'
             });
             
             if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    url = `${API_BASE}/api/invoices/bulk-issue/public`;
-                    response = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(payload)
-                    });
-                }
-                if (!response.ok) {
-                    let errorMessage = `HTTP ${response.status}`;
-                    try {
-                        const errorData = await response.json();
-                        errorMessage = errorData.detail || JSON.stringify(errorData);
-                    } catch (e) {
-                        const errorText = await response.text().catch(() => '');
-                        if (errorText) {
-                            try {
-                                const errorJson = JSON.parse(errorText);
-                                errorMessage = errorJson.detail || errorText;
-                            } catch {
-                                errorMessage = errorText || errorMessage;
-                            }
+                let errorMessage = `HTTP ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.detail || JSON.stringify(errorData);
+                } catch (e) {
+                    const errorText = await response.text().catch(() => '');
+                    if (errorText) {
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            errorMessage = errorJson.detail || errorText;
+                        } catch {
+                            errorMessage = errorText || errorMessage;
                         }
                     }
-                    throw new Error(errorMessage);
                 }
+                throw new Error(errorMessage);
             }
             
             const data = await response.json();

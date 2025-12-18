@@ -256,9 +256,6 @@
         
         try {
             let response = await fetch(`${API_BASE}/api/payments?${params.toString()}`, { credentials: 'include' });
-            if (!response.ok && response.status === 401) {
-                response = await fetch(`${API_BASE}/api/payments/public?${params.toString()}`);
-            }
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -438,12 +435,6 @@
                 let url = `${API_BASE}/api/residents?per_page=${perPage}&page=${page}`;
                 let response = await fetch(url, { credentials: 'include' });
 
-                if (!response.ok && response.status === 401) {
-                    // Публичная версия, если нет авторизации
-                    url = `${API_BASE}/api/residents/public?per_page=${perPage}&page=${page}`;
-                    response = await fetch(url);
-                }
-
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -571,16 +562,6 @@
                 credentials: 'include'
             });
             
-            if (!response.ok && response.status === 401) {
-                response = await fetch(`${API_BASE}/api/payments/public`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(paymentData)
-                });
-            }
-            
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
                 throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
@@ -631,72 +612,14 @@
         // Store payment ID for payment-view.html
         window.__currentPaymentId = id;
         
-        // Загрузить страницу просмотра через fetch и вставить в SPA контейнер
-        const viewUrl = `/admin/content/payment-view.html?id=${id}`;
-        const contentContainer = document.getElementById('spa-content');
-        
-        if (!contentContainer) {
-            console.error('SPA content container not found');
-            window.location.href = viewUrl;
-            return;
+        // Use SPA router to navigate - this prevents double-load issues
+        if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+            window.spaRouter.navigate(`/payment-view?id=${id}`);
+        } else {
+            // Fallback to direct hash navigation
+            window.location.hash = `#/payment-view?id=${id}`;
         }
-        
-        // Показать состояние загрузки
-        contentContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: rgba(255,255,255,0.8);"><i class="bi bi-hourglass-split" style="font-size: 2rem; margin-bottom: 10px;"></i><p>Загрузка...</p></div>';
-        
-        // Загрузить контент
-        fetch(viewUrl)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.text();
-            })
-            .then(html => {
-                // Вставить контент
-                contentContainer.innerHTML = html;
-                
-                // Выполнить скрипты из загруженного контента
-                const scripts = contentContainer.querySelectorAll('script');
-                scripts.forEach(oldScript => {
-                    const newScript = document.createElement('script');
-                    Array.from(oldScript.attributes).forEach(attr => {
-                        newScript.setAttribute(attr.name, attr.value);
-                    });
-                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                    oldScript.parentNode.replaceChild(newScript, oldScript);
-                });
-                
-                // Обновить заголовок страницы и breadcrumb
-                updatePageHeaderForPaymentView(id);
-                
-                // Обновить URL в браузере через hash (для SPA роутера)
-                window.location.hash = `#/payment-view?id=${id}`;
-                
-                // Скроллить наверх
-                contentContainer.scrollTop = 0;
-                
-                console.log('Payment view loaded successfully');
-            })
-            .catch(error => {
-                console.error('Error loading payment view:', error);
-                contentContainer.innerHTML = `<div style="padding: 40px; text-align: center; color: #ff6b6b;"><p>Ошибка загрузки страницы: ${error.message}</p><button onclick="window.location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px;">Перезагрузить</button></div>`;
-            });
     };
-    
-    // Функция для обновления заголовка и breadcrumb при открытии просмотра платежа
-    function updatePageHeaderForPaymentView(paymentId) {
-        const pageTitle = document.querySelector('.page-title');
-        const breadcrumb = document.querySelector('.breadcrumb');
-        
-        if (pageTitle) {
-            pageTitle.textContent = 'Платежи';
-        }
-        
-        if (breadcrumb) {
-            breadcrumb.innerHTML = '<a href="#/dashboard">Главная</a> / <a href="#/payments">Финансы</a> / Платежи';
-        }
-    }
     
     window.openDatePicker = function(inputId) {
         const input = document.getElementById(inputId);

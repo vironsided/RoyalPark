@@ -286,9 +286,7 @@
         async function loadBlocksAndTariffs() {
             try {
                 // Загружаем блоки
-                let blocksResp = await fetch(`${API_BASE}/api/blocks/public`).catch(() => 
-                    fetch(`${API_BASE}/api/blocks`, { credentials: 'include' })
-                );
+                let blocksResp = await fetch(`${API_BASE}/api/blocks`, { credentials: 'include' });
                 if (blocksResp.ok) {
                     blocks = await blocksResp.json();
                     // Обновляем фильтр блоков
@@ -316,9 +314,7 @@
                 }
                 
                 // Загружаем тарифы
-                let tariffsResp = await fetch(`${API_BASE}/api/tariffs/public`).catch(() => 
-                    fetch(`${API_BASE}/api/tariffs`, { credentials: 'include' })
-                );
+                let tariffsResp = await fetch(`${API_BASE}/api/tariffs`, { credentials: 'include' });
                 if (tariffsResp.ok) {
                     tariffs = await tariffsResp.json();
                 }
@@ -369,13 +365,7 @@
                 
                 let url = `${API_BASE}/api/residents?${params.toString()}`;
                 
-                let resp = await fetch(url, { credentials: 'include' }).catch(() => 
-                    fetch(url.replace('/api/residents', '/api/residents/public'))
-                );
-                
-                if (resp.status === 401 || resp.status === 403) {
-                    resp = await fetch(url.replace('/api/residents', '/api/residents/public'));
-                }
+                let resp = await fetch(url, { credentials: 'include' });
                 
                 if (!resp.ok) {
                     throw new Error(`Failed to load residents: ${resp.status}`);
@@ -724,12 +714,7 @@
                 setResidentModalMode('edit');
                 
                 // Загружаем данные резидента из API
-                let resp = await fetch(`${API_BASE}/api/residents/${residentId}`, { credentials: 'include' }).catch(() => 
-                    fetch(`${API_BASE}/api/residents/${residentId}/public`)
-                );
-                if (resp.status === 401 || resp.status === 403) {
-                    resp = await fetch(`${API_BASE}/api/residents/${residentId}/public`);
-                }
+                let resp = await fetch(`${API_BASE}/api/residents/${residentId}`, { credentials: 'include' });
                 if (!resp.ok) {
                     throw new Error('Failed to load resident');
                 }
@@ -1367,19 +1352,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify(payload)
-                }).catch(() => fetch(url + (url.includes('/public') ? '' : '/public'), {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                }));
-                
-                if (resp.status === 401 || resp.status === 403) {
-                    resp = await fetch(url + (url.includes('/public') ? '' : '/public'), {
-                        method: method,
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                }
+                });
                 
                 if (!resp.ok) {
                     const errorData = await resp.json().catch(() => ({ detail: 'Ошибка сохранения' }));
@@ -1425,15 +1398,7 @@
                 let resp = await fetch(`${API_BASE}/api/residents/${pendingDelete.id}`, {
                     method: 'DELETE',
                     credentials: 'include'
-                }).catch(() => fetch(`${API_BASE}/api/residents/${pendingDelete.id}/public`, {
-                        method: 'DELETE'
-                    }));
-                
-                if (resp.status === 401 || resp.status === 403) {
-                    resp = await fetch(`${API_BASE}/api/residents/${pendingDelete.id}/public`, {
-                        method: 'DELETE'
-                    });
-                }
+                });
                 
                 if (!resp.ok) {
                     throw new Error('Failed to delete resident');
