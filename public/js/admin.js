@@ -778,3 +778,121 @@ if (notificationBtn) {
 setInterval(() => {
     loadDashboardData();
 }, 30000);
+
+// Helper function to get modal root for admin panel
+function getAdminModalRoot() {
+    let root = document.getElementById('adminModalRoot');
+    if (!root) {
+        root = document.createElement('div');
+        root.id = 'adminModalRoot';
+        document.body.appendChild(root);
+    }
+    return root;
+}
+
+// Internal function to show confirm modal (dark theme)
+function showAdminConfirmModal(options) {
+    const {
+        title = 'Подтвердите действие',
+        message = '',
+        confirmText = 'OK',
+        cancelText = 'Отмена'
+    } = options || {};
+
+    return new Promise((resolve) => {
+        const root = getAdminModalRoot();
+        const overlay = document.createElement('div');
+        overlay.className = 'account-modal-overlay';
+        overlay.innerHTML = `
+            <div class="account-modal" style="max-width:520px">
+                <div class="account-modal-header">
+                    <h2>${title}</h2>
+                    <button class="account-modal-close" type="button">&times;</button>
+                </div>
+                <div class="account-modal-body">
+                    <div style="display:flex; gap:12px; align-items:flex-start;">
+                        <div style="width:38px; height:38px; border-radius:10px; background:#f59e0b; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(0,0,0,.2); flex-shrink:0;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        </div>
+                        <div style="white-space:pre-wrap; color:#fff;">${message}</div>
+                    </div>
+                </div>
+                <div class="account-modal-footer">
+                    <button class="account-btn account-btn-secondary btn-cancel" type="button">${cancelText}</button>
+                    <button class="account-btn account-btn-primary btn-ok" type="button">${confirmText}</button>
+                </div>
+            </div>`;
+
+        let resolved = false;
+        function close(result) {
+            if (resolved) return;
+            resolved = true;
+            overlay.classList.remove('show');
+            setTimeout(() => {
+                if (overlay.parentNode) {
+                    overlay.remove();
+                }
+                document.body.style.overflow = '';
+                resolve(result);
+            }, 150);
+        }
+
+        overlay.addEventListener('click', (e) => { 
+            if (e.target === overlay) close(false); 
+        });
+        overlay.querySelector('.account-modal-close').addEventListener('click', () => close(false));
+        overlay.querySelector('.btn-cancel').addEventListener('click', () => close(false));
+        overlay.querySelector('.btn-ok').addEventListener('click', () => close(true));
+        
+        const escHandler = function(e) {
+            if (e.key === 'Escape') {
+                close(false);
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+
+        root.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+        
+        // Show with animation
+        setTimeout(() => overlay.classList.add('show'), 10);
+    });
+}
+
+// Global showConfirm function for admin panel (dark theme modal)
+// Usage: showConfirm(message, title) returns Promise<boolean>
+// Or: showConfirm(message, onConfirm, onCancel) for callback style
+window.showConfirm = function showConfirm(message, titleOrCallback, onCancel) {
+    // If second argument is a function, use callback style (legacy)
+    if (typeof titleOrCallback === 'function') {
+        const onConfirm = titleOrCallback;
+        const promise = showAdminConfirmModal({
+            title: 'Подтвердите действие',
+            message: message,
+            confirmText: 'OK',
+            cancelText: 'Отмена'
+        });
+        promise.then((confirmed) => {
+            if (confirmed && typeof onConfirm === 'function') {
+                onConfirm(true);
+            } else if (!confirmed) {
+                if (typeof onCancel === 'function') {
+                    onCancel(false);
+                } else if (typeof onConfirm === 'function') {
+                    onConfirm(false);
+                }
+            }
+        });
+        return promise;
+    }
+    
+    // Promise style: showConfirm(message, title)
+    const title = typeof titleOrCallback === 'string' ? titleOrCallback : 'Подтвердите действие';
+    return showAdminConfirmModal({
+        title: title,
+        message: message,
+        confirmText: 'OK',
+        cancelText: 'Отмена'
+    });
+};

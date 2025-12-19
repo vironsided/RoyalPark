@@ -1734,23 +1734,20 @@
 
         // Используем модальное окно приложения вместо браузерного confirm
         // Удаление НЕ происходит до подтверждения в модальном окне
-        if (typeof showConfirm === 'function') {
-            showConfirm(
+        try {
+            const confirmed = await showConfirm(
                 'Вы уверены, что хотите удалить последнее показание для этого счётчика?',
-                async (confirmed) => {
-                    // Удаление происходит ТОЛЬКО если confirmed === true (нажата кнопка OK)
-                    if (confirmed === true) {
-                        await performDeleteLastReading(meterId, button);
-                    }
-                    // Если confirmed === false, ничего не делаем (отмена)
-                },
-                () => {
-                    // Явный обработчик отмены - ничего не делаем
-                    // Это гарантирует, что при нажатии "Отмена" удаление не произойдет
-                }
+                'Подтверждение удаления'
             );
-        } else {
-            // Fallback на браузерный confirm, если showConfirm недоступен
+            
+            // Удаление происходит ТОЛЬКО если confirmed === true (нажата кнопка OK)
+            if (confirmed === true) {
+                await performDeleteLastReading(meterId, button);
+            }
+            // Если confirmed === false, ничего не делаем (отмена)
+        } catch (error) {
+            // Если showConfirm не доступен, используем fallback
+            console.warn('showConfirm not available, using browser confirm as fallback');
             if (confirm('Вы уверены, что хотите удалить последнее показание для этого счётчика?')) {
                 await performDeleteLastReading(meterId, button);
             }

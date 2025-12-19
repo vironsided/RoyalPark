@@ -34,6 +34,83 @@
                     path: '/user/pages/invoice-view.html',
                     bodyClass: '',
                     parentNav: 'bills'
+                },
+                // Дополнительные роуты без загрузки контента (просто для меню)
+                news: {
+                    type: 'placeholder',
+                    parentNav: 'news'
+                },
+                profile: {
+                    type: 'placeholder',
+                    parentNav: 'profile'
+                }
+            };
+
+            // Маппинг роутов к заголовкам и breadcrumbs
+            this.pageInfo = {
+                dashboard: {
+                    title: 'Добро пожаловать!',
+                    titleKey: 'user_dashboard_welcome',
+                    breadcrumb: [
+                        { text: 'Главная', icon: 'bi-house-door', key: 'home' }
+                    ]
+                },
+                bills: {
+                    title: 'Мои счета',
+                    titleKey: 'user_nav_user_bills',
+                    breadcrumb: [
+                        { text: 'Главная', icon: 'bi-house-door', key: 'home', route: 'dashboard' },
+                        { text: 'Мои счета', key: 'user_nav_user_bills' }
+                    ]
+                },
+                report: {
+                    title: 'Оплата счетов',
+                    titleKey: 'user_nav_user_report',
+                    breadcrumb: [
+                        { text: 'Главная', icon: 'bi-house-door', key: 'home', route: 'dashboard' },
+                        { text: 'Оплата счетов', key: 'user_nav_user_report' }
+                    ]
+                },
+                resident: {
+                    title: 'Информация о резиденте',
+                    titleKey: 'user_resident_info',
+                    breadcrumb: [
+                        { text: 'Главная', icon: 'bi-house-door', key: 'home', route: 'dashboard' },
+                        { text: 'Резидент', key: 'user_resident_info' }
+                    ]
+                },
+                appeals: {
+                    title: 'Заявки',
+                    titleKey: 'user_nav_user_requests',
+                    breadcrumb: [
+                        { text: 'Главная', icon: 'bi-house-door', key: 'home', route: 'dashboard' },
+                        { text: 'Заявки', key: 'user_nav_user_requests' }
+                    ]
+                },
+                invoice: {
+                    title: 'Просмотр счёта',
+                    titleKey: 'user_invoice_view',
+                    breadcrumb: [
+                        { text: 'Главная', icon: 'bi-house-door', key: 'home', route: 'dashboard' },
+                        { text: 'Мои счета', key: 'user_nav_user_bills', route: 'bills' },
+                        { text: 'Просмотр счёта', key: 'user_invoice_view' }
+                    ]
+                },
+                news: {
+                    title: 'Новости',
+                    titleKey: 'user_nav_user_news',
+                    breadcrumb: [
+                        { text: 'Главная', icon: 'bi-house-door', key: 'home', route: 'dashboard' },
+                        { text: 'Новости', key: 'user_nav_user_news' }
+                    ]
+                },
+                profile: {
+                    title: 'Профиль',
+                    titleKey: 'nav_profile',
+                    breadcrumb: [
+                        { text: 'Главная', icon: 'bi-house-door', key: 'home', route: 'dashboard' },
+                        { text: 'Профиль', key: 'nav_profile' }
+                    ]
                 }
             };
 
@@ -56,24 +133,75 @@
                 this.navigate(route, false);
             });
 
+            // Слушаем изменения hash для обновления активного пункта меню
+            this._isNavigating = false;
+            window.addEventListener('hashchange', () => {
+                if (this._isNavigating) {
+                    this._isNavigating = false;
+                    return;
+                }
+                const route = this.getRouteFromLocation();
+                this.navigate(route, false);
+            });
+
             const initialRoute = this.getRouteFromLocation();
+            
+            // При первой загрузке всегда обновляем активное состояние и заголовок
+            this.updateActiveMenu(initialRoute);
+            this.updatePageTitle(initialRoute);
             this.navigate(initialRoute, false);
         }
 
         getRouteFromLocation() {
-            const hash = window.location.hash.replace('#', '');
-            if (hash && this.routes[hash]) {
+            const hash = window.location.hash.replace('#', '').split('?')[0];
+            if (hash) {
                 return hash;
             }
             return 'dashboard';
         }
 
+        extractRouteFromHref(href) {
+            if (!href) return null;
+            // Извлекаем route из href
+            // /user/dashboard.html#bills -> bills
+            // #report -> report
+            // /user/dashboard.html -> dashboard
+            if (href.includes('#')) {
+                const hash = href.split('#')[1].split('?')[0];
+                return hash || 'dashboard';
+            }
+            if (href === '/user/dashboard.html' || href === '/user/dashboard.html/') {
+                return 'dashboard';
+            }
+            return null;
+        }
+
         setupNavigationListeners() {
-            document.querySelectorAll('.nav-item[data-user-route]').forEach(link => {
+            // Обрабатываем все nav-item элементы
+            document.querySelectorAll('.nav-item').forEach(link => {
+                // Пропускаем кнопку выхода
+                if (link.classList.contains('logout-btn')) {
+                    return;
+                }
+
                 link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const route = link.getAttribute('data-user-route');
-                    this.navigate(route, true);
+                    const dataRoute = link.getAttribute('data-user-route');
+                    const href = link.getAttribute('href');
+                    
+                    let route = dataRoute || this.extractRouteFromHref(href);
+                    
+                    if (route && this.routes[route]) {
+                        e.preventDefault();
+                        this.navigate(route, true);
+                    } else if (href && href.startsWith('#')) {
+                        // Для простых hash ссылок просто обновляем активное состояние
+                        e.preventDefault();
+                        const hashRoute = href.replace('#', '');
+                        if (hashRoute) {
+                            window.location.hash = hashRoute;
+                            this.updateActiveMenu(hashRoute);
+                        }
+                    }
                 });
             });
         }
@@ -85,12 +213,13 @@
                 event.preventDefault();
                 const route = target.getAttribute('data-user-route-target');
                 
-                // If navigating to resident detail, store resident ID
-                if (route === 'resident') {
+                // If navigating to resident detail or bills, store resident ID
+                if (route === 'resident' || route === 'bills') {
                     // Try to get resident ID from button attribute or dashboard data
                     let residentId = target.getAttribute('data-resident-id');
                     
                     if (!residentId && window.dashboardData && window.dashboardData.residents && window.dashboardData.residents.length > 0) {
+                        // Fallback to first resident if no specific ID provided
                         residentId = window.dashboardData.residents[0].id;
                     }
                     
@@ -98,6 +227,14 @@
                         sessionStorage.setItem('currentResidentId', residentId.toString());
                     } else {
                         console.warn('Resident ID not found, will try to load from backend');
+                    }
+                }
+                
+                // For report payment, also store resident ID if provided
+                if (route === 'report') {
+                    const residentId = target.getAttribute('data-resident-id');
+                    if (residentId) {
+                        sessionStorage.setItem('currentResidentId', residentId.toString());
                     }
                 }
                 
@@ -114,14 +251,20 @@
         }
 
         navigate(route, updateHistory = true) {
-            if (!route || !this.routes[route]) {
+            // Если роут не существует, используем dashboard
+            if (!route) {
                 route = 'dashboard';
             }
 
+            // Если это уже текущий роут - пропускаем
             if (this.currentRoute === route && !this.isLoading) {
                 return;
             }
 
+            // Устанавливаем флаг, чтобы hashchange не вызывал повторную навигацию
+            this._isNavigating = true;
+
+            // Обновляем URL
             if (updateHistory) {
                 const url = route === 'dashboard'
                     ? window.location.pathname
@@ -133,10 +276,20 @@
                     : `${window.location.pathname}#${route}`);
             }
 
+            // Всегда обновляем активный пункт меню и заголовок
             this.updateActiveMenu(route);
+            this.updatePageTitle(route);
             this.applyBodyClass(route);
 
             const config = this.routes[route];
+            
+            // Для placeholder роутов (news, profile и т.д.) - только обновляем меню
+            if (!config || config.type === 'placeholder') {
+                this.currentRoute = route;
+                return;
+            }
+
+            // Для inline контента (dashboard)
             if (config.type === 'inline') {
                 this.contentContainer.innerHTML = config.content;
                 this.afterContentRender(route);
@@ -150,17 +303,119 @@
                 return;
             }
 
+            // Для remote контента
             this.loadRemoteRoute(route, config.path);
         }
 
         updateActiveMenu(route) {
             // Если у маршрута есть "родитель" для навигации (например, invoice -> bills),
             // подсвечиваем в меню именно его.
-            const navRoute = this.routes[route]?.parentNav || route;
+            const routeConfig = this.routes[route];
+            const navRoute = routeConfig?.parentNav || route;
 
-            document.querySelectorAll('.nav-item[data-user-route]').forEach(item => {
-                item.classList.toggle('active', item.getAttribute('data-user-route') === navRoute);
+            // Убираем active со всех пунктов меню
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
             });
+
+            // Добавляем active на текущий пункт меню
+            document.querySelectorAll('.nav-item').forEach(item => {
+                // Пропускаем кнопку выхода
+                if (item.classList.contains('logout-btn')) {
+                    return;
+                }
+
+                // Получаем route из data-user-route или href
+                const dataRoute = item.getAttribute('data-user-route');
+                const href = item.getAttribute('href');
+                
+                let itemRoute = null;
+                if (dataRoute) {
+                    itemRoute = dataRoute;
+                } else if (href) {
+                    itemRoute = this.extractRouteFromHref(href);
+                }
+
+                // Сравниваем роуты
+                if (itemRoute && (itemRoute === navRoute || itemRoute === route)) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        updatePageTitle(route) {
+            const pageInfo = this.pageInfo[route] || this.pageInfo['dashboard'];
+            const titleContainer = document.querySelector('.page-title');
+            
+            if (!titleContainer) return;
+            
+            // Обновляем заголовок
+            const h1 = titleContainer.querySelector('h1');
+            if (h1) {
+                h1.textContent = pageInfo.title;
+                if (pageInfo.titleKey) {
+                    h1.setAttribute('data-i18n', pageInfo.titleKey);
+                }
+            }
+            
+            // Обновляем breadcrumb
+            const breadcrumbContainer = titleContainer.querySelector('.page-breadcrumb');
+            if (breadcrumbContainer && pageInfo.breadcrumb) {
+                let breadcrumbHtml = '';
+                
+                pageInfo.breadcrumb.forEach((crumb, index) => {
+                    // Разделитель между элементами
+                    if (index > 0) {
+                        breadcrumbHtml += '<span class="breadcrumb-separator">›</span>';
+                    }
+                    
+                    // Иконка (только для первого элемента)
+                    const iconHtml = crumb.icon 
+                        ? `<i class="bi ${crumb.icon}"></i> ` 
+                        : '';
+                    
+                    // Если есть route - делаем кликабельным
+                    if (crumb.route) {
+                        const dataI18n = crumb.key ? `data-i18n="${crumb.key}"` : '';
+                        breadcrumbHtml += `
+                            <a href="#${crumb.route}" class="breadcrumb-item breadcrumb-link" data-user-route="${crumb.route}" ${dataI18n}>
+                                ${iconHtml}<span ${dataI18n}>${crumb.text}</span>
+                            </a>
+                        `;
+                    } else {
+                        const dataI18n = crumb.key ? `data-i18n="${crumb.key}"` : '';
+                        breadcrumbHtml += `
+                            <span class="breadcrumb-item" ${dataI18n}>
+                                ${iconHtml}<span ${dataI18n}>${crumb.text}</span>
+                            </span>
+                        `;
+                    }
+                });
+                
+                breadcrumbContainer.innerHTML = breadcrumbHtml;
+                
+                // Добавляем обработчики на кликабельные breadcrumbs
+                breadcrumbContainer.querySelectorAll('.breadcrumb-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const targetRoute = link.getAttribute('data-user-route');
+                        if (targetRoute) {
+                            this.navigate(targetRoute, true);
+                        }
+                    });
+                });
+            }
+            
+            // Обновляем title страницы
+            document.title = `${pageInfo.title} - RoyalPark`;
+            
+            // Применяем переводы если доступны
+            setTimeout(() => {
+                if (window.i18n) {
+                    const savedLang = localStorage.getItem('language') || 'ru';
+                    window.i18n.applyLanguage(savedLang);
+                }
+            }, 10);
         }
 
         applyBodyClass(route) {

@@ -317,7 +317,6 @@ function updateDashboardUI(data) {
         const fullName = data.user.full_name || data.user.username || 'Пользователь';
         const userNameEl = document.querySelector('.user-name');
         const userAvatarEl = document.querySelector('.user-avatar');
-        const greetingEl = document.querySelector('.resident-greeting');
         
         if (userNameEl) {
             userNameEl.textContent = fullName;
@@ -327,64 +326,175 @@ function updateDashboardUI(data) {
             const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
             userAvatarEl.textContent = initials || fullName.substring(0, 2).toUpperCase();
         }
-
-        if (greetingEl) {
-            greetingEl.innerHTML = `<span data-i18n="user_greeting_prefix">Здравствуйте,</span> ${fullName}`;
-        }
     }
 
-    // Update summary (first resident or aggregate)
-    if (data.residents && data.residents.length > 0) {
-        const firstResident = data.residents[0];
-        const summary = data.summary;
+    // Get container and template
+    const container = document.getElementById('residentsContainer');
+    const template = container?.querySelector('.resident-card-template');
+    
+    if (!container || !template) {
+        console.error('Residents container or template not found');
+        return;
+    }
 
-        // Update resident card
-        const residentTag = document.querySelector('.resident-tag');
-        if (residentTag && firstResident) {
-            residentTag.textContent = firstResident.code;
+    // Remove all existing resident cards (except template)
+    container.querySelectorAll('.resident-card:not(.resident-card-template)').forEach(card => card.remove());
+    
+    // Remove existing wrapper if exists
+    const existingWrapper = container.querySelector('.residents-cards-wrapper');
+    if (existingWrapper) {
+        existingWrapper.remove();
+    }
+
+    // Update summary cards (use aggregate summary)
+    const summary = data.summary || {};
+    updateStatValue('.resident-summary-card:first-child .summary-value', summary.total_debt);
+    updateStatValue('.resident-summary-card.accent .summary-value', summary.total_advance);
+
+    // Create card for each resident
+    if (data.residents && data.residents.length > 0) {
+        const fullName = data.user?.full_name || data.user?.username || 'Пользователь';
+        const hasMultipleResidents = data.residents.length > 1;
+        
+        // Add class to container if multiple residents
+        if (hasMultipleResidents) {
+            container.classList.add('has-multiple-residents');
+        } else {
+            container.classList.remove('has-multiple-residents');
         }
         
-        // Set resident ID on "Подробнее" button
-        const detailsBtn = document.querySelector('[data-user-route-target="resident"]');
-        if (detailsBtn && firstResident) {
-            detailsBtn.setAttribute('data-resident-id', firstResident.id.toString());
+        // Create wrapper for resident cards if multiple
+        let residentsWrapper = null;
+        if (hasMultipleResidents) {
+            residentsWrapper = document.createElement('div');
+            residentsWrapper.className = 'residents-cards-wrapper';
         }
-
-        // Update month due
-        const monthDueEl = document.querySelector('.resident-amount-box strong');
-        if (monthDueEl) {
-            monthDueEl.textContent = formatCurrency(summary.total_month);
-        }
-
-        // Update progress bar
-        const progressBar = document.querySelector('.resident-progress-bar');
-        const progressFill = document.querySelector('.resident-progress-fill');
-        if (progressBar && progressFill && firstResident) {
-            const percentage = firstResident.month_total > 0 
-                ? (firstResident.month_paid / firstResident.month_total) * 100 
-                : 0;
-            progressFill.style.width = `${Math.min(percentage, 100)}%`;
-
-            // Показываем короткий формат "оплачено/за месяц", например 0/112, по центру полосы
-            const paidShort = Math.round(firstResident.month_paid || 0);
-            const totalShort = Math.round(firstResident.month_total || 0);
-            let progressTextSpan = progressBar.querySelector('.resident-progress-text');
-            if (!progressTextSpan) {
-                progressTextSpan = document.createElement('span');
-                progressTextSpan.className = 'resident-progress-text';
-                progressBar.appendChild(progressTextSpan);
+        
+        data.residents.forEach((resident, index) => {
+            // Clone template
+            const card = template.cloneNode(true);
+            card.classList.remove('resident-card-template');
+            card.style.display = '';
+            
+            // Update greeting (only show on first card)
+            const greetingEl = card.querySelector('.resident-greeting');
+            if (greetingEl && index === 0) {
+                greetingEl.innerHTML = `<span data-i18n="user_greeting_prefix">Здравствуйте,</span> ${fullName}`;
+            } else if (greetingEl) {
+                greetingEl.style.display = 'none';
             }
-            progressTextSpan.textContent = `${paidShort}/${totalShort}`;
+            
+            // Update resident tag
+            const residentTag = card.querySelector('.resident-tag');
+            if (residentTag) {
+                residentTag.textContent = resident.code;
+            }
+            
+            // Update payment deadline
+            const dueDateEl = card.querySelector('.resident-due-date');
+            if (dueDateEl) {
+                if (resident.due_date) {
+                    const dueDate = new Date(resident.due_date);
+                    const formattedDate = dueDate.toLocaleDateString('ru-RU', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric' 
+                    });
+                    dueDateEl.textContent = `Срок оплаты: ${formattedDate}`;
+                    dueDateEl.style.display = 'flex';
+                    
+                    // Apply styling based on due_state
+                    dueDateEl.className = 'resident-due-date';
+                    if (resident.due_state === 'over') {
+                        dueDateEl.classList.add('due-over');
+                    } else if (resident.due_state === 'soon') {
+                        dueDateEl.classList.add('due-soon');
+                    } else if (resident.due_state === 'ok') {
+                        dueDateEl.classList.add('due-ok');
+                    }
+                } else {
+                    dueDateEl.style.display = 'none';
+                }
+            }
+            
+            // Update month due
+            const monthDueEl = card.querySelector('.resident-amount-box strong');
+            if (monthDueEl) {
+                monthDueEl.textContent = formatCurrency(resident.month_due);
+            }
+            
+            // Update progress bar
+            const progressBar = card.querySelector('.resident-progress-bar');
+            const progressFill = card.querySelector('.resident-progress-fill');
+            if (progressBar && progressFill) {
+                const percentage = resident.month_total > 0 
+                    ? (resident.month_paid / resident.month_total) * 100 
+                    : 0;
+                progressFill.style.width = `${Math.min(percentage, 100)}%`;
+                
+                const paidShort = Math.round(resident.month_paid || 0);
+                const totalShort = Math.round(resident.month_total || 0);
+                let progressTextSpan = progressBar.querySelector('.resident-progress-text');
+                if (!progressTextSpan) {
+                    progressTextSpan = document.createElement('span');
+                    progressTextSpan.className = 'resident-progress-text';
+                    progressBar.appendChild(progressTextSpan);
+                }
+                progressTextSpan.textContent = `${paidShort}/${totalShort}`;
+            }
+            
+            // Update stats
+            const statsRow = card.querySelector('.resident-stats-row');
+            if (statsRow) {
+                const debtEl = statsRow.querySelector('div:nth-child(1) .resident-stat-value');
+                const advanceEl = statsRow.querySelector('div:nth-child(2) .resident-stat-value');
+                const payNowEl = statsRow.querySelector('div:nth-child(3) .resident-stat-value');
+                
+                if (debtEl) {
+                    debtEl.textContent = formatCurrency(resident.debt_total);
+                }
+                if (advanceEl) {
+                    advanceEl.textContent = formatCurrency(resident.advance_total);
+                    if (resident.advance_total > 0) {
+                        advanceEl.classList.add('positive');
+                    } else {
+                        advanceEl.classList.remove('positive');
+                    }
+                }
+                if (payNowEl) {
+                    payNowEl.textContent = formatCurrency(resident.pay_now);
+                }
+            }
+            
+            // Set resident ID on all buttons
+            const residentId = resident.id.toString();
+            card.querySelectorAll('[data-resident-id]').forEach(btn => {
+                btn.setAttribute('data-resident-id', residentId);
+            });
+            
+            // Add card to wrapper or container
+            if (hasMultipleResidents && residentsWrapper) {
+                residentsWrapper.appendChild(card);
+            } else {
+                // Single resident - insert before side cards
+                const sideCards = container.querySelector('.resident-side-cards');
+                if (sideCards) {
+                    container.insertBefore(card, sideCards);
+                } else {
+                    container.appendChild(card);
+                }
+            }
+        });
+        
+        // Insert wrapper before side cards if multiple residents
+        if (hasMultipleResidents && residentsWrapper) {
+            const sideCards = container.querySelector('.resident-side-cards');
+            if (sideCards) {
+                container.insertBefore(residentsWrapper, sideCards);
+            } else {
+                container.appendChild(residentsWrapper);
+            }
         }
-
-        // Update detailed stats in resident card (use first resident's data)
-        updateStatValue('.resident-stats-row > div:nth-child(1) .resident-stat-value', firstResident.debt_total);
-        updateStatValue('.resident-stats-row > div:nth-child(2) .resident-stat-value', firstResident.advance_total, true);
-        updateStatValue('.resident-stats-row > div:nth-child(3) .resident-stat-value', firstResident.pay_now);
-
-        // Update summary cards (use aggregate summary)
-        updateStatValue('.resident-summary-card:first-child .summary-value', summary.total_debt);
-        updateStatValue('.resident-summary-card.accent .summary-value', summary.total_advance);
         
         // Update stats grid cards
         updateStatsGrid(data);
@@ -542,8 +652,12 @@ function createBillItem(invoice) {
 }
 
 // Helper function to update stat value
-function updateStatValue(selector, value, isPositive = false) {
-    const element = document.querySelector(selector);
+// Accepts either a selector string or an element
+function updateStatValue(selectorOrElement, value, isPositive = false) {
+    const element = typeof selectorOrElement === 'string' 
+        ? document.querySelector(selectorOrElement)
+        : selectorOrElement;
+    
     if (element) {
         element.textContent = formatCurrency(value);
         if (isPositive && value > 0) {
@@ -568,26 +682,43 @@ function setupActionButtons() {
     document.addEventListener('click', async (e) => {
         // Нужны данные дашборда для сумм
         const summary = window.dashboardData?.summary || {};
+        const residents = window.dashboardData?.residents || [];
 
         // "Погасить из аванса" (Pay from advance)
         const payFromAdvanceBtn = e.target.closest('[data-action="pay-from-advance"]');
-        if (payFromAdvanceBtn && window.dashboardData && window.dashboardData.residents.length > 0) {
+        if (payFromAdvanceBtn) {
             e.preventDefault();
-            const residentId = window.dashboardData.residents[0].id; // Use first resident for now
-            await applyAdvance(residentId);
+            const residentIdAttr = payFromAdvanceBtn.getAttribute('data-resident-id');
+            if (residentIdAttr) {
+                const residentId = parseInt(residentIdAttr, 10);
+                await applyAdvance(residentId);
+            }
             return;
         }
 
-        // "Оплатить за месяц" — оплачиваем только текущий месяц
+        // "Оплатить за месяц" — оплачиваем только текущий месяц для конкретного резидента
         const payMonthBtn = e.target.closest('[data-action="pay-month"]');
         if (payMonthBtn && window.dashboardData) {
             e.preventDefault();
-            const amount = summary.total_month || 0;
-            startPaymentFlow('month', amount, summary);
+            const residentIdAttr = payMonthBtn.getAttribute('data-resident-id');
+            let amount = summary.total_month || 0;
+            let residentCode = '';
+            
+            // Если есть resident_id, используем данные конкретного резидента
+            if (residentIdAttr) {
+                const residentId = parseInt(residentIdAttr, 10);
+                const resident = residents.find(r => r.id === residentId);
+                if (resident) {
+                    amount = resident.month_due || 0;
+                    residentCode = resident.code || '';
+                }
+            }
+            
+            startPaymentFlow('month', amount, summary, residentIdAttr ? parseInt(residentIdAttr, 10) : null, residentCode);
             return;
         }
 
-        // "Оплатить всё" — полное погашение долга по всем счетам
+        // "Оплатить всё" — полное погашение долга по всем счетам (агрегированная сумма)
         const payAllBtn = e.target.closest('[data-action="pay-all"]');
         if (payAllBtn && window.dashboardData) {
             e.preventDefault();
@@ -599,10 +730,12 @@ function setupActionButtons() {
 }
 
 // Запуск цепочки оплаты: сохраняем параметры и переходим на страницу оплаты
-function startPaymentFlow(scope, amount, summaryFromDashboard) {
-    // Код резидента для отображения на странице оплаты
-    const residentTagEl = document.querySelector('.resident-tag');
-    const residentCode = residentTagEl ? residentTagEl.textContent.trim() : '';
+function startPaymentFlow(scope, amount, summaryFromDashboard, residentId = null, residentCode = null) {
+    // Если residentCode не передан, пытаемся получить из DOM
+    if (!residentCode) {
+        const residentTagEl = document.querySelector('.resident-tag');
+        residentCode = residentTagEl ? residentTagEl.textContent.trim() : '';
+    }
 
     // Человеко-понятный текст типа платежа
     let scopeLabel;
@@ -623,6 +756,9 @@ function startPaymentFlow(scope, amount, summaryFromDashboard) {
         if (residentCode) {
             sessionStorage.setItem('paymentResidentCode', residentCode);
         }
+        if (residentId) {
+            sessionStorage.setItem('paymentResidentId', String(residentId));
+        }
     } catch (err) {
         console.warn('Failed to store payment data in sessionStorage', err);
     }
@@ -638,7 +774,8 @@ function startPaymentFlow(scope, amount, summaryFromDashboard) {
 
 // Apply advance payment
 async function applyAdvance(residentId) {
-    if (!confirm('Применить аванс к открытым счетам?')) {
+    const confirmed = await showConfirm('Применить аванс к открытым счетам?', 'Подтверждение');
+    if (!confirmed) {
         return;
     }
 
@@ -659,32 +796,183 @@ async function applyAdvance(residentId) {
         // Reload dashboard data
         await loadDashboardData();
         
-        if (window.showSuccess) {
-            showSuccess('Аванс успешно применён к счетам!');
-        } else {
-            alert('Аванс успешно применён к счетам!');
-        }
+        await showSuccess('Аванс успешно применён к счетам!');
     } catch (error) {
         console.error('Error applying advance:', error);
-        if (window.showError) {
-            showError('Не удалось применить аванс. Попробуйте позже.');
-        } else {
-            alert('Не удалось применить аванс. Попробуйте позже.');
-        }
+        await showError('Не удалось применить аванс. Попробуйте позже.');
     }
 }
 
-// Show error message
-function showError(message) {
-    // You can implement a toast notification here
-    console.error(message);
-    // For now, just log it
+// Modal confirmation dialog (returns Promise<boolean>)
+window.showConfirm = function showConfirm(message, title = 'Подтвердите действие') {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'user-modal-overlay';
+        overlay.innerHTML = `
+            <div class="user-confirm-modal">
+                <div class="user-confirm-modal-header">
+                    <div class="user-confirm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                    </div>
+                    <h3>${title}</h3>
+                    <button class="user-confirm-modal-close" type="button">&times;</button>
+                </div>
+                <div class="user-confirm-modal-body">
+                    <p>${message}</p>
+                </div>
+                <div class="user-confirm-modal-footer">
+                    <button class="user-btn user-btn-secondary btn-cancel" type="button">Отмена</button>
+                    <button class="user-btn user-btn-primary btn-confirm" type="button">OK</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        // Show with animation
+        setTimeout(() => overlay.classList.add('show'), 10);
+        
+        let resolved = false;
+        const close = (result) => {
+            if (resolved) return; // Prevent double resolution
+            resolved = true;
+            
+            overlay.classList.remove('show');
+            setTimeout(() => {
+                if (document.body.contains(overlay)) {
+                    document.body.removeChild(overlay);
+                }
+                resolve(result);
+            }, 300);
+        };
+        
+        // Get button references after DOM is ready
+        const confirmBtn = overlay.querySelector('.btn-confirm');
+        const cancelBtn = overlay.querySelector('.btn-cancel');
+        const closeBtn = overlay.querySelector('.user-confirm-modal-close');
+        
+        // Add event listeners with proper handling
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                close(true); // OK - подтверждаем действие
+            });
+        }
+        
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                close(false); // Отмена - отменяем действие
+            });
+        }
+        
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                close(false); // Закрытие = отмена
+            });
+        }
+        
+        // Close on overlay click (but not on modal content)
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                close(false); // Клик вне модалки = отмена
+            }
+        });
+        
+        // ESC key handler
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                close(false); // ESC = отмена
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    });
 }
 
-// Show success message
-function showSuccess(message) {
-    console.log(message);
-    // You can implement a toast notification here
+// Modal alert dialog
+window.showAlert = function showAlert(message, title = 'Уведомление', type = 'info') {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'user-modal-overlay';
+        
+        const iconMap = {
+            success: '✓',
+            error: '✕',
+            warning: '⚠',
+            info: 'ℹ'
+        };
+        
+        const colorMap = {
+            success: '#34c759',
+            error: '#ff3b30',
+            warning: '#ff9500',
+            info: '#007aff'
+        };
+        
+        overlay.innerHTML = `
+            <div class="user-alert-modal">
+                <div class="user-alert-modal-header">
+                    <div class="user-alert-icon" style="background: ${colorMap[type]}20; color: ${colorMap[type]}">
+                        ${iconMap[type] || iconMap.info}
+                    </div>
+                    <h3>${title}</h3>
+                    <button class="user-alert-modal-close" type="button">&times;</button>
+                </div>
+                <div class="user-alert-modal-body">
+                    <p>${message}</p>
+                </div>
+                <div class="user-alert-modal-footer">
+                    <button class="user-btn user-btn-primary btn-ok" type="button">OK</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        // Show with animation
+        setTimeout(() => overlay.classList.add('show'), 10);
+        
+        const close = () => {
+            overlay.classList.remove('show');
+            setTimeout(() => {
+                document.body.removeChild(overlay);
+                resolve();
+            }, 300);
+        };
+        
+        overlay.querySelector('.btn-ok').addEventListener('click', close);
+        overlay.querySelector('.user-alert-modal-close').addEventListener('click', close);
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) close();
+        });
+        
+        // ESC key
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                close();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    });
 }
+
+// Show error message
+window.showError = function showError(message) {
+    return showAlert(message, 'Ошибка', 'error');
+};
+
+// Show success message
+window.showSuccess = function showSuccess(message) {
+    return showAlert(message, 'Успешно', 'success');
+};
 
 console.log('📱 User dashboard loaded!');

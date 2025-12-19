@@ -231,10 +231,26 @@
     margin-bottom: 2rem;
 }
 
+/* Container for multiple resident cards */
+.residents-cards-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* When multiple residents, use grid layout */
+.overview-collab.has-multiple-residents {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 @media (min-width: 992px) {
     .overview-collab {
         grid-template-columns: minmax(0, 1fr) 280px;
-        align-items: stretch;
+        align-items: start;
+    }
+    
+    .overview-collab.has-multiple-residents {
+        grid-template-columns: minmax(0, 1fr) 280px;
     }
 }
 
@@ -247,6 +263,13 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    width: 100%;
+    min-height: 0;
+}
+
+/* Ensure all resident cards have same size when multiple */
+.residents-cards-wrapper .resident-card {
+    flex: 0 0 auto;
 }
 
 [data-theme="dark"] .resident-card {
@@ -260,6 +283,14 @@
     flex-direction: column;
     gap: 1rem;
 }
+
+.resident-card-header > div:first-child {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
 
 @media (min-width: 700px) {
     .resident-card-header {
@@ -277,8 +308,9 @@
 }
 
 .resident-tag {
-    display: inline-flex;
+    display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.35rem;
     padding: 0.2rem 0.9rem;
     border-radius: 999px;
@@ -291,6 +323,54 @@
 [data-theme="dark"] .resident-tag {
     background: rgba(79, 172, 254, 0.2);
     color: #7ed2ff;
+}
+
+.resident-due-date {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.9rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    background: rgba(108, 117, 125, 0.12);
+    color: #6c757d;
+}
+
+.resident-due-date.due-ok {
+    background: rgba(40, 167, 69, 0.12);
+    color: #28a745;
+}
+
+.resident-due-date.due-soon {
+    background: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+}
+
+.resident-due-date.due-over {
+    background: rgba(220, 53, 69, 0.12);
+    color: #dc3545;
+}
+
+[data-theme="dark"] .resident-due-date {
+    background: rgba(108, 117, 125, 0.2);
+    color: #adb5bd;
+}
+
+[data-theme="dark"] .resident-due-date.due-ok {
+    background: rgba(40, 167, 69, 0.2);
+    color: #4ade80;
+}
+
+[data-theme="dark"] .resident-due-date.due-soon {
+    background: rgba(255, 193, 7, 0.2);
+    color: #fbbf24;
+}
+
+[data-theme="dark"] .resident-due-date.due-over {
+    background: rgba(220, 53, 69, 0.2);
+    color: #f87171;
 }
 
 .resident-amount-box {
@@ -446,8 +526,16 @@
 }
 
 .resident-side-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+}
+
+/* When multiple residents, side cards stack vertically */
+.overview-collab.has-multiple-residents .resident-side-cards {
+    display: flex;
+    flex-direction: column;
     gap: 1rem;
 }
 
@@ -1543,8 +1631,10 @@ body[data-theme="dark"] .user-bills-section select option {
     perspective: 1000px;
     width: 100%;
     height: 250px;
+    min-height: 200px;
     cursor: pointer;
     position: relative;
+    aspect-ratio: 1.6 / 1; /* Сохраняем пропорции карты */
 }
 
 .saved-card-inner {
@@ -1611,7 +1701,7 @@ body[data-theme="dark"] .user-bills-section select option {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    overflow: visible;
+    overflow: hidden;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
@@ -1906,6 +1996,8 @@ body[data-theme="dark"] .user-bills-section select option {
     position: relative;
     z-index: 2;
     margin-top: auto;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .saved-card > *,
@@ -1939,6 +2031,9 @@ body[data-theme="dark"] .user-bills-section select option {
     margin-bottom: 15px;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     font-family: 'Space Mono', monospace;
+    word-break: break-all;
+    overflow-wrap: break-word;
+    line-height: 1.2;
 }
 
 .card-holder-section {
@@ -1953,11 +2048,16 @@ body[data-theme="dark"] .user-bills-section select option {
     color: #fff;
     letter-spacing: 0.5px;
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    word-break: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.2;
 }
 
 .saved-card .valid-date,
 .card-preview .valid-date {
     text-align: right;
+    flex-shrink: 0;
+    min-width: fit-content;
 }
 
 .saved-card .valid-date h5,
@@ -2038,7 +2138,7 @@ body[data-theme="dark"] .user-bills-section select option {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    overflow: visible;
+    overflow: hidden;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
@@ -2421,6 +2521,113 @@ body[data-theme="dark"] .user-bills-section select option {
     font-size: 1.1rem;
 }
 
+/* Custom Amount Section */
+.custom-amount-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.custom-amount-checkbox {
+    margin-bottom: 1rem;
+}
+
+.custom-amount-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.custom-amount-checkbox-input {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #667eea;
+}
+
+.custom-amount-checkbox-text {
+    font-weight: 500;
+}
+
+.custom-amount-field-wrapper {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+}
+
+.custom-amount-field-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.custom-amount-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.custom-amount-input {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.custom-amount-input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.custom-amount-currency {
+    position: absolute;
+    right: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    pointer-events: none;
+}
+
+.custom-amount-hint {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    background: rgba(102, 126, 234, 0.1);
+    color: #7ed2ff;
+}
+
+.custom-amount-hint.hint-advance {
+    background: rgba(52, 199, 89, 0.15);
+    color: #4ade80;
+}
+
+.custom-amount-hint.hint-partial {
+    background: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+}
+
+.custom-amount-hint.hint-full {
+    background: rgba(52, 199, 89, 0.15);
+    color: #4ade80;
+}
+
 /* Responsive */
 @media (max-width: 1400px) {
     .payment-container {
@@ -2469,5 +2676,519 @@ body[data-theme="dark"] .user-bills-section select option {
     padding: 1.5rem;
     border: 1px solid rgba(255, 255, 255, 0.1);
 } */
+
+/* ========================================
+   BREADCRUMB STYLES
+   ======================================== */
+
+.page-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    font-size: 0.875rem;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+    margin-top: 0.25rem;
+}
+
+.page-breadcrumb .breadcrumb-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.page-breadcrumb .breadcrumb-item i {
+    font-size: 0.875rem;
+}
+
+.page-breadcrumb .breadcrumb-link {
+    color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+    text-decoration: none;
+    transition: color 0.2s ease;
+    cursor: pointer;
+}
+
+.page-breadcrumb .breadcrumb-link:hover {
+    color: var(--text-primary, #fff);
+    text-decoration: underline;
+}
+
+.page-breadcrumb .breadcrumb-separator {
+    color: var(--text-secondary, rgba(255, 255, 255, 0.4));
+    margin: 0 0.25rem;
+    user-select: none;
+}
+
+/* Dark theme breadcrumb adjustments */
+[data-theme="dark"] .page-breadcrumb {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="dark"] .page-breadcrumb .breadcrumb-link {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="dark"] .page-breadcrumb .breadcrumb-link:hover {
+    color: #fff;
+}
+
+[data-theme="dark"] .page-breadcrumb .breadcrumb-separator {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Light theme breadcrumb adjustments */
+[data-theme="light"] .page-breadcrumb {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="light"] .page-breadcrumb .breadcrumb-link {
+    color: var(--primary-color, #667eea);
+}
+
+[data-theme="light"] .page-breadcrumb .breadcrumb-link:hover {
+    color: var(--primary-dark, #5a6bc9);
+}
+
+[data-theme="light"] .page-breadcrumb .breadcrumb-separator {
+    color: rgba(0, 0, 0, 0.4);
+}
+
+/* Modal overlay and dialogs */
+.user-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1300;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(4px);
+}
+
+.user-modal-overlay.show {
+    opacity: 1;
+}
+
+/* Confirm modal */
+.user-confirm-modal {
+    background: #1f2330;
+    color: var(--text-primary);
+    border-radius: 1rem;
+    width: min(480px, 90vw);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    max-height: 90vh;
+    overflow: hidden;
+}
+
+.user-modal-overlay.show .user-confirm-modal {
+    transform: scale(1);
+}
+
+.user-confirm-modal-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+}
+
+.user-confirm-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.2);
+}
+
+.user-confirm-modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.user-confirm-modal-close {
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.user-confirm-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.user-confirm-modal-body {
+    padding: 1.5rem;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.user-confirm-modal-body p {
+    margin: 0;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.user-confirm-modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+/* Alert modal */
+.user-alert-modal {
+    background: #1f2330;
+    color: var(--text-primary);
+    border-radius: 1rem;
+    width: min(420px, 90vw);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    max-height: 90vh;
+    overflow: hidden;
+}
+
+.user-modal-overlay.show .user-alert-modal {
+    transform: scale(1);
+}
+
+.user-alert-modal-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+}
+
+.user-alert-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.user-alert-modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.user-alert-modal-close {
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.user-alert-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.user-alert-modal-body {
+    padding: 1.5rem;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.user-alert-modal-body p {
+    margin: 0;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.user-alert-modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Buttons */
+.user-btn {
+    padding: 0.6rem 1.25rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.user-btn-primary {
+    background: #667eea;
+    color: #fff;
+}
+
+.user-btn-primary:hover {
+    background: #5568d3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.user-btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.user-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Responsive styles for payment cards */
+@media (max-width: 1200px) {
+    .payment-container {
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    
+    .payment-right-column {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .payment-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .payment-right-column {
+        grid-column: 1;
+    }
+    
+    /* Адаптивные размеры карт */
+    .saved-card-wrapper {
+        height: 220px;
+        min-height: 180px;
+    }
+    
+    .card-preview-container {
+        height: 220px;
+    }
+    
+    .saved-card,
+    .card-preview,
+    .saved-card-back,
+    .card-preview-back {
+        padding: 15px;
+    }
+    
+    .saved-card header,
+    .card-preview header {
+        margin-bottom: 15px;
+    }
+    
+    .card-header-left {
+        gap: 10px;
+    }
+    
+    /* Адаптивные размеры шрифтов */
+    .saved-card .name-number h5.number,
+    .card-preview .name-number h5.number {
+        font-size: 16px;
+        letter-spacing: 2px;
+        margin-bottom: 12px;
+    }
+    
+    .saved-card .name-number h5.name,
+    .card-preview .name-number h5.name {
+        font-size: 14px;
+    }
+    
+    .saved-card header h5,
+    .card-preview header h5 {
+        font-size: 14px;
+    }
+    
+    .saved-card .valid-date h5,
+    .card-preview .valid-date h5 {
+        font-size: 14px;
+    }
+    
+    .saved-card h6,
+    .card-preview h6 {
+        font-size: 10px;
+        margin-bottom: 4px;
+    }
+    
+    /* Адаптивные размеры элементов */
+    .saved-card .chip,
+    .card-preview .chip {
+        width: 40px;
+        height: 32px;
+    }
+    
+    .mastercard-logo {
+        width: 40px;
+        height: 24px;
+    }
+    
+    .mastercard-circle {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .visa-logo-small {
+        width: 40px;
+        height: 26px;
+        font-size: 12px;
+    }
+    
+    .card-holder-section {
+        margin-top: 8px;
+    }
+    
+    .card-details {
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Еще более компактные размеры для очень маленьких экранов */
+    .saved-card-wrapper {
+        height: 200px;
+        min-height: 160px;
+    }
+    
+    .card-preview-container {
+        height: 200px;
+    }
+    
+    .saved-card,
+    .card-preview,
+    .saved-card-back,
+    .card-preview-back {
+        padding: 12px;
+    }
+    
+    .saved-card header,
+    .card-preview header {
+        margin-bottom: 12px;
+    }
+    
+    .card-header-left {
+        gap: 8px;
+    }
+    
+    .saved-card .name-number h5.number,
+    .card-preview .name-number h5.number {
+        font-size: 14px;
+        letter-spacing: 1.5px;
+        margin-bottom: 10px;
+    }
+    
+    .saved-card .name-number h5.name,
+    .card-preview .name-number h5.name {
+        font-size: 12px;
+    }
+    
+    .saved-card header h5,
+    .card-preview header h5 {
+        font-size: 12px;
+    }
+    
+    .saved-card .valid-date h5,
+    .card-preview .valid-date h5 {
+        font-size: 12px;
+    }
+    
+    .saved-card h6,
+    .card-preview h6 {
+        font-size: 9px;
+        margin-bottom: 3px;
+    }
+    
+    .saved-card .chip,
+    .card-preview .chip {
+        width: 35px;
+        height: 28px;
+    }
+    
+    .mastercard-logo {
+        width: 35px;
+        height: 20px;
+    }
+    
+    .mastercard-circle {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .visa-logo-small {
+        width: 35px;
+        height: 22px;
+        font-size: 10px;
+    }
+    
+    .card-holder-section {
+        margin-top: 6px;
+    }
+    
+    .contactless-icon {
+        font-size: 18px !important;
+    }
+}
 
 /* END ADDED CSS */

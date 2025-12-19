@@ -207,6 +207,7 @@ const translations = {
         user_bills_pdf_btn: "PDF",
 
         // User invoice view
+        user_invoice_view: "Просмотр счёта",
         user_invoice_back_to_list: "← К списку счетов",
         user_invoice_title_prefix: "Счёт:",
         user_invoice_pdf_button: "PDF",
@@ -603,6 +604,7 @@ const translations = {
         user_bills_pdf_btn: "PDF",
 
         // User invoice view
+        user_invoice_view: "Hesabın görüntülənməsi",
         user_invoice_back_to_list: "← Hesablar siyahısına",
         user_invoice_title_prefix: "Hesab:",
         user_invoice_pdf_button: "PDF",
@@ -937,6 +939,7 @@ const translations = {
         user_bills_pdf_btn: "PDF",
 
         // User invoice view
+        user_invoice_view: "Invoice View",
         user_invoice_back_to_list: "← Back to bills list",
         user_invoice_title_prefix: "Invoice:",
         user_invoice_pdf_button: "PDF",

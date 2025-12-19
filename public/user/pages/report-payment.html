@@ -226,7 +226,7 @@
 
                     <div class="form-group">
                         <label>CVV</label>
-                        <input type="text" placeholder="123" maxlength="4" class="card-cvv-input" id="cardCvvInput">
+                        <input type="text" placeholder="123" maxlength="3" class="card-cvv-input" id="cardCvvInput">
                     </div>
                 </div>
 
@@ -287,6 +287,31 @@
                     <div class="order-total-item final">
                         <span class="total-label">Итого</span>
                         <span class="total-value" id="total"></span>
+                    </div>
+                </div>
+
+                <!-- Custom Amount Section -->
+                <div class="custom-amount-section">
+                    <div class="custom-amount-checkbox">
+                        <label class="custom-amount-label">
+                            <input type="checkbox" id="customAmountCheckbox" class="custom-amount-checkbox-input">
+                            <span class="custom-amount-checkbox-text">Указать другую сумму для оплаты</span>
+                        </label>
+                    </div>
+                    <div class="custom-amount-field-wrapper" id="customAmountFieldWrapper" style="display: none;">
+                        <label class="custom-amount-field-label">Сумма к оплате</label>
+                        <div class="custom-amount-input-wrapper">
+                            <input 
+                                type="number" 
+                                id="customAmountInput" 
+                                class="custom-amount-input" 
+                                step="0.01" 
+                                min="0.01" 
+                                placeholder="0.00"
+                            >
+                            <span class="custom-amount-currency">₼</span>
+                        </div>
+                        <div class="custom-amount-hint" id="customAmountHint"></div>
                     </div>
                 </div>
             </div>
@@ -1040,15 +1065,383 @@ async function initPaymentPage() {
         if (paymentDateEl && !paymentDateEl.textContent) {
             paymentDateEl.textContent = formatPaymentDateNow();
         }
+
+        // Initialize custom amount functionality
+        initCustomAmountField(amount);
     } catch (err) {
         console.error('Error initializing payment summary:', err);
     }
 }
 
+// Initialize custom amount field functionality
+function initCustomAmountField(defaultAmount) {
+    const checkbox = document.getElementById('customAmountCheckbox');
+    const fieldWrapper = document.getElementById('customAmountFieldWrapper');
+    const amountInput = document.getElementById('customAmountInput');
+    const hintEl = document.getElementById('customAmountHint');
+    const totalEl = document.getElementById('total');
+
+    if (!checkbox || !fieldWrapper || !amountInput) return;
+
+    // Get total amount from invoice
+    let invoiceTotal = defaultAmount || 0;
+    if (totalEl) {
+        const totalText = totalEl.textContent || '';
+        const cleanAmount = totalText.replace(/[^\d,\.]/g, '').replace(',', '.');
+        invoiceTotal = parseFloat(cleanAmount) || 0;
+    }
+
+    // Checkbox change handler
+    checkbox.addEventListener('change', function() {
+        if (this.checked) {
+            fieldWrapper.style.display = 'block';
+            amountInput.focus();
+            // Set default value to invoice total
+            if (invoiceTotal > 0) {
+                amountInput.value = invoiceTotal.toFixed(2);
+            }
+            updateAmountHint(invoiceTotal, invoiceTotal);
+        } else {
+            fieldWrapper.style.display = 'none';
+            amountInput.value = '';
+            if (hintEl) hintEl.textContent = '';
+        }
+    });
+
+    // Input change handler
+    amountInput.addEventListener('input', function() {
+        const customAmount = parseFloat(this.value) || 0;
+        updateAmountHint(invoiceTotal, customAmount);
+    });
+
+    // Update hint based on amounts
+    function updateAmountHint(invoiceTotal, customAmount) {
+        if (!hintEl) return;
+        
+        if (customAmount <= 0) {
+            hintEl.textContent = '';
+            hintEl.className = 'custom-amount-hint';
+            return;
+        }
+
+        if (customAmount > invoiceTotal) {
+            const advance = customAmount - invoiceTotal;
+            hintEl.textContent = `Излишек ${advance.toFixed(2)} ₼ будет зачислен в аванс`;
+            hintEl.className = 'custom-amount-hint hint-advance';
+        } else if (customAmount < invoiceTotal) {
+            const remaining = invoiceTotal - customAmount;
+            hintEl.textContent = `Останется к оплате: ${remaining.toFixed(2)} ₼ (счёт будет частично оплачен)`;
+            hintEl.className = 'custom-amount-hint hint-partial';
+        } else {
+            hintEl.textContent = 'Счёт будет полностью оплачен';
+            hintEl.className = 'custom-amount-hint hint-full';
+        }
+    }
+}
+
+// -------------------------------
+// Submit Payment Function
+// -------------------------------
+
+async function submitPayment(event) {
+    if (event) {
+        event.preventDefault();
+    }
+    
+    const payButton = document.querySelector('.pay-button');
+    const originalText = payButton ? payButton.textContent : 'Оплатить';
+    
+    // Validate card form
+    const cardNumber = document.getElementById('cardNumberInput')?.value?.replace(/\s/g, '') || '';
+    const cardName = document.getElementById('cardNameInput')?.value?.trim() || '';
+    const cardExp = document.getElementById('cardExpInput')?.value || '';
+    const cardCvv = document.getElementById('cardCvvInput')?.value || '';
+    
+    // Basic validation
+    if (cardNumber.length < 13) {
+        showPaymentError('Введите корректный номер карты');
+        return false;
+    }
+    if (cardName.length < 2) {
+        showPaymentError('Введите имя на карте');
+        return false;
+    }
+    if (!cardExp.match(/^\d{2}\/\d{2}$/)) {
+        showPaymentError('Введите срок действия карты (MM/YY)');
+        return false;
+    }
+    if (cardCvv.length < 3) {
+        showPaymentError('Введите CVV код');
+        return false;
+    }
+    
+    // Get payment data from session storage
+    const scope = sessionStorage.getItem('paymentScope') || 'month';
+    let amount = parseFloat(sessionStorage.getItem('paymentAmount') || '0');
+    
+    // Check if custom amount is enabled
+    const customAmountCheckbox = document.getElementById('customAmountCheckbox');
+    const customAmountInput = document.getElementById('customAmountInput');
+    const useCustomAmount = customAmountCheckbox && customAmountCheckbox.checked;
+    
+    if (useCustomAmount && customAmountInput) {
+        // Use custom amount from input
+        const customAmount = parseFloat(customAmountInput.value) || 0;
+        if (customAmount <= 0) {
+            showPaymentError('Введите сумму для оплаты');
+            return false;
+        }
+        amount = customAmount;
+    } else {
+        // Use default amount from session storage or total element
+        if (!amount || amount <= 0) {
+            const totalEl = document.getElementById('total');
+            if (totalEl) {
+                const totalText = totalEl.textContent || '';
+                // Parse "1 234,56 ₼" format
+                const cleanAmount = totalText.replace(/[^\d,\.]/g, '').replace(',', '.');
+                amount = parseFloat(cleanAmount) || 0;
+            }
+        }
+    }
+    
+    if (amount <= 0) {
+        showPaymentError('Сумма оплаты должна быть больше 0');
+        return false;
+    }
+    
+    // Get resident IDs from dashboard data
+    let residentId = null;
+    try {
+        const dashboardResp = await fetch(`${API_BASE}/api/resident/dashboard`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (dashboardResp.ok) {
+            const dashboardData = await dashboardResp.json();
+            if (dashboardData.residents && dashboardData.residents.length > 0) {
+                // Use first resident ID (in case user has multiple)
+                residentId = dashboardData.residents[0].id;
+            }
+        }
+    } catch (err) {
+        console.error('Failed to get resident ID:', err);
+    }
+    
+    if (!residentId) {
+        showPaymentError('Не удалось определить резидента. Попробуйте перезагрузить страницу.');
+        return false;
+    }
+    
+    // Show loading state
+    if (payButton) {
+        payButton.disabled = true;
+        payButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Обработка...';
+    }
+    
+    try {
+        // Submit payment to backend
+        const response = await fetch(`${API_BASE}/api/resident/payment`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                resident_id: residentId,
+                amount: amount,
+                method: 'CARD',
+                reference: `Card ***${cardNumber.slice(-4)}`,
+                comment: `Онлайн-оплата картой ${cardName}`
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `Ошибка сервера: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.ok) {
+            // Success!
+            showPaymentSuccess('Платёж успешно проведён!');
+            
+            // Clear payment session data
+            sessionStorage.removeItem('paymentAmount');
+            sessionStorage.removeItem('paymentScope');
+            sessionStorage.removeItem('paymentScopeLabel');
+            sessionStorage.removeItem('paymentResidentCode');
+            sessionStorage.removeItem('paymentSummary');
+            
+            // Set filter to show DRAFT status invoices on bills page
+            sessionStorage.setItem('billsFilterStatuses', JSON.stringify(['DRAFT']));
+            
+            // Redirect to bills page with DRAFT filter after short delay
+            setTimeout(() => {
+                if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
+                    window.userSpaRouter.navigate('bills', true);
+                } else {
+                    window.location.href = '/user/dashboard.html#bills?status=DRAFT';
+                }
+            }, 2000);
+        } else {
+            throw new Error(result.message || 'Не удалось обработать платёж');
+        }
+        
+    } catch (error) {
+        console.error('Payment error:', error);
+        showPaymentError(error.message || 'Произошла ошибка при обработке платежа');
+        
+        // Restore button
+        if (payButton) {
+            payButton.disabled = false;
+            payButton.textContent = originalText;
+        }
+    }
+    
+    return false;
+}
+
+// Show success message
+function showPaymentSuccess(message) {
+    // Try to use global notification system if available
+    if (window.showSuccess) {
+        window.showSuccess(message);
+        return;
+    }
+    
+    // Fallback: create custom toast
+    const toast = document.createElement('div');
+    toast.className = 'payment-toast payment-toast-success';
+    toast.innerHTML = `
+        <div class="payment-toast-icon">
+            <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <div class="payment-toast-message">${message}</div>
+    `;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+        box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3);
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease-in';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Show error message
+function showPaymentError(message) {
+    // Try to use global notification system if available
+    if (window.showError) {
+        window.showError(message);
+        return;
+    }
+    
+    // Fallback: create custom toast
+    const toast = document.createElement('div');
+    toast.className = 'payment-toast payment-toast-error';
+    toast.innerHTML = `
+        <div class="payment-toast-icon">
+            <i class="bi bi-exclamation-circle-fill"></i>
+        </div>
+        <div class="payment-toast-message">${message}</div>
+    `;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+        box-shadow: 0 10px 40px rgba(239, 68, 68, 0.3);
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease-in';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+// Add toast animations
+if (!document.getElementById('payment-toast-styles')) {
+    const style = document.createElement('style');
+    style.id = 'payment-toast-styles';
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Bind pay button
+function bindPayButton() {
+    const payForm = document.querySelector('.payment-card-form');
+    const payButton = document.querySelector('.pay-button');
+    
+    if (payForm) {
+        payForm.addEventListener('submit', submitPayment);
+    }
+    
+    if (payButton && !payButton.dataset.bound) {
+        payButton.dataset.bound = 'true';
+        payButton.addEventListener('click', function(e) {
+            if (!payForm) {
+                submitPayment(e);
+            }
+        });
+    }
+}
+
 // Инициализируем страницу как при обычной загрузке, так и при загрузке через SPA
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPaymentPage);
+    document.addEventListener('DOMContentLoaded', () => {
+        initPaymentPage();
+        bindPayButton();
+    });
 } else {
     initPaymentPage();
+    bindPayButton();
 }
 </script>

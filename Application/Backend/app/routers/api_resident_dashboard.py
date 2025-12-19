@@ -769,6 +769,97 @@ def delete_resident_appeal(
     return {"ok": True}
 
 
+# --------- Resident Payment API ---------
+
+
+class ResidentPaymentCreate(BaseModel):
+    resident_id: int
+    amount: float
+    method: str = "CARD"  # CARD, TRANSFER, CASH, ONLINE
+    reference: Optional[str] = None
+    comment: Optional[str] = None
+
+
+class ResidentPaymentResponse(BaseModel):
+    ok: bool
+    payment_id: int
+    message: str
+
+
+@router.post("/payment", response_model=ResidentPaymentResponse)
+def create_resident_payment(
+    data: ResidentPaymentCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Create a payment from the resident portal.
+    This endpoint allows authenticated resident users to submit payments.
+    The payment will be automatically applied to open invoices (FIFO).
+    """
+    from ..models import Payment, PaymentMethod
+    from .payments import auto_apply_advance
+    
+    user = _get_resident_user(request, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Load user with residents relationship
+    user_with_residents = (
+        db.query(User)
+        .options(joinedload(User.resident_links))
+        .filter(User.id == user.id)
+        .first()
+    )
+    
+    if not user_with_residents:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Validate resident belongs to user
+    resident_ids = [r.id for r in (user_with_residents.resident_links or [])]
+    if data.resident_id not in resident_ids:
+        raise HTTPException(status_code=403, detail="Invalid resident")
+
+    # Validate amount
+    if data.amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be positive")
+
+    # Validate payment method
+    valid_methods = {m.value for m in PaymentMethod}
+    method_value = data.method.upper()
+    if method_value not in valid_methods:
+        method_value = "CARD"  # Default to CARD for online payments
+
+    # Create payment
+    from datetime import date as date_type
+    payment = Payment(
+        resident_id=data.resident_id,
+        received_at=date_type.today(),
+        amount_total=Decimal(str(data.amount)),
+        method=PaymentMethod(method_value),
+        reference=data.reference or None,
+        comment=data.comment or f"Онлайн-оплата через личный кабинет",
+        created_by_id=None,  # Self-payment by resident
+    )
+    db.add(payment)
+    db.commit()
+    db.refresh(payment)
+
+    # Auto-apply payment to open invoices (FIFO by period)
+    try:
+        auto_apply_advance(db, data.resident_id)
+        db.commit()
+    except Exception as e:
+        print(f"Warning: auto_apply_advance failed: {e}")
+        # Payment still created, just not auto-applied
+
+    return ResidentPaymentResponse(
+        ok=True,
+        payment_id=payment.id,
+        message="Платёж успешно создан и применён к открытым счетам"
+    )
+
+
 @router.get("/dashboard", response_model=ResidentDashboardResponse)
 def get_resident_dashboard(
     request: Request,

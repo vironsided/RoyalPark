@@ -90,61 +90,9 @@ function showInfo(message, duration = 3000) {
     return showNotification(message, 'info', duration);
 }
 
-// Custom Confirm Dialog
-function showConfirm(message, onConfirm, onCancel) {
-    const overlay = document.createElement('div');
-    overlay.className = 'confirm-overlay';
-    
-    const dialog = document.createElement('div');
-    dialog.className = 'confirm-dialog';
-    
-    dialog.innerHTML = `
-        <div class="confirm-message">${message}</div>
-        <div class="confirm-actions">
-            <button class="confirm-btn confirm-ok">OK</button>
-            <button class="confirm-btn confirm-cancel">Отмена</button>
-        </div>
-    `;
-    
-    overlay.appendChild(dialog);
-    document.body.appendChild(overlay);
-    
-    // Show with animation
-    setTimeout(() => overlay.classList.add('show'), 10);
-    
-    // OK button
-    dialog.querySelector('.confirm-ok').addEventListener('click', () => {
-        closeConfirm(overlay);
-        if (onConfirm) onConfirm(true);  // Pass true when confirmed
-    });
-    
-    // Cancel button
-    dialog.querySelector('.confirm-cancel').addEventListener('click', () => {
-        closeConfirm(overlay);
-        if (onCancel) onCancel(false);  // Pass false when cancelled
-        else if (onConfirm) onConfirm(false);  // If no onCancel, call onConfirm with false
-    });
-    
-    // Close on overlay click
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            closeConfirm(overlay);
-            if (onCancel) onCancel(false);
-            else if (onConfirm) onConfirm(false);  // If no onCancel, call onConfirm with false
-        }
-    });
-    
-    // Close on Escape
-    const escHandler = (e) => {
-        if (e.key === 'Escape') {
-            closeConfirm(overlay);
-            if (onCancel) onCancel(false);
-            else if (onConfirm) onConfirm(false);  // If no onCancel, call onConfirm with false
-            document.removeEventListener('keydown', escHandler);
-        }
-    };
-    document.addEventListener('keydown', escHandler);
-}
+// Custom Confirm Dialog - REMOVED: Use window.showConfirm from user.js instead
+// This function has been removed to avoid conflicts. All code should use window.showConfirm
+// which returns a Promise<boolean> and is defined in user.js
 
 function closeConfirm(overlay) {
     overlay.classList.remove('show');

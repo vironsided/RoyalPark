@@ -44,40 +44,40 @@
 
             <nav class="nav-menu">
                 <div class="nav-section">
-                    <a href="/user/dashboard.html" class="nav-item active" data-user-route="dashboard">
+                    <a href="#dashboard" class="nav-item" data-user-route="dashboard">
                         <span class="nav-icon"><i class="bi bi-house-door"></i></span>
                         <span class="nav-text" data-i18n="user_nav_user_home">Главная</span>
                     </a>
-                    <a href="/user/dashboard.html#bills" class="nav-item" data-user-route="bills">
+                    <a href="#bills" class="nav-item" data-user-route="bills">
                         <span class="nav-icon"><i class="bi bi-receipt"></i></span>
                         <span class="nav-text" data-i18n="user_nav_user_bills">Мои счета</span>
                         <span class="nav-badge">3</span>
                     </a>
-                    <a href="/user/dashboard.html#report" class="nav-item" data-user-route="report">
+                    <a href="#report" class="nav-item" data-user-route="report">
                         <span class="nav-icon"><i class="bi bi-cash-coin"></i></span>
                         <span class="nav-text" data-i18n="user_nav_user_report">Оплатить счета</span>
                     </a>
-                    <a href="#payments" class="nav-item">
+                    <!-- <a href="#payments" class="nav-item" data-user-route="payments">
                         <span class="nav-icon"><i class="bi bi-credit-card"></i></span>
                         <span class="nav-text">Платежи</span>
                     </a>
-                    <a href="#meters" class="nav-item">
+                    <a href="#meters" class="nav-item" data-user-route="meters">
                         <span class="nav-icon"><i class="bi bi-speedometer"></i></span>
                         <span class="nav-text">Счетчики</span>
-                    </a>
+                    </a> -->
                 </div>
 
                 <div class="nav-section">
                     <div class="nav-section-title" data-i18n="nav_maintenance">ОБСЛУЖИВАНИЕ</div>
-                    <a href="/user/dashboard.html#appeals" class="nav-item" data-user-route="appeals">
+                    <a href="#appeals" class="nav-item" data-user-route="appeals">
                         <span class="nav-icon"><i class="bi bi-tools"></i></span>
                         <span class="nav-text" data-i18n="user_nav_user_requests">Заявки</span>
                     </a>
-                    <a href="#documents" class="nav-item">
+                    <!-- <a href="#documents" class="nav-item" data-user-route="documents">
                         <span class="nav-icon"><i class="bi bi-file-earmark-text"></i></span>
                         <span class="nav-text" data-i18n="user_nav_user_documents">Документы</span>
-                    </a>
-                    <a href="#news" class="nav-item">
+                    </a> -->
+                    <a href="#news" class="nav-item" data-user-route="news">
                         <span class="nav-icon"><i class="bi bi-newspaper"></i></span>
                         <span class="nav-text" data-i18n="user_nav_user_news">Новости</span>
                     </a>
@@ -85,14 +85,14 @@
 
                 <div class="nav-section">
                     <div class="nav-section-title" data-i18n="settings">Настройки</div>
-                    <a href="#profile" class="nav-item">
+                    <!-- <a href="#profile" class="nav-item" data-user-route="profile">
                         <span class="nav-icon"><i class="bi bi-person-circle"></i></span>
                         <span class="nav-text" data-i18n="nav_profile">Профиль</span>
-                    </a>
-                    <a href="#notifications" class="nav-item">
+                    </a> -->
+                    <!-- <a href="#notifications" class="nav-item" data-user-route="notifications">
                         <span class="nav-icon"><i class="bi bi-bell"></i></span>
                         <span class="nav-text" data-i18n="user_nav_notifications">Уведомления</span>
-                    </a>
+                    </a> -->
                     <a href="#" class="nav-item logout-btn">
                         <span class="nav-icon"><i class="bi bi-box-arrow-right"></i></span>
                         <span class="nav-text" data-i18n="logout">Выход</span>
@@ -127,7 +127,6 @@
                         <div class="user-avatar">ПО</div>
                         <div class="user-info">
                             <div class="user-name">Пользователь</div>
-                            <div class="user-role"><span data-i18n="user_apartment_label">Квартира</span> #205</div>
                         </div>
                     </div>
                 </div>
@@ -136,16 +135,19 @@
             <!-- Dashboard Content -->
             <div class="dashboard-content" id="userSpaContent">
                 <!-- Collaborative Overview -->
-                <div class="overview-collab">
-                    <div class="resident-card">
+                <div class="overview-collab" id="residentsContainer">
+                    <!-- Resident cards will be dynamically generated here -->
+                    <!-- Template for resident card (hidden) -->
+                    <div class="resident-card resident-card-template" style="display: none;">
                         <div class="resident-card-header">
                             <div>
-                                <p class="resident-greeting"><span data-i18n="user_greeting_prefix">Здравствуйте,</span> Vusal Guleli Teymurov</p>
-                                <span class="resident-tag" data-i18n="user_resident_tag">Резидент X / 2</span>
+                                <p class="resident-greeting"><span data-i18n="user_greeting_prefix">Здравствуйте,</span> <span class="resident-full-name">User</span></p>
+                                <span class="resident-tag" data-i18n="user_resident_tag">Резидент</span>
+                                <span class="resident-due-date" style="display: none;"></span>
                             </div>
                             <div class="resident-amount-box">
                                 <span data-i18n="user_to_pay_month">К оплате за месяц</span>
-                                <button class="resident-btn primary resident-pay-month-btn mt-2" data-action="pay-month">
+                                <button class="resident-btn primary resident-pay-month-btn mt-2" data-action="pay-month" data-resident-id>
                                     <strong class="resident-amount-value">0.00</strong>
                                     <span data-i18n="user_btn_pay_month">Оплатить за месяц</span>
                                 </button>
@@ -158,7 +160,7 @@
                                 <span data-i18n="user_paid_short">Оплачено</span>
                             </div>
                             <div class="resident-progress-bar">
-                                <div class="resident-progress-fill" style="width: 65%;"></div>
+                                <div class="resident-progress-fill" style="width: 0%;"></div>
                                 <span class="resident-progress-text">0/0</span>
                             </div>
                         </div>
@@ -170,7 +172,7 @@
                             </div>
                             <div>
                                 <span class="resident-stat-label" data-i18n="user_advance">Аванс</span>
-                                <span class="resident-stat-value positive">70.00</span>
+                                <span class="resident-stat-value positive">0.00</span>
                             </div>
                             <div>
                                 <span class="resident-stat-label" data-i18n="user_to_pay_now">К оплате сейчас</span>
@@ -181,12 +183,13 @@
                         <div class="resident-actions">
                             <div class="resident-actions-left">
                                 <button class="resident-btn subtle" data-user-route-target="resident" data-resident-id data-i18n="user_btn_details">Подробнее</button>
-                                <button class="resident-btn subtle" data-user-route-target="bills" data-i18n="user_btn_my_bills">Мои счета</button>
-                                <button class="resident-btn primary" data-user-route-target="report" data-i18n="user_btn_report_payment">Оплатить счета</button>
+                                <button class="resident-btn subtle" data-user-route-target="bills" data-resident-id data-i18n="user_btn_my_bills">Мои счета</button>
+                                <button class="resident-btn primary" data-user-route-target="report" data-resident-id data-i18n="user_btn_report_payment">Оплатить счета</button>
                             </div>
-                            <button class="resident-btn success" data-action="pay-from-advance" data-i18n="user_btn_pay_from_advance">Погасить из аванса</button>
+                            <button class="resident-btn success" data-action="pay-from-advance" data-resident-id data-i18n="user_btn_pay_from_advance">Погасить из аванса</button>
                         </div>
                     </div>
+                    <!-- End template -->
 
                         <div class="resident-side-cards">
                         <div class="resident-summary-card">
@@ -458,14 +461,14 @@
                                         <option value="en">English</option>
                                     </select>
                                 </div>
-                                <div class="account-form-group">
+                                <!-- <div class="account-form-group">
                                     <label>Тема оформления</label>
                                     <select id="accountTheme">
                                         <option value="light">Светлая</option>
                                         <option value="dark">Тёмная</option>
                                         <option value="auto">Автоматически</option>
                                     </select>
-                                </div>
+                                </div> -->
                             </div>
                             <p class="account-hint">PNG/JPG/WebP, до 4 МБ.</p>
                         </div>
@@ -477,6 +480,7 @@
                                 <input type="file" id="accountAvatarInput" accept="image/*">
                             </div>
                         </div>
+                        <button class="account-btn account-btn-primary" id="accountModalSave">Сохранить изменения</button>
                     </div>
                 </div>
 
@@ -501,7 +505,6 @@
             </div>
             <div class="account-modal-footer">
                 <button class="account-btn account-btn-secondary" id="accountModalCancel">Отмена</button>
-                <button class="account-btn account-btn-primary" id="accountModalSave">Сохранить изменения</button>
             </div>
         </div>
     </div>
@@ -593,15 +596,11 @@
                 
                 const message = 'Вы уверены, что хотите отменить изменения? Все несохранённые данные будут потеряны.';
                 
-                if (window.showConfirm) {
-                    showConfirm(message, () => {
-                        closeAccountModal();
-                    });
-                } else {
-                    if (confirm(message)) {
+                showConfirm(message, 'Подтверждение').then((confirmed) => {
+                    if (confirmed) {
                         closeAccountModal();
                     }
-                }
+                });
             }
             
             // Load user profile from backend
@@ -656,7 +655,8 @@
                     }
                 } catch (error) {
                     console.error('Error loading user profile:', error);
-                    if (window.showError) {
+                    // Show error using modal
+                    if (false) {
                         showError('Не удалось загрузить данные профиля');
                     }
                 }
@@ -778,29 +778,17 @@
                     const confirmPassword = document.getElementById('confirmPassword')?.value || '';
                     
                     if (!currentPassword || !newPassword || !confirmPassword) {
-                        if (window.showError) {
-                            showError('Пожалуйста, заполните все поля пароля.');
-                        } else {
-                            alert('Пожалуйста, заполните все поля пароля.');
-                        }
+                        showAlert('Пожалуйста, заполните все поля пароля.', 'Ошибка', 'error');
                         return;
                     }
                     
                     if (newPassword !== confirmPassword) {
-                        if (window.showError) {
-                            showError('Пароли не совпадают!');
-                        } else {
-                            alert('Пароли не совпадают!');
-                        }
+                        showAlert('Пароли не совпадают!', 'Ошибка', 'error');
                         return;
                     }
                     
                     if (newPassword.length < 6) {
-                        if (window.showError) {
-                            showError('Пароль должен быть не менее 6 символов!');
-                        } else {
-                            alert('Пароль должен быть не менее 6 символов!');
-                        }
+                        showAlert('Пароль должен быть не менее 6 символов!', 'Ошибка', 'error');
                         return;
                     }
                     
@@ -811,21 +799,13 @@
                     try {
                         await changePassword(currentPassword, newPassword, confirmPassword);
                         
-                        if (window.showSuccess) {
-                            showSuccess('Пароль успешно изменён!');
-                        } else {
-                            alert('Пароль успешно изменён!');
-                        }
+                        await showAlert('Пароль успешно изменён!', 'Успешно', 'success');
                         
                         document.getElementById('currentPassword').value = '';
                         document.getElementById('newPassword').value = '';
                         document.getElementById('confirmPassword').value = '';
                     } catch (error) {
-                        if (window.showError) {
-                            showError(error.message || 'Ошибка при изменении пароля');
-                        } else {
-                            alert(error.message || 'Ошибка при изменении пароля');
-                        }
+                        showAlert(error.message || 'Ошибка при изменении пароля', 'Ошибка', 'error');
                     } finally {
                         changePasswordBtn.disabled = false;
                         changePasswordBtn.textContent = 'Изменить пароль';
@@ -905,10 +885,11 @@
                             document.documentElement.setAttribute('data-theme', themeSelect.value);
                         }
                         
-                        if (window.showSuccess) {
+                        // Show success using modal
+                        if (false) {
                             showSuccess('Настройки сохранены!');
                         } else {
-                            alert('Настройки сохранены!');
+                            showAlert('Настройки сохранены!', 'Успешно', 'success');
                         }
                         
                         // Clear password fields
@@ -923,11 +904,7 @@
                             window.location.reload();
                         }, 350);
                     } catch (error) {
-                        if (window.showError) {
-                            showError(error.message || 'Ошибка при сохранении профиля');
-                        } else {
-                            alert(error.message || 'Ошибка при сохранении профиля');
-                        }
+                        showAlert(error.message || 'Ошибка при сохранении профиля', 'Ошибка', 'error');
                     } finally {
                         accountModalSave.disabled = false;
                         accountModalSave.textContent = originalText;

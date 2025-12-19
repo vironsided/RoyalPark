@@ -276,7 +276,8 @@
     }
 
     // In-app confirm modal (returns Promise<boolean>)
-    function showConfirmModal(options) {
+    // Make it globally available for admin panel
+    window.showConfirmModal = function showConfirmModal(options) {
         const {
             title = 'Подтвердите действие',
             message = '',
@@ -324,7 +325,44 @@
             root.appendChild(overlay);
             document.body.style.overflow = 'hidden';
         });
-    }
+    };
+
+    // Global showConfirm function for admin panel (compatible with Promise-style calls)
+    // Usage: showConfirm(message, title) returns Promise<boolean>
+    // Or: showConfirm(message, onConfirm, onCancel) for callback style
+    window.showConfirm = function showConfirm(message, titleOrCallback, onCancel) {
+        // If second argument is a function, use callback style (legacy)
+        if (typeof titleOrCallback === 'function') {
+            const onConfirm = titleOrCallback;
+            const promise = window.showConfirmModal({
+                title: 'Подтвердите действие',
+                message: message,
+                confirmText: 'OK',
+                cancelText: 'Отмена'
+            });
+            promise.then((confirmed) => {
+                if (confirmed && typeof onConfirm === 'function') {
+                    onConfirm(true);
+                } else if (!confirmed) {
+                    if (typeof onCancel === 'function') {
+                        onCancel(false);
+                    } else if (typeof onConfirm === 'function') {
+                        onConfirm(false);
+                    }
+                }
+            });
+            return promise;
+        }
+        
+        // Promise style: showConfirm(message, title)
+        const title = typeof titleOrCallback === 'string' ? titleOrCallback : 'Подтвердите действие';
+        return window.showConfirmModal({
+            title: title,
+            message: message,
+            confirmText: 'OK',
+            cancelText: 'Отмена'
+        });
+    };
 
     // In-app info modal
     function showInfoModal(options) {
