@@ -352,9 +352,14 @@
             // Обновляем заголовок
             const h1 = titleContainer.querySelector('h1');
             if (h1) {
-                h1.textContent = pageInfo.title;
+                // Используем ключ i18n если есть, иначе fallback на title
                 if (pageInfo.titleKey) {
                     h1.setAttribute('data-i18n', pageInfo.titleKey);
+                    // Устанавливаем fallback текст
+                    h1.textContent = pageInfo.title;
+                } else {
+                    h1.textContent = pageInfo.title;
+                    h1.removeAttribute('data-i18n');
                 }
             }
             
@@ -406,16 +411,22 @@
                 });
             }
             
-            // Обновляем title страницы
-            document.title = `${pageInfo.title} - RoyalPark`;
+            // Обновляем title страницы (используем переведенный текст если доступен)
+            const pageTitle = pageInfo.title || 'RoyalPark';
+            document.title = `${pageTitle} - RoyalPark`;
             
             // Применяем переводы если доступны
             setTimeout(() => {
                 if (window.i18n) {
                     const savedLang = localStorage.getItem('language') || 'ru';
                     window.i18n.applyLanguage(savedLang);
+                    // Обновляем title страницы после перевода
+                    if (h1 && pageInfo.titleKey) {
+                        const translatedTitle = h1.textContent || pageInfo.title;
+                        document.title = `${translatedTitle} - RoyalPark`;
+                    }
                 }
-            }, 10);
+            }, 50);
         }
 
         applyBodyClass(route) {
@@ -482,7 +493,18 @@
         afterContentRender(route) {
             this.executeInlineScripts();
 
-            setTimeout(() => {
+            // Обновляем имя и аватар пользователя в шапке на всех страницах
+            if (typeof loadUserProfileForHeader === 'function') {
+                loadUserProfileForHeader();
+            } else if (window.dashboardData && window.dashboardData.user) {
+                // Fallback: используем данные из dashboardData если функция недоступна
+                if (typeof window.updateUserHeader === 'function') {
+                    window.updateUserHeader(window.dashboardData.user);
+                }
+            }
+
+            // Применяем переводы с несколькими попытками для надежности
+            const applyTranslations = () => {
                 if (window.reapplyAutoTranslations) {
                     window.reapplyAutoTranslations();
                 }
@@ -490,7 +512,16 @@
                     const savedLang = localStorage.getItem('language') || 'ru';
                     window.i18n.applyLanguage(savedLang);
                 }
-            }, 50);
+            };
+            
+            // Первая попытка сразу
+            applyTranslations();
+            
+            // Вторая попытка через небольшую задержку
+            setTimeout(applyTranslations, 100);
+            
+            // Третья попытка через еще большую задержку (на случай если скрипты загружаются асинхронно)
+            setTimeout(applyTranslations, 300);
 
             if (window.addCardAnimations) {
                 window.addCardAnimations();

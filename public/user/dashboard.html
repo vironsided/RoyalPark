@@ -600,7 +600,7 @@
                     if (confirmed) {
                         closeAccountModal();
                     }
-                });
+                    });
             }
             
             // Load user profile from backend
@@ -634,7 +634,7 @@
                     if (phoneInput) phoneInput.value = user.phone || '';
                     if (emailInput) emailInput.value = user.email || '';
                     
-                    // Update avatar
+                    // Update avatar in modal
                     if (avatarPreview) {
                         if (user.avatar_path) {
                             avatarPreview.style.backgroundImage = `url('http://localhost:8000${user.avatar_path}')`;
@@ -653,6 +653,11 @@
                             avatarPreview.textContent = initials;
                         }
                     }
+                    
+                    // Update initial state after loading
+                    setTimeout(() => {
+                        initialAccountState = getAccountState();
+                    }, 100);
                 } catch (error) {
                     console.error('Error loading user profile:', error);
                     // Show error using modal
@@ -664,6 +669,7 @@
 
             function openAccountModal() {
                 if (accountModal) {
+                    accountModal.style.display = 'flex';
                     accountModal.classList.add('show');
                     document.body.style.overflow = 'hidden';
                     const savedLang = localStorage.getItem('language') || 'ru';
@@ -687,6 +693,14 @@
                 if (accountModal) {
                     accountModal.classList.remove('show');
                     document.body.style.overflow = '';
+                    // Reset initial state
+                    initialAccountState = null;
+                    // Force remove any lingering overlay effects
+                    setTimeout(() => {
+                        if (accountModal && !accountModal.classList.contains('show')) {
+                            accountModal.style.display = 'none';
+                        }
+                    }, 300);
                 }
             }
             
@@ -822,12 +836,22 @@
                     const avatarInput = document.getElementById('accountAvatarInput');
                     
                     const formData = new FormData();
-                    formData.append('full_name', fullName);
-                    formData.append('phone', phone);
-                    formData.append('email', email);
+                    formData.append('full_name', fullName.trim());
+                    formData.append('phone', phone.trim());
+                    formData.append('email', email.trim());
                     
                     if (avatarInput && avatarInput.files && avatarInput.files[0]) {
-                        formData.append('avatar', avatarInput.files[0]);
+                        // Validate file type
+                        const file = avatarInput.files[0];
+                        const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+                        if (!validTypes.includes(file.type)) {
+                            throw new Error('Недопустимый формат файла. Разрешены только PNG, JPG и WebP.');
+                        }
+                        // Validate file size (4MB)
+                        if (file.size > 4 * 1024 * 1024) {
+                            throw new Error('Размер файла превышает 4 МБ.');
+                        }
+                        formData.append('avatar', file);
                     }
                     
                     const response = await fetch('http://localhost:8000/api/users/me', {
@@ -841,8 +865,42 @@
                             window.location.href = '/login.html';
                             return;
                         }
-                        const errorData = await response.json().catch(() => ({ detail: 'Ошибка при сохранении профиля' }));
-                        throw new Error(errorData.detail || 'Ошибка при сохранении профиля');
+                        
+                        let errorMessage = 'Ошибка при сохранении профиля';
+                        try {
+                            const errorData = await response.json();
+                            console.log('Server error response:', errorData);
+                            
+                            // Handle different error formats
+                            if (errorData.detail) {
+                                if (typeof errorData.detail === 'string') {
+                                    errorMessage = errorData.detail;
+                                } else if (Array.isArray(errorData.detail)) {
+                                    // FastAPI validation errors format: [{loc: [...], msg: "...", type: "..."}, ...]
+                                    errorMessage = errorData.detail.map(err => {
+                                        if (typeof err === 'string') {
+                                            return err;
+                                        } else if (err.msg) {
+                                            const field = err.loc && err.loc.length > 0 ? err.loc[err.loc.length - 1] : '';
+                                            return field ? `${field}: ${err.msg}` : err.msg;
+                                        } else if (err.message) {
+                                            return err.message;
+                                        } else {
+                                            return JSON.stringify(err);
+                                        }
+                                    }).join(', ');
+                                } else if (typeof errorData.detail === 'object') {
+                                    errorMessage = JSON.stringify(errorData.detail);
+                                }
+                            } else if (errorData.message) {
+                                errorMessage = errorData.message;
+                            }
+                        } catch (e) {
+                            console.error('Failed to parse error response:', e);
+                            errorMessage = `Ошибка ${response.status}: ${response.statusText}`;
+                        }
+                        
+                        throw new Error(errorMessage);
                     }
 
                     const user = await response.json();
@@ -850,6 +908,39 @@
                 } catch (error) {
                     console.error('Error saving profile:', error);
                     throw error;
+                }
+            }
+
+            // Update user info in header (use global function if available)
+            function updateUserHeader(user) {
+                if (typeof window.updateUserHeader === 'function') {
+                    window.updateUserHeader(user);
+                } else {
+                    // Fallback implementation
+                    const userNameEl = document.querySelector('.user-name');
+                    const userAvatarEl = document.querySelector('.user-avatar');
+                    
+                    if (userNameEl && user.full_name) {
+                        userNameEl.textContent = user.full_name;
+                    }
+                    
+                    if (userAvatarEl) {
+                        if (user.avatar_path) {
+                            userAvatarEl.style.backgroundImage = `url('http://localhost:8000${user.avatar_path}')`;
+                            userAvatarEl.style.backgroundSize = 'cover';
+                            userAvatarEl.style.backgroundPosition = 'center';
+                            userAvatarEl.textContent = '';
+                        } else {
+                            const initials = (user.full_name || user.username || 'ПО')
+                                .split(' ')
+                                .map(n => n[0])
+                                .join('')
+                                .toUpperCase()
+                                .substring(0, 2);
+                            userAvatarEl.style.backgroundImage = '';
+                            userAvatarEl.textContent = initials;
+                        }
+                    }
                 }
             }
 
@@ -865,7 +956,16 @@
                     
                     try {
                         // Save profile to backend
-                        await saveUserProfile();
+                        const updatedUser = await saveUserProfile();
+                        
+                        // Update header with new user data (use global function if available)
+                        if (updatedUser) {
+                            if (typeof window.updateUserHeader === 'function') {
+                                window.updateUserHeader(updatedUser);
+                            } else {
+                                updateUserHeader(updatedUser);
+                            }
+                        }
                         
                         // Save language and theme to localStorage
                         if (langSelect) {
@@ -885,26 +985,49 @@
                             document.documentElement.setAttribute('data-theme', themeSelect.value);
                         }
                         
-                        // Show success using modal
-                        if (false) {
-                            showSuccess('Настройки сохранены!');
-                        } else {
-                            showAlert('Настройки сохранены!', 'Успешно', 'success');
-                        }
-                        
                         // Clear password fields
                         document.getElementById('currentPassword').value = '';
                         document.getElementById('newPassword').value = '';
                         document.getElementById('confirmPassword').value = '';
                         
+                        // Clear avatar input
+                        const avatarInput = document.getElementById('accountAvatarInput');
+                        if (avatarInput) {
+                            avatarInput.value = '';
+                        }
+                        
+                        // Close modal first
                         closeAccountModal();
                         
-                        // Reload page to update UI with new settings
+                        // Wait for modal to close
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                        
+                        // Reload profile data to update initial state
+                        await loadUserProfile();
                         setTimeout(() => {
-                            window.location.reload();
-                        }, 350);
+                            initialAccountState = getAccountState();
+                        }, 100);
+                        
+                        // Show success message after modal is closed
+                        if (typeof showAlert === 'function') {
+                            await showAlert('Настройки сохранены!', 'Успешно', 'success');
+                        } else {
+                            console.warn('showAlert function not found');
+                            alert('Настройки сохранены!');
+                        }
                     } catch (error) {
-                        showAlert(error.message || 'Ошибка при сохранении профиля', 'Ошибка', 'error');
+                        console.error('Error saving profile:', error);
+                        // Close modal first
+                        closeAccountModal();
+                        // Wait for modal to close
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                        // Show error after modal is closed
+                        if (typeof showAlert === 'function') {
+                            await showAlert(error.message || 'Ошибка при сохранении профиля', 'Ошибка', 'error');
+                        } else {
+                            console.warn('showAlert function not found');
+                            alert(error.message || 'Ошибка при сохранении профиля');
+                        }
                     } finally {
                         accountModalSave.disabled = false;
                         accountModalSave.textContent = originalText;

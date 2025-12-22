@@ -17,6 +17,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Setup action buttons
     setupActionButtons();
 
+    // Load user profile for header (name and avatar) on all pages
+    loadUserProfileForHeader();
+
     // Load dashboard data from backend (will be called after auth check)
     // Small delay to ensure auth check completes
     setTimeout(() => {
@@ -52,27 +55,8 @@ async function checkAuth() {
     } catch (error) {
         console.error('Auth check error:', error);
         // Don't redirect on network errors, just log
-        // Fallback to localStorage check for compatibility
-        const authToken = localStorage.getItem('authToken');
-        const userRole = localStorage.getItem('userRole');
-
-        if (!authToken || userRole !== 'RESIDENT') {
-            window.location.href = '/resident/login';
-            return;
-        }
-
-        // Set user info from localStorage
-        const username = localStorage.getItem('username') || 'Пользователь';
-        const userNameEl = document.querySelector('.user-name');
-        const userAvatarEl = document.querySelector('.user-avatar');
-        
-        if (userNameEl) {
-            userNameEl.textContent = username;
-        }
-        
-        if (userAvatarEl) {
-            userAvatarEl.textContent = username.substring(0, 2).toUpperCase();
-        }
+        // User info will be loaded by loadUserProfileForHeader() and loadDashboardData()
+        // Don't overwrite with localStorage data to avoid showing "Пользователь"
     }
 }
 
@@ -270,6 +254,56 @@ const API_BASE_URL = 'http://localhost:8000';
 // Store dashboard data globally
 window.dashboardData = null;
 
+// Update user name and avatar in header (available globally for all pages)
+window.updateUserHeader = function updateUserHeader(userData) {
+    if (!userData) return;
+    
+    const fullName = userData.full_name || userData.username || 'Пользователь';
+    const userNameEl = document.querySelector('.user-name');
+    const userAvatarEl = document.querySelector('.user-avatar');
+    
+    if (userNameEl) {
+        userNameEl.textContent = fullName;
+    }
+    
+    if (userAvatarEl) {
+        if (userData.avatar_path) {
+            userAvatarEl.style.backgroundImage = `url('http://localhost:8000${userData.avatar_path}')`;
+            userAvatarEl.style.backgroundSize = 'cover';
+            userAvatarEl.style.backgroundPosition = 'center';
+            userAvatarEl.textContent = '';
+        } else {
+            const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+            userAvatarEl.style.backgroundImage = '';
+            userAvatarEl.textContent = initials || fullName.substring(0, 2).toUpperCase();
+        }
+    }
+};
+
+// Load user profile and update header (available globally)
+window.loadUserProfileForHeader = async function loadUserProfileForHeader() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/users/me`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        if (response.ok) {
+            const user = await response.json();
+            if (typeof window.updateUserHeader === 'function') {
+                window.updateUserHeader(user);
+                // Store user data globally to prevent overwriting with "Пользователь"
+                window.currentUserData = user;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading user profile for header:', error);
+    }
+}
+
 // Load dashboard data from backend
 window.loadDashboardData = async function loadDashboardData() {
     try {
@@ -312,19 +346,21 @@ window.loadDashboardData = async function loadDashboardData() {
 
 // Update UI with dashboard data
 function updateDashboardUI(data) {
-    // Update user info
+    // Update user info in header (use global function)
+    // Only update if we don't already have user data with full_name, or if data is different
     if (data.user) {
-        const fullName = data.user.full_name || data.user.username || 'Пользователь';
-        const userNameEl = document.querySelector('.user-name');
-        const userAvatarEl = document.querySelector('.user-avatar');
-        
-        if (userNameEl) {
-            userNameEl.textContent = fullName;
-        }
-        
-        if (userAvatarEl) {
-            const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-            userAvatarEl.textContent = initials || fullName.substring(0, 2).toUpperCase();
+        // If we already have user data with full_name, don't overwrite it with data that might not have full_name
+        if (window.currentUserData && window.currentUserData.full_name) {
+            // We already have good data, only update if new data also has full_name and is different
+            if (data.user.full_name && data.user.full_name !== window.currentUserData.full_name) {
+                window.updateUserHeader(data.user);
+                window.currentUserData = data.user;
+            }
+            // Otherwise, keep current data to prevent showing "Пользователь"
+        } else {
+            // No current data or current data doesn't have full_name, update with new data
+            window.updateUserHeader(data.user);
+            window.currentUserData = data.user;
         }
     }
 
@@ -332,8 +368,8 @@ function updateDashboardUI(data) {
     const container = document.getElementById('residentsContainer');
     const template = container?.querySelector('.resident-card-template');
     
+    // If we are not on the dashboard page, just return (header is already updated above)
     if (!container || !template) {
-        console.error('Residents container or template not found');
         return;
     }
 
@@ -379,7 +415,7 @@ function updateDashboardUI(data) {
             // Update greeting (only show on first card)
             const greetingEl = card.querySelector('.resident-greeting');
             if (greetingEl && index === 0) {
-                greetingEl.innerHTML = `<span data-i18n="user_greeting_prefix">Здравствуйте,</span> ${fullName}`;
+            greetingEl.innerHTML = `<span data-i18n="user_greeting_prefix">Здравствуйте,</span> ${fullName}`;
             } else if (greetingEl) {
                 greetingEl.style.display = 'none';
             }
@@ -388,8 +424,8 @@ function updateDashboardUI(data) {
             const residentTag = card.querySelector('.resident-tag');
             if (residentTag) {
                 residentTag.textContent = resident.code;
-            }
-            
+        }
+        
             // Update payment deadline
             const dueDateEl = card.querySelector('.resident-due-date');
             if (dueDateEl) {
@@ -415,34 +451,34 @@ function updateDashboardUI(data) {
                 } else {
                     dueDateEl.style.display = 'none';
                 }
-            }
-            
-            // Update month due
+        }
+
+        // Update month due
             const monthDueEl = card.querySelector('.resident-amount-box strong');
-            if (monthDueEl) {
+        if (monthDueEl) {
                 monthDueEl.textContent = formatCurrency(resident.month_due);
-            }
-            
-            // Update progress bar
+        }
+
+        // Update progress bar
             const progressBar = card.querySelector('.resident-progress-bar');
             const progressFill = card.querySelector('.resident-progress-fill');
             if (progressBar && progressFill) {
                 const percentage = resident.month_total > 0 
                     ? (resident.month_paid / resident.month_total) * 100 
-                    : 0;
-                progressFill.style.width = `${Math.min(percentage, 100)}%`;
-                
+                : 0;
+            progressFill.style.width = `${Math.min(percentage, 100)}%`;
+
                 const paidShort = Math.round(resident.month_paid || 0);
                 const totalShort = Math.round(resident.month_total || 0);
-                let progressTextSpan = progressBar.querySelector('.resident-progress-text');
-                if (!progressTextSpan) {
-                    progressTextSpan = document.createElement('span');
-                    progressTextSpan.className = 'resident-progress-text';
-                    progressBar.appendChild(progressTextSpan);
-                }
-                progressTextSpan.textContent = `${paidShort}/${totalShort}`;
+            let progressTextSpan = progressBar.querySelector('.resident-progress-text');
+            if (!progressTextSpan) {
+                progressTextSpan = document.createElement('span');
+                progressTextSpan.className = 'resident-progress-text';
+                progressBar.appendChild(progressTextSpan);
             }
-            
+            progressTextSpan.textContent = `${paidShort}/${totalShort}`;
+        }
+
             // Update stats
             const statsRow = card.querySelector('.resident-stats-row');
             if (statsRow) {
@@ -691,7 +727,7 @@ function setupActionButtons() {
             const residentIdAttr = payFromAdvanceBtn.getAttribute('data-resident-id');
             if (residentIdAttr) {
                 const residentId = parseInt(residentIdAttr, 10);
-                await applyAdvance(residentId);
+            await applyAdvance(residentId);
             }
             return;
         }
@@ -733,7 +769,7 @@ function setupActionButtons() {
 function startPaymentFlow(scope, amount, summaryFromDashboard, residentId = null, residentCode = null) {
     // Если residentCode не передан, пытаемся получить из DOM
     if (!residentCode) {
-        const residentTagEl = document.querySelector('.resident-tag');
+    const residentTagEl = document.querySelector('.resident-tag');
         residentCode = residentTagEl ? residentTagEl.textContent.trim() : '';
     }
 

@@ -2761,7 +2761,7 @@ body[data-theme="dark"] .user-bills-section select option {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1300;
+    z-index: 9999;
     opacity: 0;
     transition: opacity 0.3s ease;
     backdrop-filter: blur(4px);

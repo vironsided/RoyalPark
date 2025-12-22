@@ -118,72 +118,6 @@ def create_user_api(
     return user
 
 
-@router.put("/{user_id}", response_model=UserOut)
-def update_user_api(
-    user_id: int,
-    payload: UserUpdate,
-    db: Session = Depends(get_db),
-    actor: User = Depends(get_current_user),
-):
-    """
-    Обновление полей пользователя (ФИО, телефон, email, статус, роль).
-    """
-    user = db.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
-
-    if not can_manage_user(user, actor):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
-
-    if payload.username is not None:
-        # проверяем дубликаты
-        exists = db.query(User).filter(User.username == payload.username, User.id != user.id).first()
-        if exists:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Логин уже используется")
-        user.username = payload.username
-    if payload.full_name is not None:
-        user.full_name = payload.full_name
-    if payload.phone is not None:
-        user.phone = payload.phone
-    if payload.email is not None:
-        user.email = payload.email
-    if payload.is_active is not None:
-        user.is_active = payload.is_active
-    if payload.role is not None:
-        # admin не может повышать до root/admin
-        if actor.role == RoleEnum.ADMIN and payload.role in (RoleEnum.ROOT, RoleEnum.ADMIN):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав для смены роли")
-        user.role = payload.role
-
-    db.commit()
-    db.refresh(user)
-    return user
-
-
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user_api(
-    user_id: int,
-    db: Session = Depends(get_db),
-    actor: User = Depends(get_current_user),
-):
-    """
-    Удаление пользователя.
-    """
-    target = db.get(User, user_id)
-    if not target:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
-
-    if target.id == actor.id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Нельзя удалить себя")
-
-    if not can_manage_user(target, actor):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
-
-    db.delete(target)
-    db.commit()
-    return None
-
-
 # Функция для сохранения аватара
 def _save_avatar(file: UploadFile, user_id: int) -> str | None:
     if not file:
@@ -206,32 +140,8 @@ class ChangePasswordRequest(BaseModel):
     confirm_password: str
 
 
-@router.post("/{user_id}/reset", response_model=UserOut)
-def reset_password_api(
-    user_id: int,
-    db: Session = Depends(get_db),
-    actor: User = Depends(get_current_user),
-):
-    """
-    Сброс пароля с генерацией временного пароля.
-    """
-    target = db.get(User, user_id)
-    if not target:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
-
-    if not can_manage_user(target, actor):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
-
-    # Сложный временный пароль как у жителей (только буквы, случайный)
-    temp_pass = generate_temp_password(10)
-    target.password_hash = hash_password(temp_pass)
-    target.require_password_change = True
-    target.temp_password_plain = temp_pass
-    db.commit()
-    db.refresh(target)
-    return target
-
-
+# Важно: маршруты /me должны быть ПЕРЕД маршрутами /{user_id}, 
+# чтобы FastAPI правильно обрабатывал запросы
 @router.get("/me", response_model=UserOut)
 def get_current_user_profile(
     user: User = Depends(get_current_user),
@@ -306,5 +216,98 @@ def change_current_user_password(
     db.commit()
     
     return {"success": True, "message": "Пароль успешно изменён"}
+
+
+# Маршруты для управления пользователями (должны быть ПОСЛЕ маршрутов /me)
+@router.put("/{user_id}", response_model=UserOut)
+def update_user_api(
+    user_id: int,
+    payload: UserUpdate,
+    db: Session = Depends(get_db),
+    actor: User = Depends(get_current_user),
+):
+    """
+    Обновление полей пользователя (ФИО, телефон, email, статус, роль).
+    """
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
+
+    if not can_manage_user(user, actor):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
+
+    if payload.username is not None:
+        # проверяем дубликаты
+        exists = db.query(User).filter(User.username == payload.username, User.id != user.id).first()
+        if exists:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Логин уже используется")
+        user.username = payload.username
+    if payload.full_name is not None:
+        user.full_name = payload.full_name
+    if payload.phone is not None:
+        user.phone = payload.phone
+    if payload.email is not None:
+        user.email = payload.email
+    if payload.is_active is not None:
+        user.is_active = payload.is_active
+    if payload.role is not None:
+        # admin не может повышать до root/admin
+        if actor.role == RoleEnum.ADMIN and payload.role in (RoleEnum.ROOT, RoleEnum.ADMIN):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав для смены роли")
+        user.role = payload.role
+
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user_api(
+    user_id: int,
+    db: Session = Depends(get_db),
+    actor: User = Depends(get_current_user),
+):
+    """
+    Удаление пользователя.
+    """
+    target = db.get(User, user_id)
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
+
+    if target.id == actor.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Нельзя удалить себя")
+
+    if not can_manage_user(target, actor):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
+
+    db.delete(target)
+    db.commit()
+    return None
+
+
+@router.post("/{user_id}/reset", response_model=UserOut)
+def reset_password_api(
+    user_id: int,
+    db: Session = Depends(get_db),
+    actor: User = Depends(get_current_user),
+):
+    """
+    Сброс пароля с генерацией временного пароля.
+    """
+    target = db.get(User, user_id)
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
+
+    if not can_manage_user(target, actor):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
+
+    # Сложный временный пароль как у жителей (только буквы, случайный)
+    temp_pass = generate_temp_password(10)
+    target.password_hash = hash_password(temp_pass)
+    target.require_password_change = True
+    target.temp_password_plain = temp_pass
+    db.commit()
+    db.refresh(target)
+    return target
 
 

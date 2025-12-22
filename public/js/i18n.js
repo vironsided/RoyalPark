@@ -238,6 +238,7 @@ const translations = {
         user_invoice_print_period_label: "Период",
         user_invoice_print_status_label: "Статус",
         user_invoice_print_due_date_label: "Срок оплаты",
+        user_invoice_print_tariff_label: "Тариф",
         user_invoice_print_total_label: "Сумма к оплате",
         user_invoice_print_payments_title: "Оплата по счёту",
         user_invoice_print_payments_summary: "Оплачено: {paid}, Остаток: {remaining} из {total}",
@@ -270,6 +271,7 @@ const translations = {
         // User dashboard main cards/texts
         user_greeting_prefix: "Здравствуйте,",
         user_resident_tag: "Резидент X / 2",
+        user_resident_info: "Информация о резиденте",
         user_to_pay_month: "К оплате за месяц",
         user_for_month: "За месяц",
         user_paid_short: "Оплачено",
@@ -291,6 +293,8 @@ const translations = {
         user_water: "Вода",
         user_gas_per_month: "м³ за месяц",
         user_gas: "Газ",
+        user_unit_kwh: "кВт·ч",
+        user_unit_m3: "м³",
         user_energy_change_month: "-12% за месяц",
         user_active_request: "Активная заявка",
         user_last_bills: "Последние счета",
@@ -318,37 +322,6 @@ const translations = {
         user_news_3_title: "Улучшение сервиса",
         user_news_3_text: "Мы обновили наш личный кабинет для вашего удобства!",
         user_news_3_date: "05.10.2024",
-
-        // Resident detail (meters)
-        user_resident_block_label: "Blok",
-        user_resident_apartment_label: "Mənzil",
-        user_resident_status_label: "Status",
-        user_resident_status_active: "Aktivdir",
-        user_resident_balance_label: "Balans",
-        user_resident_back_btn: "← Geri",
-        user_resident_date_from: "Kimdən",
-        user_resident_date_to: "Kimə",
-        user_resident_filter_btn: "Filter",
-        user_resident_reset_btn: "Təmizlə",
-        user_resident_quick_select: "Sürətli seçim",
-        user_resident_quick_month: "Ay üzrə",
-        user_resident_quick_quarter: "3 ay",
-        user_resident_quick_half: "6 ay",
-        user_resident_quick_year: "İl üzrə",
-        user_resident_meter_gas: "Qaz",
-        user_resident_meter_electricity: "Elektrik",
-        user_resident_meter_water: "Su",
-        user_resident_table_date: "Tarix",
-        user_resident_table_reading: "Göstərici",
-        user_resident_table_usage: "İstifadə",
-        user_resident_table_charge: "Hesablanıb",
-        user_resident_table_vat: "ƏDV, %",
-        user_resident_table_comment: "Şərh",
-
-        // User appeals extra
-        user_appeals_hint: "Maksimum 2000 simvol.",
-        user_appeal_status_read: "Oxunub",
-        user_appeal_status_unread: "Oxunmayıb",
 
         // User report payment
         user_report_title: "Оплатить счета",
@@ -392,6 +365,7 @@ const translations = {
         user_resident_table_charge: "Начислено",
         user_resident_table_vat: "НДС, %",
         user_resident_table_comment: "Комментарий",
+        user_resident_table_empty: "Записей пока нет",
 
         // User appeals extra
         user_appeals_hint: "Максимум 2000 символов.",
@@ -635,6 +609,7 @@ const translations = {
         user_invoice_print_period_label: "Dövr",
         user_invoice_print_status_label: "Status",
         user_invoice_print_due_date_label: "Ödəniş müddəti",
+        user_invoice_print_tariff_label: "Tarif",
         user_invoice_print_total_label: "Ödəniləcək məbləğ",
         user_invoice_print_payments_title: "Hesab üzrə ödənişlər",
         user_invoice_print_payments_summary: "Ödənilib: {paid}, Qalıq: {remaining} / {total}",
@@ -667,6 +642,7 @@ const translations = {
         // User dashboard main cards/texts
         user_greeting_prefix: "Salam,",
         user_resident_tag: "Sakin X / 2",
+        user_resident_info: "Rezident haqqında məlumat",
         user_to_pay_month: "Aylıq ödəniləcək məbləğ",
         user_for_month: "Ay üzrə",
         user_paid_short: "Ödənilib",
@@ -705,6 +681,8 @@ const translations = {
         user_water: "Su",
         user_gas_per_month: "m³ ay üzrə",
         user_gas: "Qaz",
+        user_unit_kwh: "kVt·s",
+        user_unit_m3: "m³",
         user_energy_change_month: "ay ərzində -12%",
         user_active_request: "Aktiv müraciət",
         user_last_bills: "Son hesablar",
@@ -732,6 +710,38 @@ const translations = {
         user_news_3_title: "Xidmətin təkmilləşdirilməsi",
         user_news_3_text: "Sizin rahatlığınız üçün şəxsi kabinetimizi yeniləmişik!",
         user_news_3_date: "05.10.2024",
+
+        // Resident detail (meters)
+        user_resident_block_label: "Blok",
+        user_resident_apartment_label: "Mənzil",
+        user_resident_status_label: "Status",
+        user_resident_status_active: "Aktivdir",
+        user_resident_balance_label: "Balans",
+        user_resident_back_btn: "← Geri",
+        user_resident_date_from: "Kimdən",
+        user_resident_date_to: "Kimə",
+        user_resident_filter_btn: "Filter",
+        user_resident_reset_btn: "Təmizlə",
+        user_resident_quick_select: "Sürətli seçim",
+        user_resident_quick_month: "Ay üzrə",
+        user_resident_quick_quarter: "3 ay",
+        user_resident_quick_half: "6 ay",
+        user_resident_quick_year: "İl üzrə",
+        user_resident_meter_gas: "Qaz",
+        user_resident_meter_electricity: "Elektrik",
+        user_resident_meter_water: "Su",
+        user_resident_table_date: "Tarix",
+        user_resident_table_reading: "Göstərici",
+        user_resident_table_usage: "İstifadə",
+        user_resident_table_charge: "Hesablanıb",
+        user_resident_table_vat: "ƏDV, %",
+        user_resident_table_comment: "Şərh",
+        user_resident_table_empty: "Hələ ki, qeyd yoxdur",
+
+        // User appeals extra
+        user_appeals_hint: "Maksimum 2000 simvol.",
+        user_appeal_status_read: "Oxunub",
+        user_appeal_status_unread: "Oxunmayıb",
     },
     
     // en ENGLISH
@@ -970,6 +980,7 @@ const translations = {
         user_invoice_print_period_label: "Period",
         user_invoice_print_status_label: "Status",
         user_invoice_print_due_date_label: "Due date",
+        user_invoice_print_tariff_label: "Tariff",
         user_invoice_print_total_label: "Total amount",
         user_invoice_print_payments_title: "Payments for invoice",
         user_invoice_print_payments_summary: "Paid: {paid}, Remaining: {remaining} of {total}",
@@ -1002,6 +1013,7 @@ const translations = {
         // User dashboard main cards/texts
         user_greeting_prefix: "Hello,",
         user_resident_tag: "Resident X / 2",
+        user_resident_info: "Resident Information",
         user_to_pay_month: "Amount due this month",
         user_for_month: "This month",
         user_paid_short: "Paid",
@@ -1023,6 +1035,8 @@ const translations = {
         user_water: "Water",
         user_gas_per_month: "m³ per month",
         user_gas: "Gas",
+        user_unit_kwh: "kWh",
+        user_unit_m3: "m³",
         user_energy_change_month: "-12% per month",
         user_active_request: "Active request",
         user_last_bills: "Latest bills",
@@ -1093,6 +1107,7 @@ const translations = {
         user_resident_table_charge: "Charged",
         user_resident_table_vat: "VAT, %",
         user_resident_table_comment: "Comment",
+        user_resident_table_empty: "No records yet",
 
         // User appeals extra
         user_appeals_hint: "Maximum 2000 characters.",
@@ -1191,30 +1206,89 @@ class LanguageManager {
     }
     
     applyLanguage(lang) {
+        // Update current language
+        this.currentLanguage = lang;
+        
         // Translate all elements with data-i18n attribute
-        document.querySelectorAll('[data-i18n]').forEach(element => {
-            const key = element.getAttribute('data-i18n');
-            const translation = this.translate(key, lang);
+        // Search in main document (covers everything including SPA content)
+        const containers = [document];
+        
+        containers.forEach(container => {
+            if (!container) return;
             
-            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-                if (element.placeholder !== undefined) {
-                    element.placeholder = translation;
+            // Get all elements with data-i18n, process from deepest to shallowest
+            const allElements = Array.from(container.querySelectorAll('[data-i18n]'));
+            // Sort by depth (deepest first) to avoid updating parents before children
+            allElements.sort((a, b) => {
+                const depthA = (a.parentElement ? a.parentElement.querySelectorAll('[data-i18n]').length : 0);
+                const depthB = (b.parentElement ? b.parentElement.querySelectorAll('[data-i18n]').length : 0);
+                return depthB - depthA;
+            });
+            
+            allElements.forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (!key) return;
+                
+                const translation = this.translate(key, lang);
+                
+                if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                    if (element.placeholder !== undefined) {
+                        element.placeholder = translation;
+                    }
+                } else {
+                    // Check if element has any child with data-i18n attribute
+                    const childWithI18n = element.querySelector(':scope > [data-i18n]');
+                    
+                    if (childWithI18n) {
+                        // Parent has direct child with data-i18n, skip parent
+                        // Child will be processed in its own iteration
+                        return;
+                    }
+                    
+                    // Save non-i18n children that should be preserved (like .meter-head-unit)
+                    const preserveChildren = Array.from(element.children).filter(child => 
+                        child.classList.contains('meter-head-unit') || 
+                        child.classList.contains('meter-unit')
+                    );
+                    
+                    if (preserveChildren.length > 0) {
+                        // Store children temporarily
+                        const childrenData = preserveChildren.map(child => ({
+                            element: child,
+                            html: child.outerHTML
+                        }));
+                        
+                        // Update text content
+                        element.textContent = translation;
+                        
+                        // Restore preserved children
+                        childrenData.forEach(({ element: child, html }) => {
+                            const temp = document.createElement('div');
+                            temp.innerHTML = html;
+                            element.appendChild(temp.firstElementChild);
+                        });
+                    } else {
+                        // Simple case: just update textContent
+                        element.textContent = translation;
+                    }
                 }
-            } else {
-                element.textContent = translation;
-            }
-        });
-        
-        // Translate placeholders
-        document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
-            const key = element.getAttribute('data-i18n-placeholder');
-            element.placeholder = this.translate(key, lang);
-        });
-        
-        // Translate titles
-        document.querySelectorAll('[data-i18n-title]').forEach(element => {
-            const key = element.getAttribute('data-i18n-title');
-            element.title = this.translate(key, lang);
+            });
+            
+            // Translate placeholders
+            container.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+                const key = element.getAttribute('data-i18n-placeholder');
+                if (key) {
+                    element.placeholder = this.translate(key, lang);
+                }
+            });
+            
+            // Translate titles
+            container.querySelectorAll('[data-i18n-title]').forEach(element => {
+                const key = element.getAttribute('data-i18n-title');
+                if (key) {
+                    element.title = this.translate(key, lang);
+                }
+            });
         });
     }
     
