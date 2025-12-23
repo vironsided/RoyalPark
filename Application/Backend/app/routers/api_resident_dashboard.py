@@ -3,7 +3,7 @@ API endpoint for resident dashboard data
 Returns JSON data for the resident's personal dashboard
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from datetime import datetime, date, timedelta
@@ -17,11 +17,44 @@ from ..models import (
     Invoice, InvoiceStatus, InvoiceLine,
     Payment, PaymentApplication, PaymentMethod,
     Notification, NotificationStatus, MeterReading,
+    user_residents
 )
 from ..security import get_user_id_from_session
 
 
 router = APIRouter(prefix="/api/resident", tags=["resident-api"])
+
+
+@router.post("/apply-advance")
+def api_resident_apply_advance(
+    request: Request,
+    db: Session = Depends(get_db),
+    resident_id: int = Form(...),
+):
+    """
+    API версия применения аванса. 
+    Берет аванс из общего пула и применяет к конкретному дому.
+    """
+    from .payments import auto_apply_advance
+    user = _get_resident_user(request, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Проверка прав (дом должен принадлежать пользователю)
+    if resident_id not in [r.id for r in (user.resident_links or [])]:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    try:
+        affected = auto_apply_advance(db, resident_id)
+        db.commit()
+        return {
+            "ok": True, 
+            "affected_count": affected, 
+            "message": f"Аванс успешно применен к {affected} счет(ам)" if affected > 0 else "Нет открытых счетов для оплаты или аванс отсутствует"
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/test")
@@ -893,9 +926,26 @@ def get_resident_dashboard(
     month_total: dict[int, Decimal] = {}
     month_paid: dict[int, Decimal] = {}
     debt_total: dict[int, Decimal] = {}
-    advance_total: dict[int, Decimal] = {}
-    pay_now: dict[int, Decimal] = {}
     due_info: dict[int, dict] = {}
+
+    resident_ids = [r.id for r in residents]
+
+    # Global advance calculation for the user
+    # Sum of all payments for all residents of this user
+    total_payments = (
+        db.query(func.coalesce(func.sum(Payment.amount_total), 0))
+        .filter(Payment.resident_id.in_(resident_ids))
+        .scalar() or 0
+    )
+    # Sum of all applications to any invoices
+    total_applied = (
+        db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+        .join(Payment, Payment.id == PaymentApplication.payment_id)
+        .filter(Payment.resident_id.in_(resident_ids))
+        .scalar() or 0
+    )
+    shared_advance = Decimal(total_payments) - Decimal(total_applied)
+    if shared_advance < 0: shared_advance = Decimal("0")
 
     for r in residents:
         # Current month invoice
@@ -959,35 +1009,15 @@ def get_resident_dashboard(
         debt = Decimal(inv_total) - Decimal(paid_total)
         debt_total[r.id] = debt if debt > 0 else Decimal("0")
 
-        # Advance (free balance from payments)
-        # Sum of all payments for this resident
-        pay_sum = (
-            db.query(func.coalesce(func.sum(Payment.amount_total), 0))
-            .filter(Payment.resident_id == r.id)
-            .scalar() or 0
-        )
-        # Sum of all payment applications (how much was applied to invoices)
-        appl_sum = (
-            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
-            .join(Payment, Payment.id == PaymentApplication.payment_id)
-            .filter(Payment.resident_id == r.id)
-            .scalar() or 0
-        )
-        # Advance = total payments - applied payments (free balance)
-        adv = Decimal(pay_sum) - Decimal(appl_sum)
-        advance_total[r.id] = adv if adv > 0 else Decimal("0")
-
-        # Pay now = debt - advance (minimum 0)
-        pay_now[r.id] = max(debt_total[r.id] - advance_total[r.id], Decimal("0"))
-
     # Summary across all residents
-    total_month = sum(month_due.values(), Decimal("0"))
+    total_month_due = sum(month_due.values(), Decimal("0"))
     total_debt = sum(debt_total.values(), Decimal("0"))
-    total_adv = sum(advance_total.values(), Decimal("0"))
-    total_pay = sum(pay_now.values(), Decimal("0"))
+    
+    # Pay now = total debt - shared advance (minimum 0)
+    # This reflects the potential to pay EVERYTHING from the shared pool
+    total_pay_now = max(total_debt - shared_advance, Decimal("0"))
 
     # Count unpaid invoices
-    resident_ids = [r.id for r in residents]
     unpaid_count = 0
     if resident_ids:
         unpaid_count = (
@@ -1018,10 +1048,10 @@ def get_resident_dashboard(
     monthly_water_m3 = Decimal("0")
     monthly_gas_m3 = Decimal("0")
     if resident_ids:
-        today = datetime.utcnow()
-        month_start = datetime(today.year, today.month, 1)
-        month_end = datetime(today.year + (1 if today.month == 12 else 0), 
-                             (1 if today.month == 12 else today.month + 1), 1)
+        today_now = datetime.utcnow()
+        month_start = datetime(today_now.year, today_now.month, 1)
+        month_end = datetime(today_now.year + (1 if today_now.month == 12 else 0), 
+                             (1 if today_now.month == 12 else today_now.month + 1), 1)
         
         from ..models import MeterType
         
@@ -1081,9 +1111,17 @@ def get_resident_dashboard(
 
     # Format resident data
     residents_data = []
+    
     for r in residents:
         block_name = r.block.name if r.block else ""
         code = f"{block_name} / {r.unit_number}" if block_name else r.unit_number
+        
+        res_debt = debt_total.get(r.id, Decimal("0"))
+        
+        # К ОПЛАТЕ СЕЙЧАС для конкретного дома:
+        # Теперь это просто долг этого дома, БЕЗ учета общего аванса, 
+        # так как списание не происходит автоматически.
+        res_pay_now = res_debt
         
         residents_data.append(ResidentDashboardData(
             id=r.id,
@@ -1091,9 +1129,9 @@ def get_resident_dashboard(
             month_due=float(month_due.get(r.id, Decimal("0"))),
             month_total=float(month_total.get(r.id, Decimal("0"))),
             month_paid=float(month_paid.get(r.id, Decimal("0"))),
-            debt_total=float(debt_total.get(r.id, Decimal("0"))),
-            advance_total=float(advance_total.get(r.id, Decimal("0"))),
-            pay_now=float(pay_now.get(r.id, Decimal("0"))),
+            debt_total=float(res_debt),
+            advance_total=float(shared_advance), # Показываем ОБЩИЙ аванс на всех карточках
+            pay_now=float(res_pay_now),
             due_date=due_info.get(r.id, {}).get("due_date"),
             due_state=due_info.get(r.id, {}).get("state", "none"),
         ))
@@ -1108,10 +1146,10 @@ def get_resident_dashboard(
         },
         residents=residents_data,
         summary=DashboardSummary(
-            total_month=float(total_month),
+            total_month=float(total_month_due),
             total_debt=float(total_debt),
-            total_advance=float(total_adv),
-            total_pay_now=float(total_pay),
+            total_advance=float(shared_advance),
+            total_pay_now=float(total_pay_now),
             unpaid_invoices_count=unpaid_count,
             monthly_kwh=float(monthly_kwh),
             monthly_water_m3=float(monthly_water_m3),

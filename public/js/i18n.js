@@ -14,6 +14,7 @@ const translations = {
         cancel: "Отмена",
         apply: "Применить",
         reset: "Сбросить",
+        error_loading_data: "Ошибка загрузки данных",
         show_menu: "Показать меню",
         
         // Login Page
@@ -68,6 +69,34 @@ const translations = {
         nav_readings: "Показатели",
         nav_checks: "Проверки",
         nav_personnel: "Персонал",
+        
+        // News Management
+        admin_news_title: "Управление новостями",
+        admin_news_subtitle: "Создавайте и редактируйте новости для пользователей на 3 языках",
+        admin_news_create_btn: "Создать новость",
+        admin_news_th_icon: "Иконка",
+        admin_news_th_title: "Заголовок",
+        admin_news_th_priority: "Приоритет",
+        admin_news_th_published: "Опубликовано",
+        admin_news_th_status: "Статус",
+        admin_news_th_actions: "Действия",
+        admin_news_status_active: "Активна",
+        admin_news_status_inactive: "Неактивна",
+        admin_news_modal_create: "Создать новость",
+        admin_news_modal_edit: "Редактировать новость",
+        admin_news_label_icon: "Иконка",
+        admin_news_label_priority: "Приоритет",
+        admin_news_label_priority_hint: "Чем выше, тем важнее",
+        admin_news_label_published_at: "Дата публикации",
+        admin_news_label_expires_at: "Срок действия",
+        admin_news_label_expires_hint: "Оставьте пустым для бессрочной",
+        admin_news_label_active: "Активна (видна пользователям)",
+        admin_news_icon_info: "Информация",
+        admin_news_icon_announcement: "Объявление",
+        admin_news_icon_star: "Важное",
+        admin_news_icon_warning: "Предупреждение",
+        admin_news_icon_calendar: "Событие",
+        admin_news_icon_tools: "Техработы",
         
         // Dashboard
         dashboard_title: "Панель управления",
@@ -270,7 +299,7 @@ const translations = {
 
         // User dashboard main cards/texts
         user_greeting_prefix: "Здравствуйте,",
-        user_resident_tag: "Резидент X / 2",
+        user_resident_tag: "Резидент",
         user_resident_info: "Информация о резиденте",
         user_to_pay_month: "К оплате за месяц",
         user_for_month: "За месяц",
@@ -310,9 +339,10 @@ const translations = {
         user_quick_send_data: "Отправить данные",
         user_quick_new_request: "Новая заявка",
         user_quick_report_problem: "Сообщить о проблеме",
-        user_quick_documents: "Документы",
+        user_quick_documents: "Новости",
         user_quick_view_all: "Посмотреть все",
         user_news_title: "Новости и объявления",
+        user_no_news: "Нет новостей",
         user_news_1_title: "Плановое отключение воды",
         user_news_1_text: "20 октября с 10:00 до 16:00 будет производиться плановое отключение холодной воды.",
         user_news_1_date: "15.10.2024",
@@ -385,6 +415,7 @@ const translations = {
         cancel: "Ləğv et",
         apply: "Tətbiq et",
         reset: "Sıfırla",
+        error_loading_data: "Məlumat yüklənmədi",
         show_menu: "Menyunu göstər",
         
         // Login Page
@@ -439,6 +470,34 @@ const translations = {
         nav_readings: "Göstəricilər",
         nav_checks: "Yoxlamalar",
         nav_personnel: "Personal",
+        
+        // News Management
+        admin_news_title: "Xəbərlərin idarə edilməsi",
+        admin_news_subtitle: "İstifadəçilər üçün 3 dildə xəbərlər yaradın və redaktə edin",
+        admin_news_create_btn: "Xəbər yarat",
+        admin_news_th_icon: "İkona",
+        admin_news_th_title: "Başlıq",
+        admin_news_th_priority: "Prioritet",
+        admin_news_th_published: "Dərc edilib",
+        admin_news_th_status: "Status",
+        admin_news_th_actions: "Əməliyyatlar",
+        admin_news_status_active: "Aktiv",
+        admin_news_status_inactive: "Deaktiv",
+        admin_news_modal_create: "Xəbər yarat",
+        admin_news_modal_edit: "Xəbəri redaktə et",
+        admin_news_label_icon: "İkona",
+        admin_news_label_priority: "Prioritet",
+        admin_news_label_priority_hint: "Nə qədər yüksəkdirsə, o qədər vacibdir",
+        admin_news_label_published_at: "Dərc tarixi",
+        admin_news_label_expires_at: "Bitmə tarixi",
+        admin_news_label_expires_hint: "Müddətsiz üçün boş qoyun",
+        admin_news_label_active: "Aktiv (istifadəçilərə görünür)",
+        admin_news_icon_info: "Məlumat",
+        admin_news_icon_announcement: "Elan",
+        admin_news_icon_star: "Vacib",
+        admin_news_icon_warning: "Xəbərdarlıq",
+        admin_news_icon_calendar: "Hadisə",
+        admin_news_icon_tools: "Texniki işlər",
         
         // Dashboard
         dashboard_title: "İdarəetmə paneli",
@@ -641,7 +700,7 @@ const translations = {
 
         // User dashboard main cards/texts
         user_greeting_prefix: "Salam,",
-        user_resident_tag: "Sakin X / 2",
+        user_resident_tag: "Sakin",
         user_resident_info: "Rezident haqqında məlumat",
         user_to_pay_month: "Aylıq ödəniləcək məbləğ",
         user_for_month: "Ay üzrə",
@@ -698,9 +757,10 @@ const translations = {
         user_quick_send_data: "Məlumatları göndər",
         user_quick_new_request: "Yeni müraciət",
         user_quick_report_problem: "Problemi bildirin",
-        user_quick_documents: "Sənədlər",
+        user_quick_documents: "Xəbərlər",
         user_quick_view_all: "Hamısına bax",
         user_news_title: "Xəbərlər və elanlar",
+        user_no_news: "Xəbər yoxdur",
         user_news_1_title: "Su təchizatının planlı dayandırılması",
         user_news_1_text: "20 oktyabr tarixində saat 10:00-dan 16:00-dək soyuq suyun verilişi planlı şəkildə dayandırılacaq.",
         user_news_1_date: "15.10.2024",
@@ -756,6 +816,7 @@ const translations = {
         cancel: "Cancel",
         apply: "Apply",
         reset: "Reset",
+        error_loading_data: "Error loading data",
         show_menu: "Show menu",
         
         // Login Page
@@ -810,6 +871,34 @@ const translations = {
         nav_readings: "Readings",
         nav_checks: "Checks",
         nav_personnel: "Personnel",
+        
+        // News Management
+        admin_news_title: "News Management",
+        admin_news_subtitle: "Create and edit news for users in 3 languages",
+        admin_news_create_btn: "Create News",
+        admin_news_th_icon: "Icon",
+        admin_news_th_title: "Title",
+        admin_news_th_priority: "Priority",
+        admin_news_th_published: "Published",
+        admin_news_th_status: "Status",
+        admin_news_th_actions: "Actions",
+        admin_news_status_active: "Active",
+        admin_news_status_inactive: "Inactive",
+        admin_news_modal_create: "Create News",
+        admin_news_modal_edit: "Edit News",
+        admin_news_label_icon: "Icon",
+        admin_news_label_priority: "Priority",
+        admin_news_label_priority_hint: "Higher is more important",
+        admin_news_label_published_at: "Publish Date",
+        admin_news_label_expires_at: "Expiry Date",
+        admin_news_label_expires_hint: "Leave empty for permanent",
+        admin_news_label_active: "Active (visible to users)",
+        admin_news_icon_info: "Information",
+        admin_news_icon_announcement: "Announcement",
+        admin_news_icon_star: "Important",
+        admin_news_icon_warning: "Warning",
+        admin_news_icon_calendar: "Event",
+        admin_news_icon_tools: "Maintenance",
         
         // Dashboard
         dashboard_title: "Dashboard",
@@ -1012,7 +1101,7 @@ const translations = {
 
         // User dashboard main cards/texts
         user_greeting_prefix: "Hello,",
-        user_resident_tag: "Resident X / 2",
+        user_resident_tag: "Resident",
         user_resident_info: "Resident Information",
         user_to_pay_month: "Amount due this month",
         user_for_month: "This month",
@@ -1052,9 +1141,10 @@ const translations = {
         user_quick_send_data: "Send data",
         user_quick_new_request: "New request",
         user_quick_report_problem: "Report a problem",
-        user_quick_documents: "Documents",
+        user_quick_documents: "News",
         user_quick_view_all: "View all",
         user_news_title: "News & announcements",
+        user_no_news: "No news available",
         user_news_1_title: "Planned water outage",
         user_news_1_text: "On October 20 from 10:00 to 16:00 there will be a planned shutdown of cold water supply.",
         user_news_1_date: "15.10.2024",
@@ -1226,16 +1316,16 @@ class LanguageManager {
             });
             
             allElements.forEach(element => {
-                const key = element.getAttribute('data-i18n');
+            const key = element.getAttribute('data-i18n');
                 if (!key) return;
                 
-                const translation = this.translate(key, lang);
-                
-                if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-                    if (element.placeholder !== undefined) {
-                        element.placeholder = translation;
-                    }
-                } else {
+            const translation = this.translate(key, lang);
+            
+            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                if (element.placeholder !== undefined) {
+                    element.placeholder = translation;
+                }
+            } else {
                     // Check if element has any child with data-i18n attribute
                     const childWithI18n = element.querySelector(':scope > [data-i18n]');
                     
@@ -1269,24 +1359,24 @@ class LanguageManager {
                         });
                     } else {
                         // Simple case: just update textContent
-                        element.textContent = translation;
+                element.textContent = translation;
                     }
-                }
-            });
-            
-            // Translate placeholders
+            }
+        });
+        
+        // Translate placeholders
             container.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
-                const key = element.getAttribute('data-i18n-placeholder');
+            const key = element.getAttribute('data-i18n-placeholder');
                 if (key) {
-                    element.placeholder = this.translate(key, lang);
+            element.placeholder = this.translate(key, lang);
                 }
-            });
-            
-            // Translate titles
+        });
+        
+        // Translate titles
             container.querySelectorAll('[data-i18n-title]').forEach(element => {
-                const key = element.getAttribute('data-i18n-title');
+            const key = element.getAttribute('data-i18n-title');
                 if (key) {
-                    element.title = this.translate(key, lang);
+            element.title = this.translate(key, lang);
                 }
             });
         });

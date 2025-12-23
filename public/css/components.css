@@ -947,9 +947,9 @@
     animation: spin 0.6s linear infinite;
 }
 
-/* Notification Badge Animation */
+/* Notification Badge Animation - REMOVED Pulsing */
 .notification-badge {
-    animation: pulse 2s infinite;
+    /* animation: pulse 2s infinite; */
 }
 
 /* Search Box Modern Style */

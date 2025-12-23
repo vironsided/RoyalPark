@@ -32,6 +32,7 @@ class SPARouter {
             '/staff': '/admin/content/staff.html',
             
             // Система
+            '/news': '/admin/content/news.html',
             '/settings': '/admin/content/settings.html',
             '/logs': '/admin/content/logs.html',
             '/backup': '/admin/content/backup.html',
@@ -149,6 +150,11 @@ class SPARouter {
             },
             
             // Система
+            '/news': {
+                title: 'Новости',
+                breadcrumb: ['Система', 'Новости'],
+                section: 'Система'
+            },
             '/settings': {
                 title: 'Настройки',
                 breadcrumb: ['Система', 'Настройки'],
