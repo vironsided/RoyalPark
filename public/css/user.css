@@ -1626,6 +1626,416 @@ body[data-theme="dark"] .user-bills-section select option {
     gap: 1rem;
 }
 
+/* Modern static saved cards (except Royal Park pass) */
+.payment-left-column .bank-card {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1.58 / 1;
+    border-radius: 24px;
+    padding: 1.75rem;
+    box-sizing: border-box;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+    transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.35s ease;
+}
+
+.payment-left-column .bank-card:hover {
+    transform: scale(1.02) translateY(-8px);
+    box-shadow: 0 26px 60px rgba(0, 0, 0, 0.6);
+}
+
+.payment-left-column .animated-bg-1 {
+    background: linear-gradient(45deg, #2e1a47, #1a1c2c, #3a3d5e);
+    background-size: 400% 400%;
+    animation: meshGradientSaved1 10s ease infinite;
+}
+
+.payment-left-column .animated-bg-2 {
+    background: linear-gradient(-45deg, #0f2027, #203a43, #2c5364, #1a1c2c);
+    background-size: 400% 400%;
+    animation: meshGradientSaved2 12s ease infinite;
+}
+
+@keyframes meshGradientSaved1 {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes meshGradientSaved2 {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.payment-left-column .glass-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 100%);
+    backdrop-filter: blur(3px);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.payment-left-column .bank-card .card-inner {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #ffffff;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.payment-left-column .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.payment-left-column .chip-with-svg {
+    width: 55px;
+    height: 42px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));
+}
+
+.payment-left-column .chip-with-svg svg {
+    width: 100%;
+    height: 100%;
+}
+
+.payment-left-column .contactless {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 5px rgba(255,255,255,0.4));
+}
+
+.payment-left-column .brand-row {
+    margin-top: 0.35rem;
+}
+
+.payment-left-column .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.payment-left-column .mc-circles {
+    position: relative;
+    width: 45px;
+    height: 28px;
+}
+
+.payment-left-column .mc-circles .circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    position: absolute;
+}
+
+.payment-left-column .mc-circles .circle.red {
+    left: 0;
+    background-color: #eb001b;
+}
+
+.payment-left-column .mc-circles .circle.orange {
+    right: 0;
+    background-color: #f79e1b;
+    opacity: 0.9;
+}
+
+.payment-left-column .brand-name {
+    font-weight: 500;
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+}
+
+.payment-left-column .visa-badge {
+    background: linear-gradient(to bottom, #1a1f71, #0033a0);
+    color: white;
+    padding: 0.25rem 0.9rem;
+    border-radius: 0.4rem;
+    font-weight: 800;
+    font-style: italic;
+    font-size: 0.95rem;
+    letter-spacing: 1.2px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+}
+
+.payment-left-column .card-number {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.4rem;
+    letter-spacing: 0.22em;
+    margin: 0.85rem 0 0.65rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.55);
+}
+
+.payment-left-column .card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.payment-left-column .info-group label {
+    display: block;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 0.25rem;
+    letter-spacing: 0.12em;
+    font-weight: 500;
+}
+
+.payment-left-column .info-group .value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.payment-left-column .info-group.align-right {
+    text-align: right;
+}
+
+.payment-left-column .bank-card::after {
+    content: '';
+    position: absolute;
+    top: -100%;
+    left: -100%;
+    width: 300%;
+    height: 300%;
+    background: linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.12) 50%, transparent 55%);
+    transition: all 0.6s;
+    pointer-events: none;
+}
+
+.payment-left-column .bank-card:hover::after {
+    top: 100%;
+    left: 100%;
+}
+
+/* Selected saved card state */
+.saved-cards-container .bank-card.selected {
+    transform: scale(1.02) translateY(-10px);
+    box-shadow:
+        0 32px 70px rgba(0, 0, 0, 0.7),
+        0 0 0 2px rgba(255, 255, 255, 0.35);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Hidden state for middle payment column until user chooses to add a card */
+.payment-middle-column.is-hidden {
+    display: none;
+}
+
+/* Royal Park resident pass (default card) */
+.resident-pass-wrapper {
+    height: 260px;
+}
+
+.resident-pass-card {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    padding: 24px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #0f1016 0%, #1e212e 100%);
+    color: #ffffff;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
+    font-family: 'Inter', 'Space Mono', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.resident-pass-wrapper:hover .resident-pass-card {
+    transform: translateY(-4px);
+    box-shadow: 0 35px 70px rgba(0, 0, 0, 0.5);
+}
+
+/* Selected state for Royal Park advance pass (when chosen as payment source) */
+.resident-pass-card.selected {
+    box-shadow:
+        0 32px 70px rgba(0, 0, 0, 0.8),
+        0 0 0 2px rgba(212, 175, 55, 0.7);
+}
+
+/* Disabled state for Royal Park advance pass (when advance balance is 0) */
+.resident-pass-card.disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    pointer-events: none;
+    filter: grayscale(0.3);
+    position: relative;
+}
+
+.resident-pass-card.disabled::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.resident-pass-card.disabled::after {
+    content: 'Недоступно';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 0, 0, 0.8);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 11;
+    pointer-events: none;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.resident-pass-wrapper:hover .resident-pass-card.disabled {
+    transform: none;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
+}
+
+.pass-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 2;
+}
+
+.pass-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: 2px;
+    font-weight: 600;
+    color: #d4af37;
+}
+
+.pass-logo {
+    width: 22px;
+    height: 22px;
+    color: #d4af37;
+}
+
+.pass-type {
+    font-size: 10px;
+    letter-spacing: 1px;
+    opacity: 0.6;
+    text-transform: uppercase;
+}
+
+.pass-chip-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-top: 12px;
+    z-index: 2;
+}
+
+.pass-chip {
+    width: 50px;
+    height: 38px;
+    background: linear-gradient(135deg, #e2c07d 0%, #b8860b 100%);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.pass-chip .chip-line {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.pass-chip .chip-line:nth-child(1) { width: 100%; height: 1px; top: 33%; }
+.pass-chip .chip-line:nth-child(2) { width: 100%; height: 1px; top: 66%; }
+.pass-chip .chip-line:nth-child(3) { width: 1px; height: 100%; left: 50%; }
+.pass-chip .chip-line:nth-child(4) { width: 1px; height: 100%; left: 25%; }
+
+.pass-contactless {
+    width: 22px;
+    height: 22px;
+    opacity: 0.6;
+    transform: rotate(90deg);
+}
+
+.pass-balance {
+    margin-top: 12px;
+    z-index: 2;
+}
+
+.pass-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.55;
+    margin-bottom: 4px;
+}
+
+.pass-amount {
+    font-family: 'Space Mono', 'Inter', monospace;
+    font-size: 28px;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+.pass-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    z-index: 2;
+}
+
+.pass-name {
+    font-size: 15px;
+    letter-spacing: 1.4px;
+    font-weight: 500;
+}
+
+.pass-expiry {
+    text-align: right;
+}
+
+.pass-exp {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+}
+
+.pass-pattern {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 2px 2px, rgba(212, 175, 55, 0.05) 1px, transparent 0);
+    background-size: 18px 18px;
+    z-index: 1;
+}
+
+.pass-gloss {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent 45%, rgba(255, 255, 255, 0.06) 50%, transparent 55%);
+    z-index: 3;
+    pointer-events: none;
+    animation: passShine 6s infinite linear;
+}
+
+@keyframes passShine {
+    0% { transform: translate(-35%, -35%); }
+    100% { transform: translate(35%, 35%); }
+}
+
 /* 3D Card Container for Saved Cards */
 .saved-card-wrapper {
     perspective: 1000px;
@@ -2044,9 +2454,9 @@ body[data-theme="dark"] .user-bills-section select option {
 .card-preview .name-number h5.name {
     margin-top: 4px;
     font-size: 16px;
-    font-weight: 500;
+    font-weight: 600;
     color: #fff;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     word-break: break-word;
     overflow-wrap: break-word;
@@ -2139,12 +2549,16 @@ body[data-theme="dark"] .user-bills-section select option {
     flex-direction: column;
     justify-content: space-between;
     overflow: hidden;
-    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     
-    /* True Glassmorphism Effect */
-    background: rgba(255, 255, 255, 0.05);
+    /* Animated gradient background similar to saved bank cards */
+    background: linear-gradient(45deg, #2e1a47, #1a1c2c, #3a3d5e);
+    background-size: 400% 400%;
+    animation: meshGradientSaved1 10s ease infinite;
+
+    /* Glassmorphism overlay */
     backdrop-filter: blur(15px) saturate(180%);
     -webkit-backdrop-filter: blur(15px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.18);
@@ -2161,8 +2575,8 @@ body[data-theme="dark"] .user-bills-section select option {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.4) 100%);
-    opacity: 0.6;
+    background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 100%);
+    opacity: 1;
     pointer-events: none;
     z-index: 0;
     border-radius: 20px;
@@ -2214,15 +2628,12 @@ body[data-theme="dark"] .user-bills-section select option {
 .card-preview::after {
     content: '';
     position: absolute;
-    top: -50%;
-    right: -30%;
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
-    border-radius: 50%;
+    inset: 0;
+    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.12), transparent 45%),
+                radial-gradient(circle at 80% 30%, rgba(255,255,255,0.08), transparent 45%),
+                radial-gradient(circle at 60% 70%, rgba(0,0,0,0.15), transparent 55%);
     pointer-events: none;
     z-index: 0;
-    animation: pulse 8s ease-in-out infinite;
 }
 
 /* Card Back Styles */
@@ -2406,6 +2817,16 @@ body[data-theme="dark"] .user-bills-section select option {
     border-radius: 1rem;
     padding: 1.5rem;
     border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.default-pay-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.default-pay-actions .pay-button {
+    min-width: 160px;
 }
 
 .order-summary {
