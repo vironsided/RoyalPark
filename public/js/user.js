@@ -17,6 +17,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Setup action buttons
     setupActionButtons();
 
+    // Quick initial UI update from cache
+    const cachedUser = localStorage.getItem('userData');
+    if (cachedUser) {
+        try {
+            window.updateUserHeader(JSON.parse(cachedUser));
+        } catch(e) {}
+    }
+
     // Load user profile for header (name and avatar) on all pages
     loadUserProfileForHeader();
 
@@ -258,13 +266,30 @@ window.dashboardData = null;
 window.updateUserHeader = function updateUserHeader(userData) {
     if (!userData) return;
     
-    const fullName = userData.full_name || userData.username || 'Пользователь';
     const userNameEl = document.querySelector('.user-name');
     const userAvatarEl = document.querySelector('.user-avatar');
+    
+    // Determine the best name to show
+    // Priority: full_name -> username -> current text (if not "Пользователь") -> fallback
+    let fullName = userData.full_name || userData.username;
+    
+    if (!fullName && userNameEl) {
+        const currentName = userNameEl.textContent.trim();
+        if (currentName && currentName !== 'Пользователь' && currentName !== 'User') {
+            fullName = currentName;
+        }
+    }
+    
+    if (!fullName) {
+        fullName = 'Пользователь';
+    }
     
     if (userNameEl) {
         userNameEl.textContent = fullName;
     }
+    
+    // Cache for quick initial load next time
+    localStorage.setItem('userData', JSON.stringify(userData));
     
     if (userAvatarEl) {
         if (userData.avatar_path) {
@@ -297,6 +322,8 @@ window.loadUserProfileForHeader = async function loadUserProfileForHeader() {
                 window.updateUserHeader(user);
                 // Store user data globally to prevent overwriting with "Пользователь"
                 window.currentUserData = user;
+                // Cache for next initial load
+                localStorage.setItem('userData', JSON.stringify(user));
             }
         }
     } catch (error) {
@@ -306,6 +333,23 @@ window.loadUserProfileForHeader = async function loadUserProfileForHeader() {
 
 // Load dashboard data from backend
 window.loadDashboardData = async function loadDashboardData() {
+    const spaContent = document.getElementById('userSpaContent');
+    const currentRoute = window.userSpaRouter?.currentRoute || 
+                         (window.location.hash ? window.location.hash.replace('#', '').split('?')[0] : 'dashboard');
+    const isDashboard = currentRoute === 'dashboard';
+    
+    // Show loading state ONLY if on dashboard
+    if (spaContent && isDashboard) {
+        // ... (rest of the code)
+        spaContent.innerHTML = `
+            <div class="loading-state" style="display:flex;align-items:center;justify-content:center;min-height:400px;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+            </div>
+        `;
+    }
+
     try {
         const response = await fetch(`${API_BASE_URL}/api/resident/dashboard`, {
             method: 'GET',
@@ -332,6 +376,9 @@ window.loadDashboardData = async function loadDashboardData() {
         if (data.residents && data.residents.length > 0) {
             loadInvoices(data.residents.map(r => r.id));
         }
+        
+        // Load latest news
+        loadDashboardNews();
     } catch (error) {
         console.error('Error loading dashboard data:', error);
         // Don't show error popup on network errors, just log
@@ -365,8 +412,30 @@ function updateDashboardUI(data) {
     }
 
     // Get container and template
-    const container = document.getElementById('residentsContainer');
-    const template = container?.querySelector('.resident-card-template');
+    let container = document.getElementById('residentsContainer');
+    let template = container?.querySelector('.resident-card-template');
+    
+    // Check if we are currently on the dashboard route
+    // Use the router's current route if available, otherwise check the hash
+    const currentRoute = window.userSpaRouter?.currentRoute || 
+                         (window.location.hash ? window.location.hash.replace('#', '').split('?')[0] : 'dashboard');
+    const isDashboard = currentRoute === 'dashboard';
+    
+    // If container not found (maybe showing loading state) AND we are on dashboard, restore it from SPA router
+    if (isDashboard && (!container || !template)) {
+        const spaContent = document.getElementById('userSpaContent');
+        if (spaContent && window.userSpaRouter && window.userSpaRouter.routes.dashboard.content) {
+            spaContent.innerHTML = window.userSpaRouter.routes.dashboard.content;
+            container = document.getElementById('residentsContainer');
+            template = container?.querySelector('.resident-card-template');
+            
+            // Re-apply translations to restored content
+            if (window.i18n) {
+                const savedLang = localStorage.getItem('language') || 'ru';
+                window.i18n.applyLanguage(savedLang);
+        }
+        }
+    }
     
     // If we are not on the dashboard page, just return (header is already updated above)
     if (!container || !template) {
@@ -389,7 +458,6 @@ function updateDashboardUI(data) {
 
     // Create card for each resident
     if (data.residents && data.residents.length > 0) {
-        const fullName = data.user?.full_name || data.user?.username || 'Пользователь';
         const hasMultipleResidents = data.residents.length > 1;
         
         // Add class to container if multiple residents
@@ -412,18 +480,19 @@ function updateDashboardUI(data) {
             card.classList.remove('resident-card-template');
             card.style.display = '';
             
-            // Update greeting (only show on first card)
-            const greetingEl = card.querySelector('.resident-greeting');
-            if (greetingEl && index === 0) {
-            greetingEl.innerHTML = `<span data-i18n="user_greeting_prefix">Здравствуйте,</span> ${fullName}`;
-            } else if (greetingEl) {
-                greetingEl.style.display = 'none';
-            }
+        // Update greeting (only show on first card)
+        const greetingEl = card.querySelector('.resident-greeting');
+        if (greetingEl && index === 0) {
+            const displayName = data.user?.full_name || data.user?.username || (window.currentUserData?.full_name) || 'Пользователь';
+            greetingEl.innerHTML = `<span data-i18n="user_greeting_prefix">Здравствуйте,</span> ${displayName}`;
+        } else if (greetingEl) {
+            greetingEl.style.display = 'none';
+        }
             
             // Update resident tag
-            const residentTag = card.querySelector('.resident-tag');
-            if (residentTag) {
-                residentTag.textContent = resident.code;
+            const residentCodeVal = card.querySelector('.resident-code-val');
+            if (residentCodeVal) {
+                residentCodeVal.textContent = resident.code;
         }
         
             // Update payment deadline
@@ -769,8 +838,8 @@ function setupActionButtons() {
 function startPaymentFlow(scope, amount, summaryFromDashboard, residentId = null, residentCode = null) {
     // Если residentCode не передан, пытаемся получить из DOM
     if (!residentCode) {
-    const residentTagEl = document.querySelector('.resident-tag');
-        residentCode = residentTagEl ? residentTagEl.textContent.trim() : '';
+        const residentCodeEl = document.querySelector('.resident-code-val');
+        residentCode = residentCodeEl ? residentCodeEl.textContent.trim() : '';
     }
 
     // Человеко-понятный текст типа платежа
@@ -809,6 +878,7 @@ function startPaymentFlow(scope, amount, summaryFromDashboard, residentId = null
 }
 
 // Apply advance payment
+// Apply advance payment
 async function applyAdvance(residentId) {
     const confirmed = await showConfirm('Применить аванс к открытым счетам?', 'Подтверждение');
     if (!confirmed) {
@@ -819,23 +889,29 @@ async function applyAdvance(residentId) {
         const formData = new FormData();
         formData.append('resident_id', residentId);
 
-        const response = await fetch(`${API_BASE_URL}/resident/apply-advance`, {
+        const response = await fetch(`${API_BASE_URL}/api/resident/apply-advance`, {
             method: 'POST',
             credentials: 'include',
             body: formData
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Ошибка при применении аванса');
         }
 
-        // Reload dashboard data
-        await loadDashboardData();
+        const result = await response.json();
         
-        await showSuccess('Аванс успешно применён к счетам!');
+        if (result.ok) {
+            await showAlert(result.message, 'Успешно', 'success');
+            // Reload data to reflect changes
+            loadDashboardData();
+        } else {
+            throw new Error(result.error || 'Не удалось применить аванс');
+        }
     } catch (error) {
         console.error('Error applying advance:', error);
-        await showError('Не удалось применить аванс. Попробуйте позже.');
+        showAlert(error.message, 'Ошибка', 'error');
     }
 }
 
@@ -918,7 +994,7 @@ window.showConfirm = function showConfirm(message, title = 'Подтвердит
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
                 close(false); // Клик вне модалки = отмена
-            }
+        }
         });
         
         // ESC key handler
@@ -927,7 +1003,7 @@ window.showConfirm = function showConfirm(message, title = 'Подтвердит
                 e.preventDefault();
                 close(false); // ESC = отмена
                 document.removeEventListener('keydown', escHandler);
-            }
+        }
         };
         document.addEventListener('keydown', escHandler);
     });
@@ -1010,5 +1086,179 @@ window.showError = function showError(message) {
 window.showSuccess = function showSuccess(message) {
     return showAlert(message, 'Успешно', 'success');
 };
+
+// Load latest 3 news for dashboard
+window.loadDashboardNews = async function loadDashboardNews() {
+    const newsGrid = document.getElementById('dashboardNewsGrid');
+    if (!newsGrid) return;
+    
+    try {
+        const lang = localStorage.getItem('language') || 'ru';
+        const response = await fetch(`${API_BASE_URL}/api/news/admin?per_page=100`, {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to load news');
+        }
+        
+        const data = await response.json();
+        
+        // Фильтруем только активные и опубликованные новости
+        const now = new Date();
+        const activeNews = (data.items || []).filter(news => {
+            if (!news.is_active) return false;
+            
+            const publishedAt = new Date(news.published_at);
+            if (publishedAt > now) return false;
+            
+            if (news.expires_at) {
+                const expiresAt = new Date(news.expires_at);
+                if (expiresAt <= now) return false;
+            }
+            
+            return true;
+        });
+        
+        // Сортируем по приоритету и дате, берем первые 3
+        const sortedNews = [...activeNews].sort((a, b) => {
+            if (b.priority !== a.priority) {
+                return b.priority - a.priority;
+            }
+            return new Date(b.published_at) - new Date(a.published_at);
+        }).slice(0, 3);
+        
+        renderDashboardNews(sortedNews, lang);
+    } catch (error) {
+        console.error('Error loading dashboard news:', error);
+        const newsGrid = document.getElementById('dashboardNewsGrid');
+        if (newsGrid) {
+            newsGrid.innerHTML = '<div class="text-center p-4 text-muted">Не удалось загрузить новости</div>';
+        }
+    }
+};
+
+function renderDashboardNews(newsItems, lang) {
+    const newsGrid = document.getElementById('dashboardNewsGrid');
+    if (!newsGrid) return;
+    
+    if (!newsItems || newsItems.length === 0) {
+        newsGrid.innerHTML = '<div class="text-center p-4 text-muted" data-i18n="user_no_news">Нет новостей</div>';
+        // Применяем переводы если доступны
+        if (window.applyTranslations) {
+            setTimeout(() => window.applyTranslations(), 100);
+        }
+        return;
+    }
+    
+    const iconMap = {
+        'info': 'bi-info-circle-fill',
+        'announcement': 'bi-megaphone-fill',
+        'star': 'bi-star-fill',
+        'warning': 'bi-exclamation-triangle-fill',
+        'calendar': 'bi-calendar-event-fill',
+        'tools': 'bi-tools'
+    };
+    
+    newsGrid.innerHTML = newsItems.map((news, index) => {
+        // Парсим JSON поля если нужно
+        let title, content;
+        try {
+            title = typeof news.title === 'string' ? JSON.parse(news.title) : news.title;
+            content = typeof news.content === 'string' ? JSON.parse(news.content) : news.content;
+        } catch (e) {
+            console.error('Error parsing news JSON:', e, news);
+            title = { ru: 'Ошибка загрузки', az: 'Yükləmə xətası', en: 'Loading error' };
+            content = { ru: 'Не удалось загрузить содержимое', az: 'Məzmun yüklənə bilmədi', en: 'Failed to load content' };
+        }
+        
+        // Выбираем язык с правильным fallback
+        const titleText = (title[lang] && title[lang].trim()) || 
+                         (title.ru && title.ru.trim()) || 
+                         (title.az && title.az.trim()) || 
+                         (title.en && title.en.trim()) || 
+                         'Без заголовка';
+        const contentText = (content[lang] && content[lang].trim()) || 
+                           (content.ru && content.ru.trim()) || 
+                           (content.az && content.az.trim()) || 
+                           (content.en && content.en.trim()) || 
+                           'Нет содержания';
+        
+        // Форматируем дату
+        const locale = lang === 'ru' ? 'ru-RU' : (lang === 'az' ? 'az' : 'en-US');
+        let publishedDate;
+        try {
+            publishedDate = new Date(news.published_at).toLocaleDateString(locale, {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+            if (publishedDate.includes('M')) {
+                throw new Error('Fallback');
+            }
+        } catch (e) {
+            const d = new Date(news.published_at);
+            publishedDate = `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getFullYear()}`;
+        }
+        
+        // Экранируем HTML
+        const escapeHtml = (text) => {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        };
+        
+        const iconColor = news.icon_color || '#667eea';
+        // Создаем тень с тем же цветом, но прозрачностью 0.4 для эффекта свечения
+        const iconShadow = `0 4px 15px ${iconColor}66`;
+        
+        return `
+            <div class="news-item" onclick="if(window.openNewsDetail){window.openNewsDetail(${news.id})}">
+                <div class="news-icon" style="background-color: ${iconColor} !important; box-shadow: ${iconShadow} !important;">
+                    <i class="bi ${iconMap[news.icon] || 'bi-info-circle-fill'}"></i>
+                </div>
+                <div class="news-content">
+                    <h4>${escapeHtml(titleText)}</h4>
+                    <p>${escapeHtml(contentText)}</p>
+                    <span class="news-date"><i class="bi bi-calendar"></i> ${publishedDate}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Перерисовка новостей при смене языка
+function refreshDashboardNews() {
+    if (window.loadDashboardNews) {
+        window.loadDashboardNews();
+    }
+}
+
+// Слушаем смену языка
+window.addEventListener('languageChanged', () => {
+    refreshDashboardNews();
+});
+
+// Также слушаем изменения в localStorage для языка
+window.addEventListener('storage', (e) => {
+    if (e.key === 'language') {
+        refreshDashboardNews();
+    }
+});
+
+// Отслеживаем изменения языка через polling
+let currentLang = localStorage.getItem('language') || 'ru';
+const langCheckInterval = setInterval(() => {
+    const newLang = localStorage.getItem('language') || 'ru';
+    if (newLang !== currentLang) {
+        currentLang = newLang;
+        refreshDashboardNews();
+    }
+}, 300);
+
+// Очищаем интервал при размонтировании
+window.addEventListener('beforeunload', () => {
+    if (langCheckInterval) clearInterval(langCheckInterval);
+});
 
 console.log('📱 User dashboard loaded!');

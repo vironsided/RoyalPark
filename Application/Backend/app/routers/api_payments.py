@@ -322,11 +322,22 @@ def get_open_invoices_for_payment(
     if not p:
         raise HTTPException(status_code=404, detail="Payment not found")
     
-    # Открытые счета резидента (ISSUED/PARTIAL), FIFO по периоду
+    # Находим всех резидентов того же пользователя(ей)
+    from .payments import user_residents
+    resident_ids = db.query(user_residents.c.resident_id).filter(
+        user_residents.c.user_id.in_(
+            db.query(user_residents.c.user_id).filter(user_residents.c.resident_id == p.resident_id)
+        )
+    ).all()
+    all_resident_ids = [r[0] for r in resident_ids]
+    if not all_resident_ids:
+        all_resident_ids = [p.resident_id]
+
+    # Открытые счета ВСЕХ связанных резидентов (ISSUED/PARTIAL), FIFO по периоду
     open_invoices = (
         db.query(Invoice)
         .filter(
-            Invoice.resident_id == p.resident_id,
+            Invoice.resident_id.in_(all_resident_ids),
             Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
         )
         .order_by(Invoice.period_year.asc(), Invoice.period_month.asc(), Invoice.id.asc())
@@ -380,11 +391,22 @@ def get_open_invoices_for_payment_public(
     if not p:
         raise HTTPException(status_code=404, detail="Payment not found")
     
-    # Открытые счета резидента (ISSUED/PARTIAL), FIFO по периоду
+    # Находим всех резидентов того же пользователя(ей)
+    from .payments import user_residents
+    resident_ids = db.query(user_residents.c.resident_id).filter(
+        user_residents.c.user_id.in_(
+            db.query(user_residents.c.user_id).filter(user_residents.c.resident_id == p.resident_id)
+        )
+    ).all()
+    all_resident_ids = [r[0] for r in resident_ids]
+    if not all_resident_ids:
+        all_resident_ids = [p.resident_id]
+
+    # Открытые счета ВСЕХ связанных резидентов (ISSUED/PARTIAL), FIFO по периоду
     open_invoices = (
         db.query(Invoice)
         .filter(
-            Invoice.resident_id == p.resident_id,
+            Invoice.resident_id.in_(all_resident_ids),
             Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
         )
         .order_by(Invoice.period_year.asc(), Invoice.period_month.asc(), Invoice.id.asc())
@@ -448,11 +470,22 @@ def auto_apply_payment(
     if leftover <= 0:
         return {"ok": True, "plan": plan, "left_after": float(leftover)}
     
-    # Получаем открытые счета резидента
+    # Находим всех резидентов того же пользователя(ей)
+    from .payments import user_residents
+    resident_ids = db.query(user_residents.c.resident_id).filter(
+        user_residents.c.user_id.in_(
+            db.query(user_residents.c.user_id).filter(user_residents.c.resident_id == p.resident_id)
+        )
+    ).all()
+    all_resident_ids = [r[0] for r in resident_ids]
+    if not all_resident_ids:
+        all_resident_ids = [p.resident_id]
+
+    # Получаем открытые счета ВСЕХ связанных резидентов
     open_invoices = (
         db.query(Invoice)
         .filter(
-            Invoice.resident_id == p.resident_id,
+            Invoice.resident_id.in_(all_resident_ids),
             Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
         )
         .order_by(Invoice.period_year.asc(), Invoice.period_month.asc(), Invoice.id.asc())
@@ -497,11 +530,22 @@ def auto_apply_payment_public(
     if leftover <= 0:
         return {"ok": True, "plan": plan, "left_after": float(leftover)}
     
-    # Получаем открытые счета резидента
+    # Находим всех резидентов того же пользователя(ей)
+    from .payments import user_residents
+    resident_ids = db.query(user_residents.c.resident_id).filter(
+        user_residents.c.user_id.in_(
+            db.query(user_residents.c.user_id).filter(user_residents.c.resident_id == p.resident_id)
+        )
+    ).all()
+    all_resident_ids = [r[0] for r in resident_ids]
+    if not all_resident_ids:
+        all_resident_ids = [p.resident_id]
+
+    # Получаем открытые счета ВСЕХ связанных резидентов
     open_invoices = (
         db.query(Invoice)
         .filter(
-            Invoice.resident_id == p.resident_id,
+            Invoice.resident_id.in_(all_resident_ids),
             Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
         )
         .order_by(Invoice.period_year.asc(), Invoice.period_month.asc(), Invoice.id.asc())

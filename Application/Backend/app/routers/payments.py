@@ -32,6 +32,7 @@ from ..models import (
     User, RoleEnum,
     Resident, Invoice, InvoiceStatus,
     Payment, PaymentApplication, PaymentMethod,
+    user_residents
 )
 
 router = APIRouter(prefix="/payments", tags=["payments"])
@@ -76,14 +77,22 @@ def _recompute_invoice_status(db: Session, inv: Invoice):
 # =========================
 def auto_apply_advance(db: Session, resident_id: int) -> int:
     """
-    Пробует автоматически применить ВСЕ свободные остатки платежей (авансы) резидента
-    ко ВСЕМ открытым счетам (ISSUED/PARTIAL) по принципу FIFO.
+    Пробует автоматически применить свободные остатки платежей (авансы) пользователя
+    ТОЛЬКО к открытым счетам (ISSUED/PARTIAL) КОНКРЕТНОГО резидента (resident_id).
 
-    Возвращает количество затронутых счетов.
+    Деньги (аванс) берутся из ОБЩЕГО пула всех объектов этого пользователя.
     """
     affected_invoice_ids: set[int] = set()
 
-    # 1) открытые счета резидента — FIFO по периоду
+    # 1) Находим все объекты (resident_id), привязанные к тем же пользователям, что и текущий дом
+    linked_users_subquery = db.query(user_residents.c.user_id).filter(user_residents.c.resident_id == resident_id).subquery()
+    associated_residents = db.query(user_residents.c.resident_id).filter(user_residents.c.user_id.in_(linked_users_subquery)).all()
+    all_resident_ids = [r[0] for r in associated_residents]
+    if not all_resident_ids:
+        all_resident_ids = [resident_id]
+
+    # 2) Открытые счета ТОЛЬКО ЦЕЛЕВОГО резидента (resident_id)
+    # Это гарантирует, что аванс не уйдет на другой дом без команды пользователя
     open_invoices: list[Invoice] = (
         db.query(Invoice)
           .filter(Invoice.resident_id == resident_id,
@@ -94,25 +103,29 @@ def auto_apply_advance(db: Session, resident_id: int) -> int:
     if not open_invoices:
         return 0
 
-    # 2) платежи с остатком (авансом) — FIFO по дате
+    # 3) Платежи со ВСЕХ объектов пользователя (общий пул аванса)
     payments: list[Payment] = (
         db.query(Payment)
-          .filter(Payment.resident_id == resident_id)
+          .filter(Payment.resident_id.in_(all_resident_ids))
           .order_by(Payment.received_at.asc(), Payment.id.asc())
           .all()
     )
+    
     pay_leftover: dict[int, Decimal] = {}
     for p in payments:
         applied = db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0)) \
+                    .filter(PaymentApplication.invoice_id == p.id).scalar() or Decimal("0")
+        # Исправлено: суммируем применения к ЛЮБЫМ инвойсам, чтобы найти остаток платежа
+        actual_applied = db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0)) \
                     .filter(PaymentApplication.payment_id == p.id).scalar() or Decimal("0")
-        left = Decimal(p.amount_total or 0) - Decimal(applied)
+        left = Decimal(p.amount_total or 0) - Decimal(actual_applied)
         if left > 0:
             pay_leftover[p.id] = left
 
     if not pay_leftover:
         return 0
 
-    # 3) проходим по счетам и «доливаем» из самых ранних платежей
+    # 4) Проходим по счетам целевого дома и «доливаем» из общего пула авансов
     for inv in open_invoices:
         paid_all = db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0)) \
                      .filter(PaymentApplication.invoice_id == inv.id).scalar() or Decimal("0")
@@ -141,16 +154,12 @@ def auto_apply_advance(db: Session, resident_id: int) -> int:
             else:
                 db.add(PaymentApplication(payment_id=p.id, invoice_id=inv.id, amount_applied=apply_amt))
 
-            # критично: зафиксировать изменения в сессии,
-            # чтобы SUM(...) в пересчёте статуса увидел новое применение
-            db.flush()
+            db.flush() # фиксируем для корректного SUM в следующей итерации
 
-            # скорректируем локальные остатки
             pay_leftover[p.id] = left - apply_amt
             inv_left -= apply_amt
             affected_invoice_ids.add(inv.id)
 
-        # после всех возможных вливаний в этот счёт — пересчитаем его статус
         _recompute_invoice_status(db, inv)
 
     return len(affected_invoice_ids)
@@ -409,8 +418,20 @@ def payment_save_applications(
             continue
 
         inv = db.get(Invoice, inv_id)
-        if not inv or inv.resident_id != p.resident_id:
+        if not inv:
             return _see_other(f"/payments/{payment_id}?error=bad_invoice")
+            
+        # Проверяем, что счет и платеж принадлежат одному и тому же пользователю (или пользователям)
+        payment_users = db.query(user_residents.c.user_id).filter(user_residents.c.resident_id == p.resident_id).all()
+        invoice_users = db.query(user_residents.c.user_id).filter(user_residents.c.resident_id == inv.resident_id).all()
+        
+        p_user_ids = {u[0] for u in payment_users}
+        i_user_ids = {u[0] for u in invoice_users}
+        
+        # Если есть хотя бы один общий пользователь, разрешаем применение
+        # Также разрешаем, если resident_id совпадает (на случай если пользователь не привязан)
+        if not (p_user_ids & i_user_ids) and inv.resident_id != p.resident_id:
+            return _see_other(f"/payments/{payment_id}?error=bad_invoice_owner")
 
         # Остаток по счёту на сейчас (с учётом ВСЕХ платежей)
         paid_all = db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0)) \

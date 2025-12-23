@@ -729,8 +729,8 @@ html, body {
 
 .notification-badge {
     position: absolute;
-    top: 0;
-    right: 0;
+    top: 5px;
+    right: -2px;
     background: var(--danger-color);
     color: white;
     border-radius: 50%;
@@ -1669,9 +1669,9 @@ html, body {
     animation: spin 0.6s linear infinite;
 }
 
-/* Notification Badge Animation */
+/* Notification Badge Animation - REMOVED Pulsing */
 .notification-badge {
-    animation: pulse 2s infinite;
+    /* animation: pulse 2s infinite; */
 }
 
 /* Search Box Modern Style */

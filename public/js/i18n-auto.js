@@ -52,7 +52,7 @@
         'ОТЧЕТЫ': 'nav_reports',
         'Финансовые': 'nav_financial',
         'Аналитика': 'nav_analytics',
-        'Документы': 'nav_documents',
+        'Новости': 'nav_documents',
         'Заявки': 'nav_requests',
         'Заявки на ремонт': 'nav_repair_requests',
         'Счетчики': 'nav_meters',

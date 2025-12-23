@@ -1,24 +1,14 @@
 import enum
 from datetime import datetime, date
-from sqlalchemy import (
-    String, Integer, Enum, Boolean, DateTime, ForeignKey, UniqueConstraint, Numeric, Text
-)
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from .database import Base
-from sqlalchemy import String, Integer, Enum, Boolean, DateTime, ForeignKey, UniqueConstraint, Numeric, Text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from datetime import datetime
-from sqlalchemy import Table, Column
-from sqlalchemy import Numeric, Integer, String, Boolean, ForeignKey, DateTime, Text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from datetime import datetime
 from decimal import Decimal
-from sqlalchemy import Enum as SAEnum
-from sqlalchemy import Date, Text
-# в импортах models.py
-import enum
+from sqlalchemy import (
+    String, Integer, Enum, Boolean, DateTime, ForeignKey, UniqueConstraint, 
+    Numeric, Text, Table, Column, Date
+)
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from .database import Base
 
 
 
@@ -437,6 +427,39 @@ class Notification(Base):
 
     user: Mapped["User"] = relationship("User", lazy="joined")
     resident: Mapped["Resident"] = relationship("Resident", lazy="joined")
+
+
+class News(Base):
+    """
+    Новости для отображения пользователям.
+    Поддерживает мультиязычность через JSON поля.
+    """
+    __tablename__ = "news"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    
+    # Мультиязычные поля в TEXT формате ( JSON)
+    
+    title: Mapped[str] = mapped_column(Text, nullable=False)  
+    content: Mapped[str] = mapped_column(Text, nullable=False)  
+    
+    
+    icon: Mapped[str] = mapped_column(String(50), nullable=False, default='info')  
+    icon_color: Mapped[str] = mapped_column(String(50), nullable=False, default='#667eea')  
+    
+    
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    priority: Mapped[int] = mapped_column(Integer, default=0)  
+    
+    
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+    
+    
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_by = relationship("User", foreign_keys=[created_by_id], lazy="joined")
 
 
 class QRToken(Base):

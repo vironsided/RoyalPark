@@ -124,9 +124,9 @@
                          перед переключателем языка (language-selector из i18n.js) -->
 
                     <div class="user-profile" id="accountProfileBtn">
-                        <div class="user-avatar">ПО</div>
+                        <div class="user-avatar">...</div>
                         <div class="user-info">
-                            <div class="user-name">Пользователь</div>
+                            <div class="user-name">...</div>
                         </div>
                     </div>
                 </div>
@@ -142,7 +142,10 @@
                         <div class="resident-card-header">
                             <div>
                                 <p class="resident-greeting"><span data-i18n="user_greeting_prefix">Здравствуйте,</span> <span class="resident-full-name">User</span></p>
-                                <span class="resident-tag" data-i18n="user_resident_tag">Резидент</span>
+                                <span class="resident-tag">
+                                    <span data-i18n="user_resident_tag">Резидент</span>
+                                    <span class="resident-code-val"></span>
+                                </span>
                                 <span class="resident-due-date" style="display: none;"></span>
                             </div>
                             <div class="resident-amount-box">
@@ -327,6 +330,7 @@
                     <div class="activity-card">
                         <h3 class="chart-title" data-i18n="user_quick_actions">Быстрые действия</h3>
                         
+                        <a href="/user/dashboard.html#report" class="text-decoration-none">
                         <button class="action-button action-primary">
                             <i class="bi bi-credit-card"></i>
                             <div>
@@ -335,7 +339,9 @@
                             </div>
                             <i class="bi bi-arrow-right"></i>
                         </button>
+                        </a>
 
+                        <a href="/user/dashboard.html#bills" class="text-decoration-none">
                         <button class="action-button action-success">
                             <i class="bi bi-speedometer"></i>
                             <div>
@@ -344,7 +350,9 @@
                             </div>
                             <i class="bi bi-arrow-right"></i>
                         </button>
+                        </a>
 
+                        <a href="/user/dashboard.html#appeals" class="text-decoration-none">
                         <button class="action-button action-warning">
                             <i class="bi bi-tools"></i>
                             <div>
@@ -353,15 +361,18 @@
                             </div>
                             <i class="bi bi-arrow-right"></i>
                         </button>
+                        </a>
 
+                        <a href="/user/dashboard.html#news" class="text-decoration-none">
                         <button class="action-button action-info">
                             <i class="bi bi-file-earmark-text"></i>
                             <div>
-                                <div class="action-title" data-i18n="user_quick_documents">Документы</div>
+                                    <div class="action-title" data-i18n="user_quick_documents">Новости</div>
                                 <div class="action-subtitle" data-i18n="user_quick_view_all">Посмотреть все</div>
                             </div>
                             <i class="bi bi-arrow-right"></i>
                         </button>
+                        </a>
                     </div>
                 </div>
 
@@ -370,32 +381,10 @@
                     <div class="card-header">
                         <h3><i class="bi bi-newspaper"></i> <span data-i18n="user_news_title">Новости и объявления</span></h3>
                     </div>
-                    <div class="news-grid">
-                        <div class="news-item">
-                            <div class="news-icon"><i class="bi bi-megaphone"></i></div>
-                            <div class="news-content">
-                                <h4 data-i18n="user_news_1_title">Плановое отключение воды</h4>
-                                <p data-i18n="user_news_1_text">20 октября с 10:00 до 16:00 будет производиться плановое отключение холодной воды.</p>
-                                <span class="news-date"><i class="bi bi-calendar"></i> 15.10.2024</span>
-                            </div>
-                        </div>
-
-                        <div class="news-item">
-                            <div class="news-icon"><i class="bi bi-info-circle"></i></div>
-                            <div class="news-content">
-                                <h4 data-i18n="user_news_2_title">Новая система оплаты</h4>
-                                <p data-i18n="user_news_2_text">Теперь вы можете оплатить счета через мобильное приложение.</p>
-                                <span class="news-date"><i class="bi bi-calendar"></i> 10.10.2024</span>
-                            </div>
-                        </div>
-
-                        <div class="news-item">
-                            <div class="news-icon"><i class="bi bi-star"></i></div>
-                            <div class="news-content">
-                                <h4 data-i18n="user_news_3_title">Улучшение сервиса</h4>
-                                <p data-i18n="user_news_3_text">Мы обновили наш личный кабинет для вашего удобства!</p>
-                                <span class="news-date"><i class="bi bi-calendar"></i> 05.10.2024</span>
-                            </div>
+                    <div class="news-grid" id="dashboardNewsGrid">
+                        <!-- News items will be loaded dynamically -->
+                        <div class="text-center p-4">
+                            <div class="spinner-border text-primary"></div>
                         </div>
                     </div>
                 </div>

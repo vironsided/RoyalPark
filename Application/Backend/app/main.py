@@ -8,7 +8,7 @@ from .config import settings
 from .database import Base, engine, SessionLocal
 from .models import User, RoleEnum
 from .security import hash_password
-from .routers import auth_routes, dashboard, users, blocks, tariffs, residents, readings, tenants, resident_portal, invoices, payments, notifications, api_users, api_blocks, api_tariffs, api_residents, api_readings, api_tenants, api_invoices, api_payments, api_notifications, api_dashboard, api_logs, api_qr, api_payment, api_resident_dashboard
+from .routers import auth_routes, dashboard, users, blocks, tariffs, residents, readings, tenants, resident_portal, invoices, payments, notifications, api_users, api_blocks, api_tariffs, api_residents, api_readings, api_tenants, api_invoices, api_payments, api_notifications, api_dashboard, api_logs, api_qr, api_payment, api_resident_dashboard, api_news
 from fastapi.responses import RedirectResponse
 from sqlalchemy import text
 from fastapi.staticfiles import StaticFiles
@@ -48,6 +48,23 @@ def run_bootstrap_schema():
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS comment   varchar(500);",
         # НОВОЕ: путь к аватару
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_path varchar(255);",
+        # News table
+        """
+        CREATE TABLE IF NOT EXISTS news (
+          id SERIAL PRIMARY KEY,
+          title TEXT NOT NULL,
+          content TEXT NOT NULL,
+          icon VARCHAR(50) NOT NULL DEFAULT 'info',
+          icon_color VARCHAR(50) NOT NULL DEFAULT '#667eea',
+          is_active BOOLEAN NOT NULL DEFAULT TRUE,
+          priority INTEGER NOT NULL DEFAULT 0,
+          published_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+          expires_at TIMESTAMP WITHOUT TIME ZONE NULL,
+          created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+          updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+          created_by_id INTEGER NULL REFERENCES users(id) ON DELETE SET NULL
+        );
+        """,
         # M2M таблица (если не создана)
         """
         CREATE TABLE IF NOT EXISTS user_residents (
@@ -138,6 +155,7 @@ def create_app() -> FastAPI:
     app.include_router(api_qr.router)
     app.include_router(api_payment.router)
     app.include_router(api_resident_dashboard.router)
+    app.include_router(api_news.router)
     app.include_router(blocks.router)
     app.include_router(tariffs.router)
     app.include_router(residents.router)

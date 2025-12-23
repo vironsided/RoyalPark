@@ -1,0 +1,646 @@
+<section class="user-news-section">
+    <div class="news-list-container">
+        <div id="newsList" class="news-list">
+            <!-- News items will be loaded here -->
+        </div>
+    </div>
+</section>
+
+<!-- News Detail Modal -->
+<div class="user-news-modal-overlay" id="newsDetailModal">
+    <div class="user-news-modal">
+        <div class="user-news-modal-header">
+            <div class="user-news-modal-icon" id="newsDetailIcon"></div>
+            <h3 id="newsDetailTitle"></h3>
+            <button type="button" class="user-news-modal-close" id="newsDetailModalClose">&times;</button>
+        </div>
+        <div class="user-news-modal-body">
+            <div class="user-news-modal-date" id="newsDetailDate"></div>
+            <div class="user-news-modal-content" id="newsDetailContent"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+.user-news-section {
+    padding: 2rem 0;
+}
+
+.news-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.news-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    display: flex;
+    gap: 1.25rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.news-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    border-color: rgba(102, 126, 234, 0.5);
+}
+
+[data-theme="dark"] .news-item {
+    background: #1e232f;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.news-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 28px;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.news-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.news-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.news-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.news-date {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.news-text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.news-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-secondary);
+}
+
+.news-empty i {
+    font-size: 4rem;
+    opacity: 0.3;
+    margin-bottom: 1rem;
+}
+
+/* News Detail Modal Styles */
+.user-news-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 1rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.user-news-modal-overlay.show {
+    display: flex;
+    opacity: 1;
+}
+
+.user-news-modal {
+    background: var(--bg-secondary);
+    border-radius: 1.25rem;
+    max-width: 700px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.user-news-modal-overlay.show .user-news-modal {
+    transform: scale(1);
+}
+
+[data-theme="dark"] .user-news-modal {
+    background: #1e232f;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-news-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+}
+
+[data-theme="dark"] .user-news-modal-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.user-news-modal-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.user-news-modal-header h3 {
+    flex: 1;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.user-news-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 2rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.user-news-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.user-news-modal-body {
+    padding: 1.5rem;
+}
+
+.user-news-modal-date {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .user-news-modal-date {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.user-news-modal-content {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+@media (max-width: 768px) {
+    .news-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .news-icon {
+        margin: 0 auto;
+    }
+    
+    .news-header {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .user-news-modal {
+        max-width: 100%;
+        margin: 0.5rem;
+        max-height: 95vh;
+    }
+    
+    .user-news-modal-header {
+        flex-wrap: wrap;
+    }
+    
+    .user-news-modal-header h3 {
+        font-size: 1.25rem;
+    }
+}
+</style>
+
+<script>
+(function() {
+    'use strict';
+    
+    const API_BASE_URL = 'http://localhost:8000';
+    
+    // Get current language
+    const getCurrentLanguage = () => {
+        return localStorage.getItem('language') || 'ru';
+    };
+    
+    // Load news
+    async function loadNews() {
+        const newsList = document.getElementById('newsList');
+        if (!newsList) return;
+        
+        newsList.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary"></div></div>';
+        
+        try {
+            const lang = getCurrentLanguage();
+            // Используем админский эндпоинт, но фильтруем только активные новости
+            const response = await fetch(`${API_BASE_URL}/api/news/admin?per_page=100`, {
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to load news');
+            }
+            
+            const data = await response.json();
+            
+            // Фильтруем только активные и опубликованные новости
+            const now = new Date();
+            const activeNews = (data.items || []).filter(news => {
+                if (!news.is_active) return false;
+                
+                const publishedAt = new Date(news.published_at);
+                if (publishedAt > now) return false;
+                
+                if (news.expires_at) {
+                    const expiresAt = new Date(news.expires_at);
+                    if (expiresAt <= now) return false;
+                }
+                
+                return true;
+            });
+            
+            // Сохраняем данные в кэш для быстрой перерисовки при смене языка
+            cachedNewsData = activeNews;
+            
+            renderNews(activeNews, lang);
+        } catch (error) {
+            console.error('Error loading news:', error);
+            newsList.innerHTML = `
+                <div class="news-empty">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <p>Не удалось загрузить новости</p>
+                </div>
+            `;
+        }
+    }
+    
+    function renderNews(items, lang) {
+        const newsList = document.getElementById('newsList');
+        if (!lang) lang = getCurrentLanguage();
+        
+        if (!items || items.length === 0) {
+            newsList.innerHTML = `
+                <div class="news-empty">
+                    <i class="bi bi-newspaper"></i>
+                    <p data-i18n="user_no_news">Нет новостей</p>
+                </div>
+            `;
+            // Применяем переводы если доступны
+            if (window.applyTranslations) {
+                setTimeout(() => window.applyTranslations(), 100);
+            }
+            return;
+        }
+        
+        // Сортируем по приоритету и дате публикации
+        const sortedItems = [...items].sort((a, b) => {
+            if (b.priority !== a.priority) {
+                return b.priority - a.priority;
+            }
+            return new Date(b.published_at) - new Date(a.published_at);
+        });
+        
+        const iconMap = {
+            'info': 'bi-info-circle-fill',
+            'announcement': 'bi-megaphone-fill',
+            'star': 'bi-star-fill',
+            'warning': 'bi-exclamation-triangle-fill',
+            'calendar': 'bi-calendar-event-fill',
+            'tools': 'bi-tools'
+        };
+        
+        newsList.innerHTML = sortedItems.map(news => {
+            // Парсим JSON поля если нужно
+            let title, content;
+            try {
+                title = typeof news.title === 'string' ? JSON.parse(news.title) : news.title;
+                content = typeof news.content === 'string' ? JSON.parse(news.content) : news.content;
+            } catch (e) {
+                console.error('Error parsing news JSON:', e, news);
+                title = { ru: 'Ошибка загрузки', az: 'Yükləmə xətası', en: 'Loading error' };
+                content = { ru: 'Не удалось загрузить содержимое', az: 'Məzmun yüklənə bilmədi', en: 'Failed to load content' };
+            }
+            
+            // Выбираем язык с правильным fallback: сначала текущий язык, потом ru, потом az, потом en
+            const titleText = (title[lang] && title[lang].trim()) || 
+                             (title.ru && title.ru.trim()) || 
+                             (title.az && title.az.trim()) || 
+                             (title.en && title.en.trim()) || 
+                             'Без заголовка';
+            const contentText = (content[lang] && content[lang].trim()) || 
+                               (content.ru && content.ru.trim()) || 
+                               (content.az && content.az.trim()) || 
+                               (content.en && content.en.trim()) || 
+                               'Нет содержания';
+            
+            // Форматируем дату в зависимости от языка
+            const dateOptions = {
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric'
+            };
+            const locale = lang === 'ru' ? 'ru-RU' : (lang === 'az' ? 'az' : 'en-US');
+            let publishedDate;
+            try {
+                publishedDate = new Date(news.published_at).toLocaleDateString(locale, dateOptions);
+                // Проверка на некорректный формат (например, "2025 M12 22")
+                if (publishedDate.includes('M')) {
+                    throw new Error('Fallback to simple format');
+                }
+            } catch (e) {
+                // Простой числовой формат если локаль не поддерживается корректно
+                const d = new Date(news.published_at);
+                publishedDate = `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getFullYear()}`;
+            }
+            
+            const iconColor = news.icon_color || '#667eea';
+            const iconShadow = `0 4px 15px ${iconColor}66`;
+            
+            // Сохраняем данные для быстрой перерисовки при смене языка
+            return `
+                <div class="news-item" 
+                     onclick="window.openNewsDetail(${news.id})"
+                     data-news-id="${news.id}"
+                     data-published-at="${news.published_at}"
+                     data-title='${JSON.stringify(title)}'
+                     data-content='${JSON.stringify(content)}'>
+                    <div class="news-icon" style="background-color: ${iconColor} !important; box-shadow: ${iconShadow} !important;">
+                        <i class="bi ${iconMap[news.icon] || 'bi-info-circle-fill'}"></i>
+                    </div>
+                    <div class="news-content">
+                        <div class="news-header">
+                            <h3 class="news-title">${escapeHtml(titleText)}</h3>
+                            <span class="news-date">${publishedDate}</span>
+                        </div>
+                        <p class="news-text">${escapeHtml(contentText)}</p>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // Функция для экранирования HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    async function openNewsDetail(newsId) {
+        const modal = document.getElementById('newsDetailModal');
+        const modalTitle = document.getElementById('newsDetailTitle');
+        const modalContent = document.getElementById('newsDetailContent');
+        const modalDate = document.getElementById('newsDetailDate');
+        const modalIcon = document.getElementById('newsDetailIcon');
+        
+        if (!modal || !modalTitle || !modalContent) return;
+        
+        // Показываем модальное окно с загрузкой
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        
+        modalTitle.textContent = 'Загрузка...';
+        modalContent.textContent = '';
+        modalDate.textContent = '';
+        
+        try {
+            // Ищем новость в кэше или загружаем с сервера
+            let news = null;
+            if (cachedNewsData) {
+                news = cachedNewsData.find(n => n.id === newsId);
+            }
+            
+            if (!news) {
+                // Загружаем с сервера если нет в кэше
+                const response = await fetch(`${API_BASE_URL}/api/news/admin/${newsId}`, {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load news');
+                }
+                
+                news = await response.json();
+            }
+            
+            // Парсим JSON поля
+            let title, content;
+            try {
+                title = typeof news.title === 'string' ? JSON.parse(news.title) : news.title;
+                content = typeof news.content === 'string' ? JSON.parse(news.content) : news.content;
+            } catch (e) {
+                console.error('Error parsing news JSON:', e);
+                title = { ru: 'Ошибка загрузки', az: 'Yükləmə xətası', en: 'Loading error' };
+                content = { ru: 'Не удалось загрузить содержимое', az: 'Məzmun yüklənə bilmədi', en: 'Failed to load content' };
+            }
+            
+            const lang = getCurrentLanguage();
+            
+            // Выбираем язык с fallback
+            const titleText = (title[lang] && title[lang].trim()) || 
+                             (title.ru && title.ru.trim()) || 
+                             (title.az && title.az.trim()) || 
+                             (title.en && title.en.trim()) || 
+                             'Без заголовка';
+            const contentText = (content[lang] && content[lang].trim()) || 
+                               (content.ru && content.ru.trim()) || 
+                               (content.az && content.az.trim()) || 
+                               (content.en && content.en.trim()) || 
+                               'Нет содержания';
+            
+            // Форматируем дату
+            const dateOptions = {
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            const locale = lang === 'ru' ? 'ru-RU' : (lang === 'az' ? 'az' : 'en-US');
+            let publishedDate;
+            try {
+                publishedDate = new Date(news.published_at).toLocaleDateString(locale, dateOptions);
+                if (publishedDate.includes('M')) {
+                    throw new Error('Fallback');
+                }
+            } catch (e) {
+                const d = new Date(news.published_at);
+                publishedDate = `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+            }
+            
+            // Иконка
+            const iconMap = {
+                'info': 'bi-info-circle-fill',
+                'announcement': 'bi-megaphone-fill',
+                'star': 'bi-star-fill',
+                'warning': 'bi-exclamation-triangle-fill',
+                'calendar': 'bi-calendar-event-fill',
+                'tools': 'bi-tools'
+            };
+            
+            // Заполняем модальное окно
+            modalTitle.textContent = escapeHtml(titleText);
+            modalContent.textContent = escapeHtml(contentText);
+            modalDate.textContent = publishedDate;
+            
+            if (modalIcon) {
+                modalIcon.style.background = news.icon_color || '#667eea';
+                modalIcon.innerHTML = `<i class="bi ${iconMap[news.icon] || 'bi-info-circle-fill'}"></i>`;
+            }
+            
+        } catch (error) {
+            console.error('Error loading news detail:', error);
+            modalTitle.textContent = 'Ошибка';
+            modalContent.textContent = 'Не удалось загрузить новость. Попробуйте позже.';
+            modalDate.textContent = '';
+        }
+    }
+    
+    function closeNewsDetailModal() {
+        const modal = document.getElementById('newsDetailModal');
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+    }
+    
+    // Сохраняем загруженные новости для быстрой перерисовки при смене языка
+    let cachedNewsData = null;
+    
+    // Перерисовка новостей при смене языка
+    function refreshNewsLanguage() {
+        if (cachedNewsData && cachedNewsData.length > 0) {
+            // Если есть кэшированные данные, просто перерисовываем с новым языком
+            const lang = getCurrentLanguage();
+            renderNews(cachedNewsData, lang);
+        } else {
+            // Если данных нет, перезагружаем
+            loadNews();
+        }
+    }
+    
+    // Load news on page init
+    function initNewsPage() {
+        // Небольшая задержка для гарантии, что DOM готов
+        setTimeout(() => {
+            loadNews();
+        }, 100);
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initNewsPage);
+    } else {
+        initNewsPage();
+    }
+    
+    // Reload news when language changes
+    window.addEventListener('languageChanged', () => {
+        refreshNewsLanguage();
+    });
+    
+    // Также слушаем изменения в localStorage для языка
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'language') {
+            refreshNewsLanguage();
+        }
+    });
+    
+    // Отслеживаем изменения языка через polling (на случай если событие не срабатывает)
+    let currentLang = getCurrentLanguage();
+    const langCheckInterval = setInterval(() => {
+        const newLang = getCurrentLanguage();
+        if (newLang !== currentLang) {
+            currentLang = newLang;
+            refreshNewsLanguage();
+        }
+    }, 300);
+    
+    // Очищаем интервал при размонтировании страницы
+    window.addEventListener('beforeunload', () => {
+        if (langCheckInterval) clearInterval(langCheckInterval);
+    });
+    
+    // Modal close handlers
+    const modalCloseBtn = document.getElementById('newsDetailModalClose');
+    const newsDetailModal = document.getElementById('newsDetailModal');
+    
+    if (modalCloseBtn) {
+        modalCloseBtn.addEventListener('click', closeNewsDetailModal);
+    }
+    
+    if (newsDetailModal) {
+        newsDetailModal.addEventListener('click', (e) => {
+            if (e.target === newsDetailModal) {
+                closeNewsDetailModal();
+            }
+        });
+        
+        // Закрытие по Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && newsDetailModal.classList.contains('show')) {
+                closeNewsDetailModal();
+            }
+        });
+    }
+    
+    // Expose functions globally for SPA router
+    window.openNewsDetail = openNewsDetail;
+    window.closeNewsDetailModal = closeNewsDetailModal;
+    window.loadNews = loadNews;
+    window.refreshNewsLanguage = refreshNewsLanguage;
+})();
+</script>
+

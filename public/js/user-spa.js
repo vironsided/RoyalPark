@@ -35,9 +35,10 @@
                     bodyClass: '',
                     parentNav: 'bills'
                 },
-                // Дополнительные роуты без загрузки контента (просто для меню)
                 news: {
-                    type: 'placeholder',
+                    type: 'remote',
+                    path: '/user/pages/news.html',
+                    bodyClass: '',
                     parentNav: 'news'
                 },
                 profile: {
@@ -125,6 +126,14 @@
 
             this.routes.dashboard.content = this.contentContainer.innerHTML;
 
+            const initialRoute = this.getRouteFromLocation();
+            
+            // Если мы не на дашборде, сразу показываем состояние загрузки, 
+            // чтобы не мелькал контент дашборда из HTML
+            if (initialRoute !== 'dashboard') {
+                this.showLoadingState();
+            }
+
             this.setupNavigationListeners();
             this.setupActionTargets();
 
@@ -144,8 +153,6 @@
                 this.navigate(route, false);
             });
 
-            const initialRoute = this.getRouteFromLocation();
-            
             // При первой загрузке всегда обновляем активное состояние и заголовок
             this.updateActiveMenu(initialRoute);
             this.updatePageTitle(initialRoute);
@@ -291,15 +298,9 @@
 
             // Для inline контента (dashboard)
             if (config.type === 'inline') {
-                this.contentContainer.innerHTML = config.content;
+                this.showLoadingState();
                 this.afterContentRender(route);
                 this.currentRoute = route;
-                // Reload dashboard data if navigating to dashboard
-                if (route === 'dashboard' && typeof loadDashboardData === 'function') {
-                    setTimeout(() => {
-                        loadDashboardData();
-                    }, 100);
-                }
                 return;
             }
 
