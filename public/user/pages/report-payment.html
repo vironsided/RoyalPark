@@ -6,119 +6,149 @@
             
             <!-- Saved Cards -->
             <div class="saved-cards-container">
-                <div class="saved-card-wrapper" onclick="flipSavedCard(this)">
-                    <div class="saved-card-inner">
-                        <div class="card-preview">
-                            <header class="card-preview-header">
-                                <div class="card-header-left">
-                                    <div class="chip"></div>
-                                    <span class="logo">
-                                        <div class="mastercard-logo">
-                                            <span class="mastercard-circle circle-red"></span>
-                                            <span class="mastercard-circle circle-orange"></span>
-                                        </div>
-                                        <h5>Master Card</h5>
-                                    </span>
-                                </div>
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="contactless-icon">
-                                        <i class="bi bi-wifi" style="transform: rotate(-90deg); font-size: 24px;"></i>
-                                    </div>
-                                    <div class="card-network-logo">
-                                        <div class="visa-logo-small">VISA</div>
-                                    </div>
-                                </div>
-                            </header>
-                            <div class="card-details">
-                                <div class="name-number">
-                                    <h6>Card Number</h6>
-                                    <h5 class="number">4985 3212 3456 7899</h5>
-                                    <div class="card-holder-section">
-                                        <h6>Card Holder name</h6>
-                                        <h5 class="name">ИВАН ИВАНОВ</h5>
-                                    </div>
-                                </div>
-                                <div class="valid-date">
-                                    <h6>Expiry Date</h6>
-                                    <h5>12/28</h5>
-                                </div>
+                <!-- Default Royal Park resident card (advance balance) -->
+                <div class="saved-card-wrapper resident-pass-wrapper">
+                    <div class="resident-pass-card"
+                         data-card-id="advance-pass"
+                         data-card-type="ADVANCE"
+                         data-card-holder="Vusal Guleli Teymurov">
+                        <div class="pass-header">
+                            <div class="pass-brand">
+                                <svg class="pass-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z" />
+                                </svg>
+                                <span class="pass-brand-name">ROYAL PARK</span>
+                            </div>
+                            <div class="pass-type">RESIDENT PASS</div>
+                        </div>
+
+                        <div class="pass-chip-row">
+                            <div class="pass-chip">
+                                <div class="chip-line"></div>
+                                <div class="chip-line"></div>
+                                <div class="chip-line"></div>
+                                <div class="chip-line"></div>
+                            </div>
+                            <svg class="pass-contactless" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 8a10 10 0 0 1 0 8" />
+                                <path d="M8 6a14 14 0 0 1 0 12" />
+                                <path d="M11 4a18 18 0 0 1 0 16" />
+                            </svg>
+                        </div>
+
+                        <div class="pass-balance">
+                            <div class="pass-label">Advance Balance</div>
+                            <div class="pass-amount" id="passAdvanceAmount"></div>
+                        </div>
+
+                        <div class="pass-footer">
+                            <div>
+                                <div class="pass-label">Resident Name</div>
+                                <div class="pass-name" id="passResidentName"></div>
+                            </div>
+                            <div class="pass-expiry">
+                                <div class="pass-label">Valid Thru</div>
+                                <div class="pass-exp">12/28</div>
                             </div>
                         </div>
-                        <div class="card-preview-back">
-                            <div class="magnetic-strip"></div>
-                            <div class="text-end pe-3 mb-2">
-                                <small style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Authorized Signature</small>
+
+                        <div class="pass-pattern"></div>
+                        <div class="pass-gloss"></div>
+                    </div>
+                </div>
+
+                <!-- Stylized static saved cards -->
+                <div class="bank-card animated-bg-1"
+                     data-card-id="saved-mc-1"
+                     data-card-last4="7899"
+                     data-card-holder="ИВАН ИВАНОВ">
+                    <div class="glass-overlay"></div>
+                    <div class="card-inner">
+                        <div class="card-top">
+                            <div class="chip chip-with-svg">
+                                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                                    <defs>
+                                        <linearGradient id="saved-chip-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" style="stop-color:#ffd700;stop-opacity:1" />
+                                            <stop offset="100%" style="stop-color:#b8860b;stop-opacity:1" />
+                                        </linearGradient>
+                                    </defs>
+                                    <rect x="10" y="20" width="80" height="60" rx="10" fill="url(#saved-chip-grad)" />
+                                    <path d="M10 40 H90 M10 60 H90 M40 20 V80 M60 20 V80" stroke="rgba(0,0,0,0.2)" stroke-width="1" fill="none"/>
+                                </svg>
                             </div>
-                            <div class="signature-area">
-                                <span class="cvv-display">468</span>
+                            <div class="contactless">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                    <path d="M5 8a10 10 0 0 1 0 8" />
+                                    <path d="M8 6a14 14 0 0 1 0 12" />
+                                    <path d="M11 4a18 18 0 0 1 0 16" />
+                                </svg>
                             </div>
-                            <div class="d-flex justify-content-between px-3 align-items-center mt-auto">
-                                <small style="color: rgba(255,255,255,0.6); font-size: 0.6rem; line-height: 1.2; max-width: 200px;">
-                                    This card is property of the issuer.
-                                </small>
-                                <div class="mastercard-logo">
-                                    <span class="mastercard-circle circle-red"></span>
-                                    <span class="mastercard-circle circle-orange"></span>
+                        </div>
+                        
+                        <div class="brand-row">
+                            <div class="brand-logo">
+                                <div class="mc-circles">
+                                    <div class="circle red"></div>
+                                    <div class="circle orange"></div>
                                 </div>
+                                <span class="brand-name">MasterCard</span>
+                            </div>
+                        </div>
+
+                        <div class="card-number">4985 3212 3456 7899</div>
+
+                        <div class="card-bottom">
+                            <div class="info-group">
+                                <label>CARD HOLDER NAME</label>
+                                <div class="value">ИВАН ИВАНОВ</div>
+                            </div>
+                            <div class="info-group align-right">
+                                <label>EXPIRY DATE</label>
+                                <div class="value">12/28</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="saved-card-wrapper" onclick="flipSavedCard(this)">
-                    <div class="saved-card-inner">
-                        <div class="card-preview">
-                            <header class="card-preview-header">
-                                <div class="card-header-left">
-                                    <div class="chip"></div>
-                                    <span class="logo">
-                                        <div class="mastercard-logo">
-                                            <span class="mastercard-circle circle-red"></span>
-                                            <span class="mastercard-circle circle-orange"></span>
-                                        </div>
-                                        <h5>Master Card</h5>
-                                    </span>
-                                </div>
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="contactless-icon">
-                                        <i class="bi bi-wifi" style="transform: rotate(-90deg); font-size: 24px;"></i>
-                                    </div>
-                                    <div class="card-network-logo">
-                                        <div class="visa-logo-small">VISA</div>
-                                    </div>
-                                </div>
-                            </header>
-                            <div class="card-details">
-                                <div class="name-number">
-                                    <h6>Card Number</h6>
-                                    <h5 class="number">5282 3456 7890 1289</h5>
-                                    <div class="card-holder-section">
-                                        <h6>Card Holder name</h6>
-                                        <h5 class="name">ПЕТР ПЕТРОВ</h5>
-                                    </div>
-                                </div>
-                                <div class="valid-date">
-                                    <h6>Expiry Date</h6>
-                                    <h5>09/25</h5>
-                                </div>
+                <div class="bank-card animated-bg-2"
+                     data-card-id="saved-visa-1"
+                     data-card-last4="1289"
+                     data-card-holder="ПЕТР ПЕТРОВ">
+                    <div class="glass-overlay"></div>
+                    <div class="card-inner">
+                        <div class="card-top">
+                            <div class="chip chip-with-svg">
+                                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                                    <rect x="10" y="20" width="80" height="60" rx="10" fill="#ffd700" />
+                                    <path d="M10 40 H90 M10 60 H90 M40 20 V80 M60 20 V80" stroke="rgba(0,0,0,0.2)" stroke-width="1" fill="none"/>
+                                </svg>
+                            </div>
+                            <div class="contactless">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                    <path d="M5 8a10 10 0 0 1 0 8" />
+                                    <path d="M8 6a14 14 0 0 1 0 12" />
+                                    <path d="M11 4a18 18 0 0 1 0 16" />
+                                </svg>
                             </div>
                         </div>
-                        <div class="card-preview-back">
-                            <div class="magnetic-strip"></div>
-                            <div class="text-end pe-3 mb-2">
-                                <small style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Authorized Signature</small>
+                        
+                        <div class="brand-row">
+                            <div class="brand-logo">
+                                <div class="visa-badge">VISA</div>
                             </div>
-                            <div class="signature-area">
-                                <span class="cvv-display">789</span>
+                        </div>
+
+                        <div class="card-number">5282 3456 7890 1289</div>
+
+                        <div class="card-bottom">
+                            <div class="info-group">
+                                <label>CARD HOLDER NAME</label>
+                                <div class="value">ПЕТР ПЕТРОВ</div>
                             </div>
-                            <div class="d-flex justify-content-between px-3 align-items-center mt-auto">
-                                <small style="color: rgba(255,255,255,0.6); font-size: 0.6rem; line-height: 1.2; max-width: 200px;">
-                                    This card is property of the issuer.
-                                </small>
-                                <div class="mastercard-logo">
-                                    <span class="mastercard-circle circle-red"></span>
-                                    <span class="mastercard-circle circle-orange"></span>
-                                </div>
+                            <div class="info-group align-right">
+                                <label>EXPIRY DATE</label>
+                                <div class="value">09/25</div>
                             </div>
                         </div>
                     </div>
@@ -131,18 +161,19 @@
             </div>
         </div>
 
-        <!-- Middle Column: Credit Card Form -->
-        <div class="payment-middle-column">
+        <!-- Middle Column: Credit Card Form (hidden by default until user chooses to add a card) -->
+        <div class="payment-middle-column is-hidden" id="paymentMiddleColumn">
             <h3 class="payment-section-title">Оплата банковской картой</h3>
             <p class="payment-amount-label">Сумма к оплате: <span id="paymentAmountLabel">0,00 ₼</span></p>
             
             <!-- Card Preview with 3D Flip -->
             <div class="card-preview-container" id="cardPreviewContainer" onclick="flipPreviewCard()">
                 <div class="card-preview-wrapper">
-                    <div class="card-preview" id="cardPreview">
+                    <div class="card-preview modern-card" id="cardPreview">
+                        <div class="glass-overlay card-preview-overlay"></div>
                         <header class="card-preview-header">
                             <div class="card-header-left">
-                                <div class="chip"></div>
+                                <div class="chip modern-chip"></div>
                                 <span class="logo">
                                     <div class="mastercard-logo" id="mastercardLogo">
                                         <span class="mastercard-circle circle-red"></span>
@@ -315,6 +346,11 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Default pay action when user doesn't add a new card -->
+            <div class="default-pay-actions">
+                <button type="button" class="pay-button default-pay-button">Оплатить</button>
+            </div>
         </div>
     </div>
 </section>
@@ -323,6 +359,8 @@
 // API Configuration (используем var, чтобы избежать ошибок при повторной загрузке через SPA)
 var API_BASE = window.BACKEND_API_BASE || 'http://localhost:8000';
 var BIN_LOOKUP_URL = API_BASE + '/api/payment/bin-lookup';
+// Флаг демо-режима оплаты: true — имитация платежа без реального запроса на backend
+var ENABLE_FAKE_PAYMENT = false;
 
 // Current card data
 var currentCardData = {
@@ -331,6 +369,9 @@ var currentCardData = {
     scheme: null,
     country: null
 };
+
+// Currently selected saved card (from the list on the left)
+var selectedSavedCard = null;
 
 // Card styles for different banks (один экземпляр на всё приложение)
 if (!window.bankStyles) {
@@ -586,14 +627,8 @@ function updateCardPreview(cardNumber, cardName, cardExp, cardData) {
         }
     }
     
-    // Update background based on bank or default beautiful gradient
-    const bankStyle = getBankStyle(cardData?.bank);
-    if (bankStyle && bankStyle.gradient) {
-        preview.style.background = bankStyle.gradient;
-    } else {
-        // Красивый градиент по умолчанию
-        preview.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-    }
+    // Keep background defined in CSS (modern animated gradient) to match saved cards design.
+    // We only control foreground (text/icons) via JS.
     preview.style.color = 'white';
     
     // Show bank info
@@ -750,7 +785,9 @@ async function loadDashboardSummaryForPayment(scope) {
 }
 
 // Загрузка связанных счетов резидента для показа в деталях оплаты
-async function loadPaymentInvoices(scope, residentCode) {
+// preferredAmount - сумма из sessionStorage, которая имеет приоритет над суммой из счетов
+// residentId - ID резидента для фильтрации счетов
+async function loadPaymentInvoices(scope, residentCode, preferredAmount = null, residentId = null) {
     try {
         const response = await fetch(`${API_BASE}/api/resident/invoices`, {
             method: 'GET',
@@ -775,28 +812,37 @@ async function loadPaymentInvoices(scope, residentCode) {
         const curYear = now.getFullYear();
         const curMonth = now.getMonth() + 1;
 
-        let targetInvoices = invoices;
+        // Фильтруем счета по резидент-коду и/или residentId, если они указаны
+        let filteredInvoices = invoices;
+        if (residentId) {
+            // Приоритет: фильтрация по residentId (более точная)
+            filteredInvoices = invoices.filter(inv => inv.resident_id === residentId);
+        } else if (residentCode) {
+            // Fallback: фильтрация по резидент-коду
+            filteredInvoices = invoices.filter(inv => {
+                const invResidentCode = inv.resident_code || '';
+                // Сравниваем резидент-коды (нормализуем пробелы)
+                return invResidentCode.replace(/\s+/g, ' ').trim() === residentCode.replace(/\s+/g, ' ').trim();
+            });
+        }
+
+        // Затем фильтруем по периоду, если scope === 'month'
+        let targetInvoices = filteredInvoices;
         if (scope === 'month') {
-            const monthInvoices = invoices.filter(inv => inv.period_year === curYear && inv.period_month === curMonth);
+            const monthInvoices = filteredInvoices.filter(inv => inv.period_year === curYear && inv.period_month === curMonth);
             if (monthInvoices.length) {
                 targetInvoices = monthInvoices;
+            } else if (filteredInvoices.length > 0) {
+                // Если нет счетов за текущий месяц, но есть отфильтрованные счета, используем их
+                targetInvoices = filteredInvoices;
             }
         }
 
         // Подготовим список id выбранных счетов для страницы "Мои счета"
+        // НЕ сохраняем их в sessionStorage сразу - только при клике на invoice-link
         const targetInvoiceIds = (targetInvoices || [])
             .map(inv => inv && inv.id)
             .filter(id => id !== null && id !== undefined);
-        if (targetInvoiceIds.length) {
-            try {
-                sessionStorage.setItem('billsFilterInvoiceIds', JSON.stringify(targetInvoiceIds));
-                // При переходе со страницы оплаты хотим сразу показывать только счета в статусе ISSUED и PARTIAL
-                const statusesForBills = ['ISSUED', 'PARTIAL'];
-                sessionStorage.setItem('billsFilterStatuses', JSON.stringify(statusesForBills));
-            } catch (e) {
-                console.warn('Failed to store billsFilterInvoiceIds or billsFilterStatuses', e);
-            }
-        }
 
         const invoiceNumberEl = document.getElementById('invoiceNumber');
         const paymentResidentEl = document.getElementById('paymentResident');
@@ -842,9 +888,13 @@ async function loadPaymentInvoices(scope, residentCode) {
                 invoiceNumberEl.onclick = function () {
                     if (targetInvoiceIds.length) {
                         try {
+                            // Сохраняем ID счетов и статусы только при клике на invoice-link
                             sessionStorage.setItem('billsFilterInvoiceIds', JSON.stringify(targetInvoiceIds));
+                            // При переходе со страницы оплаты через invoice-link показываем только счета в статусе ISSUED и PARTIAL
+                            const statusesForBills = ['ISSUED', 'PARTIAL'];
+                            sessionStorage.setItem('billsFilterStatuses', JSON.stringify(statusesForBills));
                         } catch (e) {
-                            console.warn('Failed to store billsFilterInvoiceIds before navigation', e);
+                            console.warn('Failed to store billsFilterInvoiceIds or billsFilterStatuses before navigation', e);
                         }
                     }
                     if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
@@ -857,18 +907,33 @@ async function loadPaymentInvoices(scope, residentCode) {
         }
 
         // Резидент
+        // Приоритет отдаём резидент-коду из sessionStorage (который был передан при нажатии кнопки)
+        // Не перезаписываем, если резидент-код уже установлен из sessionStorage
         if (paymentResidentEl) {
-            const codeFromInvoice = first?.resident_code;
-            if (codeFromInvoice) {
-                paymentResidentEl.textContent = codeFromInvoice;
+            const currentResidentCode = paymentResidentEl.textContent || '';
+            // Если резидент-код уже установлен и совпадает с переданным, не меняем
+            if (residentCode && currentResidentCode.trim() === residentCode.trim()) {
+                // Уже правильно установлен, не меняем
             } else if (residentCode) {
+                // Устанавливаем резидент-код из параметра (из sessionStorage)
                 paymentResidentEl.textContent = residentCode;
+            } else if (first?.resident_code) {
+                // Fallback: берем из первого счёта, если резидент-код не был передан
+                paymentResidentEl.textContent = first.resident_code;
             }
         }
 
         // Период
-        if (paymentDateEl && targetInvoices.length > 0) {
-            if (scope === 'all' && targetInvoices.length > 1) {
+        // Если scope === 'month', период должен быть текущий месяц
+        // Если scope === 'all', показываем диапазон из счетов
+        if (paymentDateEl) {
+            // Если scope === 'month' и нет счетов после фильтрации, показываем текущий месяц
+            if (scope === 'month' && targetInvoices.length === 0) {
+                const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+                const mName = monthNames[curMonth - 1] || curMonth;
+                paymentDateEl.textContent = `${mName} ${curYear}`;
+            } else if (targetInvoices.length > 0) {
+                if (scope === 'all' && targetInvoices.length > 1) {
                 // Для полного погашения долга показываем диапазон от первой до последней даты
                 const parseDate = (str) => {
                     if (!str || typeof str !== 'string') return null;
@@ -934,19 +999,56 @@ async function loadPaymentInvoices(scope, residentCode) {
                         }
                     }
                 }
-            } else if (first) {
-                if (first.period_dates && first.period_dates.from && first.period_dates.to) {
-                    paymentDateEl.textContent = `${first.period_dates.from} — ${first.period_dates.to}`;
-                } else if (first.period_year && first.period_month) {
+                } else if (first) {
+                    if (first.period_dates && first.period_dates.from && first.period_dates.to) {
+                        paymentDateEl.textContent = `${first.period_dates.from} — ${first.period_dates.to}`;
+                    } else if (first.period_year && first.period_month) {
+                        const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+                        const mName = monthNames[first.period_month - 1] || first.period_month;
+                        paymentDateEl.textContent = `${mName} ${first.period_year}`;
+                    }
+                } else if (scope === 'month') {
+                    // Если нет счетов, но scope === 'month', показываем текущий месяц
                     const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-                    const mName = monthNames[first.period_month - 1] || first.period_month;
-                    paymentDateEl.textContent = `${mName} ${first.period_year}`;
+                    const mName = monthNames[curMonth - 1] || curMonth;
+                    paymentDateEl.textContent = `${mName} ${curYear}`;
                 }
             }
         }
 
         // Сумма по инвойсам как дополнительная гарантия
+        // НЕ перезаписываем сумму, если она уже была установлена из sessionStorage
         if (totalEl && amountLabelEl && targetInvoices.length > 0) {
+            // Если передана preferredAmount (сумма из sessionStorage), используем её как приоритет
+            if (preferredAmount !== null && preferredAmount > 0) {
+                // Сумма из sessionStorage имеет приоритет, не перезаписываем её
+                // Только убеждаемся, что amountLabelEl синхронизирован с totalEl
+                const currentTotal = totalEl.textContent || '';
+                if (amountLabelEl.textContent !== currentTotal && currentTotal) {
+                    amountLabelEl.textContent = currentTotal;
+                }
+                return; // Не перезаписываем сумму из счетов
+            }
+            
+            // Если preferredAmount не передан или равен 0, проверяем sessionStorage напрямую
+            const storedAmountRaw = sessionStorage.getItem('paymentAmount');
+            const storedAmount = storedAmountRaw ? parseFloat(storedAmountRaw) : 0;
+            
+            // Проверяем текущую установленную сумму
+            const existingAmountText = totalEl.textContent || '';
+            const existingAmountValue = existingAmountText.replace(/[^\d,\.]/g, '').replace(',', '.');
+            const existingAmount = parseFloat(existingAmountValue) || 0;
+            
+            // Если сумма из sessionStorage уже установлена и она больше 0, не перезаписываем её
+            if (storedAmount > 0 && Math.abs(existingAmount - storedAmount) < 0.01) {
+                // Сумма уже правильно установлена из sessionStorage, не перезаписываем
+                if (amountLabelEl.textContent !== existingAmountText) {
+                    amountLabelEl.textContent = existingAmountText;
+                }
+                return; // Не перезаписываем сумму из счетов
+            }
+            
+            // Если сумма не была установлена или равна 0, вычисляем её из счетов как fallback
             let sumAmount = 0;
             // Для пользователя важно видеть сумму К ОПЛАТЕ (остаток), а не общий номинал счетов
             // Поэтому и для 'all', и для 'month' используем remaining_amount, если он есть
@@ -960,8 +1062,11 @@ async function loadPaymentInvoices(scope, residentCode) {
                 maximumFractionDigits: 2
             }).format(sumAmount) + ' ₼';
 
-            totalEl.textContent = formatted;
-            amountLabelEl.textContent = formatted;
+            // Обновляем только если текущая сумма равна 0 или не установлена
+            if (existingAmount <= 0 || !existingAmountText || existingAmountText === '—') {
+                totalEl.textContent = formatted;
+                amountLabelEl.textContent = formatted;
+            }
         }
     } catch (error) {
         console.error('Error loading payment-related invoices:', error);
@@ -985,7 +1090,133 @@ async function initPaymentPage() {
     // Изначально очищаем превью карты
     updateCardPreview('', '', '', null);
 
+    // helper to set resident name and advance on the Royal Park pass
+    async function setResidentPassInfo(codeFromSession) {
+        const nameEl = document.getElementById('passResidentName');
+        const advanceEl = document.getElementById('passAdvanceAmount');
+        if (!nameEl && !advanceEl) return;
+
+        let displayName = codeFromSession || '';
+        let advanceValue = null;
+        let userFullName = '';
+
+        // fallback helper to load user profile name
+        async function fetchUserName() {
+            try {
+                const resp = await fetch(`${API_BASE}/api/users/me`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (resp.ok) {
+                    const user = await resp.json();
+                    return user?.full_name || user?.username || '';
+                }
+            } catch (e) {
+                console.warn('Failed to load user profile for pass name', e);
+            }
+            return '';
+        }
+
+        try {
+            // Добавляем timestamp для предотвращения кэширования при обновлении после оплаты
+            const timestamp = new Date().getTime();
+            const resp = await fetch(`${API_BASE}/api/resident/dashboard?t=${timestamp}`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                cache: 'no-cache'
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                const residents = data?.residents || [];
+                const summary = data?.summary || {};
+
+                if (residents.length) {
+                    // prefer match by resident_code, else first resident
+                    const matched = residents.find(r => r?.resident_code === codeFromSession) || residents[0];
+                    displayName = matched?.full_name || matched?.resident_name || matched?.resident_code || displayName;
+
+                    // try multiple possible advance keys (приоритет: advance_total из API)
+                    advanceValue = matched?.advance_total ?? matched?.advance ?? matched?.advance_balance ?? matched?.balance?.advance ?? matched?.balance?.advance_balance ?? null;
+                }
+
+                // fallback to summary if resident value not found
+                if (advanceValue === null || advanceValue === undefined) {
+                    advanceValue = summary?.total_advance ?? summary?.advance ?? null;
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to load resident info for pass', e);
+        }
+
+        if (!displayName) {
+            userFullName = await fetchUserName();
+            displayName = userFullName || displayName;
+        }
+
+        if (nameEl) {
+            nameEl.textContent = displayName || 'Резидент';
+        }
+
+        if (advanceEl) {
+            const adv = typeof advanceValue === 'number' ? advanceValue : 0;
+            advanceEl.textContent = new Intl.NumberFormat('ru-RU', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(adv) + ' ₼';
+        }
+        
+        // Отключаем карту Royal Park, если аванс = 0
+        const advanceCard = document.querySelector('.resident-pass-card[data-card-type="ADVANCE"]');
+        if (advanceCard) {
+            const adv = typeof advanceValue === 'number' ? advanceValue : 0;
+            if (adv <= 0) {
+                // Отключаем карту: добавляем класс disabled и делаем недоступной для выбора
+                advanceCard.classList.add('disabled');
+                advanceCard.style.opacity = '0.5';
+                advanceCard.style.cursor = 'not-allowed';
+                advanceCard.setAttribute('aria-disabled', 'true');
+                advanceCard.title = 'Аванс недоступен (баланс: 0,00 ₼)';
+                
+                // Если эта карта была выбрана, снимаем выбор
+                if (advanceCard.classList.contains('selected')) {
+                    advanceCard.classList.remove('selected');
+                    // Выбираем первую доступную карту (не Royal Park)
+                    const availableCards = document.querySelectorAll('.saved-cards-container .bank-card:not(.disabled), .saved-cards-container .resident-pass-card:not(.disabled)');
+                    if (availableCards.length > 0 && availableCards[0] !== advanceCard) {
+                        availableCards[0].click();
+                    }
+                }
+            } else {
+                // Включаем карту обратно, если аванс > 0
+                advanceCard.classList.remove('disabled');
+                advanceCard.style.opacity = '';
+                advanceCard.style.cursor = '';
+                advanceCard.removeAttribute('aria-disabled');
+                advanceCard.title = '';
+            }
+        }
+    }
+
     try {
+        // Проверяем временную метку данных оплаты (данные действительны 5 минут)
+        const paymentTimestamp = sessionStorage.getItem('paymentTimestamp');
+        const now = Date.now();
+        const PAYMENT_DATA_TTL = 5 * 60 * 1000; // 5 минут в миллисекундах
+        
+        // Если данные устарели (старше 5 минут) или их нет, очищаем все данные оплаты
+        if (!paymentTimestamp || (now - parseInt(paymentTimestamp, 10)) > PAYMENT_DATA_TTL) {
+            // Очищаем старые данные оплаты
+            sessionStorage.removeItem('paymentScope');
+            sessionStorage.removeItem('paymentAmount');
+            sessionStorage.removeItem('paymentScopeLabel');
+            sessionStorage.removeItem('paymentResidentCode');
+            sessionStorage.removeItem('paymentResidentId');
+            sessionStorage.removeItem('paymentSummary');
+            sessionStorage.removeItem('paymentTimestamp');
+        }
+        
         const scope = sessionStorage.getItem('paymentScope') || 'month';
         let amountRaw = sessionStorage.getItem('paymentAmount');
         let amount = amountRaw ? parseFloat(amountRaw) : 0;
@@ -1009,19 +1240,30 @@ async function initPaymentPage() {
         const paymentDateEl = document.getElementById('paymentDate');
         const paymentCommissionEl = document.getElementById('paymentCommission');
 
+        // Проверяем, есть ли актуальные данные в sessionStorage (пользователь перешел через кнопку)
+        // Данные считаются актуальными только если есть временная метка и она не устарела
+        const hasPaymentData = paymentTimestamp && (now - parseInt(paymentTimestamp, 10)) <= PAYMENT_DATA_TTL && 
+                               (amountRaw || residentCodeStored || paymentSummaryRaw || sessionStorage.getItem('paymentResidentId'));
+        
         // Если сумма из sessionStorage отсутствует или равна 0, пробуем взять её из summary/бэкенда
-        if (!amount || Number.isNaN(amount)) {
-            if (paymentSummary) {
-                amount = scope === 'all'
-                    ? (paymentSummary.total_debt || 0)
-                    : (paymentSummary.total_month || 0);
-            }
+        // Но только если есть данные в sessionStorage (пользователь перешел через кнопку)
+        if (hasPaymentData) {
             if (!amount || Number.isNaN(amount)) {
-                const fallback = await loadDashboardSummaryForPayment(scope);
-                if (fallback && typeof fallback.amount === 'number') {
-                    amount = fallback.amount;
+                if (paymentSummary) {
+                    amount = scope === 'all'
+                        ? (paymentSummary.total_debt || 0)
+                        : (paymentSummary.total_month || 0);
+                }
+                if (!amount || Number.isNaN(amount)) {
+                    const fallback = await loadDashboardSummaryForPayment(scope);
+                    if (fallback && typeof fallback.amount === 'number') {
+                        amount = fallback.amount;
+                    }
                 }
             }
+        } else {
+            // Если нет данных в sessionStorage, сумма должна быть 0
+            amount = 0;
         }
 
         const formattedAmount = new Intl.NumberFormat('ru-RU', {
@@ -1036,27 +1278,74 @@ async function initPaymentPage() {
             amountLabelEl.textContent = formattedAmount;
         }
 
-        if (subtitleEl) {
-            if (scope === 'all') {
-                subtitleEl.textContent = 'Оплата всего долга';
-            } else {
-                subtitleEl.textContent = 'Оплата за текущий месяц';
+        // Проверяем, есть ли данные в sessionStorage (пользователь перешел через кнопку)
+        // Загрузить данные по счетам с backend только если есть данные в sessionStorage
+        // (т.е. пользователь перешел на страницу оплаты через кнопку, а не напрямую)
+        if (hasPaymentData) {
+            // Устанавливаем поля только если есть данные
+            if (subtitleEl) {
+                if (scope === 'all') {
+                    subtitleEl.textContent = 'Оплата всего долга';
+                } else {
+                    subtitleEl.textContent = 'Оплата за текущий месяц';
+                }
+            }
+
+            if (paymentTypeEl) {
+                const defaultScopeText = scope === 'all'
+                    ? 'Полное погашение долга по счетам'
+                    : 'Оплата счетов за текущий месяц';
+                paymentTypeEl.textContent = scopeLabelStored || defaultScopeText;
+            }
+
+            if (paymentResidentEl) {
+                paymentResidentEl.textContent = residentCodeStored || '—';
+            }
+            
+            // update resident name and advance on the default pass
+            setResidentPassInfo(residentCodeStored);
+            // Передаём сумму из sessionStorage, чтобы loadPaymentInvoices не перезаписывала её
+            const residentIdStored = sessionStorage.getItem('paymentResidentId');
+            const residentIdParsed = residentIdStored ? parseInt(residentIdStored, 10) : null;
+            loadPaymentInvoices(scope, residentCodeStored || null, amount, residentIdParsed);
+        } else {
+            // Если нет данных в sessionStorage, оставляем все поля пустыми
+            if (subtitleEl) {
+                subtitleEl.textContent = 'Оплата счёта';
+            }
+            
+            if (paymentTypeEl) {
+                paymentTypeEl.textContent = '—';
+            }
+            
+            if (paymentResidentEl) {
+                paymentResidentEl.textContent = '—';
+            }
+            
+            if (paymentDateEl) {
+                paymentDateEl.textContent = '—';
+            }
+            
+            const invoiceNumberEl = document.getElementById('invoiceNumber');
+            if (invoiceNumberEl) {
+                invoiceNumberEl.textContent = '—';
+                invoiceNumberEl.classList.remove('invoice-link');
+                invoiceNumberEl.style.cursor = 'default';
+                invoiceNumberEl.onclick = null;
+            }
+            
+            // Сумма уже установлена в 0 выше, но убедимся
+            if (totalEl) {
+                totalEl.textContent = '0,00 ₼';
+            }
+            if (amountLabelEl) {
+                amountLabelEl.textContent = '0,00 ₼';
             }
         }
-
-        if (paymentTypeEl) {
-            const defaultScopeText = scope === 'all'
-                ? 'Полное погашение долга по счетам'
-                : 'Оплата счетов за текущий месяц';
-            paymentTypeEl.textContent = scopeLabelStored || defaultScopeText;
-        }
-
-        if (paymentResidentEl) {
-            paymentResidentEl.textContent = residentCodeStored || '—';
-        }
-
-        // Загрузить данные по счетам с backend, чтобы дополнить детали оплаты
-        loadPaymentInvoices(scope, residentCodeStored || null);
+        
+        // Всегда загружаем данные резидента для pass (имя и аванс), независимо от наличия данных в sessionStorage
+        // Если residentCodeStored пустой, функция сама загрузит данные первого резидента
+        setResidentPassInfo(residentCodeStored || null);
 
         if (paymentCommissionEl) {
             paymentCommissionEl.textContent = '0,00 ₼';
@@ -1148,41 +1437,66 @@ async function submitPayment(event) {
         event.preventDefault();
     }
     
-    const payButton = document.querySelector('.pay-button');
+    // Determine which pay button was actually clicked (default in sidebar or form button)
+    let payButton = null;
+    if (event && event.target && event.target.classList && event.target.classList.contains('pay-button')) {
+        payButton = event.target;
+    } else {
+        payButton = document.querySelector('.pay-button');
+    }
     const originalText = payButton ? payButton.textContent : 'Оплатить';
-    
-    // Validate card form
+
+    // Понимаем, использует ли пользователь форму "новая карта" или сохранённые карты / аванс
+    const isUsingNewCardForm = !!(event && event.target && event.target.closest && event.target.closest('.payment-middle-column'));
+
+    // Данные карты (нужны только если пользователь вводит новую карту)
     const cardNumber = document.getElementById('cardNumberInput')?.value?.replace(/\s/g, '') || '';
     const cardName = document.getElementById('cardNameInput')?.value?.trim() || '';
     const cardExp = document.getElementById('cardExpInput')?.value || '';
     const cardCvv = document.getElementById('cardCvvInput')?.value || '';
     
-    // Basic validation
-    if (cardNumber.length < 13) {
-        showPaymentError('Введите корректный номер карты');
-        return false;
-    }
-    if (cardName.length < 2) {
-        showPaymentError('Введите имя на карте');
-        return false;
-    }
-    if (!cardExp.match(/^\d{2}\/\d{2}$/)) {
-        showPaymentError('Введите срок действия карты (MM/YY)');
-        return false;
-    }
-    if (cardCvv.length < 3) {
-        showPaymentError('Введите CVV код');
-        return false;
+    if (isUsingNewCardForm) {
+        // Валидация только для сценария "Добавить новую карту"
+        if (cardNumber.length < 13) {
+            showPaymentError('Введите корректный номер карты');
+            return false;
+        }
+        if (cardName.length < 2) {
+            showPaymentError('Введите имя на карте');
+            return false;
+        }
+        if (!cardExp.match(/^\d{2}\/\d{2}$/)) {
+            showPaymentError('Введите срок действия карты (MM/YY)');
+            return false;
+        }
+        if (cardCvv.length < 3) {
+            showPaymentError('Введите CVV код');
+            return false;
+        }
     }
     
     // Get payment data from session storage
-    const scope = sessionStorage.getItem('paymentScope') || 'month';
+    let scope = sessionStorage.getItem('paymentScope') || 'month';
     let amount = parseFloat(sessionStorage.getItem('paymentAmount') || '0');
     
     // Check if custom amount is enabled
     const customAmountCheckbox = document.getElementById('customAmountCheckbox');
     const customAmountInput = document.getElementById('customAmountInput');
     const useCustomAmount = customAmountCheckbox && customAmountCheckbox.checked;
+    
+    // Проверяем, есть ли invoice для оплаты
+    const invoiceNumberEl = document.getElementById('invoiceNumber');
+    const hasInvoice = invoiceNumberEl && invoiceNumberEl.textContent && invoiceNumberEl.textContent.trim() !== '—';
+    
+    // Проверяем сумму из total элемента (сумма invoice)
+    const totalEl = document.getElementById('total');
+    let invoiceTotal = 0;
+    if (totalEl) {
+        const totalText = totalEl.textContent || '';
+        // Parse "1 234,56 ₼" format
+        const cleanAmount = totalText.replace(/[^\d,\.]/g, '').replace(',', '.');
+        invoiceTotal = parseFloat(cleanAmount) || 0;
+    }
     
     if (useCustomAmount && customAmountInput) {
         // Use custom amount from input
@@ -1192,56 +1506,129 @@ async function submitPayment(event) {
             return false;
         }
         amount = customAmount;
+        
+        // Если нет invoice (invoiceNumber = "—") или invoice total = 0, это пополнение аванса
+        // В этом случае scope должен быть null, чтобы платеж не применялся к счетам
+        if (!hasInvoice || invoiceTotal === 0) {
+            scope = null;
+        }
+        // Если есть invoice, но пользователь указал кастомную сумму, применяем к invoice
+        // (излишек автоматически уйдет в аванс)
     } else {
         // Use default amount from session storage or total element
         if (!amount || amount <= 0) {
-            const totalEl = document.getElementById('total');
-            if (totalEl) {
-                const totalText = totalEl.textContent || '';
-                // Parse "1 234,56 ₼" format
-                const cleanAmount = totalText.replace(/[^\d,\.]/g, '').replace(',', '.');
-                amount = parseFloat(cleanAmount) || 0;
-            }
+            amount = invoiceTotal;
+        }
+        
+        // Если нет invoice или invoice total = 0, это пополнение аванса
+        if (!hasInvoice || invoiceTotal === 0) {
+            scope = null;
         }
     }
+    
+    // Сохраняем scope для передачи в backend (null если пополнение аванса)
+    const paymentScope = scope;
     
     if (amount <= 0) {
         showPaymentError('Сумма оплаты должна быть больше 0');
         return false;
     }
     
-    // Get resident IDs from dashboard data
+    // Get resident ID - приоритет: из sessionStorage (сохранен при нажатии кнопки), иначе из dashboard
     let residentId = null;
-    try {
-        const dashboardResp = await fetch(`${API_BASE}/api/resident/dashboard`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' }
-        });
-        if (dashboardResp.ok) {
-            const dashboardData = await dashboardResp.json();
-            if (dashboardData.residents && dashboardData.residents.length > 0) {
-                // Use first resident ID (in case user has multiple)
-                residentId = dashboardData.residents[0].id;
+    
+    // Сначала проверяем sessionStorage (сохранен при нажатии "Оплатить за месяц" для конкретного резидента)
+    const residentIdStored = sessionStorage.getItem('paymentResidentId');
+    if (residentIdStored) {
+        residentId = parseInt(residentIdStored, 10);
+    }
+    
+    // Если не нашли в sessionStorage, получаем из dashboard (fallback)
+    if (!residentId) {
+        try {
+            const dashboardResp = await fetch(`${API_BASE}/api/resident/dashboard`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (dashboardResp.ok) {
+                const dashboardData = await dashboardResp.json();
+                if (dashboardData.residents && dashboardData.residents.length > 0) {
+                    // Use first resident ID (in case user has multiple)
+                    residentId = dashboardData.residents[0].id;
+                }
             }
+        } catch (err) {
+            console.error('Failed to get resident ID:', err);
         }
-    } catch (err) {
-        console.error('Failed to get resident ID:', err);
     }
     
     if (!residentId) {
         showPaymentError('Не удалось определить резидента. Попробуйте перезагрузить страницу.');
         return false;
     }
-    
+
+    // Тип метода оплаты: карта или аванс (если выбрана карта Royal Park)
+    let paymentMethod = 'CARD';
+    if (window.selectedSavedCard && window.selectedSavedCard.type === 'ADVANCE') {
+        // Дополнительная проверка: если карта отключена, не позволяем оплату через аванс
+        const advanceCard = document.querySelector('.resident-pass-card[data-card-type="ADVANCE"]');
+        if (advanceCard && (advanceCard.classList.contains('disabled') || advanceCard.getAttribute('aria-disabled') === 'true')) {
+            showPaymentError('Аванс недоступен. Баланс аванса равен 0,00 ₼. Выберите другой способ оплаты.');
+            if (payButton) {
+                payButton.disabled = false;
+                payButton.textContent = originalText;
+            }
+            return false;
+        }
+        paymentMethod = 'ADVANCE';
+    }
+
     // Show loading state
     if (payButton) {
         payButton.disabled = true;
         payButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Обработка...';
     }
-    
+
+    // DEMO: имитация успешной оплаты без обращения к backend
+    if (ENABLE_FAKE_PAYMENT) {
+        try {
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            showPaymentSuccess(
+                paymentMethod === 'ADVANCE'
+                    ? 'Платёж успешно проведён из аванса (демо-режим).'
+                    : 'Платёж успешно проведён (демо-режим).'
+            );
+
+            // Очищаем сессионные данные как при реальной оплате
+            sessionStorage.removeItem('paymentAmount');
+            sessionStorage.removeItem('paymentScope');
+            sessionStorage.removeItem('paymentScopeLabel');
+            sessionStorage.removeItem('paymentResidentCode');
+            sessionStorage.removeItem('paymentSummary');
+
+            // Фильтр для черновиков на странице счетов
+            sessionStorage.setItem('billsFilterStatuses', JSON.stringify(['DRAFT']));
+
+            setTimeout(() => {
+                if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
+                    window.userSpaRouter.navigate('bills', true);
+                } else {
+                    window.location.href = '/user/dashboard.html#bills?status=DRAFT';
+                }
+            }, 2000);
+        } finally {
+            if (payButton) {
+                payButton.disabled = false;
+                payButton.textContent = originalText;
+            }
+        }
+        return false;
+    }
+
     try {
-        // Submit payment to backend
+        // Submit payment to backend (боевой режим)
         const response = await fetch(`${API_BASE}/api/resident/payment`, {
             method: 'POST',
             credentials: 'include',
@@ -1251,9 +1638,12 @@ async function submitPayment(event) {
             body: JSON.stringify({
                 resident_id: residentId,
                 amount: amount,
-                method: 'CARD',
-                reference: `Card ***${cardNumber.slice(-4)}`,
-                comment: `Онлайн-оплата картой ${cardName}`
+                method: paymentMethod,
+                reference: isUsingNewCardForm ? `Card ***${cardNumber.slice(-4)}` : (window.selectedSavedCard?.brand || 'Saved card'),
+                comment: isUsingNewCardForm
+                    ? `Онлайн-оплата картой ${cardName}`
+                    : `Онлайн-оплата сохранённой картой / авансом`,
+                scope: paymentScope  // 'month' или 'all' - для применения к счетам, null - только пополнение аванса
             })
         });
         
@@ -1268,6 +1658,9 @@ async function submitPayment(event) {
             // Success!
             showPaymentSuccess('Платёж успешно проведён!');
             
+            // Сохраняем residentCode перед очисткой sessionStorage
+            const residentCode = sessionStorage.getItem('paymentResidentCode');
+            
             // Clear payment session data
             sessionStorage.removeItem('paymentAmount');
             sessionStorage.removeItem('paymentScope');
@@ -1275,17 +1668,57 @@ async function submitPayment(event) {
             sessionStorage.removeItem('paymentResidentCode');
             sessionStorage.removeItem('paymentSummary');
             
+            // Обновляем аванс на странице оплаты перед редиректом
+            // Делаем это после небольшой задержки, чтобы бэкенд успел обработать платеж
+            if (residentCode && typeof setResidentPassInfo === 'function') {
+                setTimeout(() => {
+                    setResidentPassInfo(residentCode);
+                }, 300);
+            }
+            
             // Set filter to show DRAFT status invoices on bills page
             sessionStorage.setItem('billsFilterStatuses', JSON.stringify(['DRAFT']));
             
-            // Redirect to bills page with DRAFT filter after short delay
+            // Redirect to dashboard first to show updated progress, then to bills page
             setTimeout(() => {
                 if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
-                    window.userSpaRouter.navigate('bills', true);
+                    // Navigate to dashboard first to show updated data
+                    window.userSpaRouter.navigate('dashboard', true);
+                    // Обновляем дашборд после навигации (SPA router автоматически вызывает loadDashboardData через 100ms)
+                    // Но добавляем дополнительный вызов с задержкой, чтобы убедиться, что контейнер загружен
+                    setTimeout(() => {
+                        if (typeof loadDashboardData === 'function') {
+                            console.log('Refreshing dashboard after payment...');
+                            // Принудительно обновляем данные (forceRefresh = true)
+                            loadDashboardData(true).then(() => {
+                                console.log('Dashboard refreshed successfully');
+                                // Принудительно обновляем еще раз через небольшую задержку
+                                // чтобы убедиться, что все данные обновились (включая аванс)
+                                setTimeout(() => {
+                                    if (typeof loadDashboardData === 'function') {
+                                        loadDashboardData(true);
+                                    }
+                                }, 500);
+                            }).catch(err => {
+                                console.error('Failed to refresh dashboard:', err);
+                            });
+                        }
+                    }, 500);
+                    // Then navigate to bills after a short delay
+                    setTimeout(() => {
+                        window.userSpaRouter.navigate('bills', true);
+                    }, 2000);
                 } else {
-                    window.location.href = '/user/dashboard.html#bills?status=DRAFT';
+                    // Fallback для обычной навигации
+                    window.location.href = '/user/dashboard.html#dashboard';
+                    // После загрузки страницы обновляем данные
+                    setTimeout(() => {
+                        if (typeof loadDashboardData === 'function') {
+                            loadDashboardData();
+                        }
+                    }, 500);
                 }
-            }, 2000);
+            }, 1500);
         } else {
             throw new Error(result.message || 'Не удалось обработать платёж');
         }
@@ -1434,14 +1867,187 @@ function bindPayButton() {
     }
 }
 
+// Saved cards selection (user can choose which card, including Royal Park advance pass)
+function setupSavedCardSelection() {
+    const savedCards = document.querySelectorAll('.saved-cards-container .bank-card, .saved-cards-container .resident-pass-card');
+    if (!savedCards.length) return;
+
+    function applySelection(cardElement) {
+        savedCards.forEach(c => c.classList.remove('selected'));
+        cardElement.classList.add('selected');
+
+        const last4 = cardElement.dataset.cardLast4 || '';
+        const holder = cardElement.dataset.cardHolder || '';
+        const type = cardElement.dataset.cardType || 'CARD';
+        const brandEl = cardElement.querySelector('.brand-name, .visa-badge');
+        const brand = brandEl ? brandEl.textContent.trim() : 'Card';
+
+        selectedSavedCard = {
+            id: cardElement.dataset.cardId || null,
+            last4,
+            holder,
+            type,
+            brand
+        };
+    }
+
+    savedCards.forEach(card => {
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+
+        card.addEventListener('click', () => {
+            // Проверяем, не отключена ли карта (особенно для Royal Park с авансом = 0)
+            if (card.classList.contains('disabled') || card.getAttribute('aria-disabled') === 'true') {
+                return; // Не позволяем выбрать отключенную карту
+            }
+            applySelection(card);
+        });
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                // Проверяем, не отключена ли карта
+                if (card.classList.contains('disabled') || card.getAttribute('aria-disabled') === 'true') {
+                    return; // Не позволяем выбрать отключенную карту
+                }
+                applySelection(card);
+            }
+        });
+    });
+
+    // Select the first available (not disabled) saved card by default
+    const availableCards = Array.from(savedCards).filter(card => 
+        !card.classList.contains('disabled') && card.getAttribute('aria-disabled') !== 'true'
+    );
+    if (availableCards.length > 0) {
+        applySelection(availableCards[0]);
+    }
+}
+
+// Layout logic: show/hide card form and default pay button
+function setupPaymentLayout() {
+    const addCardBtn = document.querySelector('.add-card-btn');
+    const middleColumn = document.getElementById('paymentMiddleColumn');
+    const defaultPayActions = document.querySelector('.default-pay-actions');
+    const defaultPayButton = document.querySelector('.default-pay-button');
+
+    function toggleCardForm(show) {
+        if (middleColumn) {
+            if (show) {
+                middleColumn.classList.remove('is-hidden');
+            } else {
+                middleColumn.classList.add('is-hidden');
+            }
+        }
+        if (defaultPayActions) {
+            defaultPayActions.style.display = show ? 'none' : '';
+        }
+    }
+
+    if (addCardBtn) {
+        addCardBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleCardForm(true);
+            // небольшая прокрутка к форме карты
+            if (middleColumn && typeof middleColumn.scrollIntoView === 'function') {
+                middleColumn.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    }
+
+    if (defaultPayButton) {
+        defaultPayButton.addEventListener('click', function (e) {
+            // Используем тот же submitPayment, что и для формы
+            submitPayment(e);
+        });
+    }
+
+    // начальное состояние: форма скрыта, видна только правая кнопка "Оплатить"
+    toggleCardForm(false);
+}
+
+// Функция для очистки данных оплаты из sessionStorage
+function clearPaymentData() {
+    try {
+        sessionStorage.removeItem('paymentScope');
+        sessionStorage.removeItem('paymentAmount');
+        sessionStorage.removeItem('paymentScopeLabel');
+        sessionStorage.removeItem('paymentResidentCode');
+        sessionStorage.removeItem('paymentResidentId');
+        sessionStorage.removeItem('paymentSummary');
+        sessionStorage.removeItem('paymentTimestamp');
+    } catch (e) {
+        console.warn('Failed to clear payment data from sessionStorage', e);
+    }
+}
+
+// Очищаем данные оплаты при уходе со страницы оплаты
+function setupPaymentDataCleanup() {
+    let previousHash = window.location.hash;
+    let wasOnReportPage = previousHash.includes('#report') || previousHash.endsWith('#report');
+    
+    // Отслеживаем изменения hash - если пользователь ушел со страницы #report, очищаем данные
+    const handleHashChange = () => {
+        const currentHash = window.location.hash;
+        const isOnReportPage = currentHash.includes('#report') || currentHash.endsWith('#report');
+        
+        // Если были на странице оплаты и ушли на другую страницу - очищаем данные
+        if (wasOnReportPage && !isOnReportPage) {
+            // Небольшая задержка, чтобы дать возможность вернуться назад
+            // Если пользователь вернется в течение 100мс, данные сохранятся
+            setTimeout(() => {
+                const finalHash = window.location.hash;
+                const finalIsOnReportPage = finalHash.includes('#report') || finalHash.endsWith('#report');
+                // Очищаем только если все еще не на странице оплаты
+                if (!finalIsOnReportPage) {
+                    clearPaymentData();
+                }
+            }, 100);
+        }
+        
+        wasOnReportPage = isOnReportPage;
+        previousHash = currentHash;
+    };
+    
+    // Слушаем изменения hash
+    window.addEventListener('hashchange', handleHashChange);
+    
+    // Также очищаем при закрытии/перезагрузке страницы, если были на странице оплаты
+    window.addEventListener('beforeunload', () => {
+        const currentHash = window.location.hash;
+        const isOnReportPage = currentHash.includes('#report') || currentHash.endsWith('#report');
+        if (isOnReportPage) {
+            // Очищаем данные при закрытии страницы, если были на странице оплаты
+            clearPaymentData();
+        }
+    });
+    
+    // Очищаем данные при полном закрытии окна/вкладки
+    window.addEventListener('pagehide', (event) => {
+        // Если страница выгружается окончательно (не просто скрывается)
+        if (event.persisted === false) {
+            const currentHash = window.location.hash;
+            const isOnReportPage = currentHash.includes('#report') || currentHash.endsWith('#report');
+            if (isOnReportPage) {
+                clearPaymentData();
+            }
+        }
+    });
+}
+
 // Инициализируем страницу как при обычной загрузке, так и при загрузке через SPA
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         initPaymentPage();
         bindPayButton();
+        setupSavedCardSelection();
+        setupPaymentLayout();
+        setupPaymentDataCleanup();
     });
 } else {
     initPaymentPage();
     bindPayButton();
+    setupSavedCardSelection();
+    setupPaymentLayout();
+    setupPaymentDataCleanup();
 }
 </script>
