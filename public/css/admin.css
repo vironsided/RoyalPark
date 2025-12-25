@@ -1947,11 +1947,11 @@ html, body {
 /* Universal glassmorphism and dark mode support for all pages - HIGHEST PRIORITY */
 
 /* Отступы сверху для всех страниц */
-#spa-content .content-wrapper,
+/* #spa-content .content-wrapper,
 .dashboard-content .content-wrapper,
 .content-wrapper {
     padding-top: 2rem !important;
-}
+} */
 
 #spa-content .content-wrapper,
 #spa-content .block-map-container,
@@ -2277,12 +2277,12 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
 }
 
 /* Extra spacing for main section headers */
-#spa-content .content-wrapper > h2,
+/* #spa-content .content-wrapper > h2,
 .dashboard-content .content-wrapper > h2,
 .content-wrapper > h2 {
     margin-top: 2.5rem !important;
     padding-top: 1rem !important;
-}
+} */
 
 /* Make stat cards (both custom and Bootstrap) beautiful */
 #spa-content .content-wrapper .row .card.text-center,

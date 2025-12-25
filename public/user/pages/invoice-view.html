@@ -213,14 +213,21 @@
             if (payments.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Оплаты по этому счёту отсутствуют.</td></tr>';
             } else {
-                tbody.innerHTML = payments.map(p => `
-                    <tr>
-                        <td>${p.date ? new Date(p.date).toLocaleDateString('ru-RU') : '—'}</td>
-                        <td>${p.method || '—'}</td>
-                        <td>${formatCurrency(p.amount)}</td>
-                        <td>${p.comment || '—'}</td>
-                    </tr>
-                `).join('');
+                tbody.innerHTML = payments.map(p => {
+                    let methodDisplay = p.method || '—';
+                    if (p.method === 'ADVANCE') {
+                        methodDisplay = window.i18n ? window.i18n.translate('user_invoice_payment_method_advance') : 'Аванс';
+                    }
+                    
+                    return `
+                        <tr>
+                            <td>${p.date ? new Date(p.date).toLocaleDateString('ru-RU') : '—'}</td>
+                            <td>${methodDisplay}</td>
+                            <td>${formatCurrency(p.amount)}</td>
+                            <td>${p.comment || '—'}</td>
+                        </tr>
+                    `;
+                }).join('');
             }
             
             // Update payments summary

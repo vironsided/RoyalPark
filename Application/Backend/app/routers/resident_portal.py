@@ -537,7 +537,6 @@ def resident_invoices(
         ).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
         
         if abs(float(inv.amount_total or 0) - float(lines_sum)) > 0.01:
-            print(f"DEBUG: Invoice {inv.id} amount_total mismatch! invoice={inv.amount_total}, lines_sum={lines_sum}, fixing...")
             inv.amount_total = Decimal(str(lines_sum))
             net_sum = db.query(func.coalesce(func.sum(InvoiceLine.amount_net), 0)).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
             vat_sum = db.query(func.coalesce(func.sum(InvoiceLine.amount_vat), 0)).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0

@@ -91,6 +91,9 @@ def run_bootstrap_schema():
         "ALTER TABLE tariff_steps ADD COLUMN IF NOT EXISTS to_date DATE;",
         "ALTER TABLE tariff_steps ALTER COLUMN from_value DROP NOT NULL;",
         "ALTER TABLE tariff_steps ALTER COLUMN to_value DROP NOT NULL;",
+        "ALTER TABLE payment_applications ADD COLUMN IF NOT EXISTS reference VARCHAR(100);",
+        # Убираем уникальное ограничение uq_payment_invoice, чтобы разрешить несколько применений одного платежа к одному счету
+        "DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_payment_invoice') THEN ALTER TABLE payment_applications DROP CONSTRAINT uq_payment_invoice; END IF; END $$;",
         # QR Tokens table
         """
         CREATE TABLE IF NOT EXISTS qr_tokens (
@@ -100,6 +103,19 @@ def run_bootstrap_schema():
           is_used BOOLEAN NOT NULL DEFAULT FALSE,
           created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
           used_at TIMESTAMP WITHOUT TIME ZONE NULL
+        );
+        """,
+        # Payment Logs table
+        """
+        CREATE TABLE IF NOT EXISTS payment_logs (
+          id SERIAL PRIMARY KEY,
+          payment_id INTEGER NULL REFERENCES payments(id) ON DELETE SET NULL,
+          resident_id INTEGER NULL REFERENCES residents(id) ON DELETE SET NULL,
+          user_id INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
+          action VARCHAR(50) NOT NULL,
+          amount NUMERIC(12,2) NOT NULL,
+          details TEXT NULL,
+          created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
         );
         """,
 

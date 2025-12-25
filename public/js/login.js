@@ -61,8 +61,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add success animation
             celebrateSuccess();
 
-            // Redirect based on role
+            // Redirect based on role and password change status
             setTimeout(() => {
+                if (data.require_password_change) {
+                    // Redirect to password setup if first login
+                    window.location.href = '/qr-password-setup.html?from_login=true';
+                    return;
+                }
+
                 if (data.role === 'RESIDENT') {
                     // Redirect to user panel for residents
                     window.location.href = '/user/dashboard.html';

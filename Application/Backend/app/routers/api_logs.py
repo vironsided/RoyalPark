@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
 
 from ..database import get_db
-from ..models import ReadingLog, ResidentMeter, Resident, Block, User, MeterType
+from ..models import ReadingLog, ResidentMeter, Resident, Block, User, MeterType, PaymentLog
 
 router = APIRouter(prefix="/api/logs", tags=["logs-api"])
 
@@ -28,6 +28,27 @@ class ReadingLogOut(BaseModel):
 
 class ReadingLogListOut(BaseModel):
     logs: List[ReadingLogOut]
+    total: int
+    page: int
+    per_page: int
+    last_page: int
+
+
+class PaymentLogOut(BaseModel):
+    id: int
+    date_time: str
+    action: str
+    resident: str
+    amount: float
+    user: str
+    details: str
+
+    class Config:
+        from_attributes = True
+
+
+class PaymentLogListOut(BaseModel):
+    logs: List[PaymentLogOut]
     total: int
     page: int
     per_page: int
@@ -159,6 +180,95 @@ def get_reading_logs(
         import traceback
         traceback.print_exc()
         return ReadingLogListOut(
+            logs=[],
+            total=0,
+            page=1,
+            per_page=per_page,
+            last_page=1
+        )
+
+
+@router.get("/payment-logs", response_model=PaymentLogListOut)
+def get_payment_logs(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=1, le=100),
+    action: Optional[str] = Query(None),
+    resident_id: Optional[int] = Query(None),
+    user_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """Получить логи платежей с фильтрацией и пагинацией."""
+    try:
+        query = db.query(PaymentLog)\
+            .options(
+                joinedload(PaymentLog.resident).joinedload(Resident.block),
+                joinedload(PaymentLog.user)
+            )
+        
+        # Фильтры
+        if action:
+            query = query.filter(PaymentLog.action == action.upper())
+        if resident_id:
+            query = query.filter(PaymentLog.resident_id == resident_id)
+        if user_id:
+            query = query.filter(PaymentLog.user_id == user_id)
+        
+        total = query.count()
+        last_page = max(1, (total + per_page - 1) // per_page)
+        if page > last_page:
+            page = last_page
+        
+        offset = (page - 1) * per_page
+        logs = query.order_by(desc(PaymentLog.created_at))\
+            .limit(per_page)\
+            .offset(offset)\
+            .all()
+        
+        result = []
+        for log in logs:
+            dt = log.created_at
+            date_time = dt.strftime("%d.%m.%Y, %H:%M")
+            
+            action_map = {
+                "CREATE": "СОЗДАНИЕ",
+                "APPLY": "ПРИМЕНЕНИЕ",
+                "APPLY_AUTO": "АВТО-ПРИМЕНЕНИЕ",
+                "ADVANCE_USE": "ИСПОЛЬЗОВАНИЕ АВАНСА",
+                "ADJUST": "КОРРЕКТИРОВКА"
+            }
+            action_ru = action_map.get(log.action, log.action)
+            
+            # Формируем строку резидента
+            res_str = "—"
+            if log.resident:
+                block_name = log.resident.block.name if log.resident.block else ""
+                res_str = f"{block_name}/{log.resident.unit_number}" if block_name else log.resident.unit_number
+            
+            # Формируем имя пользователя
+            user_str = "Система"
+            if log.user:
+                user_str = log.user.full_name or log.user.username
+            
+            result.append(PaymentLogOut(
+                id=log.id,
+                date_time=date_time,
+                action=action_ru,
+                resident=res_str,
+                amount=float(log.amount),
+                user=user_str,
+                details=log.details or ""
+            ))
+            
+        return PaymentLogListOut(
+            logs=result,
+            total=total,
+            page=page,
+            per_page=per_page,
+            last_page=last_page
+        )
+    except Exception as e:
+        print(f"Error in get_payment_logs: {e}")
+        return PaymentLogListOut(
             logs=[],
             total=0,
             page=1,

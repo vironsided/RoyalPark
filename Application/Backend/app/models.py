@@ -70,6 +70,7 @@ class PaymentMethod(str, enum.Enum):
     CARD = "CARD"
     TRANSFER = "TRANSFER"
     ONLINE = "ONLINE"
+    ADVANCE = "ADVANCE"    # Оплата из внутреннего аванса резидента
 
 # ----- Payment / PaymentApplication -----
 class Payment(Base):
@@ -106,14 +107,14 @@ class Payment(Base):
 
 class PaymentApplication(Base):
     __tablename__ = "payment_applications"
-    __table_args__ = (
-        UniqueConstraint("payment_id", "invoice_id", name="uq_payment_invoice"),
-    )
+    # УБИРАЕМ уникальное ограничение, чтобы разрешить несколько применений одного платежа к одному счету
+    # Это нужно для того, чтобы каждое "Погасить из аванса" создавало отдельную строку в invoice details
 
     id = Column(Integer, primary_key=True)
     payment_id = Column(ForeignKey("payments.id", ondelete="CASCADE"), nullable=False)
     invoice_id = Column(ForeignKey("invoices.id", ondelete="RESTRICT"), nullable=False)
     amount_applied = Column(Numeric(12, 2), nullable=False)
+    reference = Column(String(100), nullable=True) # "ADVANCE" or "DIRECT"
 
     payment = relationship("Payment", back_populates="applications")
     invoice = relationship("Invoice", lazy="joined")
@@ -477,3 +478,24 @@ class QRToken(Base):
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
 
     user: Mapped["User"] = relationship("User", lazy="joined")
+
+
+class PaymentLog(Base):
+    """
+    Логи всех процессов, связанных с платежами.
+    """
+    __tablename__ = "payment_logs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    payment_id: Mapped[int | None] = mapped_column(ForeignKey("payments.id", ondelete="SET NULL"), nullable=True)
+    resident_id: Mapped[int | None] = mapped_column(ForeignKey("residents.id", ondelete="SET NULL"), nullable=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    
+    action: Mapped[str] = mapped_column(String(50), nullable=False)  # CREATE, APPLY, ADJUST, ADVANCE_USE
+    amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    details: Mapped[str] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow)
+
+    payment: Mapped["Payment"] = relationship("Payment", foreign_keys=[payment_id], lazy="joined")
+    resident: Mapped["Resident"] = relationship("Resident", foreign_keys=[resident_id], lazy="joined")
+    user: Mapped["User"] = relationship("User", foreign_keys=[user_id], lazy="joined")

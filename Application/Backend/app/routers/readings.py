@@ -744,7 +744,6 @@ def create_readings(
         inv.amount_net = Decimal(str(sums[0] or 0))
         inv.amount_vat = Decimal(str(sums[1] or 0))
         inv.amount_total = Decimal(str(sums[2] or 0))
-        print(f"DEBUG: Recalculated invoice {inv.id} totals: net={inv.amount_net}, vat={inv.amount_vat}, total={inv.amount_total}, lines_count={len(all_period_readings)}")
         
         # Если счёт пустой (все показания удалены) - удаляем его
         if inv.amount_total == 0 and not db.query(InvoiceLine).filter(InvoiceLine.invoice_id == inv.id).first():

@@ -73,81 +73,10 @@
         </div>
 
         <!-- Recent Activity -->
-        <div class="activity-card">
+        <div class="activity-card" style="height: 580px; overflow: hidden;">
             <h3 class="chart-title">Последняя активность</h3>
-
-            <div class="activity-item">
-                <div class="activity-icon payment">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <use href="/images/icons.svg#icon-payments"></use>
-                    </svg>
-                </div>
-                <div class="activity-details">
-                    <div class="activity-title">Новый платеж получен</div>
-                    <div class="activity-time">Квартира #205 - 5 минут назад</div>
-                </div>
-            </div>
-
-            <div class="activity-item">
-                <div class="activity-icon repair">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <use href="/images/icons.svg#icon-maintenance"></use>
-                    </svg>
-                </div>
-                <div class="activity-details">
-                    <div class="activity-title">Новая заявка на ремонт</div>
-                    <div class="activity-time">Здание A - 15 минут назад</div>
-                </div>
-            </div>
-
-            <div class="activity-item">
-                <div class="activity-icon meter">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                            d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8.009 8.009 0 0 1-8 8Zm0-14a1 1 0 0 0-1 1v5.382l-2.724 2.725a1 1 0 1 0 1.414 1.414l3-3A1 1 0 0 0 13 13V7a1 1 0 0 0-1-1Z" />
-                    </svg>
-                </div>
-                <div class="activity-details">
-                    <div class="activity-title">Показания счетчика</div>
-                    <div class="activity-time">Квартира #301 - 1 час назад</div>
-                </div>
-            </div>
-
-            <div class="activity-item">
-                <div class="activity-icon inspection">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                            d="M10 2a8 8 0 0 1 8 8 7.93 7.93 0 0 1-1.28 4.32l3.48 3.48-1.42 1.42-3.48-3.48A7.93 7.93 0 0 1 10 18a8 8 0 0 1 0-16Zm0 2a6 6 0 1 0 6 6 6.007 6.007 0 0 0-6-6Zm0 3a1 1 0 0 1 1 1v3l2 2-1.42 1.42L9 11.58V8a1 1 0 0 1 1-1Z" />
-                    </svg>
-                </div>
-                <div class="activity-details">
-                    <div class="activity-title">Проверка завершена</div>
-                    <div class="activity-time">Здание B - 2 часа назад</div>
-                </div>
-            </div>
-
-            <div class="activity-item">
-                <div class="activity-icon user">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <use href="/images/icons.svg#icon-users"></use>
-                    </svg>
-                </div>
-                <div class="activity-details">
-                    <div class="activity-title">Новый пользователь</div>
-                    <div class="activity-time">Квартира #410 - 3 часа назад</div>
-                </div>
-            </div>
-
-            <div class="activity-item">
-                <div class="activity-icon debt">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <use href="/images/icons.svg#icon-debts"></use>
-                    </svg>
-                </div>
-                <div class="activity-details">
-                    <div class="activity-title">Напоминание о задолженности</div>
-                    <div class="activity-time">5 квартир - 4 часа назад</div>
-                </div>
+            <div id="recentActivityList">
+                <!-- Will be filled dynamically via JS -->
             </div>
         </div>
     </div>
@@ -358,7 +287,7 @@
         // Загрузка последней активности
         async function loadRecentActivity() {
             try {
-                const response = await fetch(`${API_BASE}/api/dashboard/recent-activity?limit=6`);
+                const response = await fetch(`${API_BASE}/api/dashboard/recent-activity?limit=5`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -369,42 +298,61 @@
                 renderRecentActivity(data.activities || []);
             } catch (error) {
                 console.error('Error loading recent activity:', error);
-                // Оставляем моковые данные
+                // Очищаем список при ошибке
+                renderRecentActivity([]);
             }
         }
 
         function renderRecentActivity(activities) {
-            const activityCard = document.querySelector('.activity-card');
-            if (!activityCard) return;
+            const activityList = document.getElementById('recentActivityList');
+            if (!activityList) return;
 
-            // Удаляем существующие элементы активности (кроме заголовка)
-            const existingItems = activityCard.querySelectorAll('.activity-item');
-            existingItems.forEach(item => item.remove());
+            // Очищаем существующие элементы
+            activityList.innerHTML = '';
 
-            if (!activities.length) {
-                activityCard.innerHTML += '<div class="activity-item"><div class="activity-details"><div class="activity-title">Нет активности</div></div></div>';
+            if (!activities || activities.length === 0) {
+                activityList.innerHTML = '<div class="activity-item"><div class="activity-details"><div class="activity-title">Нет активности</div></div></div>';
                 return;
             }
 
             const iconMap = {
-                success: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`,
-                warning: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>`,
-                info: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>`
+                payment: `/images/icons.svg#icon-payments`,
+                repair: `/images/icons.svg#icon-maintenance`,
+                meter: `M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8.009 8.009 0 0 1-8 8Zm0-14a1 1 0 0 0-1 1v5.382l-2.724 2.725a1 1 0 1 0 1.414 1.414l3-3A1 1 0 0 0 13 13V7a1 1 0 0 0-1-1Z`,
+                inspection: `M10 2a8 8 0 0 1 8 8 7.93 7.93 0 0 1-1.28 4.32l3.48 3.48-1.42 1.42-3.48-3.48A7.93 7.93 0 0 1 10 18a8 8 0 0 1 0-16Zm0 2a6 6 0 1 0 6 6 6.007 6.007 0 0 0-6-6Zm0 3a1 1 0 0 1 1 1v3l2 2-1.42 1.42L9 11.58V8a1 1 0 0 1 1-1Z`,
+                user: `/images/icons.svg#icon-users`,
+                debt: `/images/icons.svg#icon-debts`,
+                success: `<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>`,
+                warning: `<path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>`,
+                info: `<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>`
             };
 
-            activities.forEach(activity => {
+            // Ограничиваем до 5 элементов на случай если сервер вернул больше
+            activities.slice(0, 5).forEach(activity => {
                 const item = document.createElement('div');
                 item.className = 'activity-item';
+                
+                let iconHtml = '';
+                const iconSource = iconMap[activity.icon] || iconMap.info;
+                
+                if (iconSource.includes('svg#')) {
+                    iconHtml = `<svg viewBox="0 0 24 24" aria-hidden="true"><use href="${iconSource}"></use></svg>`;
+                } else if (iconSource.startsWith('<path')) {
+                    iconHtml = `<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">${iconSource}</svg>`;
+                } else {
+                    iconHtml = `<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="${iconSource}"/></svg>`;
+                }
+
                 item.innerHTML = `
-                <div class="activity-icon ${activity.icon}">
-                    ${iconMap[activity.icon] || iconMap.info}
-                </div>
-                <div class="activity-details">
-                    <div class="activity-title">${activity.title}</div>
-                    <div class="activity-time">${activity.description} - ${activity.time}</div>
-                </div>
-            `;
-                activityCard.appendChild(item);
+                    <div class="activity-icon ${activity.icon}">
+                        ${iconHtml}
+                    </div>
+                    <div class="activity-details">
+                        <div class="activity-title">${activity.title}</div>
+                        <div class="activity-time">${activity.description || ''} ${activity.time || ''}</div>
+                    </div>
+                `;
+                activityList.appendChild(item);
             });
         }
 

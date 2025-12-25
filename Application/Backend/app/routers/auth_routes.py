@@ -24,6 +24,7 @@ class LoginResponse(BaseModel):
     role: str
     username: str
     message: str
+    require_password_change: bool = False
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -53,8 +54,6 @@ def login(request: Request, db: Session = Depends(get_db),
 @router.post("/api/auth/login", response_model=LoginResponse)
 async def api_login(login_data: LoginRequest, db: Session = Depends(get_db)):
     """API endpoint для логина, возвращает роль пользователя и устанавливает сессию"""
-    from fastapi.responses import JSONResponse
-    
     user = db.query(User).filter(User.username == login_data.username).first()
     
     if not user or not verify_password(login_data.password, user.password_hash) or not user.is_active:
@@ -71,7 +70,8 @@ async def api_login(login_data: LoginRequest, db: Session = Depends(get_db)):
         success=True,
         role=user.role.value,
         username=user.username,
-        message="Вход выполнен успешно"
+        message="Вход выполнен успешно",
+        require_password_change=user.require_password_change
     )
     
     # Создаем Response и устанавливаем cookie
@@ -79,6 +79,37 @@ async def api_login(login_data: LoginRequest, db: Session = Depends(get_db)):
     set_session(response, user.id)
     
     return response
+
+
+class PasswordChangeRequest(BaseModel):
+    new_password: str
+    confirm_password: str
+
+
+@router.post("/api/auth/force-change-password")
+async def api_force_change_password(
+    payload: PasswordChangeRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """API endpoint для принудительной смены пароля (после первого входа)"""
+    if not user.require_password_change:
+        return JSONResponse(content={"success": True, "message": "Пароль уже изменен"})
+
+    if payload.new_password != payload.confirm_password:
+        raise HTTPException(status_code=400, detail="Пароли не совпадают")
+
+    if len(payload.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Пароль должен быть не менее 6 символов")
+
+    from ..security import hash_password
+    user.password_hash = hash_password(payload.new_password)
+    user.require_password_change = False
+    user.temp_password_plain = None
+    user.last_password_change_at = datetime.utcnow()
+    db.commit()
+
+    return JSONResponse(content={"success": True, "message": "Пароль успешно изменен"})
 
 
 @router.get("/logout")
@@ -103,7 +134,8 @@ def check_session(user: User = Depends(get_current_user)):
         "authenticated": True,
         "user_id": user.id,
         "username": user.username,
-        "role": user.role.value
+        "role": user.role.value,
+        "require_password_change": user.require_password_change
     })
 
 

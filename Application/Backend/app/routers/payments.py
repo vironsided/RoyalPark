@@ -32,7 +32,7 @@ from ..models import (
     User, RoleEnum,
     Resident, Invoice, InvoiceStatus,
     Payment, PaymentApplication, PaymentMethod,
-    user_residents
+    user_residents, PaymentLog
 )
 
 router = APIRouter(prefix="/payments", tags=["payments"])
@@ -111,22 +111,32 @@ def auto_apply_advance(db: Session, resident_id: int) -> int:
           .all()
     )
     
+    total_available_advance = Decimal("0")
     pay_leftover: dict[int, Decimal] = {}
     for p in payments:
-        applied = db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0)) \
-                    .filter(PaymentApplication.invoice_id == p.id).scalar() or Decimal("0")
         # Исправлено: суммируем применения к ЛЮБЫМ инвойсам, чтобы найти остаток платежа
         actual_applied = db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0)) \
                     .filter(PaymentApplication.payment_id == p.id).scalar() or Decimal("0")
         left = Decimal(p.amount_total or 0) - Decimal(actual_applied)
+        
+        # Учитываем все платежи для расчета общего доступного баланса
+        total_available_advance += left
+        
+        # Только положительные остатки можно использовать для применения
         if left > 0:
             pay_leftover[p.id] = left
 
-    if not pay_leftover:
+    if total_available_advance <= 0 or not pay_leftover:
         return 0
 
-    # 4) Проходим по счетам целевого дома и «доливаем» из общего пула авансов
+    # 4) Проходим по счетам целевого дома и «доливаем» из общего пула авансов, 
+    # но не больше, чем есть в общем доступном авансе
+    remaining_pool = total_available_advance
+    total_actually_applied = Decimal("0")
     for inv in open_invoices:
+        if remaining_pool <= 0:
+            break
+            
         paid_all = db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0)) \
                      .filter(PaymentApplication.invoice_id == inv.id).scalar() or Decimal("0")
         inv_left = Decimal(inv.amount_total or 0) - Decimal(paid_all)
@@ -134,13 +144,14 @@ def auto_apply_advance(db: Session, resident_id: int) -> int:
             continue
 
         for p in payments:
-            if inv_left <= 0:
+            if inv_left <= 0 or remaining_pool <= 0:
                 break
             left = pay_leftover.get(p.id, Decimal("0"))
             if left <= 0:
                 continue
 
-            apply_amt = min(inv_left, left)
+            # Применяем минимум из: остаток инвойса, остаток конкретного платежа, остаток всего пула
+            apply_amt = min(inv_left, left, remaining_pool)
             if apply_amt <= 0:
                 continue
 
@@ -151,17 +162,314 @@ def auto_apply_advance(db: Session, resident_id: int) -> int:
             ).first()
             if app:
                 app.amount_applied = Decimal(app.amount_applied or 0) + apply_amt
+                app.reference = "ADVANCE"
             else:
-                db.add(PaymentApplication(payment_id=p.id, invoice_id=inv.id, amount_applied=apply_amt))
+                db.add(PaymentApplication(
+                    payment_id=p.id, 
+                    invoice_id=inv.id, 
+                    amount_applied=apply_amt,
+                    reference="ADVANCE"
+                ))
 
             db.flush() # фиксируем для корректного SUM в следующей итерации
 
             pay_leftover[p.id] = left - apply_amt
             inv_left -= apply_amt
+            remaining_pool -= apply_amt
+            total_actually_applied += apply_amt
             affected_invoice_ids.add(inv.id)
 
         _recompute_invoice_status(db, inv)
 
+    # ЛОГИРОВАНИЕ
+    if len(affected_invoice_ids) > 0:
+        db.add(PaymentLog(
+            resident_id=resident_id,
+            action="APPLY_AUTO",
+            amount=float(total_actually_applied),
+            details=f"Автоматическое распределение аванса по {len(affected_invoice_ids)} счетам"
+        ))
+
+    return len(affected_invoice_ids)
+
+
+def apply_payment_to_invoices(
+    db: Session,
+    payment_id: int,
+    resident_id: int,
+    scope: Optional[str] = None
+) -> int:
+    """
+    Применяет платеж к счетам с учетом scope.
+    
+    Args:
+        db: Database session
+        payment_id: ID платежа для применения
+        resident_id: ID резидента
+        scope: 'month' - только текущий месяц, 'all' - все счета, None - не применять
+    
+    Returns:
+        Количество затронутых счетов
+    """
+    from datetime import date
+    
+    payment = db.get(Payment, payment_id)
+    if not payment:
+        return 0
+    
+    # Если scope=None, не применяем платеж к счетам (только пополнение аванса)
+    if scope is None:
+        return 0
+    
+    # Получаем остаток платежа (сумма минус уже примененные)
+    applied_total = (
+        db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+        .filter(PaymentApplication.payment_id == payment_id)
+        .scalar() or Decimal("0")
+    )
+    payment_leftover = Decimal(payment.amount_total or 0) - Decimal(applied_total)
+    
+    if payment_leftover <= 0:
+        return 0
+    
+    # Фильтруем счета в зависимости от scope
+    today = date.today()
+    cur_year, cur_month = today.year, today.month
+    
+    if scope == 'all':
+        # Для "Оплатить всё" находим всех резидентов этого пользователя, чтобы оплатить ВСЕ счета
+        linked_users_subquery = db.query(user_residents.c.user_id).filter(user_residents.c.resident_id == resident_id).subquery()
+        associated_residents = db.query(user_residents.c.resident_id).filter(user_residents.c.user_id.in_(linked_users_subquery)).all()
+        all_resident_ids = [r[0] for r in associated_residents]
+        if not all_resident_ids:
+            all_resident_ids = [resident_id]
+            
+        query = db.query(Invoice).filter(
+            Invoice.resident_id.in_(all_resident_ids),
+            Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
+        )
+    else:
+        # Для оплаты конкретного дома или месяца фильтруем строго по resident_id
+        query = db.query(Invoice).filter(
+            Invoice.resident_id == resident_id,
+            Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
+        )
+    
+    if scope == 'month':
+        # Только счета за текущий месяц
+        query = query.filter(
+            Invoice.period_year == cur_year,
+            Invoice.period_month == cur_month
+        )
+    # Если scope == 'all', применяем ко всем открытым счетам (без дополнительной фильтрации)
+    
+    # Сортируем по периоду (FIFO)
+    open_invoices = query.order_by(
+        Invoice.period_year.asc(),
+        Invoice.period_month.asc(),
+        Invoice.id.asc()
+    ).all()
+    
+    if not open_invoices:
+        return 0
+    
+    affected_invoice_ids: set[int] = set()
+    remaining_payment = payment_leftover
+    
+    # Применяем платеж к счетам
+    for inv in open_invoices:
+        if remaining_payment <= 0:
+            break
+        
+        # Вычисляем остаток по счету
+        paid_total = (
+            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+            .filter(PaymentApplication.invoice_id == inv.id)
+            .scalar() or Decimal("0")
+        )
+        inv_leftover = Decimal(inv.amount_total or 0) - Decimal(paid_total)
+        
+        if inv_leftover <= 0:
+            continue
+        
+        # Применяем часть платежа к счету
+        apply_amount = min(remaining_payment, inv_leftover)
+        
+        if apply_amount <= 0:
+            continue
+        
+        # Находим или создаем применение
+        app = db.query(PaymentApplication).filter(
+            PaymentApplication.payment_id == payment_id,
+            PaymentApplication.invoice_id == inv.id
+        ).first()
+        
+        if app:
+            app.amount_applied = Decimal(app.amount_applied or 0) + apply_amount
+        else:
+            db.add(PaymentApplication(
+                payment_id=payment_id,
+                invoice_id=inv.id,
+                amount_applied=apply_amount
+            ))
+        
+        db.flush()
+        
+        remaining_payment -= apply_amount
+        affected_invoice_ids.add(inv.id)
+        
+        # Пересчитываем статус счета
+        _recompute_invoice_status(db, inv)
+    
+    return len(affected_invoice_ids)
+
+
+def apply_advance_with_limit(
+    db: Session,
+    user_id: int,
+    resident_id: int,
+    max_amount: Decimal,
+    scope: Optional[str] = None
+) -> int:
+    """
+    Применяет существующие платежи (аванс) к счетам с учетом scope и ограничением по сумме.
+    
+    Args:
+        db: Database session
+        user_id: ID пользователя (для поиска всех его резидентов)
+        resident_id: ID целевого резидента (к счетам которого применяем)
+        max_amount: Максимальная сумма для применения
+        scope: 'month' - только текущий месяц, 'all' - все счета, None - не применять
+    
+    Returns:
+        Количество затронутых счетов
+    """
+    from datetime import date
+    
+    # Если scope=None, не применяем
+    if scope is None:
+        return 0
+    
+    if max_amount <= 0:
+        return 0
+    
+    # 1) Находим все объекты (resident_id), привязанные к пользователю
+    associated_residents = db.query(user_residents.c.resident_id).filter(user_residents.c.user_id == user_id).all()
+    all_resident_ids = [r[0] for r in associated_residents]
+    if not all_resident_ids:
+        all_resident_ids = [resident_id]
+    
+    # 2) Открытые счета целевого резидента (или всех резидентов пользователя, если scope='all')
+    today = date.today()
+    cur_year, cur_month = today.year, today.month
+    
+    if scope == 'all':
+        query = db.query(Invoice).filter(
+            Invoice.resident_id.in_(all_resident_ids),
+            Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
+        )
+    else:
+        query = db.query(Invoice).filter(
+            Invoice.resident_id == resident_id,
+            Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
+        )
+    
+    if scope == 'month':
+        query = query.filter(
+            Invoice.period_year == cur_year,
+            Invoice.period_month == cur_month
+        )
+    
+    open_invoices = query.order_by(
+        Invoice.period_year.asc(),
+        Invoice.period_month.asc(),
+        Invoice.id.asc()
+    ).all()
+    
+    if not open_invoices:
+        return 0
+    
+    # 3) Платежи со всех объектов пользователя (общий пул аванса)
+    payments: list[Payment] = (
+        db.query(Payment)
+        .filter(Payment.resident_id.in_(all_resident_ids))
+        .order_by(Payment.received_at.asc(), Payment.id.asc())
+        .all()
+    )
+    
+    # Вычисляем остатки платежей
+    total_available_pool = Decimal("0")
+    pay_leftover: dict[int, Decimal] = {}
+    for p in payments:
+        actual_applied = (
+            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+            .filter(PaymentApplication.payment_id == p.id)
+            .scalar() or Decimal("0")
+        )
+        left = Decimal(p.amount_total or 0) - Decimal(actual_applied)
+        
+        # Учитываем все остатки (включая отрицательные корректировки)
+        total_available_pool += left
+        
+        if left > 0:
+            pay_leftover[p.id] = left
+    
+    if total_available_pool <= 0 or not pay_leftover:
+        return 0
+    
+    affected_invoice_ids: set[int] = set()
+    # Реально доступная сумма для применения (минимум из запрошенной и фактической в пуле)
+    remaining_to_apply = min(max_amount, total_available_pool)
+    
+    # 4) Применяем аванс к счетам, но не более remaining_to_apply
+    for inv in open_invoices:
+        if remaining_to_apply <= 0:
+            break
+        
+        # Вычисляем остаток по счету
+        paid_total = (
+            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+            .filter(PaymentApplication.invoice_id == inv.id)
+            .scalar() or Decimal("0")
+        )
+        inv_leftover = Decimal(inv.amount_total or 0) - Decimal(paid_total)
+        
+        if inv_leftover <= 0:
+            continue
+        
+        # Применяем из платежей, но не более remaining_to_apply
+        for p in payments:
+            if remaining_to_apply <= 0 or inv_leftover <= 0:
+                break
+            
+            left = pay_leftover.get(p.id, Decimal("0"))
+            if left <= 0:
+                continue
+            
+            # Применяем минимум из: остаток платежа, остаток счета, оставшаяся сумма для применения
+            apply_amt = min(left, inv_leftover, remaining_to_apply)
+            
+            if apply_amt <= 0:
+                continue
+            
+            # ВАЖНО: Всегда создаем НОВУЮ запись применения для каждого списания из аванса
+            # Это гарантирует, что каждое действие "Погасить из аванса" будет отдельной строкой в invoice
+            db.add(PaymentApplication(
+                payment_id=p.id,
+                invoice_id=inv.id,
+                amount_applied=apply_amt,
+                reference="ADVANCE"  # Метка, что это списание из аванса
+            ))
+            
+            db.flush()
+            
+            pay_leftover[p.id] = left - apply_amt
+            inv_leftover -= apply_amt
+            remaining_to_apply -= apply_amt
+            affected_invoice_ids.add(inv.id)
+        
+        _recompute_invoice_status(db, inv)
+    
     return len(affected_invoice_ids)
 
 
@@ -469,6 +777,16 @@ def payment_save_applications(
             db.add(PaymentApplication(payment_id=p.id, invoice_id=inv_id, amount_applied=tgt))
 
     db.flush()
+    
+    # ЛОГИРОВАНИЕ (АДМИН - ТЕМПЛЕЙТ)
+    db.add(PaymentLog(
+        payment_id=p.id,
+        resident_id=p.resident_id,
+        user_id=user.id,
+        action="APPLY",
+        amount=float(total_target),
+        details=f"Ручное распределение платежа администратором через интерфейс (счетов: {len(target_apps)})"
+    ))
 
     # Пересчитать статусы вовлечённых счетов
     inv_ids = list(target_apps.keys())

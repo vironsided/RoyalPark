@@ -99,6 +99,18 @@
             display: flex;
             gap: 10px;
             justify-content: flex-end;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .filters-actions {
+                justify-content: stretch;
+                width: 100%;
+            }
+            .filters-actions button {
+                flex: 1;
+            }
         }
 
         /* Modal Styles */

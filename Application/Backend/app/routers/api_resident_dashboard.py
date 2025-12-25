@@ -17,7 +17,7 @@ from ..models import (
     Invoice, InvoiceStatus, InvoiceLine,
     Payment, PaymentApplication, PaymentMethod,
     Notification, NotificationStatus, MeterReading,
-    user_residents
+    user_residents, PaymentLog
 )
 from ..security import get_user_id_from_session
 
@@ -46,6 +46,17 @@ def api_resident_apply_advance(
 
     try:
         affected = auto_apply_advance(db, resident_id)
+        
+        # ЛОГИРОВАНИЕ
+        if affected > 0:
+            db.add(PaymentLog(
+                resident_id=resident_id,
+                user_id=user.id,
+                action="APPLY",
+                amount=0, # Сумма здесь размазана по платежам
+                details=f"Автоматическое применение аванса к {affected} счетам"
+            ))
+            
         db.commit()
         return {
             "ok": True, 
@@ -811,6 +822,7 @@ class ResidentPaymentCreate(BaseModel):
     method: str = "CARD"  # CARD, TRANSFER, CASH, ONLINE
     reference: Optional[str] = None
     comment: Optional[str] = None
+    scope: Optional[str] = None  # 'month' - только текущий месяц, 'all' - все счета, None - только пополнение аванса
 
 
 class ResidentPaymentResponse(BaseModel):
@@ -828,10 +840,12 @@ def create_resident_payment(
     """
     Create a payment from the resident portal.
     This endpoint allows authenticated resident users to submit payments.
-    The payment will be automatically applied to open invoices (FIFO).
+    The payment will be automatically applied to open invoices based on scope:
+    - scope='month': only current month invoices
+    - scope='all': all open invoices
+    - scope=None: no application (advance top-up only)
     """
     from ..models import Payment, PaymentMethod
-    from .payments import auto_apply_advance
     
     user = _get_resident_user(request, db)
     if not user:
@@ -860,11 +874,184 @@ def create_resident_payment(
     # Validate payment method
     valid_methods = {m.value for m in PaymentMethod}
     method_value = data.method.upper()
-    if method_value not in valid_methods:
+    
+    # Специальная обработка для ADVANCE (списание из аванса)
+    # Она не является методом в БД (для БД используем TRANSFER), но используется в API
+    is_advance = (method_value == "ADVANCE")
+    
+    if not is_advance and method_value not in valid_methods:
         method_value = "CARD"  # Default to CARD for online payments
 
-    # Create payment
     from datetime import date as date_type
+    from .payments import apply_payment_to_invoices, apply_advance_with_limit
+    
+    # Если оплата через аванс, создаем историю списания и корректируем общий баланс
+    if is_advance:
+        # 1) Проверяем наличие средств в авансе перед списанием
+        # (считаем честно по остаткам всех платежей)
+        total_advance = Decimal("0")
+        if resident_ids:
+            all_user_payments = db.query(Payment).filter(Payment.resident_id.in_(resident_ids)).all()
+            for p in all_user_payments:
+                applied_p = db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))\
+                              .filter(PaymentApplication.payment_id == p.id).scalar() or 0
+                total_advance += (Decimal(p.amount_total or 0) - Decimal(applied_p))
+        
+        target_amount = Decimal(str(data.amount))
+        if total_advance < target_amount:
+            raise HTTPException(status_code=400, detail=f"Недостаточно средств на авансе (доступно {total_advance} ₼)")
+
+        history_payment = None
+        message = ""
+        try:
+            from .payments import apply_advance_with_limit
+            
+            # 2) Сохраняем максимальный ID применений ДО списания денег
+            max_app_id_before = db.query(func.max(PaymentApplication.id)).scalar()
+            if max_app_id_before is None:
+                max_app_id_before = 0
+            
+            # 3) Списываем реальные деньги из существующих платежей
+            # Это создаст PaymentApplication с reference="ADVANCE" к реальным платежам
+            affected_count = apply_advance_with_limit(
+                db,
+                user.id,
+                data.resident_id,
+                max_amount=target_amount,
+                scope=data.scope
+            )
+            
+            # 4) Создаем Payment для отображения в админ-панели
+            history_payment = Payment(
+                resident_id=data.resident_id,
+                received_at=date_type.today(),
+                amount_total=target_amount,
+                method=PaymentMethod.ADVANCE,
+                reference="ADVANCE: PASS",  # Фиксированное значение для отображения
+                comment=f"Списание из аванса: {target_amount} ₼",  # Явный комментарий
+                created_by_id=user.id,
+            )
+            db.add(history_payment)
+            db.flush()  # Получаем ID
+            
+            # Убеждаемся, что платеж создан
+            if history_payment.id is None:
+                raise Exception("Failed to create history payment")
+            
+            # 5) Находим применения, которые только что создал apply_advance_with_limit
+            # (те, у которых ID > max_app_id_before и reference="ADVANCE")
+            new_apps = []
+            if affected_count > 0:
+                # Обновляем сессию, чтобы увидеть новые применения
+                db.flush()
+                db.expire_all()
+                
+                new_apps = db.query(PaymentApplication).filter(
+                    PaymentApplication.id > max_app_id_before,
+                    PaymentApplication.reference == "ADVANCE"
+                ).all()
+                
+                # Если не нашли по ID, пробуем найти по времени создания (более надежный способ)
+                if not new_apps:
+                    # Находим применения с reference="ADVANCE" к счетам этого резидента
+                    from ..models import Invoice
+                    from datetime import date as date_class
+                    
+                    if data.scope == 'month':
+                        today = date_class.today()
+                        invoices_query = db.query(Invoice.id).filter(
+                            Invoice.resident_id == data.resident_id,
+                            Invoice.period_year == today.year,
+                            Invoice.period_month == today.month,
+                            Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
+                        )
+                    elif data.scope == 'all':
+                        if resident_ids:
+                            invoices_query = db.query(Invoice.id).filter(
+                                Invoice.resident_id.in_(resident_ids),
+                                Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
+                            )
+                        else:
+                            invoices_query = db.query(Invoice.id).filter(Invoice.id == -1)
+                    else:
+                        invoices_query = db.query(Invoice.id).filter(Invoice.id == -1)
+                    
+                    invoice_ids_list = [row[0] for row in invoices_query.all()]
+                    if invoice_ids_list:
+                        # Берем последние применения с reference="ADVANCE" к этим счетам
+                        new_apps = db.query(PaymentApplication).filter(
+                            PaymentApplication.invoice_id.in_(invoice_ids_list),
+                            PaymentApplication.reference == "ADVANCE",
+                            PaymentApplication.id > max_app_id_before
+                        ).order_by(PaymentApplication.id.desc()).limit(20).all()
+            
+            # 6) Группируем применения по invoice_id и суммируем суммы
+            invoice_amounts = {}
+            for app in new_apps:
+                if app.invoice_id not in invoice_amounts:
+                    invoice_amounts[app.invoice_id] = Decimal("0")
+                invoice_amounts[app.invoice_id] += Decimal(app.amount_applied or 0)
+            
+            # 7) Создаем применения для history_payment (по одному на каждый invoice)
+            # Группируем по invoice_id, чтобы было одно применение на invoice
+            if invoice_amounts:
+                for invoice_id, amount in invoice_amounts.items():
+                    if amount > 0:
+                        # Создаем одно применение на invoice с суммированной суммой
+                        db.add(PaymentApplication(
+                            payment_id=history_payment.id,
+                            invoice_id=invoice_id,
+                            amount_applied=amount,
+                            reference="ADVANCE"
+                        ))
+                db.flush()
+                
+                # Проверяем, что применения созданы
+                created_apps = db.query(PaymentApplication).filter(
+                    PaymentApplication.payment_id == history_payment.id
+                ).all()
+                if not created_apps:
+                    print(f"ERROR: No applications created for history_payment {history_payment.id}!")
+                    raise Exception(f"Failed to create applications for history_payment {history_payment.id}")
+            else:
+                print(f"WARNING: No invoice_amounts found for history_payment {history_payment.id}, affected_count={affected_count}")
+            
+            # ЛОГИРОВАНИЕ действия
+            db.add(PaymentLog(
+                payment_id=history_payment.id,
+                resident_id=data.resident_id,
+                user_id=user.id,
+                action="ADVANCE_USE",
+                amount=float(target_amount),
+                details=f"Списание из аванса. Применено к {affected_count} счетам."
+            ))
+            
+            db.commit()
+            
+            if data.scope is None:
+                message = "Аванс не применён (scope=None)"
+            elif affected_count > 0:
+                message = f"Аванс применён к {affected_count} счёт(ам) на сумму {data.amount} ₼"
+            else:
+                message = f"Аванс не применён (нет подходящих счетов)"
+                
+        except Exception as e:
+            print(f"Error in is_advance block: {e}")
+            import traceback
+            traceback.print_exc()
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Ошибка при обработке аванса: {str(e)}")
+        
+        if history_payment is None:
+            raise HTTPException(status_code=500, detail="Не удалось создать платеж")
+        
+        return ResidentPaymentResponse(
+            ok=True,
+            payment_id=history_payment.id,
+            message=message
+        )
+    
+    # Для обычных платежей (CARD, TRANSFER и т.д.) создаем новый платеж
     payment = Payment(
         resident_id=data.resident_id,
         received_at=date_type.today(),
@@ -878,18 +1065,42 @@ def create_resident_payment(
     db.commit()
     db.refresh(payment)
 
-    # Auto-apply payment to open invoices (FIFO by period)
+    # ЛОГИРОВАНИЕ создания
+    db.add(PaymentLog(
+        payment_id=payment.id,
+        resident_id=data.resident_id,
+        user_id=user.id,
+        action="CREATE",
+        amount=float(data.amount),
+        details=f"Онлайн-оплата (метод: {method_value})"
+    ))
+
+    # Apply payment to invoices based on scope
+    # scope='month' - только текущий месяц, 'all' - все счета, None - только пополнение аванса
     try:
-        auto_apply_advance(db, data.resident_id)
+        affected_count = apply_payment_to_invoices(
+            db, 
+            payment.id, 
+            data.resident_id, 
+            scope=data.scope
+        )
         db.commit()
+        
+        if data.scope is None:
+            message = "Платёж успешно создан (пополнение аванса)"
+        elif affected_count > 0:
+            message = f"Платёж успешно создан и применён к {affected_count} счёт(ам)"
+        else:
+            message = "Платёж успешно создан (не применён к счетам - нет подходящих счетов)"
     except Exception as e:
-        print(f"Warning: auto_apply_advance failed: {e}")
-        # Payment still created, just not auto-applied
+        print(f"Warning: apply_payment_to_invoices failed: {e}")
+        # Payment still created, just not applied
+        message = "Платёж успешно создан, но не применён к счетам"
 
     return ResidentPaymentResponse(
         ok=True,
         payment_id=payment.id,
-        message="Платёж успешно создан и применён к открытым счетам"
+        message=message
     )
 
 
@@ -925,26 +1136,27 @@ def get_resident_dashboard(
     month_due: dict[int, Decimal] = {}
     month_total: dict[int, Decimal] = {}
     month_paid: dict[int, Decimal] = {}
-    debt_total: dict[int, Decimal] = {}
+    total_debt_per_res: dict[int, Decimal] = {}
     due_info: dict[int, dict] = {}
 
     resident_ids = [r.id for r in residents]
 
     # Global advance calculation for the user
-    # Sum of all payments for all residents of this user
-    total_payments = (
-        db.query(func.coalesce(func.sum(Payment.amount_total), 0))
-        .filter(Payment.resident_id.in_(resident_ids))
-        .scalar() or 0
-    )
-    # Sum of all applications to any invoices
-    total_applied = (
-        db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
-        .join(Payment, Payment.id == PaymentApplication.payment_id)
-        .filter(Payment.resident_id.in_(resident_ids))
-        .scalar() or 0
-    )
-    shared_advance = Decimal(total_payments) - Decimal(total_applied)
+    # Calculate leftover for each payment belonging to the user's residents
+    total_advance_calc = Decimal("0")
+    if resident_ids:
+        # Get all payments
+        all_user_payments = db.query(Payment).filter(Payment.resident_id.in_(resident_ids)).all()
+        for p in all_user_payments:
+            # Sum of applications for THIS payment
+            applied_p = db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))\
+                          .filter(PaymentApplication.payment_id == p.id).scalar() or 0
+            left = Decimal(p.amount_total or 0) - Decimal(applied_p)
+            # Суммируем все остатки (включая отрицательные корректировки), 
+            # чтобы получить точный баланс аванса
+            total_advance_calc += left
+    
+    shared_advance = total_advance_calc
     if shared_advance < 0: shared_advance = Decimal("0")
 
     for r in residents:
@@ -1007,11 +1219,11 @@ def get_resident_dashboard(
             .scalar() or 0
         )
         debt = Decimal(inv_total) - Decimal(paid_total)
-        debt_total[r.id] = debt if debt > 0 else Decimal("0")
+        total_debt_per_res[r.id] = debt if debt > 0 else Decimal("0")
 
     # Summary across all residents
     total_month_due = sum(month_due.values(), Decimal("0"))
-    total_debt = sum(debt_total.values(), Decimal("0"))
+    total_debt = sum(total_debt_per_res.values(), Decimal("0"))
     
     # Pay now = total debt - shared advance (minimum 0)
     # This reflects the potential to pay EVERYTHING from the shared pool
@@ -1116,20 +1328,26 @@ def get_resident_dashboard(
         block_name = r.block.name if r.block else ""
         code = f"{block_name} / {r.unit_number}" if block_name else r.unit_number
         
-        res_debt = debt_total.get(r.id, Decimal("0"))
+        # Общий долг по этому дому (все счета)
+        total_res_debt = total_debt_per_res.get(r.id, Decimal("0"))
+        
+        # Долг за предыдущие периоды (все минус текущий месяц)
+        # Если в карточке мы отдельно показываем "К оплате за месяц", то "Долг" должен быть остатком
+        res_month_due = month_due.get(r.id, Decimal("0"))
+        res_overdue_debt = max(total_res_debt - res_month_due, Decimal("0"))
         
         # К ОПЛАТЕ СЕЙЧАС для конкретного дома:
-        # Теперь это просто долг этого дома, БЕЗ учета общего аванса, 
-        # так как списание не происходит автоматически.
-        res_pay_now = res_debt
+        # Теперь это просто долг этого дома (включая текущий месяц), 
+        # БЕЗ учета общего аванса, так как списание не происходит автоматически.
+        res_pay_now = total_res_debt
         
         residents_data.append(ResidentDashboardData(
             id=r.id,
             code=code,
-            month_due=float(month_due.get(r.id, Decimal("0"))),
+            month_due=float(res_month_due),
             month_total=float(month_total.get(r.id, Decimal("0"))),
             month_paid=float(month_paid.get(r.id, Decimal("0"))),
-            debt_total=float(res_debt),
+            debt_total=float(res_overdue_debt), # Теперь показываем только просроченный долг
             advance_total=float(shared_advance), # Показываем ОБЩИЙ аванс на всех карточках
             pay_now=float(res_pay_now),
             due_date=due_info.get(r.id, {}).get("due_date"),

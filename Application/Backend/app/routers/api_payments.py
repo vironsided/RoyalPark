@@ -11,7 +11,7 @@ from ..database import get_db
 from ..models import (
     User, RoleEnum, Block, Resident,
     Payment, PaymentApplication, PaymentMethod,
-    Invoice, InvoiceStatus
+    Invoice, InvoiceStatus, PaymentLog
 )
 from ..deps import get_current_user
 from .payments import auto_apply_advance, _recompute_invoice_status, _to_int
@@ -92,6 +92,10 @@ def _list_payments_internal(
         query = query.filter(Payment.received_at >= date_from)
     if date_to:
         query = query.filter(Payment.received_at <= date_to)
+    
+    # Исключаем технические списания аванса из основного списка платежей
+    query = query.filter(Payment.reference != "ADVANCE_POOL_DEDUCTION")
+
     if q:
         like = f"%{q.strip()}%"
         query = query.filter(or_(Payment.reference.ilike(like), Payment.comment.ilike(like)))
@@ -269,8 +273,19 @@ def create_payment_api(
     db.commit()
     db.refresh(p)
     
-    # Автоматически применить аванс к открытым счетам
-    auto_apply_advance(db, payment.resident_id)
+    # ЛОГИРОВАНИЕ
+    db.add(PaymentLog(
+        payment_id=p.id,
+        resident_id=p.resident_id,
+        user_id=user.id,
+        action="CREATE",
+        amount=float(p.amount_total),
+        details=f"Ручное создание платежа администратором (метод: {p.method.value})"
+    ))
+
+    # НЕ ПРИМЕНЯЕМ АВТОМАТИЧЕСКИ (по просьбе пользователя для прозрачности)
+    # auto_apply_advance(db, payment.resident_id)
+    
     db.commit()
     db.refresh(p)
     
@@ -303,8 +318,19 @@ def create_payment_public(
     db.commit()
     db.refresh(p)
     
-    # Автоматически применить аванс к открытым счетам
-    auto_apply_advance(db, payment.resident_id)
+    # ЛОГИРОВАНИЕ
+    db.add(PaymentLog(
+        payment_id=p.id,
+        resident_id=p.resident_id,
+        user_id=None,
+        action="CREATE",
+        amount=float(p.amount_total),
+        details=f"Публичное создание платежа (метод: {p.method.value})"
+    ))
+
+    # НЕ ПРИМЕНЯЕМ АВТОМАТИЧЕСКИ
+    # auto_apply_advance(db, payment.resident_id)
+    
     db.commit()
     db.refresh(p)
     
@@ -354,7 +380,6 @@ def get_open_invoices_for_payment(
         return Decimal(inv.amount_total or 0) - paid
     
     result = []
-    print(f"DEBUG: Found {len(open_invoices)} open invoices for payment {payment_id}, resident_id={p.resident_id}")
     for inv in open_invoices:
         left = invoice_left(inv)
         paid = (
@@ -362,7 +387,6 @@ def get_open_invoices_for_payment(
             .filter(PaymentApplication.invoice_id == inv.id)
             .scalar() or Decimal("0")
         )
-        print(f"DEBUG: Invoice {inv.id} ({inv.number or 'no number'}): total={inv.amount_total}, paid={paid}, left={left}, status={inv.status.value}")
         # Исключаем счета с остатком <= 0 (полностью оплаченные или переплаченные)
         if left > Decimal("0"):
             result.append({
@@ -373,11 +397,7 @@ def get_open_invoices_for_payment(
                 "paid_amount": float(Decimal(inv.amount_total or 0) - left),
                 "left_to_pay": float(left),
             })
-            print(f"DEBUG: Added invoice {inv.id} to result (left={left})")
-        else:
-            print(f"DEBUG: Skipped invoice {inv.id} (left={left} <= 0) - invoice is fully paid or overpaid")
     
-    print(f"DEBUG: Returning {len(result)} invoices with left > 0 out of {len(open_invoices)} total")
     return {"invoices": result}
 
 
@@ -423,7 +443,6 @@ def get_open_invoices_for_payment_public(
         return Decimal(inv.amount_total or 0) - paid
     
     result = []
-    print(f"DEBUG PUBLIC: Found {len(open_invoices)} open invoices for payment {payment_id}, resident_id={p.resident_id}")
     for inv in open_invoices:
         left = invoice_left(inv)
         paid = (
@@ -431,7 +450,6 @@ def get_open_invoices_for_payment_public(
             .filter(PaymentApplication.invoice_id == inv.id)
             .scalar() or Decimal("0")
         )
-        print(f"DEBUG PUBLIC: Invoice {inv.id} ({inv.number or 'no number'}): total={inv.amount_total}, paid={paid}, left={left}, status={inv.status.value}")
         # Исключаем счета с остатком <= 0 (полностью оплаченные или переплаченные)
         if left > Decimal("0"):
             result.append({
@@ -442,11 +460,7 @@ def get_open_invoices_for_payment_public(
                 "paid_amount": float(Decimal(inv.amount_total or 0) - left),
                 "left_to_pay": float(left),
             })
-            print(f"DEBUG PUBLIC: Added invoice {inv.id} to result (left={left})")
-        else:
-            print(f"DEBUG PUBLIC: Skipped invoice {inv.id} (left={left} <= 0) - invoice is fully paid or overpaid")
     
-    print(f"DEBUG PUBLIC: Returning {len(result)} invoices with left > 0 out of {len(open_invoices)} total")
     return {"invoices": result}
 
 
@@ -653,6 +667,20 @@ def save_payment_applications(
     
     db.flush()
     
+    # ЛОГИРОВАНИЕ
+    try:
+        log_user_id = user.id if 'user' in locals() else None
+        db.add(PaymentLog(
+            payment_id=p.id,
+            resident_id=p.resident_id,
+            user_id=log_user_id,
+            action="APPLY",
+            amount=float(total_target),
+            details=f"Распределение платежа по {len(target_apps)} счетам"
+        ))
+    except Exception:
+        pass
+
     # Пересчитать статусы вовлечённых счетов
     inv_ids = list(target_apps.keys())
     invs = db.query(Invoice).filter(Invoice.id.in_(inv_ids)).all()
@@ -740,6 +768,20 @@ def save_payment_applications_public(
     
     db.flush()
     
+    # ЛОГИРОВАНИЕ
+    try:
+        log_user_id = user.id if 'user' in locals() else None
+        db.add(PaymentLog(
+            payment_id=p.id,
+            resident_id=p.resident_id,
+            user_id=log_user_id,
+            action="APPLY",
+            amount=float(total_target),
+            details=f"Распределение платежа по {len(target_apps)} счетам"
+        ))
+    except Exception:
+        pass
+
     # Пересчитать статусы вовлечённых счетов
     inv_ids = list(target_apps.keys())
     invs = db.query(Invoice).filter(Invoice.id.in_(inv_ids)).all()

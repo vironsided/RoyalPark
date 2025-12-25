@@ -351,12 +351,15 @@ window.loadDashboardData = async function loadDashboardData() {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/resident/dashboard`, {
+        // Добавляем timestamp для предотвращения кэширования
+        const timestamp = new Date().getTime();
+        const response = await fetch(`${API_BASE_URL}/api/resident/dashboard?t=${timestamp}`, {
             method: 'GET',
             credentials: 'include', // Include cookies for session auth
             headers: {
                 'Content-Type': 'application/json',
-            }
+            },
+            cache: 'no-cache' // Предотвращаем кэширование
         });
 
         if (!response.ok) {
@@ -568,6 +571,21 @@ function updateDashboardUI(data) {
                 }
                 if (payNowEl) {
                     payNowEl.textContent = formatCurrency(resident.pay_now);
+                }
+                
+                // Disable pay-from-advance button if no advance or no debt
+                const payFromAdvanceBtn = card.querySelector('[data-action="pay-from-advance"]');
+                if (payFromAdvanceBtn) {
+                    const hasAdvance = resident.advance_total > 0;
+                    const hasDebt = resident.pay_now > 0;
+                    payFromAdvanceBtn.disabled = !hasAdvance || !hasDebt;
+                    if (payFromAdvanceBtn.disabled) {
+                        payFromAdvanceBtn.style.opacity = '0.5';
+                        payFromAdvanceBtn.style.cursor = 'not-allowed';
+                    } else {
+                        payFromAdvanceBtn.style.opacity = '1';
+                        payFromAdvanceBtn.style.cursor = 'pointer';
+                    }
                 }
             }
             
@@ -828,7 +846,12 @@ function setupActionButtons() {
         if (payAllBtn && window.dashboardData) {
             e.preventDefault();
             const amount = summary.total_debt || 0;
-            startPaymentFlow('all', amount, summary);
+            // Для "Оплатить всё" используем ID первого резидента как технический, 
+            // так как backend требует resident_id для создания платежа.
+            // При scope="all" backend сам найдет все остальные дома этого владельца.
+            const firstResident = residents[0];
+            const residentId = firstResident ? firstResident.id : null;
+            startPaymentFlow('all', amount, summary, residentId, 'Все объекты');
             return;
         }
     });
@@ -836,10 +859,15 @@ function setupActionButtons() {
 
 // Запуск цепочки оплаты: сохраняем параметры и переходим на страницу оплаты
 function startPaymentFlow(scope, amount, summaryFromDashboard, residentId = null, residentCode = null) {
-    // Если residentCode не передан, пытаемся получить из DOM
-    if (!residentCode) {
+    // Если residentCode не передан и это НЕ 'all', пытаемся получить из DOM
+    if (!residentCode && scope !== 'all') {
         const residentCodeEl = document.querySelector('.resident-code-val');
         residentCode = residentCodeEl ? residentCodeEl.textContent.trim() : '';
+    }
+    
+    // Для 'all' устанавливаем понятный заголовок, если он не передан
+    if (scope === 'all' && (!residentCode || residentCode === '')) {
+        residentCode = 'Все объекты';
     }
 
     // Человеко-понятный текст типа платежа
@@ -855,6 +883,8 @@ function startPaymentFlow(scope, amount, summaryFromDashboard, residentId = null
         sessionStorage.setItem('paymentScope', scope);
         sessionStorage.setItem('paymentAmount', String(amount || 0));
         sessionStorage.setItem('paymentScopeLabel', scopeLabel);
+        // Устанавливаем временную метку для валидации данных на странице оплаты
+        sessionStorage.setItem('paymentTimestamp', String(Date.now()));
         if (summaryFromDashboard && typeof summaryFromDashboard === 'object') {
             sessionStorage.setItem('paymentSummary', JSON.stringify(summaryFromDashboard));
         }

@@ -121,17 +121,11 @@ def list_readings(
     )
     period_readings = readings_q.all()
     
-    # Логирование для отладки
-    print(f"[DEBUG] Period: {from_dt} to {to_dt}")
-    print(f"[DEBUG] Found {len(period_readings)} readings")
-
     # Агрегат по счётчикам
     rows: dict[int, dict] = {}
-    print(f"[DEBUG] Processing {len(period_readings)} readings")
     for rd in period_readings:
         meter = rd.resident_meter
         res_id = meter.resident_id
-        print(f"[DEBUG] Reading: resident_id={res_id}, meter_id={meter.id}, meter_type={meter.meter_type}, is_active={meter.is_active}, date={rd.reading_date}")
 
         # Единицы: ELECTRIC -> кВт·ч; GAS/WATER/SEWERAGE -> м³; SERVICE/RENT/CONSTRUCTION -> мес.
         if meter.meter_type == MeterType.ELECTRIC:
@@ -273,9 +267,7 @@ def get_resident_meters(
             d = datetime.strptime(date, "%Y-%m-%d")
             period_start = datetime(d.year, d.month, 1)
             period_end = datetime(d.year + (1 if d.month == 12 else 0), (1 if d.month == 12 else d.month + 1), 1)
-            print(f"DEBUG: get_resident_meters - date={date}, period_start={period_start}, period_end={period_end}")
         except Exception as e:
-            print(f"DEBUG: get_resident_meters - failed to parse date '{date}': {e}")
             period_start = period_end = None
 
     meters_list = db.query(ResidentMeter).filter(
@@ -289,13 +281,6 @@ def get_resident_meters(
     for m in meters_list:
         # prev_value: ПОСЛЕДНЯЯ запись ДО начала месяца (или initial)
         if period_start:
-            # Проверим все показания для этого счетчика для отладки
-            all_readings = db.query(MeterReading).filter(MeterReading.resident_meter_id == m.id).order_by(MeterReading.reading_date.desc()).all()
-            print(f"DEBUG: Meter ID={m.id}, type={m.meter_type.value}, resident_id={m.resident_id}, all readings count={len(all_readings)}")
-            for rd in all_readings[:5]:  # Показываем первые 5 для отладки
-                is_before = rd.reading_date < period_start
-                print(f"DEBUG:   - Reading ID={rd.id}, date={rd.reading_date}, value={rd.value}, is_before_period={is_before} (period_start={period_start})")
-            
             prev_rd = (
                 db.query(MeterReading)
                 .filter(MeterReading.resident_meter_id == m.id, MeterReading.reading_date < period_start)
@@ -304,10 +289,8 @@ def get_resident_meters(
             )
             if prev_rd:
                 prev_value = Decimal(prev_rd.value)
-                print(f"DEBUG: Meter ID={m.id}, type={m.meter_type.value}, ✓ found prev_rd: date={prev_rd.reading_date}, value={prev_rd.value}, prev_value={prev_value}")
             else:
                 prev_value = Decimal(m.initial_reading or 0)
-                print(f"DEBUG: Meter ID={m.id}, type={m.meter_type.value}, ✗ no prev_rd (period_start={period_start}), using initial_reading={m.initial_reading}, prev_value={prev_value}")
         else:
             # без даты — просто последнее показание
             last_any = (
@@ -318,10 +301,8 @@ def get_resident_meters(
             )
             if last_any:
                 prev_value = Decimal(last_any.value)
-                print(f"DEBUG: Meter ID={m.id}, type={m.meter_type.value}, found last_any: date={last_any.reading_date}, value={last_any.value}, prev_value={prev_value}")
             else:
                 prev_value = Decimal(m.initial_reading or 0)
-                print(f"DEBUG: Meter ID={m.id}, type={m.meter_type.value}, no last_any, using initial_reading={m.initial_reading}, prev_value={prev_value}")
 
         existing = None
         if period_start and period_end:
@@ -377,8 +358,6 @@ def get_resident_meters(
         
         prev_value_float = float(prev_value)
         existing_value_float = float(existing.value) if existing else None
-        
-        print(f"DEBUG: Final meter data: ID={m.id}, type={display_type}, tariff={m.tariff.name}, prev_value={prev_value_float}, existing_value={existing_value_float}, unit={unit}, initial_reading={m.initial_reading}")
         
         meters.append({
             "meter_id": m.id,
@@ -471,8 +450,6 @@ def create_readings_internal(
     period_start = datetime(period_year, period_month, 1)
     period_end = datetime(period_year + (1 if period_month == 12 else 0), (1 if period_month == 12 else period_month + 1), 1)
     
-    print(f"DEBUG POST: create_readings_internal - date_str={data.date_str}, reading_date={reading_date}, period_start={period_start}, period_end={period_end}, resident_id={data.resident_id}")
-
     upserted: list[MeterReading] = []
 
     for it in data.items:
@@ -523,13 +500,6 @@ def create_readings_internal(
             prev_val = Decimal(prev_rd.value) if prev_rd else Decimal("0")
             consumption = Decimal("1")
         else:
-            # Проверим все показания для этого счетчика для отладки
-            all_readings_post = db.query(MeterReading).filter(MeterReading.resident_meter_id == m.id).order_by(MeterReading.reading_date.desc()).all()
-            print(f"DEBUG POST: Meter ID={m.id}, type={m.meter_type.value}, period_start={period_start}, all readings count={len(all_readings_post)}")
-            for rd in all_readings_post[:5]:  # Показываем первые 5 для отладки
-                is_before = rd.reading_date < period_start
-                print(f"DEBUG POST:   - Reading ID={rd.id}, date={rd.reading_date}, value={rd.value}, is_before_period={is_before}")
-            
             prev_rd = (
                 db.query(MeterReading)
                 .filter(MeterReading.resident_meter_id == m.id, MeterReading.reading_date < period_start)
@@ -538,12 +508,9 @@ def create_readings_internal(
             )
             if prev_rd:
                 prev_val = Decimal(prev_rd.value)
-                print(f"DEBUG POST: Meter ID={m.id}, ✓ found prev_rd: date={prev_rd.reading_date}, value={prev_rd.value}, prev_val={prev_val}")
             else:
                 prev_val = Decimal(m.initial_reading or 0)
-                print(f"DEBUG POST: Meter ID={m.id}, ✗ no prev_rd, using initial_reading={m.initial_reading}, prev_val={prev_val}")
 
-            print(f"DEBUG POST: Meter ID={m.id}, new_value={new_value}, prev_val={prev_val}, comparison: {new_value < prev_val}")
             if new_value < prev_val:
                 db.rollback()
                 raise HTTPException(status_code=400, detail=f"New value {new_value} is less than previous {prev_val}")
@@ -737,7 +704,6 @@ def create_readings_internal(
                 invoice.amount_net = Decimal(str(totals.net or 0))
                 invoice.amount_vat = Decimal(str(totals.vat or 0))
                 invoice.amount_total = Decimal(str(totals.total or 0))
-                print(f"DEBUG: Recalculated invoice {invoice.id} totals: net={invoice.amount_net}, vat={invoice.amount_vat}, total={invoice.amount_total}")
 
     db.commit()
 

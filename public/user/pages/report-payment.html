@@ -372,6 +372,7 @@ var currentCardData = {
 
 // Currently selected saved card (from the list on the left)
 var selectedSavedCard = null;
+window.selectedSavedCard = null;
 
 // Card styles for different banks (один экземпляр на всё приложение)
 if (!window.bankStyles) {
@@ -814,16 +815,20 @@ async function loadPaymentInvoices(scope, residentCode, preferredAmount = null, 
 
         // Фильтруем счета по резидент-коду и/или residentId, если они указаны
         let filteredInvoices = invoices;
-        if (residentId) {
-            // Приоритет: фильтрация по residentId (более точная)
-            filteredInvoices = invoices.filter(inv => inv.resident_id === residentId);
-        } else if (residentCode) {
-            // Fallback: фильтрация по резидент-коду
-            filteredInvoices = invoices.filter(inv => {
-                const invResidentCode = inv.resident_code || '';
-                // Сравниваем резидент-коды (нормализуем пробелы)
-                return invResidentCode.replace(/\s+/g, ' ').trim() === residentCode.replace(/\s+/g, ' ').trim();
-            });
+        
+        // Для scope 'all' мы хотим видеть ВСЕ счета пользователя, поэтому пропускаем фильтрацию по резиденту
+        if (scope !== 'all') {
+            if (residentId) {
+                // Приоритет: фильтрация по residentId (более точная)
+                filteredInvoices = invoices.filter(inv => inv.resident_id === residentId);
+            } else if (residentCode && residentCode !== 'Все объекты') {
+                // Fallback: фильтрация по резидент-коду
+                filteredInvoices = invoices.filter(inv => {
+                    const invResidentCode = inv.resident_code || '';
+                    // Сравниваем резидент-коды (нормализуем пробелы)
+                    return invResidentCode.replace(/\s+/g, ' ').trim() === residentCode.replace(/\s+/g, ' ').trim();
+                });
+            }
         }
 
         // Затем фильтруем по периоду, если scope === 'month'
@@ -1133,9 +1138,9 @@ async function initPaymentPage() {
                 const summary = data?.summary || {};
 
                 if (residents.length) {
-                    // prefer match by resident_code, else first resident
-                    const matched = residents.find(r => r?.resident_code === codeFromSession) || residents[0];
-                    displayName = matched?.full_name || matched?.resident_name || matched?.resident_code || displayName;
+                    // prefer match by code or resident_code, else first resident
+                    const matched = residents.find(r => (r?.code === codeFromSession || r?.resident_code === codeFromSession)) || residents[0];
+                    displayName = matched?.full_name || matched?.resident_name || matched?.code || matched?.resident_code || displayName;
 
                     // try multiple possible advance keys (приоритет: advance_total из API)
                     advanceValue = matched?.advance_total ?? matched?.advance ?? matched?.advance_balance ?? matched?.balance?.advance ?? matched?.balance?.advance_balance ?? null;
@@ -1171,6 +1176,9 @@ async function initPaymentPage() {
         const advanceCard = document.querySelector('.resident-pass-card[data-card-type="ADVANCE"]');
         if (advanceCard) {
             const adv = typeof advanceValue === 'number' ? advanceValue : 0;
+            // Сохраняем баланс аванса в атрибуте для проверки при оплате
+            advanceCard.dataset.advanceBalance = adv;
+            
             if (adv <= 0) {
                 // Отключаем карту: добавляем класс disabled и делаем недоступной для выбора
                 advanceCard.classList.add('disabled');
@@ -1568,20 +1576,45 @@ async function submitPayment(event) {
         return false;
     }
 
-    // Тип метода оплаты: карта или аванс (если выбрана карта Royal Park)
-    let paymentMethod = 'CARD';
-    if (window.selectedSavedCard && window.selectedSavedCard.type === 'ADVANCE') {
-        // Дополнительная проверка: если карта отключена, не позволяем оплату через аванс
-        const advanceCard = document.querySelector('.resident-pass-card[data-card-type="ADVANCE"]');
-        if (advanceCard && (advanceCard.classList.contains('disabled') || advanceCard.getAttribute('aria-disabled') === 'true')) {
-            showPaymentError('Аванс недоступен. Баланс аванса равен 0,00 ₼. Выберите другой способ оплаты.');
-            if (payButton) {
-                payButton.disabled = false;
-                payButton.textContent = originalText;
+    // Формируем более точные комментарии и референсы для истории
+    let paymentComment = '';
+    let paymentReference = '';
+    let paymentMethod = 'CARD'; // Default method
+
+    if (isUsingNewCardForm) {
+        paymentComment = `Оплата новой картой ****${cardNumber.slice(-4)}`;
+        paymentReference = `CARD: ${cardNumber.slice(-4)}`;
+        paymentMethod = 'CARD';
+    } else {
+        const activeCard = window.selectedSavedCard || selectedSavedCard;
+        if (activeCard) {
+            if (activeCard.type === 'ADVANCE') {
+                // Проверяем достаточность средств на авансовом счету
+                // ПРИОРИТЕТ: берем актуальное значение из DOM, так как оно могло обновиться асинхронно
+                const advanceCardEl = document.querySelector('.resident-pass-card[data-card-type="ADVANCE"]');
+                const balance = advanceCardEl ? parseFloat(advanceCardEl.dataset.advanceBalance || 0) : (activeCard.advanceBalance || 0);
+                
+                if (amount > balance) {
+                    const diff = amount - balance;
+                    showPaymentError(`Недостаточно средств на авансе. Доступно: ${balance.toFixed(2)} ₼. Не хватает: ${diff.toFixed(2)} ₼`);
+                    return false;
+                }
+                
+                paymentComment = `Списание из аванса Royal Park Pass`;
+                paymentReference = `ADVANCE: PASS`;
+                paymentMethod = 'ADVANCE';
+            } else {
+                const brandName = activeCard.brand || 'Card';
+                const cardSuffix = activeCard.last4 ? `****${activeCard.last4}` : '';
+                paymentComment = `Оплата картой ${brandName} ${cardSuffix}`;
+                paymentReference = `CARD: ${activeCard.last4 || 'SAVED'}`;
+                paymentMethod = 'CARD';
             }
-            return false;
+        } else {
+            // Fallback
+            paymentComment = 'Онлайн-оплата';
+            paymentReference = 'ONLINE';
         }
-        paymentMethod = 'ADVANCE';
     }
 
     // Show loading state
@@ -1639,10 +1672,8 @@ async function submitPayment(event) {
                 resident_id: residentId,
                 amount: amount,
                 method: paymentMethod,
-                reference: isUsingNewCardForm ? `Card ***${cardNumber.slice(-4)}` : (window.selectedSavedCard?.brand || 'Saved card'),
-                comment: isUsingNewCardForm
-                    ? `Онлайн-оплата картой ${cardName}`
-                    : `Онлайн-оплата сохранённой картой / авансом`,
+                reference: paymentReference,
+                comment: paymentComment,
                 scope: paymentScope  // 'month' или 'all' - для применения к счетам, null - только пополнение аванса
             })
         });
@@ -1656,7 +1687,7 @@ async function submitPayment(event) {
         
         if (result.ok) {
             // Success!
-            showPaymentSuccess('Платёж успешно проведён!');
+            showPaymentSuccess(result.message || 'Платёж успешно проведён!');
             
             // Сохраняем residentCode перед очисткой sessionStorage
             const residentCode = sessionStorage.getItem('paymentResidentCode');
@@ -1879,6 +1910,7 @@ function setupSavedCardSelection() {
         const last4 = cardElement.dataset.cardLast4 || '';
         const holder = cardElement.dataset.cardHolder || '';
         const type = cardElement.dataset.cardType || 'CARD';
+        const advanceBalance = cardElement.dataset.advanceBalance ? parseFloat(cardElement.dataset.advanceBalance) : null;
         const brandEl = cardElement.querySelector('.brand-name, .visa-badge');
         const brand = brandEl ? brandEl.textContent.trim() : 'Card';
 
@@ -1887,8 +1919,11 @@ function setupSavedCardSelection() {
             last4,
             holder,
             type,
+            advanceBalance,
             brand
         };
+        // Update local variable for submitPayment
+        window.selectedSavedCard = selectedSavedCard;
     }
 
     savedCards.forEach(card => {
@@ -2036,18 +2071,20 @@ function setupPaymentDataCleanup() {
 
 // Инициализируем страницу как при обычной загрузке, так и при загрузке через SPA
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        initPaymentPage();
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initPaymentPage();
         bindPayButton();
         setupSavedCardSelection();
         setupPaymentLayout();
         setupPaymentDataCleanup();
     });
 } else {
-    initPaymentPage();
-    bindPayButton();
-    setupSavedCardSelection();
-    setupPaymentLayout();
-    setupPaymentDataCleanup();
+    (async () => {
+        await initPaymentPage();
+        bindPayButton();
+        setupSavedCardSelection();
+        setupPaymentLayout();
+        setupPaymentDataCleanup();
+    })();
 }
 </script>

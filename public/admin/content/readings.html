@@ -9,11 +9,6 @@
                 <label>Блок</label>
                 <select id="filterBlock">
                     <option value="all">Все</option>
-                    <option value="A">A</option>
-                    <option value="B">B</option>
-                    <option value="K">K</option>
-                    <option value="X">X</option>
-                    <option value="Z">Z</option>
                 </select>
             </div>
 
@@ -160,11 +155,6 @@
                     <label>Блок</label>
                     <select id="modalBlock" required onchange="window.loadResidents()">
                         <option value="">— выберите —</option>
-                        <option value="A">A</option>
-                        <option value="B">B</option>
-                        <option value="K">K</option>
-                        <option value="X">X</option>
-                        <option value="Z">Z</option>
                     </select>
                 </div>
 
@@ -276,6 +266,21 @@
 
     if (select.querySelector(`option[value="${currentYear}"]`)) {
         select.value = currentYear;
+    }
+
+    // Load all blocks for filter initially
+    window.loadAllBlocks = async function loadAllBlocks() {
+        try {
+            const response = await fetch(`${API_BASE}/api/blocks`, { credentials: 'include' });
+            if (response.ok) {
+                const data = await response.json();
+                blocks = Array.isArray(data) ? data : (data.blocks || []);
+                console.log('Global blocks loaded:', blocks);
+                window.updateFilterDropdowns();
+            }
+        } catch (error) {
+            console.error('Error loading blocks for filter:', error);
+        }
     }
 
     // Load readings from API
@@ -1798,8 +1803,11 @@
     // Listen for SPA content loaded
     function initReadingsPage() {
         console.log('=== Initializing readings page ===');
-        setTimeout(() => {
+        setTimeout(async () => {
             initCustomReadingPaginationDropdown();
+            // Сначала загружаем все блоки, чтобы фильтр был полным
+            await window.loadAllBlocks();
+            
             if (typeof window.loadReadings === 'function') {
                 console.log('Calling loadReadings');
                 window.loadReadings();

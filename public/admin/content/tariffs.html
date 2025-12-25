@@ -269,7 +269,7 @@
             'GAS': 'м³',
             'WATER': 'м³',
             'SEWERAGE': 'м³',
-            'SERVICE': 'ед.',
+            'SERVICE': 'мес.',
             'RENT': 'мес.',
             'CONSTRUCTION': 'мес.'
         };
@@ -313,7 +313,7 @@
                         </span>
                     </td>
                     <td>${tariff.vat}%</td>
-                    <td>${formatSteps(tariff.steps)}</td>
+                    <td>${formatSteps(tariff.steps, tariff.purposeKey)}</td>
                     <td>
                         <div class="table-actions">
                             <button class="btn btn-sm btn-outline-info" onclick="editTariff(${tariff.id})">Редактировать</button>
@@ -334,10 +334,15 @@
         }
     }
 
-    function formatSteps(steps = []) {
+    function formatSteps(steps = [], purposeKey = '') {
         return steps.map(step => {
             const price = step.price?.toFixed ? step.price.toFixed(4) : Number(step.price ?? 0).toFixed(4);
             const unit = step.unit || '';
+
+            // Для аренды и услуг - просто цена и единица
+            if (purposeKey === 'rent' || purposeKey === 'service') {
+                return `<span class="badge bg-secondary me-1">${price} / ${unit}</span>`;
+            }
 
             // Для строительства - даты
             if (step.from_date && step.to_date) {
@@ -402,21 +407,35 @@
             if (!resp.ok) throw new Error('Failed to load tariffs');
             const tariffs = await resp.json();
 
-            tariffsData = tariffs.map(t => ({
-                id: t.id,
-                name: t.name,
-                purpose: meterTypeMap[t.meter_type]?.label || t.meter_type,
-                purposeKey: meterTypeMap[t.meter_type]?.key || t.meter_type.toLowerCase(),
-                clientType: customerTypeMap[t.customer_type]?.key || t.customer_type.toLowerCase(),
-                clientTypeLabel: customerTypeMap[t.customer_type]?.label || t.customer_type,
-                vat: t.vat_percent,
-                steps: t.steps.map(s => ({
-                    from: s.from_value || 0,
-                    to: s.to_value,
-                    price: s.price,
-                    unit: getUnitForMeterType(t.meter_type)
-                }))
-            }));
+            tariffsData = tariffs.map(t => {
+                const isConstruction = t.meter_type === 'CONSTRUCTION';
+                return {
+                    id: t.id,
+                    name: t.name,
+                    purpose: meterTypeMap[t.meter_type]?.label || t.meter_type,
+                    purposeKey: meterTypeMap[t.meter_type]?.key || t.meter_type.toLowerCase(),
+                    clientType: customerTypeMap[t.customer_type]?.key || t.customer_type.toLowerCase(),
+                    clientTypeLabel: customerTypeMap[t.customer_type]?.label || t.customer_type,
+                    vat: t.vat_percent,
+                    steps: (t.steps || []).map(s => {
+                        if (isConstruction) {
+                            return {
+                                from_date: s.from_date,
+                                to_date: s.to_date,
+                                price: s.price,
+                                unit: getUnitForMeterType(t.meter_type)
+                            };
+                        } else {
+                            return {
+                                from: s.from_value || 0,
+                                to: s.to_value,
+                                price: s.price,
+                                unit: getUnitForMeterType(t.meter_type)
+                            };
+                        }
+                    })
+                };
+            });
 
             renderTariffsTable(tariffsData);
             if (typeof showSuccess === 'function') {
@@ -513,7 +532,7 @@
             'gas': 'м³',
             'water': 'м³',
             'sewerage': 'м³',
-            'service': 'ед.',
+            'service': 'мес.',
             'rent': 'мес.',
             'construction': 'мес.'
         };
@@ -563,9 +582,16 @@
         return purpose && purpose.value === 'construction';
     }
 
+    // Функция для проверки, является ли тип тарифа арендой или услугами
+    function isRentOrServiceType() {
+        const purpose = document.getElementById('tariffPurpose');
+        return purpose && (purpose.value === 'rent' || purpose.value === 'service');
+    }
+
     // Функция для обновления типа полей в ступенях (числа или даты)
     window.updateStepFieldsType = function () {
         const isConstruction = isConstructionType();
+        const isRentOrService = isRentOrServiceType();
         const stepRows = document.querySelectorAll('#tariffStepsContainer .step-row');
 
         stepRows.forEach(row => {
@@ -575,56 +601,60 @@
 
             if (!fromGroup || !toGroup) return;
 
-            if (isConstruction) {
-                // Для строительства - даты
-                const fromInput = fromGroup.querySelector('input');
-                const toInput = toGroup.querySelector('input');
-
-                // Сохраняем текущие значения перед изменением типа
-                const fromValue = fromInput.value || '';
-                const toValue = toInput.value || '';
-
-                fromGroup.querySelector('label').textContent = 'Дата от';
-                fromInput.type = 'date';
-                fromInput.value = fromValue; // Восстанавливаем значение
-                fromInput.placeholder = '';
-
-                toGroup.querySelector('label').textContent = 'Дата до';
-                toInput.type = 'date';
-                toInput.value = toValue; // Восстанавливаем значение
-                toInput.placeholder = '';
-
-                // Скрываем единицу измерения для строительства
-                if (unitGroup) {
-                    unitGroup.style.display = 'none';
-                }
+            if (isRentOrService) {
+                // Для аренды и услуг - убираем От и До, оставляем только Ед. изм. и Цену
+                fromGroup.style.display = 'none';
+                toGroup.style.display = 'none';
+                if (unitGroup) unitGroup.style.display = '';
+                row.classList.add('rent-row');
             } else {
-                // Для остальных - числа
-                const fromInput = fromGroup.querySelector('input');
-                const toInput = toGroup.querySelector('input');
+                fromGroup.style.display = '';
+                toGroup.style.display = '';
+                row.classList.remove('rent-row');
 
-                // Сохраняем текущие значения перед изменением типа
-                const fromValue = fromInput.value || '0';
-                // Важно: сохраняем точное значение, включая пустую строку
-                // Не устанавливаем "∞" по умолчанию - поле должно оставаться пустым
-                const toValue = toInput.value || '';
+                if (isConstruction) {
+                    // Для строительства - даты
+                    const fromInput = fromGroup.querySelector('input');
+                    const toInput = toGroup.querySelector('input');
 
-                fromGroup.querySelector('label').textContent = 'ОТ (вкл.)';
-                fromInput.type = 'number';
-                fromInput.min = '0';
-                fromInput.step = '0.01';
-                fromInput.value = fromValue; // Восстанавливаем значение
+                    const fromValue = fromInput.value || '';
+                    const toValue = toInput.value || '';
 
-                toGroup.querySelector('label').textContent = 'ДО (искл.)';
-                toInput.type = 'text';
-                // Восстанавливаем значение только если оно было заполнено
-                // Если было пустое, оставляем пустым (не устанавливаем "∞")
-                toInput.value = toValue;
-                toInput.placeholder = '∞ для бесконечности';
+                    fromGroup.querySelector('label').textContent = 'Дата от';
+                    fromInput.type = 'date';
+                    fromInput.value = fromValue;
+                    fromInput.placeholder = '';
 
-                // Показываем единицу измерения
-                if (unitGroup) {
-                    unitGroup.style.display = '';
+                    toGroup.querySelector('label').textContent = 'Дата до';
+                    toInput.type = 'date';
+                    toInput.value = toValue;
+                    toInput.placeholder = '';
+
+                    if (unitGroup) {
+                        unitGroup.style.display = '';
+                    }
+                } else {
+                    // Для остальных - числа
+                    const fromInput = fromGroup.querySelector('input');
+                    const toInput = toGroup.querySelector('input');
+
+                    const fromValue = fromInput.value || '0';
+                    const toValue = toInput.value || '';
+
+                    fromGroup.querySelector('label').textContent = 'ОТ (вкл.)';
+                    fromInput.type = 'number';
+                    fromInput.min = '0';
+                    fromInput.step = '0.01';
+                    fromInput.value = fromValue;
+
+                    toGroup.querySelector('label').textContent = 'ДО (искл.)';
+                    toInput.type = 'text';
+                    toInput.value = toValue;
+                    toInput.placeholder = '∞ для бесконечности';
+
+                    if (unitGroup) {
+                        unitGroup.style.display = '';
+                    }
                 }
             }
         });
@@ -644,10 +674,11 @@
         const container = document.getElementById('tariffStepsContainer');
         const steps = container.querySelectorAll('.step-row');
         const isConstruction = isConstructionType();
+        const isRentOrService = isRentOrServiceType();
 
         let defaultFrom = isConstruction ? '' : '0';
 
-        if (!isConstruction && steps.length > 0) {
+        if (!isConstruction && !isRentOrService && steps.length > 0) {
             const lastStepInputs = steps[steps.length - 1].querySelectorAll('input');
             const lastToValue = lastStepInputs[1].value.trim();
 
@@ -669,8 +700,32 @@
 
         const newStep = document.createElement('div');
         newStep.className = 'step-row';
+        if (isRentOrService) newStep.classList.add('rent-row');
 
-        if (isConstruction) {
+        if (isRentOrService) {
+            // Для аренды и услуг - без От и До
+            newStep.innerHTML = `
+                <div class="step-input-group" style="display: none;">
+                    <label>ОТ (вкл.)</label>
+                    <input type="number" value="0" min="0" step="0.01">
+                </div>
+                <div class="step-input-group" style="display: none;">
+                    <label>ДО (искл.)</label>
+                    <input type="text" value="" placeholder="∞ для бесконечности">
+                </div>
+                <div class="step-input-group">
+                    <label>Ед. изм.</label>
+                    <input type="text" value="${unit}" class="unit-chip" readonly>
+                </div>
+                <div class="step-input-group">
+                    <label>Цена</label>
+                    <input type="number" step="0.01" min="0" required>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
+                    <i class="bi bi-trash"></i> Удалить
+                </button>
+            `;
+        } else if (isConstruction) {
             // Для строительства - поля с датами
             newStep.innerHTML = `
                     <div class="step-input-group">
@@ -681,7 +736,7 @@
                         <label>Дата до</label>
                         <input type="date" value="" required>
                     </div>
-                    <div class="step-input-group" style="display: none;">
+                    <div class="step-input-group">
                         <label>Ед. изм.</label>
                         <input type="text" value="${unit}" class="unit-chip" readonly>
                     </div>
@@ -1000,12 +1055,37 @@
 
             // Добавляем ступени
             const isConstruction = fullTariff.meter_type === 'CONSTRUCTION';
+            const isRentOrService = fullTariff.meter_type === 'RENT' || fullTariff.meter_type === 'SERVICE';
             fullTariff.steps.forEach(step => {
                 const stepRow = document.createElement('div');
                 stepRow.className = 'step-row';
                 const unit = getUnitForPurpose(purposeMap[fullTariff.meter_type] || '');
 
-                if (isConstruction) {
+                if (isRentOrService) {
+                    // Для аренды и услуг - без От и До
+                    stepRow.classList.add('rent-row');
+                    stepRow.innerHTML = `
+                            <div class="step-input-group" style="display: none;">
+                                <label>ОТ (вкл.)</label>
+                                <input type="number" value="${step.from_value || 0}" min="0" step="0.01">
+                            </div>
+                            <div class="step-input-group" style="display: none;">
+                                <label>ДО (искл.)</label>
+                                <input type="text" value="${step.to_value === null ? '∞' : step.to_value}" placeholder="∞ для бесконечности">
+                            </div>
+                            <div class="step-input-group">
+                                <label>Ед. изм.</label>
+                                <input type="text" value="${unit}" class="unit-chip" readonly>
+                            </div>
+                            <div class="step-input-group">
+                                <label>Цена</label>
+                                <input type="number" value="${step.price || 0}" step="0.01" min="0" required>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
+                                <i class="bi bi-trash"></i> Удалить
+                            </button>
+                        `;
+                } else if (isConstruction) {
                     // Для строительства - даты
                     const fromDate = step.from_date ? step.from_date.split('T')[0] : '';
                     const toDate = step.to_date ? step.to_date.split('T')[0] : '';
@@ -1018,7 +1098,7 @@
                                 <label>Дата до</label>
                                 <input type="date" value="${toDate}" required>
                             </div>
-                            <div class="step-input-group" style="display: none;">
+                            <div class="step-input-group">
                                 <label>Ед. изм.</label>
                                 <input type="text" value="${unit}" class="unit-chip" readonly>
                             </div>

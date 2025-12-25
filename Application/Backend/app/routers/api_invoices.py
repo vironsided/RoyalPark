@@ -11,7 +11,7 @@ from ..database import get_db
 from ..models import (
     User, RoleEnum, Block, Resident,
     Invoice, InvoiceStatus, InvoiceLine,
-    PaymentApplication, Payment
+    PaymentApplication, Payment, PaymentMethod
 )
 from ..deps import get_current_user
 
@@ -129,7 +129,6 @@ def _list_invoices_internal(
         ).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
         
         if abs(float(inv.amount_total or 0) - float(lines_sum)) > 0.01:
-            print(f"DEBUG: Invoice {inv.id} amount_total mismatch! invoice={inv.amount_total}, lines_sum={lines_sum}, fixing...")
             inv.amount_total = Decimal(str(lines_sum))
             net_sum = db.query(func.coalesce(func.sum(InvoiceLine.amount_net), 0)).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
             vat_sum = db.query(func.coalesce(func.sum(InvoiceLine.amount_vat), 0)).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
@@ -251,8 +250,6 @@ def _bulk_issue_internal(
     if action not in ("by_block", "all"):
         raise HTTPException(status_code=400, detail="Action must be 'by_block' or 'all'")
     
-    print(f"DEBUG bulk_issue: action={action}, block_id={block_id}, due_date={due_date}")
-    
     # Query for DRAFT invoices
     query = db.query(Invoice).join(Resident, Resident.id == Invoice.resident_id)\
                              .filter(Invoice.status == InvoiceStatus.DRAFT)
@@ -261,24 +258,9 @@ def _bulk_issue_internal(
         if not block_id:
             raise HTTPException(status_code=400, detail="Block ID is required for 'by_block' action")
         query = query.filter(Resident.block_id == block_id)
-        # Debug: check block name
-        block_check = db.query(Block).filter(Block.id == block_id).first()
-        print(f"DEBUG: Block ID={block_id}, Block name={block_check.name if block_check else 'NOT FOUND'}")
-        
-        # Debug: check all residents in this block
-        residents_in_block = db.query(Resident).filter(Resident.block_id == block_id).all()
-        print(f"DEBUG: Total residents in block {block_check.name if block_check else block_id}: {len(residents_in_block)}")
-        for r in residents_in_block[:5]:  # Show first 5
-            invoices_for_resident = db.query(Invoice).filter(Invoice.resident_id == r.id).all()
-            draft_for_resident = [inv for inv in invoices_for_resident if inv.status == InvoiceStatus.DRAFT]
-            print(f"DEBUG:   - Resident ID={r.id}, unit={r.unit_number}, total invoices={len(invoices_for_resident)}, DRAFT={len(draft_for_resident)}")
-    else:
-        # action == "all" - no block filter needed
-        print(f"DEBUG: Processing ALL DRAFT invoices (no block filter)")
     
-    # Debug: count before processing
+    # Count before processing
     draft_count = query.count()
-    print(f"DEBUG: Found {draft_count} DRAFT invoices for action={action}, block_id={block_id}")
     
     if draft_count == 0:
         return {
@@ -287,27 +269,18 @@ def _bulk_issue_internal(
             "message": "Нет черновиков для выставления"
         }
     
-    # Debug: show sample of DRAFT invoices found
-    sample_drafts = query.limit(5).all()
-    for inv in sample_drafts:
-        print(f"DEBUG:   Sample DRAFT invoice: ID={inv.id}, resident_id={inv.resident_id}, period={inv.period_year}-{inv.period_month:02d}")
-    
     # Parse due_date
     due: Optional[date] = None
     if due_date:
         try:
             due = datetime.strptime(due_date, "%Y-%m-%d").date()
-            print(f"DEBUG: Parsed due_date: {due}")
         except Exception as e:
-            print(f"DEBUG: Failed to parse due_date '{due_date}': {e}")
             due = None
     
     cnt = 0
     invoices_to_process = query.all()
-    print(f"DEBUG: Processing {len(invoices_to_process)} invoices")
     
     for inv in invoices_to_process:
-        print(f"DEBUG: Processing invoice ID={inv.id}, resident_id={inv.resident_id}, period={inv.period_year}-{inv.period_month:02d}, status={inv.status.value}")
         # Generate invoice number if not exists
         if not inv.number:
             prefix = f"{inv.period_year}-{inv.period_month:02d}"
@@ -330,14 +303,10 @@ def _bulk_issue_internal(
         if due:
             inv.due_date = due
         cnt += 1
-        print(f"DEBUG: Updated invoice ID={inv.id} to ISSUED, due_date={inv.due_date}")
     
-    print(f"DEBUG: Total processed: {cnt} invoices")
     try:
         db.commit()
-        print(f"DEBUG: Commit successful")
     except Exception as e:
-        print(f"DEBUG: Commit failed: {e}")
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to commit changes: {str(e)}")
     
@@ -355,24 +324,13 @@ def bulk_issue_api(
     user: User = Depends(get_current_user),
 ):
     """Массовое выставление счетов."""
-    print(f"=== DEBUG bulk_issue_api START ===")
-    print(f"Received request - action={data.action}, block_id={data.block_id}, due_date={data.due_date}, user={user.username if user else 'None'}")
     try:
         # Normalize block_id: if it's None or 0, set to None
         block_id = data.block_id if data.block_id else None
-        result = _bulk_issue_internal(db, data.action, block_id, data.due_date)
-        print(f"DEBUG bulk_issue_api: Success - {result}")
-        print(f"=== DEBUG bulk_issue_api END (SUCCESS) ===")
-        return result
-    except HTTPException as he:
-        print(f"DEBUG bulk_issue_api: HTTPException - {he.status_code}: {he.detail}")
-        print(f"=== DEBUG bulk_issue_api END (HTTPException) ===")
+        return _bulk_issue_internal(db, data.action, block_id, data.due_date)
+    except HTTPException:
         raise
     except Exception as e:
-        import traceback
-        print(f"ERROR in bulk_issue_api: {e}")
-        print(traceback.format_exc())
-        print(f"=== DEBUG bulk_issue_api END (ERROR) ===")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
@@ -425,15 +383,38 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
     lines = db.query(InvoiceLine).filter(InvoiceLine.invoice_id == inv.id).all()
     
     # Получаем оплаты по счету
-    apps = (
+    # Сортируем по id PaymentApplication для правильной хронологии применения
+    all_apps = (
         db.query(PaymentApplication)
         .join(Payment, Payment.id == PaymentApplication.payment_id)
         .filter(PaymentApplication.invoice_id == inv.id)
-        .order_by(Payment.received_at.asc(), Payment.id.asc())
+        .order_by(PaymentApplication.id.asc())
         .all()
     )
     
-    print(f"DEBUG INVOICE {invoice_id}: Found {len(apps)} payment applications")
+    # ВАЖНО: Фильтруем применения для отображения
+    # Если есть применение от платежа с method=ADVANCE (history_payment),
+    # то скрываем ВСЕ применения от реальных платежей (CARD) с reference="ADVANCE",
+    # чтобы показывать только один платеж ADVANCE вместо множества CARD платежей
+    
+    # Проверяем, есть ли хотя бы одно применение от ADVANCE платежа
+    has_advance_payment = False
+    for app in all_apps:
+        if app.payment.method == PaymentMethod.ADVANCE:
+            has_advance_payment = True
+            break
+    
+    # Фильтруем применения
+    apps = []
+    for app in all_apps:
+        # Если есть применение от ADVANCE платежа (history_payment),
+        # скрываем ВСЕ применения от реальных платежей (CARD, TRANSFER и т.д.) с reference="ADVANCE"
+        if has_advance_payment:
+            # Скрываем применения от реальных платежей с reference="ADVANCE"
+            # (они создаются apply_advance_with_limit, но мы показываем только history_payment)
+            if app.reference == "ADVANCE" and app.payment.method != PaymentMethod.ADVANCE:
+                continue  # Пропускаем - скрываем применение от реального платежа
+        apps.append(app)
     
     # Пересчитываем amount_total из строк счета на случай, если он устарел
     lines_sum = db.query(
@@ -442,7 +423,6 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
     
     # Обновляем amount_total в счете, если он отличается от суммы строк
     if abs(float(inv.amount_total or 0) - float(lines_sum)) > 0.01:
-        print(f"DEBUG INVOICE {invoice_id}: amount_total mismatch! invoice.amount_total={inv.amount_total}, lines_sum={lines_sum}, updating...")
         inv.amount_total = Decimal(str(lines_sum))
         # Также пересчитываем net и vat
         net_sum = db.query(func.coalesce(func.sum(InvoiceLine.amount_net), 0)).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
@@ -450,30 +430,40 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
         inv.amount_net = Decimal(str(net_sum))
         inv.amount_vat = Decimal(str(vat_sum))
         db.commit()
-        print(f"DEBUG INVOICE {invoice_id}: Updated invoice totals: net={inv.amount_net}, vat={inv.amount_vat}, total={inv.amount_total}")
     
+    # Считаем paid_total по ВСЕМ применениям (включая скрытые), для правильного расчета остатка
     paid_total = db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))\
                    .filter(PaymentApplication.invoice_id == inv.id).scalar() or 0
     remaining = float(inv.amount_total or 0) - float(paid_total)
     
-    print(f"DEBUG INVOICE {invoice_id}: paid_total={paid_total}, amount_total={inv.amount_total}, remaining={remaining}, lines_count={len(lines)}")
-    
     payments = []
     for app in apps:
         p = app.payment
+        
+        # ВАЖНО: Если платеж с method=ADVANCE, это всегда списание из аванса (history_payment)
+        if p.method == PaymentMethod.ADVANCE:
+            display_method = "ADVANCE"
+            # Используем comment из платежа, если он есть, иначе стандартный
+            display_comment = p.comment or "Royal Park Pass"
+        elif app.reference == "ADVANCE":
+            # Применение от реального платежа с reference="ADVANCE" (должно быть скрыто фильтрацией выше)
+            display_method = "ADVANCE"
+            display_comment = "Royal Park Pass"
+        else:
+            # Обычное применение платежа
+            display_method = p.method.value
+            display_comment = p.comment or "—"
+            
         payment_data = {
             "id": app.id,
             "date": p.received_at,
-            "method": p.method.value,
+            "method": display_method,
             "amount": float(app.amount_applied),
             "payment_id": p.id,
             "reference": p.reference,
-            "comment": p.comment,
+            "comment": display_comment,
         }
         payments.append(payment_data)
-        print(f"DEBUG INVOICE {invoice_id}: Payment app {app.id}: payment_id={p.id}, amount={app.amount_applied}, date={p.received_at}, method={p.method.value}")
-    
-    print(f"DEBUG INVOICE {invoice_id}: Returning {len(payments)} payments")
     
     return {
         "id": inv.id,

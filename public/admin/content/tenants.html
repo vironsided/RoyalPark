@@ -1,18 +1,6 @@
 <link rel="stylesheet" href="/admin/content_css/tenants.css">
 <div class="content-wrapper">
-    <!-- <div class="stats-grid">
-                    <div class="stat-card solid-blue">
-                        <div class="stat-icon blue">
-                            <svg width="40" height="40" fill="white">
-                                <use href="/images/icons.svg#icon-users"></use>
-                            </svg>
-                        </div>
-                        <div class="stat-details">
-                            <div class="stat-value">1,850</div>
-                            <div class="stat-label">Всего жителей</div>
-                            <div class="stat-change positive">↑ 12% за месяц</div>
-                        </div>
-                    </div> -->
+
 
     <!-- Tenant action confirmation modal -->
     <div class="modal-overlay" id="tenantActionModal">
@@ -28,147 +16,101 @@
             </div>
         </div>
     </div>
-
-    <!-- <div class="stat-card solid-green">
-                        <div class="stat-icon green">
-                            <svg width="40" height="40" fill="white">
-                                <use href="/images/icons.svg#icon-apartments"></use>
-                            </svg>
-                        </div>
-                        <div class="stat-details">
-                            <div class="stat-value">420</div>
-                            <div class="stat-label">Квартир заселено</div>
-                            <div class="stat-change positive">↑ 15 новых</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card solid-orange">
-                        <div class="stat-icon orange">
-                            <svg width="40" height="40" fill="white">
-                                <use href="/images/icons.svg#icon-personnel"></use>
-                            </svg>
-                        </div>
-                        <div class="stat-details">
-                            <div class="stat-value">780</div>
-                            <div class="stat-label">Взрослых</div>
-                            <div class="stat-change positive">↑ 5% за месяц</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card solid-red">
-                        <div class="stat-icon purple">
-                            <svg width="40" height="40" fill="white">
-                                <use href="/images/icons.svg#icon-users"></use>
-                            </svg>
-                        </div>
-                        <div class="stat-details">
-                            <div class="stat-value">520</div>
-                            <div class="stat-label">Детей</div>
-                            <div class="stat-change negative">↓ 2% за месяц</div>
-                        </div>
-                    </div> -->
-</div>
-
-<!-- Filters -->
-<div class="filters-container">
-    <div class="filter-row">
-        <div class="filter-group">
-            <label>Поиск</label>
-            <input type="text" id="filterSearch" placeholder="Логин, ФИО, телефон, e-mail">
-        </div>
-        <div class="filter-group">
-            <label>Блок</label>
-            <select id="filterBlock">
-                <option value="all">Все блоки</option>
-                <option value="A">Блок A</option>
-                <option value="B">Блок B</option>
-                <option value="K">Блок K</option>
-                <option value="X">Блок X</option>
-                <option value="Z">Блок Z</option>
-            </select>
-        </div>
-        <div class="filter-group">
-            <label>Номер дома</label>
-            <input type="text" id="filterHouse" placeholder="Например, 205 или 101-105">
-        </div>
-        <div class="filter-actions">
-            <button class="btn btn-outline-secondary" onclick="applyFilters()" style="height: 42px;">
-                <i class="bi bi-funnel"></i> Фильтр
-            </button>
-            <button class="btn btn-primary" onclick="openCreateModal()" style="height: 42px;">
-                <i class="bi bi-plus-lg"></i> Создать жителя
-            </button>
+    <!-- Filters -->
+    <div class="filters-container">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Поиск</label>
+                <input type="text" id="filterSearch" placeholder="Логин, ФИО, телефон, e-mail">
+            </div>
+            <div class="filter-group">
+                <label>Блок</label>
+                <select id="filterBlock">
+                    <option value="all">Все блоки</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Номер дома</label>
+                <input type="text" id="filterHouse" placeholder="Например, 205 или 101-105">
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-outline-secondary" onclick="applyFilters()" style="height: 42px;">
+                    <i class="bi bi-funnel"></i> Фильтр
+                </button>
+                <button class="btn btn-primary" onclick="openCreateModal()" style="height: 42px;">
+                    <i class="bi bi-plus-lg"></i> Создать жителя
+                </button>
+            </div>
         </div>
     </div>
-</div>
 
-<div style="position: relative;">
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h3>Список жителей (проживающих)</h3>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover tenants-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Логин</th>
-                            <th>ФИО</th>
-                            <th>Телефон</th>
-                            <th>E-mail</th>
-                            <th>Последний вход</th>
-                            <th>Пароль</th>
-                            <th>Дома</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tenantsTableBody"></tbody>
-                </table>
+    <div style="position: relative;">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3>Список жителей (проживающих)</h3>
             </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover tenants-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Логин</th>
+                                <th>ФИО</th>
+                                <th>Телефон</th>
+                                <th>E-mail</th>
+                                <th>Последний вход</th>
+                                <th>Пароль</th>
+                                <th>Дома</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tenantsTableBody"></tbody>
+                    </table>
+                </div>
 
 
-        </div>
-        <!-- Pagination -->
-        <div class="table-pagination">
-            <div class="pagination-controls" id="tenantPaginationControls">
-                <button class="btn-pagination" onclick="goToTenantPage('prev')" disabled id="tenantPrevBtn">
-                    <i class="bi bi-chevron-double-left"></i>
-                </button>
-                <div id="tenantPageButtons" class="pagination-pages"></div>
-                <button class="btn-pagination" onclick="goToTenantPage('next')" disabled id="tenantNextBtn">
-                    <i class="bi bi-chevron-double-right"></i>
-                </button>
             </div>
-            <div class="pagination-info">
-                <span>Стр. <span id="tenantCurrentPage">1</span> из <span id="tenantTotalPages">1</span> · всего <span
-                        id="tenantTotalItems">0</span></span>
-            </div>
-            <div class="pagination-per-page">
-                <span>На</span>
-                <span>странице:</span>
-                <div class="custom-pag-select" id="customTenantItemsPerPage">
-                    <select id="tenantItemsPerPage" onchange="changeTenantItemsPerPage()" style="display: none;">
-                        <option value="10">10</option>
-                        <option value="25" selected>25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
-                    <div class="select-btn">
-                        <span class="select-text">25</span>
-                        <span class="arrow">▾</span>
-                    </div>
-                    <div class="select-options" style="background: rgba(36, 40, 49, 0.95) !important">
-                        <div class="select-option" data-value="10">10</div>
-                        <div class="select-option selected" data-value="25">25</div>
-                        <div class="select-option" data-value="50">50</div>
-                        <div class="select-option" data-value="100">100</div>
+            <!-- Pagination -->
+            <div class="table-pagination">
+                <div class="pagination-controls" id="tenantPaginationControls">
+                    <button class="btn-pagination" onclick="goToTenantPage('prev')" disabled id="tenantPrevBtn">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </button>
+                    <div id="tenantPageButtons" class="pagination-pages"></div>
+                    <button class="btn-pagination" onclick="goToTenantPage('next')" disabled id="tenantNextBtn">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </button>
+                </div>
+                <div class="pagination-info">
+                    <span>Стр. <span id="tenantCurrentPage">1</span> из <span id="tenantTotalPages">1</span> · всего
+                        <span id="tenantTotalItems">0</span></span>
+                </div>
+                <div class="pagination-per-page">
+                    <span>На</span>
+                    <span>странице:</span>
+                    <div class="custom-pag-select" id="customTenantItemsPerPage">
+                        <select id="tenantItemsPerPage" onchange="changeTenantItemsPerPage()" style="display: none;">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <div class="select-btn">
+                            <span class="select-text">25</span>
+                            <span class="arrow">▾</span>
+                        </div>
+                        <div class="select-options" style="background: rgba(36, 40, 49, 0.95) !important">
+                            <div class="select-option" data-value="10">10</div>
+                            <div class="select-option selected" data-value="25">25</div>
+                            <div class="select-option" data-value="50">50</div>
+                            <div class="select-option" data-value="100">100</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 </div>
 
 <!-- QR Code Modal -->
@@ -247,11 +189,6 @@
                             <select id="blockFilter" onchange="filterResidents()"
                                 style="padding: 8px 12px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 6px; font-size: 0.9rem; min-width: 150px; background: rgba(255, 255, 255, 0.05); color: #fefefe;">
                                 <option value="all">Все</option>
-                                <option value="A">Блок A</option>
-                                <option value="B">Блок B</option>
-                                <option value="K">Блок K</option>
-                                <option value="X">Блок X</option>
-                                <option value="Z">Блок Z</option>
                             </select>
                         </div>
                     </div>
@@ -291,6 +228,9 @@
             </div>
         </form>
     </div>
+</div>
+
+
 </div>
 
 <!-- jsPDF library for PDF generation -->
@@ -537,42 +477,64 @@
         // Update blocks filter dropdown
         function updateBlocksFilter() {
             const filterBlock = document.getElementById('filterBlock');
-            if (!filterBlock) return;
+            const modalBlockFilter = document.getElementById('blockFilter');
 
-            // Проверяем, есть ли сохраненный фильтр по блоку из sessionStorage
-            const savedBlockName = sessionStorage.getItem('filterBlockByName');
-            let currentValue = filterBlock.value;
-            let filterApplied = false;
+            // 1. Обновляем основной фильтр на странице
+            if (filterBlock) {
+                // Проверяем, есть ли сохраненный фильтр по блоку из sessionStorage
+                const savedBlockName = sessionStorage.getItem('filterBlockByName');
+                let currentValue = filterBlock.value;
+                let filterApplied = false;
 
-            // Если есть сохраненный фильтр и блок существует в списке, используем его
-            if (savedBlockName) {
-                const blockExists = blocks.some(b => b.name === savedBlockName);
-                if (blockExists) {
-                    currentValue = savedBlockName;
-                    filterApplied = true;
+                // Если есть сохраненный фильтр и блок существует в списке, используем его
+                if (savedBlockName) {
+                    const blockExists = blocks.some(b => b.name === savedBlockName);
+                    if (blockExists) {
+                        currentValue = savedBlockName;
+                        filterApplied = true;
+                    }
+                }
+
+                filterBlock.innerHTML = '<option value="all">Все блоки</option>';
+                blocks.forEach(block => {
+                    const option = document.createElement('option');
+                    option.value = block.name;
+                    option.textContent = `Блок ${block.name}`;
+                    filterBlock.appendChild(option);
+                });
+
+                // Устанавливаем значение фильтра
+                if (currentValue && currentValue !== 'all') {
+                    filterBlock.value = currentValue;
+                    // Очищаем sessionStorage только если фильтр был успешно применен
+                    if (filterApplied && savedBlockName) {
+                        sessionStorage.removeItem('filterBlockByName');
+                    }
+                } else {
+                    filterBlock.value = currentValue || 'all';
+                    // Если фильтр не был применен, но был сохранен, очищаем sessionStorage
+                    if (savedBlockName && !filterApplied) {
+                        sessionStorage.removeItem('filterBlockByName');
+                    }
                 }
             }
 
-            filterBlock.innerHTML = '<option value="all">Все блоки</option>';
-            blocks.forEach(block => {
-                const option = document.createElement('option');
-                option.value = block.name;
-                option.textContent = `Блок ${block.name}`;
-                filterBlock.appendChild(option);
-            });
-
-            // Устанавливаем значение фильтра
-            if (currentValue && currentValue !== 'all') {
-                filterBlock.value = currentValue;
-                // Очищаем sessionStorage только если фильтр был успешно применен
-                if (filterApplied && savedBlockName) {
-                    sessionStorage.removeItem('filterBlockByName');
-                }
-            } else {
-                filterBlock.value = currentValue || 'all';
-                // Если фильтр не был применен, но был сохранен, очищаем sessionStorage
-                if (savedBlockName && !filterApplied) {
-                    sessionStorage.removeItem('filterBlockByName');
+            // 2. Обновляем фильтр внутри модального окна (Фильтр по блоку)
+            if (modalBlockFilter) {
+                const currentModalValue = modalBlockFilter.value;
+                modalBlockFilter.innerHTML = '<option value="all">Все</option>';
+                blocks.forEach(block => {
+                    const option = document.createElement('option');
+                    option.value = block.name;
+                    option.textContent = `Блок ${block.name}`;
+                    modalBlockFilter.appendChild(option);
+                });
+                
+                // Пробуем сохранить выбранное значение, если оно все еще существует
+                if (currentModalValue && blocks.some(b => b.name === currentModalValue)) {
+                    modalBlockFilter.value = currentModalValue;
+                } else {
+                    modalBlockFilter.value = 'all';
                 }
             }
         }

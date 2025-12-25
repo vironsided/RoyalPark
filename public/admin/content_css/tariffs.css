@@ -535,6 +535,10 @@
             align-items: end;
         }
 
+        .step-row.rent-row {
+            grid-template-columns: 1fr 1fr auto;
+        }
+
         .step-input-group {
             display: flex;
             flex-direction: column;
