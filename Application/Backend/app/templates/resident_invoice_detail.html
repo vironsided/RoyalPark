@@ -74,9 +74,21 @@
             {% for a in apps %}
               <tr>
                 <td>{{ a.payment.received_at }}</td>
-                <td>{{ a.payment.method.value }}</td>
+                <td>
+                  {% if a.reference == "ADVANCE" %}
+                    ADVANCE (Аванс)
+                  {% else %}
+                    {{ a.payment.method.value }}
+                  {% endif %}
+                </td>
                 <td class="text-end">{{ '%.2f'|format(a.amount_applied) }}</td>
-                <td class="text-secondary">{{ a.payment.comment or '—' }}</td>
+                <td class="text-secondary">
+                  {% if a.reference == "ADVANCE" %}
+                    Royal Park Pass
+                  {% else %}
+                    {{ a.payment.comment or '—' }}
+                  {% endif %}
+                </td>
               </tr>
             {% endfor %}
           </tbody>

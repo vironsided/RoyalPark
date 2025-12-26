@@ -214,9 +214,21 @@
                 tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Оплаты по этому счёту отсутствуют.</td></tr>';
             } else {
                 tbody.innerHTML = payments.map(p => {
+                    // Определяем метод оплаты
                     let methodDisplay = p.method || '—';
+                    let commentDisplay = p.comment || '—';
+                    
+                    // Проверка 1: Если метод явно "ADVANCE"
                     if (p.method === 'ADVANCE') {
                         methodDisplay = window.i18n ? window.i18n.translate('user_invoice_payment_method_advance') : 'Аванс';
+                        if (commentDisplay === '—' || !commentDisplay) {
+                            commentDisplay = 'Royal Park Pass';
+                        }
+                    }
+                    // Проверка 2: Если в reference есть "ADVANCE" (дополнительная защита)
+                    else if (p.reference && p.reference.includes('ADVANCE')) {
+                        methodDisplay = window.i18n ? window.i18n.translate('user_invoice_payment_method_advance') : 'Аванс';
+                        commentDisplay = 'Royal Park Pass';
                     }
                     
                     return `
@@ -224,7 +236,7 @@
                             <td>${p.date ? new Date(p.date).toLocaleDateString('ru-RU') : '—'}</td>
                             <td>${methodDisplay}</td>
                             <td>${formatCurrency(p.amount)}</td>
-                            <td>${p.comment || '—'}</td>
+                            <td>${commentDisplay}</td>
                         </tr>
                     `;
                 }).join('');

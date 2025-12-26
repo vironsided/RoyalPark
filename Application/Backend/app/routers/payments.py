@@ -1,4 +1,4 @@
-# app/api/routers/payments.py
+﻿# app/api/routers/payments.py
 """
 Module: Payments (admin)
 Author: Mamedli Ayaz
@@ -75,7 +75,7 @@ def _recompute_invoice_status(db: Session, inv: Invoice):
 # =========================
 #  Автораспределение аванса
 # =========================
-def auto_apply_advance(db: Session, resident_id: int) -> int:
+def auto_apply_advance(db: Session, resident_id: int) -> tuple[int, Decimal]:
     """
     Пробует автоматически применить свободные остатки платежей (авансы) пользователя
     ТОЛЬКО к открытым счетам (ISSUED/PARTIAL) КОНКРЕТНОГО резидента (resident_id).
@@ -101,12 +101,14 @@ def auto_apply_advance(db: Session, resident_id: int) -> int:
           .all()
     )
     if not open_invoices:
-        return 0
+        return (0, Decimal("0"))
 
     # 3) Платежи со ВСЕХ объектов пользователя (общий пул аванса)
+    from sqlalchemy import cast, String
     payments: list[Payment] = (
         db.query(Payment)
-          .filter(Payment.resident_id.in_(all_resident_ids))
+          .filter(Payment.resident_id.in_(all_resident_ids),
+                  cast(Payment.method, String) != 'ADVANCE')
           .order_by(Payment.received_at.asc(), Payment.id.asc())
           .all()
     )
@@ -127,7 +129,7 @@ def auto_apply_advance(db: Session, resident_id: int) -> int:
             pay_leftover[p.id] = left
 
     if total_available_advance <= 0 or not pay_leftover:
-        return 0
+        return (0, Decimal("0"))
 
     # 4) Проходим по счетам целевого дома и «доливаем» из общего пула авансов, 
     # но не больше, чем есть в общем доступном авансе
@@ -190,7 +192,7 @@ def auto_apply_advance(db: Session, resident_id: int) -> int:
             details=f"Автоматическое распределение аванса по {len(affected_invoice_ids)} счетам"
         ))
 
-    return len(affected_invoice_ids)
+    return (len(affected_invoice_ids), total_actually_applied)
 
 
 def apply_payment_to_invoices(
@@ -390,9 +392,11 @@ def apply_advance_with_limit(
         return 0
     
     # 3) Платежи со всех объектов пользователя (общий пул аванса)
+    from sqlalchemy import cast, String
     payments: list[Payment] = (
         db.query(Payment)
-        .filter(Payment.resident_id.in_(all_resident_ids))
+        .filter(Payment.resident_id.in_(all_resident_ids),
+                cast(Payment.method, String) != 'ADVANCE')
         .order_by(Payment.received_at.asc(), Payment.id.asc())
         .all()
     )

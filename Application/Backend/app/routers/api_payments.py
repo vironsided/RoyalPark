@@ -93,8 +93,9 @@ def _list_payments_internal(
     if date_to:
         query = query.filter(Payment.received_at <= date_to)
     
-    # Исключаем технические списания аванса из основного списка платежей
-    query = query.filter(Payment.reference != "ADVANCE_POOL_DEDUCTION")
+    # ВАЖНО: НЕ исключаем ADVANCE из списка, чтобы админ видел эти записи
+    # Фильтр ADVANCE применяется только в расчетах балансов (dashboard, графики)
+    # Но в списке платежей админ должен видеть все операции, включая списания из аванса
 
     if q:
         like = f"%{q.strip()}%"
