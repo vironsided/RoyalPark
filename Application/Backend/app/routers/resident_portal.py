@@ -33,6 +33,7 @@ from ..models import (
     Payment, PaymentApplication, PaymentMethod,
     Notification, NotificationStatus,
 )
+from ..utils import now_baku, to_baku_datetime
 from ..security import (
     verify_password, set_session, clear_session, hash_password, get_user_id_from_session
 )
@@ -741,10 +742,8 @@ def resident_report_payment_submit(
     if resident_id not in rids:
         return RedirectResponse(url="/resident?error=forbidden", status_code=302)
 
-    try:
-        rcv = datetime.strptime(received_at, "%Y-%m-%d").date()
-    except Exception:
-        rcv = datetime.utcnow().date()
+    # Системное время Baku, чтобы фиксировать точный момент
+    rcv = now_baku()
 
     if method not in {m.value for m in PaymentMethod}:
         method = PaymentMethod.TRANSFER.value

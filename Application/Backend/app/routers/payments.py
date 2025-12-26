@@ -34,6 +34,7 @@ from ..models import (
     Payment, PaymentApplication, PaymentMethod,
     user_residents, PaymentLog
 )
+from ..utils import now_baku, to_baku_datetime
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 templates = Jinja2Templates(directory="app/templates")
@@ -170,7 +171,8 @@ def auto_apply_advance(db: Session, resident_id: int) -> tuple[int, Decimal]:
                     payment_id=p.id, 
                     invoice_id=inv.id, 
                     amount_applied=apply_amt,
-                    reference="ADVANCE"
+                    reference="ADVANCE",
+                    created_at=now_baku(),
                 ))
 
             db.flush() # фиксируем для корректного SUM в следующей итерации
@@ -266,10 +268,12 @@ def apply_payment_to_invoices(
     # Если scope == 'all', применяем ко всем открытым счетам (без дополнительной фильтрации)
     
     # Сортируем по периоду (FIFO)
+    # Важное изменение: сначала закрываем самые новые счета, чтобы "Оплатить за месяц"
+    # и частичные оплаты шли в текущий период, а не в старые долги.
     open_invoices = query.order_by(
-        Invoice.period_year.asc(),
-        Invoice.period_month.asc(),
-        Invoice.id.asc()
+        Invoice.period_year.desc(),
+        Invoice.period_month.desc(),
+        Invoice.id.desc()
     ).all()
     
     if not open_invoices:
@@ -312,7 +316,8 @@ def apply_payment_to_invoices(
             db.add(PaymentApplication(
                 payment_id=payment_id,
                 invoice_id=inv.id,
-                amount_applied=apply_amount
+                amount_applied=apply_amount,
+                created_at=now_baku(),
             ))
         
         db.flush()
@@ -397,7 +402,7 @@ def apply_advance_with_limit(
         db.query(Payment)
         .filter(Payment.resident_id.in_(all_resident_ids),
                 cast(Payment.method, String) != 'ADVANCE')
-        .order_by(Payment.received_at.asc(), Payment.id.asc())
+        .order_by(Payment.created_at.asc(), Payment.id.asc())
         .all()
     )
     
@@ -462,7 +467,8 @@ def apply_advance_with_limit(
                 payment_id=p.id,
                 invoice_id=inv.id,
                 amount_applied=apply_amt,
-                reference="ADVANCE"  # Метка, что это списание из аванса
+                reference="ADVANCE",  # Метка, что это списание из аванса
+                created_at=now_baku(),
             ))
             
             db.flush()
@@ -532,7 +538,7 @@ def payments_list(
     if page > last_page:
         page = last_page
 
-    items = query.order_by(Payment.received_at.desc(), Payment.id.desc()) \
+    items = query.order_by(Payment.created_at.desc(), Payment.id.desc()) \
                  .offset((page - 1) * per_page).limit(per_page).all()
 
     residents = db.query(Resident).order_by(Resident.block_id.asc(), Resident.unit_number.asc()).all()
@@ -579,10 +585,8 @@ def payment_create(
     reference: str = Form(""),
     comment: str = Form(""),
 ):
-    try:
-        rcv = datetime.strptime(received_at, "%Y-%m-%d").date()
-    except Exception:
-        rcv = datetime.utcnow().date()
+    # Системное время Baku, игнорируем введённую дату ради точного момента
+    rcv = now_baku()
 
     if method not in {m.value for m in PaymentMethod}:
         return _see_other("/payments?error=bad_method")
@@ -692,6 +696,7 @@ def payment_auto_apply(
 )
 def payment_save_applications(
     payment_id: int,
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     data_json: str = Form(...),  # [{"invoice_id": 10, "amount": 50.00}, ...]
 ):
@@ -778,7 +783,12 @@ def payment_save_applications(
         if app:
             app.amount_applied = tgt
         else:
-            db.add(PaymentApplication(payment_id=p.id, invoice_id=inv_id, amount_applied=tgt))
+            db.add(PaymentApplication(
+                payment_id=p.id,
+                invoice_id=inv_id,
+                amount_applied=tgt,
+                created_at=now_baku(),
+            ))
 
     db.flush()
     

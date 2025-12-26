@@ -1646,9 +1646,9 @@ async function submitPayment(event) {
 
             setTimeout(() => {
                 if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
-                    window.userSpaRouter.navigate('bills', true);
+                    window.userSpaRouter.navigate('dashboard', true);
                 } else {
-                    window.location.href = '/user/dashboard.html#bills?status=DRAFT';
+                    window.location.href = '/user/dashboard.html';
                 }
             }, 2000);
         } finally {
@@ -1710,21 +1710,18 @@ async function submitPayment(event) {
             // Set filter to show DRAFT status invoices on bills page
             sessionStorage.setItem('billsFilterStatuses', JSON.stringify(['DRAFT']));
             
-            // Redirect to dashboard first to show updated progress, then to bills page
+            // Redirect to dashboard to show updated data
             setTimeout(() => {
                 if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
-                    // Navigate to dashboard first to show updated data
+                    // Navigate to dashboard
                     window.userSpaRouter.navigate('dashboard', true);
-                    // Обновляем дашборд после навигации (SPA router автоматически вызывает loadDashboardData через 100ms)
-                    // Но добавляем дополнительный вызов с задержкой, чтобы убедиться, что контейнер загружен
+                    
+                    // Refresh dashboard data after navigation
                     setTimeout(() => {
                         if (typeof loadDashboardData === 'function') {
                             console.log('Refreshing dashboard after payment...');
-                            // Принудительно обновляем данные (forceRefresh = true)
                             loadDashboardData(true).then(() => {
                                 console.log('Dashboard refreshed successfully');
-                                // Принудительно обновляем еще раз через небольшую задержку
-                                // чтобы убедиться, что все данные обновились (включая аванс)
                                 setTimeout(() => {
                                     if (typeof loadDashboardData === 'function') {
                                         loadDashboardData(true);
@@ -1735,14 +1732,10 @@ async function submitPayment(event) {
                             });
                         }
                     }, 500);
-                    // Then navigate to bills after a short delay
-                    setTimeout(() => {
-                        window.userSpaRouter.navigate('bills', true);
-                    }, 2000);
                 } else {
-                    // Fallback для обычной навигации
-                    window.location.href = '/user/dashboard.html#dashboard';
-                    // После загрузки страницы обновляем данные
+                    // Fallback for regular navigation
+                    window.location.href = '/user/dashboard.html';
+                    
                     setTimeout(() => {
                         if (typeof loadDashboardData === 'function') {
                             loadDashboardData();

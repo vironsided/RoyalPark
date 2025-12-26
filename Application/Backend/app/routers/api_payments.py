@@ -14,6 +14,7 @@ from ..models import (
     Invoice, InvoiceStatus, PaymentLog
 )
 from ..deps import get_current_user
+from ..utils import now_baku, to_baku_datetime
 from .payments import auto_apply_advance, _recompute_invoice_status, _to_int
 
 
@@ -39,7 +40,7 @@ class PaymentOut(BaseModel):
     resident_info: str  # "Блок A, №205"
     block_name: str
     unit_number: str
-    received_at: date
+    received_at: datetime
     amount_total: float
     method: str
     reference: Optional[str] = None
@@ -55,7 +56,7 @@ class PaymentOut(BaseModel):
 
 class PaymentCreate(BaseModel):
     resident_id: int
-    received_at: date
+    received_at: Optional[datetime] = None  # игнорируем и ставим системное время
     amount_total: float
     method: str
     reference: Optional[str] = None
@@ -132,7 +133,7 @@ def _list_payments_internal(
             "resident_info": f"Блок {block.name if block else ''}, №{resident.unit_number}" if block else f"№{resident.unit_number}",
             "block_name": block.name if block else "",
             "unit_number": resident.unit_number,
-            "received_at": p.received_at,
+            "received_at": to_baku_datetime(p.received_at),
             "amount_total": float(p.amount_total),
             "method": p.method.value,
             "reference": p.reference,
@@ -226,7 +227,7 @@ def get_payment_api(
         "resident_info": f"Блок {block.name if block else ''}, №{resident.unit_number}" if block else f"№{resident.unit_number}",
         "block_name": block.name if block else "",
         "unit_number": resident.unit_number,
-        "received_at": p.received_at,
+        "received_at": to_baku_datetime(p.received_at),
         "amount_total": float(p.amount_total),
         "method": p.method.value,
         "reference": p.reference,
@@ -263,7 +264,7 @@ def create_payment_api(
     
     p = Payment(
         resident_id=payment.resident_id,
-        received_at=payment.received_at,
+        received_at=now_baku(),
         amount_total=Decimal(str(payment.amount_total)),
         method=PaymentMethod(payment.method),
         reference=payment.reference or None,
@@ -308,7 +309,7 @@ def create_payment_public(
     
     p = Payment(
         resident_id=payment.resident_id,
-        received_at=payment.received_at,
+        received_at=now_baku(),
         amount_total=Decimal(str(payment.amount_total)),
         method=PaymentMethod(payment.method),
         reference=payment.reference or None,
@@ -664,7 +665,12 @@ def save_payment_applications(
         if app:
             app.amount_applied = tgt
         else:
-            db.add(PaymentApplication(payment_id=p.id, invoice_id=inv_id, amount_applied=tgt))
+                db.add(PaymentApplication(
+                    payment_id=p.id,
+                    invoice_id=inv_id,
+                    amount_applied=tgt,
+                    created_at=now_baku(),
+                ))
     
     db.flush()
     
@@ -765,7 +771,12 @@ def save_payment_applications_public(
         if app:
             app.amount_applied = tgt
         else:
-            db.add(PaymentApplication(payment_id=p.id, invoice_id=inv_id, amount_applied=tgt))
+            db.add(PaymentApplication(
+                payment_id=p.id,
+                invoice_id=inv_id,
+                amount_applied=tgt,
+                created_at=now_baku(),
+            ))
     
     db.flush()
     

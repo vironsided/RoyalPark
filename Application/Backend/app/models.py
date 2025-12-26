@@ -78,7 +78,7 @@ class Payment(Base):
 
     id = Column(Integer, primary_key=True)
     resident_id = Column(ForeignKey("residents.id", ondelete="RESTRICT"), nullable=False)
-    received_at = Column(Date, nullable=False)
+    received_at = Column(DateTime(timezone=True), nullable=False)
     amount_total = Column(Numeric(12, 2), nullable=False)
     method = Column(SAEnum(PaymentMethod, name="payment_method"), nullable=False)
     reference = Column(String(120), nullable=True)
@@ -115,6 +115,7 @@ class PaymentApplication(Base):
     invoice_id = Column(ForeignKey("invoices.id", ondelete="RESTRICT"), nullable=False)
     amount_applied = Column(Numeric(12, 2), nullable=False)
     reference = Column(String(100), nullable=True) # "ADVANCE" or "DIRECT"
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("NOW()"))
 
     payment = relationship("Payment", back_populates="applications")
     invoice = relationship("Invoice", lazy="joined")

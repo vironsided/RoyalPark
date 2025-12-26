@@ -20,6 +20,7 @@ from ..models import (
     user_residents, PaymentLog
 )
 from ..security import get_user_id_from_session
+from ..utils import now_baku, to_baku_datetime
 
 
 router = APIRouter(prefix="/api/resident", tags=["resident-api"])
@@ -62,10 +63,9 @@ def api_resident_apply_advance(
             }
         
         # 2) Создаем техническую запись Payment для отображения в админ-панели
-        from datetime import date as date_type
         history_payment = Payment(
             resident_id=resident_id,
-            received_at=date_type.today(),
+            received_at=now_baku(),
             amount_total=applied_amount,
             method=PaymentMethod.ADVANCE,
             reference="AUTO_APPLY",
@@ -308,7 +308,7 @@ def get_resident_invoice_detail(
         db.query(PaymentApplication)
         .join(Payment, Payment.id == PaymentApplication.payment_id)
         .filter(PaymentApplication.invoice_id == inv.id)
-        .order_by(Payment.received_at.asc(), Payment.id.asc())
+        .order_by(PaymentApplication.created_at.asc(), PaymentApplication.id.asc())
         .all()
     )
     
@@ -332,15 +332,6 @@ def get_resident_invoice_detail(
     payments = []
     for app in apps:
         p = app.payment
-        # received_at в БД может быть как datetime, так и date.
-        # Защищаемся от AttributeError: 'datetime.date' object has no attribute 'date'
-        received = p.received_at
-        if isinstance(received, datetime):
-            date_value = received.date()
-        else:
-            # date или None – отдаём как есть
-            date_value = received
-
         # ВАЖНО: Если app.reference == "ADVANCE", это списание из аванса
         # Показываем "ADVANCE" вместо реального метода платежа (CARD/TRANSFER)
         if app.reference == "ADVANCE":
@@ -352,7 +343,7 @@ def get_resident_invoice_detail(
 
         payments.append({
             "id": app.id,
-            "date": date_value,
+            "date": to_baku_datetime(app.created_at or p.created_at or p.received_at),
             "method": display_method,
             "amount": float(app.amount_applied),
             "payment_id": p.id,
@@ -921,7 +912,6 @@ def create_resident_payment(
             # Если пришло что-то странное - принудительно ставим CARD.
             method_value = "CARD"
 
-    from datetime import date as date_type
     from .payments import apply_payment_to_invoices, apply_advance_with_limit
     
     # Если оплата через аванс, создаем историю списания и корректируем общий баланс
@@ -951,12 +941,16 @@ def create_resident_payment(
         try:
             # 2) Списываем реальные деньги из существующих платежей
             # Это создаст PaymentApplication с reference="ADVANCE" к реальным платежам
+            # Если scope не указан, по умолчанию бьем только текущий месяц,
+            # чтобы не разбрасывать оплату по старым долгам.
+            effective_scope = data.scope if data.scope in ("all", "month") else "month"
+
             affected_count = apply_advance_with_limit(
                 db,
                 user.id,
                 data.resident_id,
                 max_amount=target_amount,
-                scope=data.scope
+                scope=effective_scope
             )
             
             # 3) Создаем технический Payment (метод ADVANCE) ТОЛЬКО для истории
@@ -964,7 +958,7 @@ def create_resident_payment(
             # так как приложения уже созданы от реальных платежей в apply_advance_with_limit.
             history_payment = Payment(
                 resident_id=data.resident_id,
-                received_at=date_type.today(),
+                received_at=now_baku(),
                 amount_total=target_amount,
                 method=PaymentMethod.ADVANCE,
                 reference="ADVANCE_USE",
@@ -1006,7 +1000,7 @@ def create_resident_payment(
     # Для обычных платежей (CARD, TRANSFER и т.д.) создаем новый платеж
     payment = Payment(
         resident_id=data.resident_id,
-        received_at=date_type.today(),
+        received_at=now_baku(),
         amount_total=Decimal(str(data.amount)),
         method=PaymentMethod(method_value),
         reference=data.reference or None,

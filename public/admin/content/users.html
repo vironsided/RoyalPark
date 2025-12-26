@@ -111,81 +111,6 @@
     </div>
 </div>
 
-<!-- jsPDF library for PDF generation -->
-<script src="../../js/jsPDF.js"></script>
-<script>
-    // Функция для динамической загрузки jsPDF (резервный вариант)
-    window.loadJSPDFLibrary = function () {
-        return new Promise((resolve, reject) => {
-            // Проверяем, не загружена ли уже библиотека
-            const checkLibrary = () => {
-                if (typeof window.jspdf !== 'undefined') {
-                    if (window.jspdf.jsPDF || typeof window.jspdf === 'function') {
-                        return true;
-                    }
-                }
-                if (typeof window.jsPDF !== 'undefined') {
-                    return true;
-                }
-                return false;
-            };
-
-            if (checkLibrary()) {
-                resolve();
-                return;
-            }
-
-            // Проверяем, не загружается ли уже скрипт
-            const existingScript = document.querySelector('script[src*="jspdf"]');
-            if (existingScript) {
-                // Ждем загрузки существующего скрипта
-                const checkInterval = setInterval(() => {
-                    if (checkLibrary()) {
-                        clearInterval(checkInterval);
-                        resolve();
-                    }
-                }, 100);
-
-                setTimeout(() => {
-                    clearInterval(checkInterval);
-                    if (!checkLibrary()) {
-                        reject(new Error('jsPDF не загрузилась в течение 5 секунд'));
-                    }
-                }, 5000);
-                return;
-            }
-
-            // Загружаем библиотеку
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-            script.onload = () => {
-                // Ждем немного, чтобы библиотека инициализировалась
-                let attempts = 0;
-                const maxAttempts = 50; // 5 секунд
-                const checkInterval = setInterval(() => {
-                    attempts++;
-                    if (checkLibrary()) {
-                        clearInterval(checkInterval);
-                        resolve();
-                    } else if (attempts >= maxAttempts) {
-                        clearInterval(checkInterval);
-                        reject(new Error('jsPDF не инициализировалась после загрузки'));
-                    }
-                }, 100);
-            };
-            script.onerror = () => reject(new Error('Не удалось загрузить jsPDF'));
-            document.head.appendChild(script);
-        });
-    };
-
-    // Предзагружаем библиотеку при загрузке страницы
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', window.loadJSPDFLibrary);
-    } else {
-        window.loadJSPDFLibrary();
-    }
-</script>
-
 <script>
     (function () {
         // Текущий список пользователей из backend
@@ -745,179 +670,26 @@
 
         // Print QR Code to PDF
         window.printQRCode = function () {
-            if (!currentQRUserData.username || !currentQRUserData.tempPassword) {
+            if (!currentQRUserData || !currentQRUserData.qrUrl) {
                 if (window.showError) {
-                    showError('❌ Нет данных для печати');
+                    showError('❌ Нет данных для печати QR');
                 } else {
-                    alert('Нет данных для печати');
+                    alert('Нет данных для печати QR');
                 }
                 return;
             }
 
-            try {
-                // Проверяем наличие jsPDF разными способами
-                let jsPDFClass;
+            const params = new URLSearchParams({
+                type: 'user',
+                username: currentQRUserData.username || '',
+                password: currentQRUserData.tempPassword || '',
+                qrUrl: currentQRUserData.qrUrl
+            });
 
-                // Вариант 1: window.jspdf.jsPDF (UMD модуль)
-                if (typeof window.jspdf !== 'undefined') {
-                    if (window.jspdf.jsPDF) {
-                        jsPDFClass = window.jspdf.jsPDF;
-                    } else if (typeof window.jspdf === 'function') {
-                        jsPDFClass = window.jspdf;
-                    } else if (window.jspdf.default && window.jspdf.default.jsPDF) {
-                        jsPDFClass = window.jspdf.default.jsPDF;
-                    }
-                }
+            const base = window.location.origin || '';
+            const printUrl = `${base}/admin/content/qr-print.html?${params.toString()}`;
 
-                // Вариант 2: window.jsPDF (глобальный экспорт)
-                if (!jsPDFClass && typeof window.jsPDF !== 'undefined') {
-                    jsPDFClass = window.jsPDF;
-                }
-
-                // Если не нашли, пробуем загрузить динамически
-                if (!jsPDFClass) {
-                    console.warn('jsPDF not found, attempting to load...', {
-                        window_jspdf: typeof window.jspdf,
-                        window_jsPDF: typeof window.jsPDF,
-                        jspdf_content: window.jspdf ? Object.keys(window.jspdf) : 'undefined'
-                    });
-
-                    // Попробуем загрузить библиотеку динамически
-                    window.loadJSPDFLibrary().then(() => {
-                        // Повторно вызываем функцию после загрузки
-                        setTimeout(() => window.printQRCode(), 200);
-                    }).catch((err) => {
-                        console.error('Failed to load jsPDF:', err);
-                        if (window.showError) {
-                            showError('❌ Библиотека для генерации PDF не загружена. Попробуйте обновить страницу.');
-                        } else {
-                            alert('Библиотека для генерации PDF не загружена. Попробуйте обновить страницу.');
-                        }
-                    });
-                    return;
-                }
-
-                const doc = new jsPDFClass();
-
-                // Настройки страницы
-                const pageWidth = doc.internal.pageSize.getWidth();
-                const pageHeight = doc.internal.pageSize.getHeight();
-                const margin = 20;
-                const contentWidth = pageWidth - (margin * 2);
-
-                // Функция для создания текста как изображения (для поддержки кириллицы)
-                function createTextImage(text, fontSize, isBold, maxWidth) {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-
-                    // Устанавливаем размер canvas
-                    canvas.width = maxWidth || 500;
-                    canvas.height = fontSize * 2;
-
-                    // Настройки текста
-                    ctx.fillStyle = '#000000';
-                    ctx.font = `${isBold ? 'bold' : 'normal'} ${fontSize}px Arial, sans-serif`;
-                    ctx.textAlign = 'left';
-                    ctx.textBaseline = 'top';
-
-                    // Рисуем текст
-                    ctx.fillText(text, 0, 0);
-
-                    return canvas.toDataURL('image/png');
-                }
-
-                // Заголовок
-                const titleText = 'QR-код для установки пароля';
-                const titleImg = createTextImage(titleText, 20, true, 500);
-                const titleWidth = 100;
-                const titleHeight = 10;
-                doc.addImage(titleImg, 'PNG', (pageWidth - titleWidth) / 2, margin, titleWidth, titleHeight);
-
-                // Информация о пользователе
-                let yPos = margin + 25;
-                const labelSize = 12;
-                const valueSize = 12;
-
-                // Логин пользователя
-                const loginLabelImg = createTextImage('Логин пользователя:', labelSize, false, 200);
-                doc.addImage(loginLabelImg, 'PNG', margin, yPos, 50, 5);
-
-                const loginValueImg = createTextImage(currentQRUserData.username, valueSize, true, 200);
-                doc.addImage(loginValueImg, 'PNG', margin + 55, yPos, 50, 5);
-
-                yPos += 12;
-
-                // Временный пароль
-                const passwordLabelImg = createTextImage('Временный пароль:', labelSize, false, 200);
-                doc.addImage(passwordLabelImg, 'PNG', margin, yPos, 50, 5);
-
-                const passwordValueImg = createTextImage(currentQRUserData.tempPassword, valueSize, true, 200);
-                doc.addImage(passwordValueImg, 'PNG', margin + 55, yPos, 50, 5);
-
-                // Получаем QR-код из canvas
-                const canvas = document.getElementById('qrCanvas');
-                if (canvas) {
-                    try {
-                        // Конвертируем canvas в изображение
-                        const imgData = canvas.toDataURL('image/png');
-
-                        // Размер QR-кода в PDF (100x100 мм)
-                        const qrSize = 80;
-                        const qrX = (pageWidth - qrSize) / 2;
-                        const qrY = yPos + 20;
-
-                        // Добавляем QR-код
-                        doc.addImage(imgData, 'PNG', qrX, qrY, qrSize, qrSize);
-
-                        // Инструкция под QR-кодом
-                        yPos = qrY + qrSize + 15;
-                        const instructionText1 = 'Пользователь должен отсканировать этот QR-код';
-                        const instructionText2 = 'для установки пароля';
-                        const instructionImg1 = createTextImage(instructionText1, 10, false, 400);
-                        const instructionImg2 = createTextImage(instructionText2, 10, false, 400);
-                        const instructionWidth = 80;
-                        const instructionHeight = 5;
-                        doc.addImage(instructionImg1, 'PNG', (pageWidth - instructionWidth) / 2, yPos, instructionWidth, instructionHeight);
-                        doc.addImage(instructionImg2, 'PNG', (pageWidth - instructionWidth) / 2, yPos + 6, instructionWidth, instructionHeight);
-                    } catch (e) {
-                        console.error('Error adding QR image to PDF:', e);
-                        // Если не удалось добавить изображение, добавляем URL как изображение текста
-                        yPos += 20;
-                        const urlLabelImg = createTextImage('QR URL:', 10, false, 200);
-                        doc.addImage(urlLabelImg, 'PNG', margin, yPos, 30, 5);
-                        const urlValueImg = createTextImage(currentQRUserData.qrUrl, 8, false, contentWidth);
-                        doc.addImage(urlValueImg, 'PNG', margin, yPos + 8, contentWidth, 10);
-                    }
-                } else {
-                    // Если canvas не найден, добавляем URL текстом
-                    yPos += 20;
-                    doc.setFontSize(10);
-                    doc.setFont('helvetica', 'normal');
-                    doc.text('QR URL:', margin, yPos);
-                    doc.text(currentQRUserData.qrUrl, margin, yPos + 10, { maxWidth: contentWidth });
-                }
-
-                // Футер с датой
-                const date = new Date().toLocaleString('ru-RU');
-                const footerText = `Сгенерировано: ${date}`;
-                const footerImg = createTextImage(footerText, 8, false, 400);
-                doc.addImage(footerImg, 'PNG', (pageWidth - 80) / 2, pageHeight - 10, 80, 4);
-
-                // Сохраняем PDF
-                const filename = `QR_${currentQRUserData.username}_${Date.now()}.pdf`;
-                doc.save(filename);
-
-                if (window.showSuccess) {
-                    showSuccess('✅ PDF файл успешно создан');
-                }
-            } catch (e) {
-                console.error('Print QR error:', e);
-                if (window.showError) {
-                    showError('❌ Не удалось создать PDF файл');
-                } else {
-                    alert('Не удалось создать PDF файл');
-                }
-            }
+            window.open(printUrl, '_blank');
         };
 
         // Close QR Modal

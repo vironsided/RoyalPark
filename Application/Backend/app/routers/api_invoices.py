@@ -14,6 +14,7 @@ from ..models import (
     PaymentApplication, Payment, PaymentMethod
 )
 from ..deps import get_current_user
+from ..utils import to_baku_datetime
 
 
 router = APIRouter(prefix="/api/invoices", tags=["invoices-api"])
@@ -337,7 +338,7 @@ def bulk_issue_api(
 # ====== Get invoice details ======
 class PaymentOut(BaseModel):
     id: int
-    date: date
+    date: datetime
     method: str
     amount: float
     payment_id: int
@@ -383,12 +384,11 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
     lines = db.query(InvoiceLine).filter(InvoiceLine.invoice_id == inv.id).all()
     
     # Получаем оплаты по счету
-    # Сортируем по id PaymentApplication для правильной хронологии применения
     all_apps = (
         db.query(PaymentApplication)
         .join(Payment, Payment.id == PaymentApplication.payment_id)
         .filter(PaymentApplication.invoice_id == inv.id)
-        .order_by(PaymentApplication.id.asc())
+        .order_by(PaymentApplication.created_at.asc(), PaymentApplication.id.asc())
         .all()
     )
     
@@ -454,9 +454,11 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
             display_method = p.method.value
             display_comment = p.comment or "—"
             
+        received_at = to_baku_datetime(app.created_at or p.created_at or p.received_at)
+
         payment_data = {
             "id": app.id,
-            "date": p.received_at,
+            "date": received_at,
             "method": display_method,
             "amount": float(app.amount_applied),
             "payment_id": p.id,

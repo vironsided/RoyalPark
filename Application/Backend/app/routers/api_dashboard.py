@@ -12,6 +12,7 @@ from ..models import (
     User, Resident, Payment, Invoice, Block,
     Notification, NotificationStatus, PaymentMethod
 )
+from ..utils import now_baku, to_baku_datetime
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard-api"])
 
@@ -36,7 +37,7 @@ class RecentPaymentOut(BaseModel):
     resident_code: str
     resident_info: str
     amount_total: float
-    received_at: date
+    received_at: datetime
     method: str
     status: str
 
@@ -78,7 +79,7 @@ def get_dashboard_stats(
         total_residents = db.query(func.count(Resident.id)).scalar() or 0
         
         # Платежи за текущий месяц
-        now = datetime.utcnow()
+        now = now_baku()
         month_start = date(now.year, now.month, 1)
         monthly_payments_query = db.query(func.sum(Payment.amount_total)).filter(
             Payment.received_at >= month_start
@@ -144,7 +145,7 @@ def get_recent_payments(
                 resident_code=resident_code,
                 resident_info=resident_info,
                 amount_total=float(payment.amount_total),
-                received_at=payment.received_at,
+                received_at=to_baku_datetime(payment.received_at),
                 method=payment.method.value if isinstance(payment.method, PaymentMethod) else (str(payment.method) if payment.method else '—'),
                 status=status
             ))
@@ -172,7 +173,7 @@ def get_recent_activity(
             if block_name:
                 resident_info = f"{resident_info} (Блок {block_name})"
             
-            time_ago = get_time_ago(payment.received_at)
+            time_ago = get_time_ago(to_baku_datetime(payment.received_at))
             activities.append(RecentActivityOut(
                 id=payment.id,
                 type="payment",
@@ -189,7 +190,7 @@ def get_recent_activity(
             .limit(limit)\
             .all()
         for notif in recent_notifications:
-            time_ago = get_time_ago(notif.created_at)
+            time_ago = get_time_ago(to_baku_datetime(notif.created_at))
             
             # Формируем описание: блок и номер дома, если есть
             description = "Новое обращение"
@@ -228,7 +229,7 @@ def get_payment_chart_data(
 ):
     """Получить данные для графика платежей (публичный endpoint)."""
     try:
-        now = datetime.utcnow()
+        now = now_baku()
         labels = []
         data = []
         
@@ -240,8 +241,8 @@ def get_payment_chart_data(
                 day = now.date() - timedelta(days=i)
                 labels.append(day.strftime("%d.%m"))
                 
-                day_start = datetime.combine(day, datetime.min.time())
-                day_end = datetime.combine(day, datetime.max.time())
+                day_start = datetime.combine(day, datetime.min.time(), tzinfo=now.tzinfo)
+                day_end = datetime.combine(day, datetime.max.time(), tzinfo=now.tzinfo)
                 
                 total = db.query(func.sum(Payment.amount_total)).filter(
                     and_(
@@ -260,8 +261,8 @@ def get_payment_chart_data(
                 week_end = now.date() - timedelta(days=i * 7)
                 labels.append(f"Нед {4-i}")
                 
-                week_start_dt = datetime.combine(week_start, datetime.min.time())
-                week_end_dt = datetime.combine(week_end, datetime.max.time())
+                week_start_dt = datetime.combine(week_start, datetime.min.time(), tzinfo=now.tzinfo)
+                week_end_dt = datetime.combine(week_end, datetime.max.time(), tzinfo=now.tzinfo)
                 
                 total = db.query(func.sum(Payment.amount_total)).filter(
                     and_(
@@ -286,8 +287,8 @@ def get_payment_chart_data(
                 else:
                     month_end = date(month_date.year, month_date.month + 1, 1) - timedelta(days=1)
                 
-                month_start_dt = datetime.combine(month_start, datetime.min.time())
-                month_end_dt = datetime.combine(month_end, datetime.max.time())
+                month_start_dt = datetime.combine(month_start, datetime.min.time(), tzinfo=now.tzinfo)
+                month_end_dt = datetime.combine(month_end, datetime.max.time(), tzinfo=now.tzinfo)
                 
                 total = db.query(func.sum(Payment.amount_total)).filter(
                     and_(
@@ -308,10 +309,8 @@ def get_payment_chart_data(
 
 def get_time_ago(dt: datetime) -> str:
     """Получить строку "X минут/часов/дней назад"."""
-    if isinstance(dt, date) and not isinstance(dt, datetime):
-        dt = datetime.combine(dt, datetime.min.time())
-    
-    now = datetime.utcnow()
+    dt = to_baku_datetime(dt)
+    now = now_baku()
     diff = now - dt
     
     if diff.days > 0:

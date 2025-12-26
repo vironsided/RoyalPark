@@ -42,12 +42,28 @@ def run_bootstrap_schema():
     """
     ddl_statements = [
         # (если раньше ещё не добавили эти поля, оставь — IF NOT EXISTS защитит)
+                """
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'payments'
+              AND column_name = 'received_at'
+              AND data_type = 'date'
+          ) THEN
+            ALTER TABLE payments
+              ALTER COLUMN received_at TYPE TIMESTAMPTZ
+              USING (received_at::timestamp AT TIME ZONE 'Asia/Baku');
+          END IF;
+        END $$;
+        """,
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name varchar(200);",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone     varchar(50);",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS email     varchar(120);",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS comment   varchar(500);",
         # НОВОЕ: путь к аватару
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_path varchar(255);",
+        "ALTER TABLE payment_applications ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();",
         # News table
         """
         CREATE TABLE IF NOT EXISTS news (
