@@ -257,7 +257,10 @@ rippleStyle.textContent = `
 document.head.appendChild(rippleStyle);
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:8000';
+if (typeof window.API_BASE_URL === 'undefined') {
+    window.API_BASE_URL = window.BACKEND_API_BASE || 'http://localhost:8000';
+}
+const API_BASE_URL = window.API_BASE_URL;
 
 // Store dashboard data globally
 window.dashboardData = null;
@@ -292,13 +295,28 @@ window.updateUserHeader = function updateUserHeader(userData) {
     localStorage.setItem('userData', JSON.stringify(userData));
     
     if (userAvatarEl) {
+        const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        
         if (userData.avatar_path) {
-            userAvatarEl.style.backgroundImage = `url('http://localhost:8000${userData.avatar_path}')`;
-            userAvatarEl.style.backgroundSize = 'cover';
-            userAvatarEl.style.backgroundPosition = 'center';
-            userAvatarEl.textContent = '';
+            // Create image object to check if it loads correctly
+            const img = new Image();
+            img.onload = function() {
+                userAvatarEl.style.background = 'none';
+                userAvatarEl.style.backgroundImage = `url('${API_BASE_URL}${userData.avatar_path}')`;
+                userAvatarEl.style.backgroundSize = 'cover';
+                userAvatarEl.style.backgroundPosition = 'center';
+                userAvatarEl.style.backgroundRepeat = 'no-repeat';
+                userAvatarEl.textContent = '';
+            };
+            img.onerror = function() {
+                // If fails to load, fallback to initials and gradient
+                userAvatarEl.style.background = '';
+                userAvatarEl.style.backgroundImage = '';
+                userAvatarEl.textContent = initials || fullName.substring(0, 2).toUpperCase();
+            };
+            img.src = `${API_BASE_URL}${userData.avatar_path}`;
         } else {
-            const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+            userAvatarEl.style.background = ''; // Restore default gradient from CSS
             userAvatarEl.style.backgroundImage = '';
             userAvatarEl.textContent = initials || fullName.substring(0, 2).toUpperCase();
         }

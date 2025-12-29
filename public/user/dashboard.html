@@ -500,11 +500,13 @@
     
     <script src="/js/notifications.js"></script>
     <script>
+        // API_BASE_URL is already defined in user.js
+
         // Session validation - redirect to login if not authenticated
         (async function checkSession() {
             document.body.style.visibility = 'hidden';
             try {
-                const response = await fetch('http://localhost:8000/api/auth/check', {
+                const response = await fetch(`${API_BASE_URL}/api/auth/check`, {
                     credentials: 'include'
                 });
                 if (!response.ok) {
@@ -525,7 +527,7 @@
                 logoutBtn.addEventListener('click', async function(e) {
                     e.preventDefault();
                     try {
-                        await fetch('http://localhost:8000/api/auth/logout', {
+                        await fetch(`${API_BASE_URL}/api/auth/logout`, {
                             method: 'POST',
                             credentials: 'include'
                         });
@@ -595,7 +597,7 @@
             // Load user profile from backend
             async function loadUserProfile() {
                 try {
-                    const response = await fetch('http://localhost:8000/api/users/me', {
+                    const response = await fetch(`${API_BASE_URL}/api/users/me`, {
                         method: 'GET',
                         credentials: 'include',
                         headers: {
@@ -625,19 +627,31 @@
                     
                     // Update avatar in modal
                     if (avatarPreview) {
-                        if (user.avatar_path) {
-                            avatarPreview.style.backgroundImage = `url('http://localhost:8000${user.avatar_path}')`;
-                            avatarPreview.style.backgroundSize = 'cover';
-                            avatarPreview.style.backgroundPosition = 'center';
-                            avatarPreview.textContent = '';
-                        } else {
-                            // Show initials
-                            const initials = (user.full_name || user.username || 'ПО')
+                        const initials = (user.full_name || user.username || 'ПО')
                                 .split(' ')
                                 .map(n => n[0])
                                 .join('')
                                 .toUpperCase()
                                 .substring(0, 2);
+
+                        if (user.avatar_path) {
+                            const img = new Image();
+                            img.onload = function() {
+                                avatarPreview.style.background = 'none';
+                                avatarPreview.style.backgroundImage = `url('${API_BASE_URL}${user.avatar_path}')`;
+                                avatarPreview.style.backgroundSize = 'cover';
+                                avatarPreview.style.backgroundPosition = 'center';
+                                avatarPreview.style.backgroundRepeat = 'no-repeat';
+                                avatarPreview.textContent = '';
+                            };
+                            img.onerror = function() {
+                                avatarPreview.style.background = '';
+                                avatarPreview.style.backgroundImage = '';
+                                avatarPreview.textContent = initials;
+                            };
+                            img.src = `${API_BASE_URL}${user.avatar_path}`;
+                        } else {
+                            avatarPreview.style.background = ''; // Restore default gradient
                             avatarPreview.style.backgroundImage = '';
                             avatarPreview.textContent = initials;
                         }
@@ -734,9 +748,11 @@
                     if (!file) return;
                     const reader = new FileReader();
                     reader.onload = function (e) {
+                        avatarPreview.style.background = 'none'; // Clear gradient
                         avatarPreview.style.backgroundImage = `url('${e.target.result}')`;
                         avatarPreview.style.backgroundSize = 'cover';
                         avatarPreview.style.backgroundPosition = 'center';
+                        avatarPreview.style.backgroundRepeat = 'no-repeat';
                         avatarPreview.textContent = '';
                     };
                     reader.readAsDataURL(file);
@@ -746,7 +762,7 @@
             // Change password function
             async function changePassword(currentPassword, newPassword, confirmPassword) {
                 try {
-                    const response = await fetch('http://localhost:8000/api/users/me/change-password', {
+                    const response = await fetch(`${API_BASE_URL}/api/users/me/change-password`, {
                         method: 'POST',
                         credentials: 'include',
                         headers: {
@@ -843,7 +859,7 @@
                         formData.append('avatar', file);
                     }
                     
-                    const response = await fetch('http://localhost:8000/api/users/me', {
+                    const response = await fetch(`${API_BASE_URL}/api/users/me`, {
                         method: 'PUT',
                         credentials: 'include',
                         body: formData
@@ -914,18 +930,31 @@
                     }
                     
                     if (userAvatarEl) {
-                        if (user.avatar_path) {
-                            userAvatarEl.style.backgroundImage = `url('http://localhost:8000${user.avatar_path}')`;
-                            userAvatarEl.style.backgroundSize = 'cover';
-                            userAvatarEl.style.backgroundPosition = 'center';
-                            userAvatarEl.textContent = '';
-                        } else {
-                            const initials = (user.full_name || user.username || 'ПО')
+                        const initials = (user.full_name || user.username || 'ПО')
                                 .split(' ')
                                 .map(n => n[0])
                                 .join('')
                                 .toUpperCase()
                                 .substring(0, 2);
+
+                        if (user.avatar_path) {
+                            const img = new Image();
+                            img.onload = function() {
+                                userAvatarEl.style.background = 'none';
+                                userAvatarEl.style.backgroundImage = `url('${API_BASE_URL}${user.avatar_path}')`;
+                                userAvatarEl.style.backgroundSize = 'cover';
+                                userAvatarEl.style.backgroundPosition = 'center';
+                                userAvatarEl.style.backgroundRepeat = 'no-repeat';
+                                userAvatarEl.textContent = '';
+                            };
+                            img.onerror = function() {
+                                userAvatarEl.style.background = '';
+                                userAvatarEl.style.backgroundImage = '';
+                                userAvatarEl.textContent = initials;
+                            };
+                            img.src = `${API_BASE_URL}${user.avatar_path}`;
+                        } else {
+                            userAvatarEl.style.background = ''; // Restore default gradient
                             userAvatarEl.style.backgroundImage = '';
                             userAvatarEl.textContent = initials;
                         }

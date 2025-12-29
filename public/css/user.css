@@ -1387,6 +1387,23 @@ body[data-theme="dark"] .user-bills-section select option {
         gap: 0.75rem;
     }
 
+    .user-bills-filter-group {
+        width: 100%;
+    }
+
+    /* Статусный мультиселект растягиваем на всю ширину, чтобы не вылезал */
+    .user-bills-status-multiselect {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .status-multiselect-dropdown {
+        width: 100%;
+        left: 0;
+        right: 0;
+    }
+
     .user-bills-filter-group select {
         min-width: 140px;
     }
@@ -1594,6 +1611,8 @@ body[data-theme="dark"] .user-bills-section select option {
     grid-template-columns: 1fr 1.2fr 0.9fr;
     gap: 2rem;
     align-items: start;
+    width: 100%;
+    min-width: 0;
 }
 
 .payment-section-title {
@@ -3417,17 +3436,47 @@ body[data-theme="dark"] .user-bills-section select option {
 
 /* Responsive styles for payment cards */
 @media (max-width: 1200px) {
+    .user-payment-page {
+        padding: 1.25rem 1.25rem 1.5rem;
+    }
+
     .payment-container {
         grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
+        gap: 1.1rem;
     }
     
     .payment-right-column {
         grid-column: 1 / -1;
     }
+
+    .payment-section-title {
+        font-size: 1.1rem;
+    }
+
+    .resident-pass-wrapper {
+        height: 230px;
+    }
+
+    .card-preview-container {
+        height: 210px;
+    }
+
+    .payment-left-column,
+    .payment-middle-column,
+    .payment-right-column {
+        padding: 1.2rem;
+    }
+
+    .saved-cards-container {
+        gap: 0.85rem;
+    }
 }
 
 @media (max-width: 768px) {
+    .user-payment-page {
+        padding: 1rem 0.85rem 1.2rem;
+    }
+
     .payment-container {
         grid-template-columns: 1fr;
         gap: 1rem;
@@ -3439,12 +3488,45 @@ body[data-theme="dark"] .user-bills-section select option {
     
     /* Адаптивные размеры карт */
     .saved-card-wrapper {
-        height: 220px;
-        min-height: 180px;
+        height: 200px;
+        min-height: 170px;
     }
     
+    .payment-left-column,
+    .payment-middle-column,
+    .payment-right-column {
+        width: 100%;
+        padding: 1rem;
+    }
+
+    .payment-left-column .bank-card {
+        aspect-ratio: 1.45 / 1;
+        padding: 1.1rem;
+    }
+
+    .payment-left-column .card-number {
+        font-size: 1.2rem;
+        letter-spacing: 0.18em;
+    }
+
+    .payment-left-column .brand-name {
+        font-size: 1rem;
+    }
+
+    .payment-left-column .visa-badge {
+        font-size: 0.9rem;
+    }
+
+    .resident-pass-wrapper {
+        height: 190px;
+    }
+
+    .payment-section-title {
+        margin-bottom: 0.85rem;
+    }
+
     .card-preview-container {
-        height: 220px;
+        height: 200px;
     }
     
     .saved-card,
@@ -3495,18 +3577,24 @@ body[data-theme="dark"] .user-bills-section select option {
     /* Адаптивные размеры элементов */
     .saved-card .chip,
     .card-preview .chip {
-        width: 40px;
-        height: 32px;
+        width: 38px;
+        height: 30px;
     }
     
     .mastercard-logo {
-        width: 40px;
-        height: 24px;
+        width: 38px;
+        height: 22px;
     }
     
     .mastercard-circle {
-        width: 24px;
-        height: 24px;
+        width: 22px;
+        height: 22px;
+    }
+
+    .pay-button,
+    .default-pay-button {
+        width: 100%;
+        justify-content: center;
     }
     
     .visa-logo-small {
@@ -3526,13 +3614,27 @@ body[data-theme="dark"] .user-bills-section select option {
 
 @media (max-width: 480px) {
     /* Еще более компактные размеры для очень маленьких экранов */
+    .user-payment-page {
+        padding: 0.8rem 0.65rem 1rem;
+    }
+
+    .payment-container {
+        gap: 0.85rem;
+    }
+
+    .payment-left-column,
+    .payment-middle-column,
+    .payment-right-column {
+        padding: 0.85rem;
+    }
+
     .saved-card-wrapper {
-        height: 200px;
-        min-height: 160px;
+        height: 185px;
+        min-height: 150px;
     }
     
     .card-preview-container {
-        height: 200px;
+        height: 180px;
     }
     
     .saved-card,
@@ -3553,24 +3655,24 @@ body[data-theme="dark"] .user-bills-section select option {
     
     .saved-card .name-number h5.number,
     .card-preview .name-number h5.number {
-        font-size: 14px;
-        letter-spacing: 1.5px;
-        margin-bottom: 10px;
+        font-size: 13px;
+        letter-spacing: 1.3px;
+        margin-bottom: 8px;
     }
     
     .saved-card .name-number h5.name,
     .card-preview .name-number h5.name {
-        font-size: 12px;
+        font-size: 11px;
     }
     
     .saved-card header h5,
     .card-preview header h5 {
-        font-size: 12px;
+        font-size: 11px;
     }
     
     .saved-card .valid-date h5,
     .card-preview .valid-date h5 {
-        font-size: 12px;
+        font-size: 11px;
     }
     
     .saved-card h6,
@@ -3581,24 +3683,24 @@ body[data-theme="dark"] .user-bills-section select option {
     
     .saved-card .chip,
     .card-preview .chip {
-        width: 35px;
-        height: 28px;
+        width: 32px;
+        height: 25px;
     }
     
     .mastercard-logo {
-        width: 35px;
-        height: 20px;
+        width: 32px;
+        height: 18px;
     }
     
     .mastercard-circle {
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
     }
     
     .visa-logo-small {
-        width: 35px;
-        height: 22px;
-        font-size: 10px;
+        width: 32px;
+        height: 20px;
+        font-size: 9px;
     }
     
     .card-holder-section {

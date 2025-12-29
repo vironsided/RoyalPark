@@ -849,7 +849,12 @@
             const notifFilterSystem = document.getElementById('notifFilterSystem');
             const notificationsMarkRead = document.getElementById('notificationsMarkRead');
 
-            const API_BASE = 'http://localhost:8000';
+            // API Configuration
+            if (typeof window.API_BASE === 'undefined') {
+                window.API_BASE = window.BACKEND_API_BASE || 'http://localhost:8000';
+            }
+            const API_BASE = window.API_BASE;
+
             let notifications = [];
             let activeFilter = 'unread'; // По умолчанию показываем только непрочитанные
 
@@ -1131,28 +1136,25 @@
                             // Создаем изображение для проверки загрузки
                             const img = new Image();
                             img.onload = function() {
+                                avatarPreview.style.background = 'none';
                                 avatarPreview.style.backgroundImage = `url('${API_BASE}${user.avatar_path}')`;
-                                avatarPreview.style.background = 'none'; // Убираем градиентный фон
                                 avatarPreview.style.backgroundSize = 'cover';
                                 avatarPreview.style.backgroundPosition = 'center';
+                                avatarPreview.style.backgroundRepeat = 'no-repeat';
                                 avatarPreview.textContent = '';
                             };
                             img.onerror = function() {
                                 // Если изображение не загрузилось, показываем инициалы
-                                avatarPreview.textContent = initials;
+                                avatarPreview.style.background = '';
                                 avatarPreview.style.backgroundImage = 'none';
-                                avatarPreview.style.background = ''; // Восстанавливаем градиент из CSS
-                                avatarPreview.style.backgroundSize = '';
-                                avatarPreview.style.backgroundPosition = '';
+                                avatarPreview.textContent = initials;
                             };
                             img.src = `${API_BASE}${user.avatar_path}`;
                         } else {
                             // Показываем инициалы если нет аватара
-                            avatarPreview.textContent = initials;
+                            avatarPreview.style.background = '';
                             avatarPreview.style.backgroundImage = 'none';
-                            avatarPreview.style.background = ''; // Восстанавливаем градиент из CSS
-                            avatarPreview.style.backgroundSize = '';
-                            avatarPreview.style.backgroundPosition = '';
+                            avatarPreview.textContent = initials;
                         }
                     }
 
@@ -1178,28 +1180,25 @@
                         // Создаем изображение для проверки загрузки
                         const img = new Image();
                         img.onload = function() {
+                            headerAvatar.style.background = 'none';
                             headerAvatar.style.backgroundImage = `url('${API_BASE}${user.avatar_path}')`;
-                            headerAvatar.style.background = 'none'; // Убираем градиентный фон
                             headerAvatar.style.backgroundSize = 'cover';
                             headerAvatar.style.backgroundPosition = 'center';
+                            headerAvatar.style.backgroundRepeat = 'no-repeat';
                             headerAvatar.textContent = '';
                         };
                         img.onerror = function() {
                             // Если изображение не загрузилось, показываем инициалы
-                            headerAvatar.textContent = initials;
-                            headerAvatar.style.backgroundImage = 'none';
                             headerAvatar.style.background = ''; // Восстанавливаем градиент из CSS
-                            headerAvatar.style.backgroundSize = '';
-                            headerAvatar.style.backgroundPosition = '';
+                            headerAvatar.style.backgroundImage = 'none';
+                            headerAvatar.textContent = initials;
                         };
                         img.src = `${API_BASE}${user.avatar_path}`;
                     } else {
                         // Показываем инициалы если нет аватара
-                        headerAvatar.textContent = initials;
-                        headerAvatar.style.backgroundImage = 'none';
                         headerAvatar.style.background = ''; // Восстанавливаем градиент из CSS
-                        headerAvatar.style.backgroundSize = '';
-                        headerAvatar.style.backgroundPosition = '';
+                        headerAvatar.style.backgroundImage = 'none';
+                        headerAvatar.textContent = initials;
                     }
                 }
 
@@ -1360,10 +1359,11 @@
                     }
                     const reader = new FileReader();
                     reader.onload = function (e) {
+                        avatarPreview.style.background = 'none';
                         avatarPreview.style.backgroundImage = `url('${e.target.result}')`;
-                        avatarPreview.style.background = 'none'; // Убираем градиентный фон
                         avatarPreview.style.backgroundSize = 'cover';
                         avatarPreview.style.backgroundPosition = 'center';
+                        avatarPreview.style.backgroundRepeat = 'no-repeat';
                         avatarPreview.textContent = '';
                     };
                     reader.onerror = function() {

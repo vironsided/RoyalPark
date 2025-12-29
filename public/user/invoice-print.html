@@ -95,7 +95,7 @@
     <script src="/js/i18n-auto.js"></script>
     <script>
         (function () {
-            const API_BASE_URL = 'http://localhost:8000';
+            const API_BASE_URL = window.API_BASE_URL || window.BACKEND_API_BASE || 'http://localhost:8000';
             
             // Get invoice ID from sessionStorage or URL
             let invoiceId = null;

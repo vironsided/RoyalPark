@@ -63,7 +63,7 @@
     (function() {
         'use strict';
         
-        const API_BASE_URL = 'http://localhost:8000';
+        const API_BASE_URL = window.API_BASE_URL || window.BACKEND_API_BASE || 'http://localhost:8000';
         
         // Get resident ID from sessionStorage, dashboard data, or URL
         let currentResidentId = null;
