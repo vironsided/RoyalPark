@@ -157,7 +157,14 @@ def list_notifications_json(
 ):
     """JSON endpoint для получения списка уведомлений (публичный, без авторизации)."""
     try:
-        query = db.query(Notification).join(User, User.id == Notification.user_id)
+        # В админ-панели (общий список) не должны отображаться уведомления о счетах и новостях,
+        # так как этот список предназначен для обработки обращений (APPEAL) жителей.
+        query = db.query(Notification).join(User, User.id == Notification.user_id).filter(
+            or_(
+                Notification.notification_type == "APPEAL",
+                Notification.notification_type == None  # Старые уведомления без типа
+            )
+        )
         
         # Join с Resident для фильтрации
         if resident_id or block or q:

@@ -318,7 +318,7 @@ def _bulk_issue_internal(
     
     for invoice_id in invoice_ids:
         inv = db.get(Invoice, invoice_id)
-        if inv and inv.status == InvoiceStatus.ISSUED and inv.due_date:
+        if inv and inv.status == InvoiceStatus.ISSUED:
             create_invoice_notification(db, inv)
     
     return {
@@ -343,6 +343,62 @@ def bulk_issue_api(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+# ====== Bulk Notify existing invoices ======
+class BulkNotifyRequest(BaseModel):
+    due_date: Optional[str] = None  # YYYY-MM-DD
+
+@router.post("/bulk-notify")
+def bulk_notify_api(
+    data: BulkNotifyRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Рассылка уведомлений по уже выставленным счетам."""
+    # Ищем счета, которые уже выставлены или частично оплачены
+    # Берем счета за текущий месяц или все открытые? 
+    # Обычно уведомляют по открытым (не оплаченным) счетам.
+    query = db.query(Invoice).filter(
+        Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
+    )
+    
+    invoices = query.all()
+    if not invoices:
+        return {"success": True, "count": 0, "message": "Нет выставленных счетов для уведомления"}
+
+    # Парсим новый due_date если пришел
+    due: Optional[date] = None
+    if data.due_date:
+        try:
+            due = datetime.strptime(data.due_date, "%Y-%m-%d").date()
+        except:
+            due = None
+
+    cnt = 0
+    invoice_ids = []
+    for inv in invoices:
+        if due:
+            inv.due_date = due
+        invoice_ids.append(inv.id)
+        cnt += 1
+    
+    db.commit()
+    db.expire_all()
+
+    # Создаем уведомления
+    for invoice_id in invoice_ids:
+        inv = db.get(Invoice, invoice_id)
+        if inv:
+            # create_invoice_notification сама проверяет, есть ли UNREAD уведомление
+            from ..utils import create_invoice_notification
+            create_invoice_notification(db, inv)
+
+    return {
+        "success": True, 
+        "count": cnt, 
+        "message": f"Уведомления отправлены по {cnt} счетам"
+    }
 
 
 # ====== Get invoice details ======

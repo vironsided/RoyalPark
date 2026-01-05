@@ -342,6 +342,31 @@
                 </div>
 
                 <div class="top-bar-actions">
+                    <!-- Monthly Issue Block -->
+                    <div class="monthly-issue-topbar" id="monthlyIssueBlock">
+                        <span class="monthly-issue-label">Ежемесячные счета:</span>
+                        <div class="quick-days-selector">
+                            <label class="radio-tag">
+                                <input type="radio" name="paymentDaysTop" value="3" checked>
+                                <span>3д</span>
+                            </label>
+                            <label class="radio-tag">
+                                <input type="radio" name="paymentDaysTop" value="5">
+                                <span>5д</span>
+                            </label>
+                            <label class="radio-tag">
+                                <input type="radio" name="paymentDaysTop" value="7">
+                                <span>7д</span>
+                            </label>
+                        </div>
+                                <button id="btnMonthlyIssue" class="btn btn-primary btn-sm" onclick="issueMonthlyInvoices()" disabled title="Активируется за 1 день до конца месяца">
+                                    <i class="bi bi-calendar-check"></i> Уведомить
+                                </button>
+                                <div id="monthlyCountdown" class="monthly-timer-badge" style="display: none;">
+                                    <i class="bi bi-clock-history"></i> <span id="timerValue">--:--:--</span>
+                                </div>
+                            </div>
+
                     <button class="notification-btn" id="openNotifications" title="Уведомления">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                             <path

@@ -3153,6 +3153,104 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
    - public/admin/content_css/payment.css
 */
 
+/* Monthly Issue Styles in Top Bar */
+.monthly-issue-topbar {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-right: 15px;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.monthly-issue-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #667eea;
+    white-space: nowrap;
+    opacity: 0.9;
+}
+
+.quick-days-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.radio-tag {
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+}
+
+.radio-tag input {
+    display: none;
+}
+
+.radio-tag span {
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+    display: inline-block;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.radio-tag input:checked + span {
+    background: #667eea;
+    border-color: #667eea;
+    color: white;
+    box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+}
+
+.radio-tag:hover span {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+#btnMonthlyIssue {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#btnMonthlyIssue:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(1);
+    display: none; /* Скрываем кнопку, когда она не активна, чтобы показать таймер */
+}
+
+.monthly-timer-badge {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    white-space: nowrap;
+}
+
+.monthly-timer-badge i {
+    font-size: 0.85rem;
+}
+
+@media (max-width: 1200px) {
+    .monthly-issue-topbar {
+        display: none; /* Hide on smaller screens to prevent clutter */
+    }
+}
+
 /* === Notifications Modal Scrollbar (dark, inside body only) === */
 #notificationsModal .account-modal-body {
     max-height: 70vh;

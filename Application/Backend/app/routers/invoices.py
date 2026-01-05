@@ -276,7 +276,7 @@ def invoices_bulk_issue(
     
     for invoice_id in invoice_ids:
         inv = db.get(Invoice, invoice_id)
-        if inv and inv.status == InvoiceStatus.ISSUED and inv.due_date:
+        if inv and inv.status == InvoiceStatus.ISSUED:
             create_invoice_notification(db, inv)
     
     return _see_other(f"/invoices?ok=bulk_issued&cnt={cnt}")
@@ -381,10 +381,10 @@ def invoice_issue(
     if inv.status == InvoiceStatus.DRAFT:
         inv.status = InvoiceStatus.ISSUED
 
-    db.commit()
+        db.commit()
     db.refresh(inv)
     # Создаем уведомления для пользователей
-    if inv.status == InvoiceStatus.ISSUED and inv.due_date:
+    if inv.status == InvoiceStatus.ISSUED:
         create_invoice_notification(db, inv)
     
     return _see_other(f"/invoices/{invoice_id}?ok=issued")
@@ -447,8 +447,7 @@ def invoice_reissue(
     db.commit()
     db.refresh(inv)
     # Создаем уведомления для пользователей
-    if inv.due_date:
-        create_invoice_notification(db, inv)
+    create_invoice_notification(db, inv)
     
     return _see_other(f"/invoices/{invoice_id}?ok=reissued")
 

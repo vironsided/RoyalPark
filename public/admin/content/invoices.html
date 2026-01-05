@@ -215,12 +215,45 @@
                     body[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-text,
                     body[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-month-field,
                     body[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-day-field,
-                    body[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-year-field,
+                    body                    [data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-year-field,
                     html[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-text,
                     html[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-month-field,
                     html[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-day-field,
                     html[data-theme="dark"] .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit-year-field {
                         color: #ffffff !important;
+                    }
+
+                    /* Radio Tags Styles */
+                    .radio-tag {
+                        cursor: pointer;
+                        position: relative;
+                    }
+                    .radio-tag input {
+                        display: none;
+                    }
+                    .radio-tag span {
+                        padding: 6px 12px;
+                        background: rgba(255, 255, 255, 0.05);
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 6px;
+                        font-size: 0.85rem;
+                        transition: all 0.2s;
+                        display: inline-block;
+                        color: rgba(255, 255, 255, 0.7);
+                    }
+                    .radio-tag input:checked + span {
+                        background: #667eea;
+                        border-color: #667eea;
+                        color: white;
+                        box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+                    }
+                    .radio-tag:hover span {
+                        background: rgba(255, 255, 255, 0.1);
+                    }
+                    #btnMonthlyIssue:disabled {
+                        opacity: 0.4;
+                        cursor: not-allowed;
+                        filter: grayscale(1);
                     }
                 `;
                 document.head.appendChild(style);
@@ -742,7 +775,7 @@
             }, 500);
         }, 100);
     });
-    
+
     // Also load on SPA content loaded
     // Удаляем старый обработчик, если он существует
     if (window._invoicesContentLoadedHandler) {

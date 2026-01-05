@@ -86,16 +86,19 @@ def create_invoice_notification(db, invoice, created_by_user_id=None):
     """
     from .models import Notification, NotificationStatus, NotificationType, User, user_residents, Invoice, InvoiceStatus
     
-    # Проверяем, что счет выставлен (ISSUED) и есть due_date
-    if invoice.status.value != "ISSUED" or not invoice.due_date:
+    # Проверяем, что счет выставлен (ISSUED)
+    if invoice.status.value != "ISSUED":
         return
     
     # Получаем всех пользователей, связанных с резидентом через M2M таблицу
+    # Фильтруем только тех, у кого роль RESIDENT, чтобы админы не получали эти уведомления
+    from .models import RoleEnum
     users = db.query(User).join(
         user_residents, User.id == user_residents.c.user_id
     ).filter(
         user_residents.c.resident_id == invoice.resident_id,
-        User.is_active == True
+        User.is_active == True,
+        User.role == RoleEnum.RESIDENT
     ).all()
     
     if not users:
@@ -138,30 +141,30 @@ def create_invoice_notification(db, invoice, created_by_user_id=None):
         period_str = current_period_str
     
     # Форматируем дату для сообщения
-    due_date_str = invoice.due_date.strftime("%d.%m.%Y")
+    today_str = now_baku().strftime("%d.%m.%Y")
+    due_date_str = invoice.due_date.strftime("%d.%m.%Y") if invoice.due_date else "не указан"
     
-    message = f"Выставлен счет для {house_info}. Сумма: {amount_str}. Период: {period_str}. Срок оплаты: {due_date_str}"
+    # Текст сообщения
+    message = f"Выставлен счет для {house_info}. Сумма: {amount_str}. Период: {period_str}. Оплатить с {today_str} по {due_date_str}"
     
     # Создаем уведомления для каждого пользователя
     for user in users:
-        # Проверяем, нет ли уже такого уведомления (чтобы избежать дубликатов)
-        existing = db.query(Notification).filter(
-            Notification.user_id == user.id,
-            Notification.notification_type == NotificationType.INVOICE.value,
-            Notification.related_id == invoice.id,
-            Notification.status == NotificationStatus.UNREAD
-        ).first()
-        
-        if not existing:
-            notification = Notification(
-                user_id=user.id,
-                resident_id=invoice.resident_id,
-                message=message,
-                status=NotificationStatus.UNREAD,
-                notification_type=NotificationType.INVOICE.value,
-                related_id=invoice.id
-            )
-            db.add(notification)
+        # ЖЕСТКАЯ ПРОВЕРКА: Только если роль пользователя — RESIDENT
+        # Мы проверяем и через строку, и через enum на всякий случай
+        user_role = str(user.role.value) if hasattr(user.role, 'value') else str(user.role)
+        if user_role != "RESIDENT":
+            continue
+
+        notification = Notification(
+            user_id=user.id,
+            resident_id=invoice.resident_id,
+            message=message,
+            status=NotificationStatus.UNREAD,
+            notification_type="INVOICE", # Строка для надежности
+            related_id=invoice.id,
+            created_at=now_baku().replace(tzinfo=None)
+        )
+        db.add(notification)
     
     try:
         db.commit()

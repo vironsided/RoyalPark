@@ -57,7 +57,15 @@ def _list_notifications_internal(
     per_page: int = 25,
 ):
     """Внутренняя функция для получения списка уведомлений."""
-    query = db.query(Notification).join(User, User.id == Notification.user_id)
+    from sqlalchemy import or_
+    # В админ-панели показываем только обращения (APPEAL), 
+    # исключая счета (INVOICE) и новости (NEWS).
+    query = db.query(Notification).join(User, User.id == Notification.user_id).filter(
+        or_(
+            Notification.notification_type == "APPEAL",
+            Notification.notification_type == None
+        )
+    )
     
     # Join с Resident для фильтрации
     if resident_id or block_id or q:
@@ -243,8 +251,16 @@ def list_notifications_public(
 @router.get("/unread-count")
 def get_unread_count_public(db: Session = Depends(get_db)):
     """Получить количество непрочитанных уведомлений (публичный endpoint)."""
-    from sqlalchemy import func
-    count = db.query(func.count(Notification.id)).filter(Notification.status == NotificationStatus.UNREAD).scalar()
+    from sqlalchemy import func, or_
+    # Считаем только обращения (APPEAL), так как в админке нужны только они.
+    # Счета (INVOICE) и новости (NEWS) — только для жителей.
+    count = db.query(func.count(Notification.id)).filter(
+        Notification.status == NotificationStatus.UNREAD,
+        or_(
+            Notification.notification_type == "APPEAL",
+            Notification.notification_type == None
+        )
+    ).scalar()
     return {"count": count or 0}
 
 

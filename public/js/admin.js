@@ -16,6 +16,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load dashboard data
     loadDashboardData();
     
+    // Initialize monthly issue button check
+    checkMonthlyActivation();
+    setInterval(checkMonthlyActivation, 3600000); // Check every hour
+    
     // Add modern animations and effects
     addCardAnimations();
     initSmoothScroll();
@@ -30,6 +34,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 window.addEventListener('spa:contentLoaded', function(e) {
+    // Check monthly issue activation on page change
+    checkMonthlyActivation();
+    
     setTimeout(() => {
         const planOverlay = document.querySelector('.plan-overlay');
         if (planOverlay || (e.detail && e.detail.route === '/blocks')) {
@@ -896,3 +903,140 @@ window.showConfirm = function showConfirm(message, titleOrCallback, onCancel) {
         cancelText: 'Отмена'
     });
 };
+
+// Monthly Invoice Issue Logic
+function checkMonthlyActivation() {
+    const btn = document.getElementById('btnMonthlyIssue');
+    const timerBadge = document.getElementById('monthlyCountdown');
+    const timerValue = document.getElementById('timerValue');
+    if (!btn || !timerBadge) return;
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    // Функция для получения даты активации (последний день - 1)
+    function getActivationDate(year, month) {
+        const lastDay = new Date(year, month + 1, 0).getDate();
+        return new Date(year, month, lastDay - 1, 0, 0, 0);
+    }
+
+    let targetDate = getActivationDate(currentYear, currentMonth);
+    
+    // Проверяем, была ли уже рассылка в этом месяце (через localStorage для примера)
+    const lastDone = localStorage.getItem('lastMonthlyNotifyMonthYear');
+    const currentMonthKey = `${currentMonth}-${currentYear}`;
+    const alreadyDoneThisMonth = (lastDone === currentMonthKey);
+
+    // Если сегодня уже позже дня активации ИЛИ сегодня день активации, но уже отправили
+    if (now >= targetDate.setHours(23,59,59) || (now >= targetDate && alreadyDoneThisMonth)) {
+        // Значит следующая активация только в следующем месяце
+        targetDate = getActivationDate(currentYear, currentMonth + 1);
+    } else {
+        // Сбрасываем время для корректного сравнения
+        targetDate = getActivationDate(currentYear, currentMonth);
+    }
+
+    const diff = targetDate - now;
+
+    if (diff <= 0 && !alreadyDoneThisMonth) {
+        // Время пришло и еще не отправляли
+        btn.style.display = 'flex';
+        btn.disabled = false;
+        timerBadge.style.display = 'none';
+        btn.title = "Готово к рассылке уведомлений";
+    } else {
+        // Показываем таймер
+        btn.style.display = 'none';
+        btn.disabled = true;
+        timerBadge.style.display = 'flex';
+        
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+        let timeStr = "";
+        if (days > 0) timeStr += `${days}д `;
+        timeStr += `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        
+        timerValue.innerText = timeStr;
+        timerBadge.title = alreadyDoneThisMonth ? "Рассылка за этот месяц уже выполнена" : `Активация через ${timeStr}`;
+    }
+
+    // Для дебага
+    if (window.location.search.includes('debug_monthly=1')) {
+        btn.style.display = 'flex';
+        btn.disabled = false;
+        timerBadge.style.display = 'none';
+    }
+}
+
+// Запускаем обновление таймера каждую секунду
+setInterval(checkMonthlyActivation, 1000);
+
+window.issueMonthlyInvoices = async function() {
+    const daysRadio = document.querySelector('input[name="paymentDaysTop"]:checked');
+    const daysToPay = parseInt(daysRadio ? daysRadio.value : "3");
+    
+    const now = new Date();
+    const dueDate = new Date();
+    dueDate.setDate(now.getDate() + daysToPay);
+    
+    const formattedDueDate = dueDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    const confirmMessage = `Отправить уведомления пользователям по всем выставленным счетам? \nСрок оплаты в уведомлении будет: ${dueDate.toLocaleDateString('ru-RU')} (+${daysToPay} дн.)`;
+    
+    if (window.showConfirm) {
+        window.showConfirm(confirmMessage, 'Рассылка уведомлений').then(async (confirmed) => {
+            if (confirmed) await performMonthlyNotifyAll(formattedDueDate);
+        });
+    } else {
+        if (confirm(confirmMessage)) {
+            await performMonthlyNotifyAll(formattedDueDate);
+        }
+    }
+};
+
+async function performMonthlyNotifyAll(dueDate) {
+    const API_BASE = window.API_BASE || window.BACKEND_API_BASE || 'http://localhost:8000';
+    
+    try {
+        const payload = {
+            due_date: dueDate
+        };
+        
+        let response = await fetch(`${API_BASE}/api/invoices/bulk-notify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Ошибка сервера');
+        }
+        
+        const data = await response.json();
+        
+        // Помечаем, что в этом месяце уже отправляли
+        const now = new Date();
+        localStorage.setItem('lastMonthlyNotifyMonthYear', `${now.getMonth()}-${now.getFullYear()}`);
+        checkMonthlyActivation(); // Сразу скрываем кнопку и включаем таймер
+
+        if (window.showSuccess) {
+            showSuccess(`Уведомления успешно отправлены! Количество: ${data.count}`);
+        } else {
+            alert(`Уведомления успешно отправлены! Количество: ${data.count}`);
+        }
+        
+    } catch (error) {
+        console.error('Error sending bulk notifications:', error);
+        if (window.showError) {
+            showError(`Ошибка: ${error.message}`);
+        } else {
+            alert(`Ошибка: ${error.message}`);
+        }
+    }
+}

@@ -435,7 +435,9 @@ class Notification(Base):
     notification_type: Mapped[str | None] = mapped_column(String(20), nullable=True)  # INVOICE, NEWS, APPEAL
     related_id: Mapped[int | None] = mapped_column(Integer, nullable=True)  # ID счета, новости и т.д.
     
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow, nullable=False)
+    # Используем функцию из .utils (импорт внутри метода или через default)
+    # Но проще изменить default на текущее время Баку в самом приложении
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False)
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
 
     user: Mapped["User"] = relationship("User", lazy="joined")
