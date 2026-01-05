@@ -1309,4 +1309,244 @@ window.addEventListener('beforeunload', () => {
     if (langCheckInterval) clearInterval(langCheckInterval);
 });
 
+// ====== Notifications System ======
+(function() {
+    'use strict';
+    
+    const API_BASE = window.API_BASE_URL || 'http://localhost:8000';
+    const notificationBtn = document.querySelector('.notification-btn');
+    const notificationBadge = document.querySelector('.notification-badge');
+    const notificationsModal = document.getElementById('notificationsModal');
+    const notificationsClose = document.getElementById('notificationsClose');
+    const notificationsList = document.getElementById('notificationsList');
+    
+    let notifications = [];
+    
+    // Format time
+    function formatTime(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now - date;
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+        
+        if (minutes < 1) return 'только что';
+        if (minutes < 60) return `${minutes} мин назад`;
+        if (hours < 24) return `${hours} ч назад`;
+        if (days < 7) return `${days} дн назад`;
+        return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+    
+    // Load notifications
+    async function loadNotifications() {
+        try {
+            const response = await fetch(`${API_BASE}/api/notifications/user/me?per_page=50`, {
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
+            notifications = data.notifications || [];
+            renderNotifications();
+            updateNotificationCount();
+        } catch (error) {
+            console.error('Error loading notifications:', error);
+            if (notificationsList) {
+                notificationsList.innerHTML = '<div class="text-center p-4 text-muted">Не удалось загрузить уведомления</div>';
+            }
+        }
+    }
+    
+    // Get unread count
+    async function getUnreadCount() {
+        try {
+            const response = await fetch(`${API_BASE}/api/notifications/user/me/unread-count`, {
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                return 0;
+            }
+            
+            const data = await response.json();
+            return data.count || 0;
+        } catch (error) {
+            console.error('Error fetching unread count:', error);
+            return notifications.filter(n => n.status === 'UNREAD').length;
+        }
+    }
+    
+    // Update notification badge
+    async function updateNotificationCount() {
+        const count = await getUnreadCount();
+        if (notificationBadge) {
+            notificationBadge.textContent = count;
+            notificationBadge.style.display = count > 0 ? 'flex' : 'none';
+        }
+    }
+    
+    // Render notifications
+    function renderNotifications() {
+        if (!notificationsList) return;
+        
+        if (notifications.length === 0) {
+            notificationsList.innerHTML = '<div class="text-center p-4 text-muted">Нет уведомлений</div>';
+            return;
+        }
+        
+        const items = notifications.map(notif => {
+            const isUnread = notif.status === 'UNREAD';
+            const icon = notif.notification_type === 'INVOICE' 
+                ? '<i class="bi bi-receipt"></i>' 
+                : notif.notification_type === 'NEWS'
+                ? '<i class="bi bi-bell"></i>'
+                : '<i class="bi bi-bell"></i>';
+            const iconColor = notif.notification_type === 'INVOICE' ? '#f59e0b' : '#667eea';
+            
+            return `
+                <div class="notification-item" 
+                     data-id="${notif.id}" 
+                     data-type="${notif.notification_type || ''}"
+                     data-related-id="${notif.related_id || ''}"
+                     style="display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border:1px solid rgba(255,255,255,0.08); border-radius:12px; margin-bottom:10px; background:${isUnread ? 'rgba(102,126,234,0.08)' : 'transparent'}; cursor:pointer; transition:background 0.2s;"
+                     onmouseover="this.style.background='rgba(102,126,234,0.15)'" 
+                     onmouseout="this.style.background='${isUnread ? 'rgba(102,126,234,0.08)' : 'transparent'}'">
+                    <div style="width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; background:${iconColor}; box-shadow:0 6px 16px rgba(0,0,0,.15); flex-shrink:0;">
+                        ${icon}
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                            <strong style="color:var(--text-primary); font-size:0.95rem;">${escapeHtml(notif.message)}</strong>
+                            ${isUnread ? '<span class="badge" style="background:#10b981; height:20px; display:flex; align-items:center; padding:0 6px; font-size:0.7rem; flex-shrink:0;">НОВАЯ</span>' : ''}
+                        </div>
+                        <span style="font-size:0.8rem; color:var(--text-secondary);">${formatTime(notif.created_at)}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        notificationsList.innerHTML = items;
+        
+        // Add click handlers
+        notificationsList.querySelectorAll('.notification-item').forEach(item => {
+            item.addEventListener('click', async function() {
+                const notificationId = this.dataset.id;
+                const notificationType = this.dataset.type;
+                const relatedId = this.dataset.relatedId;
+                
+                // Mark as read
+                try {
+                    await fetch(`${API_BASE}/api/notifications/${notificationId}`, {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
+                } catch (e) {
+                    console.error('Error marking notification as read:', e);
+                }
+                
+                // Close modal
+                closeNotifications();
+                
+                // Navigate based on type
+                if (notificationType === 'INVOICE' && relatedId) {
+                    // Navigate to bills page and store invoice ID for filtering
+                    try {
+                        sessionStorage.setItem('billsFilterInvoiceIds', JSON.stringify([parseInt(relatedId)]));
+                        sessionStorage.setItem('billsFilterStatuses', JSON.stringify(['ISSUED', 'PARTIAL', 'DRAFT', 'PAID']));
+                    } catch (e) {
+                        console.warn('Failed to store invoice filter in sessionStorage', e);
+                    }
+                    if (window.userSpaRouter) {
+                        window.userSpaRouter.navigate('bills', true);
+                    } else {
+                        window.location.hash = 'bills';
+                    }
+                } else if (notificationType === 'NEWS' && relatedId) {
+                    // Navigate to news page - store news ID for auto-opening modal
+                    try {
+                        sessionStorage.setItem('autoOpenNewsId', relatedId.toString());
+                    } catch (e) {
+                        console.warn('Failed to store news ID in sessionStorage', e);
+                    }
+                    if (window.userSpaRouter) {
+                        window.userSpaRouter.navigate('news', true);
+                    } else {
+                        window.location.hash = 'news';
+                    }
+                    // Auto-open news modal after navigation (if function exists)
+                    setTimeout(() => {
+                        if (window.openNewsDetail && typeof window.openNewsDetail === 'function') {
+                            window.openNewsDetail(parseInt(relatedId));
+                        }
+                    }, 1000);
+                }
+                
+                // Reload notifications
+                setTimeout(() => {
+                    loadNotifications();
+                }, 500);
+            });
+        });
+    }
+    
+    // Escape HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Open notifications modal
+    function openNotifications() {
+        if (!notificationsModal) return;
+        notificationsModal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        loadNotifications();
+    }
+    
+    // Close notifications modal
+    function closeNotifications() {
+        if (!notificationsModal) return;
+        notificationsModal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+    
+    // Event listeners
+    if (notificationBtn) {
+        notificationBtn.addEventListener('click', openNotifications);
+    }
+    
+    if (notificationsClose) {
+        notificationsClose.addEventListener('click', closeNotifications);
+    }
+    
+    if (notificationsModal) {
+        notificationsModal.addEventListener('click', function(e) {
+            if (e.target === notificationsModal) {
+                closeNotifications();
+            }
+        });
+    }
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && notificationsModal && notificationsModal.classList.contains('show')) {
+            closeNotifications();
+        }
+    });
+    
+    // Load notifications count on page load
+    updateNotificationCount();
+    
+    // Refresh count every 30 seconds
+    setInterval(updateNotificationCount, 30000);
+    
+    // Expose functions globally
+    window.loadUserNotifications = loadNotifications;
+    window.updateUserNotificationCount = updateNotificationCount;
+})();
+
 console.log('📱 User dashboard loaded!');

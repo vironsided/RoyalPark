@@ -14,7 +14,7 @@ from ..models import (
     PaymentApplication, Payment, PaymentMethod
 )
 from ..deps import get_current_user
-from ..utils import to_baku_datetime
+from ..utils import to_baku_datetime, create_invoice_notification
 
 
 router = APIRouter(prefix="/api/invoices", tags=["invoices-api"])
@@ -311,6 +311,16 @@ def _bulk_issue_internal(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to commit changes: {str(e)}")
     
+    # Создаем уведомления для всех выставленных счетов
+    # Сохраняем ID счетов до commit, затем перезагружаем
+    invoice_ids = [inv.id for inv in invoices_to_process]
+    db.expire_all()  # Сбрасываем кэш сессии
+    
+    for invoice_id in invoice_ids:
+        inv = db.get(Invoice, invoice_id)
+        if inv and inv.status == InvoiceStatus.ISSUED and inv.due_date:
+            create_invoice_notification(db, inv)
+    
     return {
         "success": True,
         "count": cnt,
@@ -570,8 +580,17 @@ def _update_invoice_internal(db: Session, invoice_id: int, due_date: Optional[st
                 seq = 1
             inv.number = f"{prefix}/{seq:06d}"
         inv.status = InvoiceStatus.ISSUED
+        db.commit()
+        db.refresh(inv)
+        # Создаем уведомления для пользователей
+        create_invoice_notification(db, inv)
+    else:
+        db.commit()
+        db.refresh(inv)
+        # Если счет уже был ISSUED и мы обновили due_date, также создаем уведомления
+        if inv.status == InvoiceStatus.ISSUED and inv.due_date:
+            create_invoice_notification(db, inv)
     
-    db.commit()
     return {"success": True, "message": "Счёт успешно обновлён!"}
 
 
@@ -687,5 +706,9 @@ def _reissue_invoice_internal(db: Session, invoice_id: int, due_date: Optional[s
     inv.status = InvoiceStatus.ISSUED
     
     db.commit()
+    db.refresh(inv)
+    # Создаем уведомления для пользователей
+    create_invoice_notification(db, inv)
+    
     return {"success": True, "message": "Счёт выставлен заново!"}
 

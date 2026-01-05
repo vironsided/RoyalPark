@@ -13,6 +13,7 @@ import json
 from ..database import get_db
 from ..models import News, User, RoleEnum
 from ..deps import get_current_user
+from ..utils import create_news_notification
 
 
 router = APIRouter(prefix="/api/news", tags=["news-api"])
@@ -197,6 +198,10 @@ def create_news(
     db.commit()
     db.refresh(news)
     
+    # Создаем уведомления для пользователей, если новость опубликована
+    if news.is_active and news.published_at <= datetime.utcnow():
+        create_news_notification(db, news)
+    
     title_dict = json.loads(news.title)
     content_dict = json.loads(news.content)
     
@@ -288,6 +293,10 @@ def update_news(
     
     db.commit()
     db.refresh(news)
+    
+    # Создаем уведомления для пользователей, если новость стала активной и опубликована
+    if news.is_active and news.published_at <= datetime.utcnow():
+        create_news_notification(db, news)
     
     title_dict = json.loads(news.title) if isinstance(news.title, str) else news.title
     content_dict = json.loads(news.content) if isinstance(news.content, str) else news.content

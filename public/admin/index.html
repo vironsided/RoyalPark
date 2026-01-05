@@ -1146,14 +1146,22 @@
                             img.onerror = function() {
                                 // Если изображение не загрузилось, показываем инициалы
                                 avatarPreview.style.background = '';
-                                avatarPreview.style.backgroundImage = 'none';
+                                // ВАЖНО: не ставим backgroundImage = 'none' — это убивает CSS-градиент (он тоже background-image)
+                                avatarPreview.style.backgroundImage = '';
+                                avatarPreview.style.backgroundSize = '';
+                                avatarPreview.style.backgroundPosition = '';
+                                avatarPreview.style.backgroundRepeat = '';
                                 avatarPreview.textContent = initials;
                             };
                             img.src = `${API_BASE}${user.avatar_path}`;
                         } else {
                             // Показываем инициалы если нет аватара
                             avatarPreview.style.background = '';
-                            avatarPreview.style.backgroundImage = 'none';
+                            // ВАЖНО: не ставим backgroundImage = 'none' — это убивает CSS-градиент (он тоже background-image)
+                            avatarPreview.style.backgroundImage = '';
+                            avatarPreview.style.backgroundSize = '';
+                            avatarPreview.style.backgroundPosition = '';
+                            avatarPreview.style.backgroundRepeat = '';
                             avatarPreview.textContent = initials;
                         }
                     }
@@ -1190,14 +1198,22 @@
                         img.onerror = function() {
                             // Если изображение не загрузилось, показываем инициалы
                             headerAvatar.style.background = ''; // Восстанавливаем градиент из CSS
-                            headerAvatar.style.backgroundImage = 'none';
+                            // ВАЖНО: не ставим backgroundImage = 'none' — это убивает CSS-градиент (он тоже background-image)
+                            headerAvatar.style.backgroundImage = '';
+                            headerAvatar.style.backgroundSize = '';
+                            headerAvatar.style.backgroundPosition = '';
+                            headerAvatar.style.backgroundRepeat = '';
                             headerAvatar.textContent = initials;
                         };
                         img.src = `${API_BASE}${user.avatar_path}`;
                     } else {
                         // Показываем инициалы если нет аватара
                         headerAvatar.style.background = ''; // Восстанавливаем градиент из CSS
-                        headerAvatar.style.backgroundImage = 'none';
+                        // ВАЖНО: не ставим backgroundImage = 'none' — это убивает CSS-градиент (он тоже background-image)
+                        headerAvatar.style.backgroundImage = '';
+                        headerAvatar.style.backgroundSize = '';
+                        headerAvatar.style.backgroundPosition = '';
+                        headerAvatar.style.backgroundRepeat = '';
                         headerAvatar.textContent = initials;
                     }
                 }
@@ -1351,10 +1367,12 @@
                         const userName = userNameEl ? userNameEl.textContent : 'U';
                         const initials = userName.substring(0, 2).toUpperCase();
                         avatarPreview.textContent = initials;
-                        avatarPreview.style.backgroundImage = 'none';
+                        // ВАЖНО: не ставим backgroundImage = 'none' — это убивает CSS-градиент (он тоже background-image)
+                        avatarPreview.style.backgroundImage = '';
                         avatarPreview.style.background = ''; // Восстанавливаем градиент из CSS
                         avatarPreview.style.backgroundSize = '';
                         avatarPreview.style.backgroundPosition = '';
+                        avatarPreview.style.backgroundRepeat = '';
                         return;
                     }
                     const reader = new FileReader();
@@ -1372,10 +1390,12 @@
                         const userName = userNameEl ? userNameEl.textContent : 'U';
                         const initials = userName.substring(0, 2).toUpperCase();
                         avatarPreview.textContent = initials;
-                        avatarPreview.style.backgroundImage = 'none';
+                        // ВАЖНО: не ставим backgroundImage = 'none' — это убивает CSS-градиент (он тоже background-image)
+                        avatarPreview.style.backgroundImage = '';
                         avatarPreview.style.background = ''; // Восстанавливаем градиент из CSS
                         avatarPreview.style.backgroundSize = '';
                         avatarPreview.style.backgroundPosition = '';
+                        avatarPreview.style.backgroundRepeat = '';
                     };
                     reader.readAsDataURL(file);
                 });
@@ -1566,24 +1586,29 @@
                                     avatarPreview.style.background = 'none'; // Убираем градиентный фон
                                     avatarPreview.style.backgroundSize = 'cover';
                                     avatarPreview.style.backgroundPosition = 'center';
+                                    avatarPreview.style.backgroundRepeat = 'no-repeat';
                                     avatarPreview.textContent = '';
                                 };
                                 img.onerror = function() {
                                     // Если изображение не загрузилось, показываем инициалы
                                     avatarPreview.textContent = initials;
-                                    avatarPreview.style.backgroundImage = 'none';
+                                    // ВАЖНО: не ставим backgroundImage = 'none' — это убивает CSS-градиент (он тоже background-image)
+                                    avatarPreview.style.backgroundImage = '';
                                     avatarPreview.style.background = ''; // Восстанавливаем градиент из CSS
                                     avatarPreview.style.backgroundSize = '';
                                     avatarPreview.style.backgroundPosition = '';
+                                    avatarPreview.style.backgroundRepeat = '';
                                 };
                                 img.src = `${API_BASE}${updatedUser.avatar_path}`;
                             } else {
                                 // Показываем инициалы если нет аватара
                                 avatarPreview.textContent = initials;
-                                avatarPreview.style.backgroundImage = 'none';
+                                // ВАЖНО: не ставим backgroundImage = 'none' — это убивает CSS-градиент (он тоже background-image)
+                                avatarPreview.style.backgroundImage = '';
                                 avatarPreview.style.background = ''; // Восстанавливаем градиент из CSS
                                 avatarPreview.style.backgroundSize = '';
                                 avatarPreview.style.backgroundPosition = '';
+                                avatarPreview.style.backgroundRepeat = '';
                             }
                         }
 

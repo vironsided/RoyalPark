@@ -28,6 +28,7 @@ from sqlalchemy import func
 from starlette import status
 
 from ..database import get_db
+from ..utils import create_invoice_notification
 from ..deps import get_current_user, require_any_role
 from ..models import (
     User, RoleEnum, Block, Resident,
@@ -240,7 +241,10 @@ def invoices_bulk_issue(
             due = None
 
     cnt = 0
-    for inv in q.all():
+    invoices_to_process = q.all()
+    invoice_ids = []
+    
+    for inv in invoices_to_process:
         if not inv.number:
             prefix = f"{inv.period_year}-{inv.period_month:02d}"
             last_num = (db.query(Invoice.number)
@@ -261,9 +265,20 @@ def invoices_bulk_issue(
         inv.status = InvoiceStatus.ISSUED
         if due:
             inv.due_date = due
+        invoice_ids.append(inv.id)
         cnt += 1
 
     db.commit()
+    
+    # Создаем уведомления для всех выставленных счетов
+    # Перезагружаем счеты после commit
+    db.expire_all()  # Сбрасываем кэш сессии
+    
+    for invoice_id in invoice_ids:
+        inv = db.get(Invoice, invoice_id)
+        if inv and inv.status == InvoiceStatus.ISSUED and inv.due_date:
+            create_invoice_notification(db, inv)
+    
     return _see_other(f"/invoices?ok=bulk_issued&cnt={cnt}")
 
 
@@ -367,6 +382,11 @@ def invoice_issue(
         inv.status = InvoiceStatus.ISSUED
 
     db.commit()
+    db.refresh(inv)
+    # Создаем уведомления для пользователей
+    if inv.status == InvoiceStatus.ISSUED and inv.due_date:
+        create_invoice_notification(db, inv)
+    
     return _see_other(f"/invoices/{invoice_id}?ok=issued")
 
 
@@ -425,6 +445,11 @@ def invoice_reissue(
 
     inv.status = InvoiceStatus.ISSUED
     db.commit()
+    db.refresh(inv)
+    # Создаем уведомления для пользователей
+    if inv.due_date:
+        create_invoice_notification(db, inv)
+    
     return _see_other(f"/invoices/{invoice_id}?ok=reissued")
 
 

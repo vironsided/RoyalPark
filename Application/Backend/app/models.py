@@ -411,6 +411,12 @@ class NotificationStatus(str, enum.Enum):
     READ = "READ"
 
 
+class NotificationType(str, enum.Enum):
+    INVOICE = "INVOICE"  # Уведомление о выставленном счете
+    NEWS = "NEWS"        # Уведомление о новости
+    APPEAL = "APPEAL"    # Обращение (существующий тип для обращений)
+
+
 class Notification(Base):
     __tablename__ = "notifications"
 
@@ -424,6 +430,11 @@ class Notification(Base):
         default=NotificationStatus.UNREAD,
         nullable=False,
     )
+    
+    # Новые поля для типа уведомления и связанного объекта
+    notification_type: Mapped[str | None] = mapped_column(String(20), nullable=True)  # INVOICE, NEWS, APPEAL
+    related_id: Mapped[int | None] = mapped_column(Integer, nullable=True)  # ID счета, новости и т.д.
+    
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow, nullable=False)
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
 

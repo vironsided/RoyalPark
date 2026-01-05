@@ -134,6 +134,9 @@ def run_bootstrap_schema():
           created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
         );
         """,
+        # Новые поля для уведомлений
+        "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS notification_type VARCHAR(20);",
+        "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS related_id INTEGER;",
 
     ]
     from .database import engine

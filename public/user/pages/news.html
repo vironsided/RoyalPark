@@ -982,6 +982,22 @@ html[data-theme="dark"] .table-pagination {
         setTimeout(() => {
             loadNews();
             initCustomUserNewsPaginationDropdown();
+            
+            // Проверяем, нужно ли автоматически открыть новость (при переходе из уведомлений)
+            try {
+                const autoOpenNewsId = sessionStorage.getItem('autoOpenNewsId');
+                if (autoOpenNewsId) {
+                    sessionStorage.removeItem('autoOpenNewsId');
+                    // Открываем новость после загрузки (с небольшой задержкой)
+                    setTimeout(() => {
+                        if (window.openNewsDetail && typeof window.openNewsDetail === 'function') {
+                            window.openNewsDetail(parseInt(autoOpenNewsId));
+                        }
+                    }, 1500);
+                }
+            } catch (e) {
+                console.warn('Failed to check autoOpenNewsId', e);
+            }
         }, 100);
     }
     

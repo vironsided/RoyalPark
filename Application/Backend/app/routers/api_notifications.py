@@ -28,6 +28,10 @@ class NotificationOut(BaseModel):
     created_at: datetime
     read_at: Optional[datetime] = None
     
+    # Новые поля
+    notification_type: Optional[str] = None  # INVOICE, NEWS, APPEAL
+    related_id: Optional[int] = None  # ID счета, новости и т.д.
+    
     # User info
     user_full_name: Optional[str] = None
     user_phone: Optional[str] = None
@@ -115,6 +119,8 @@ def _list_notifications_internal(
             status=notif.status.value,
             created_at=notif.created_at,
             read_at=notif.read_at,
+            notification_type=notif.notification_type,
+            related_id=notif.related_id,
             user_full_name=notif.user.full_name,
             user_phone=notif.user.phone,
             user_email=notif.user.email,
@@ -171,6 +177,8 @@ def _get_notification_internal(
         status=notif.status.value,
         created_at=notif.created_at,
         read_at=notif.read_at,
+        notification_type=notif.notification_type,
+        related_id=notif.related_id,
         user_full_name=notif.user.full_name,
         user_phone=notif.user.phone,
         user_email=notif.user.email,
@@ -237,6 +245,86 @@ def get_unread_count_public(db: Session = Depends(get_db)):
     """Получить количество непрочитанных уведомлений (публичный endpoint)."""
     from sqlalchemy import func
     count = db.query(func.count(Notification.id)).filter(Notification.status == NotificationStatus.UNREAD).scalar()
+    return {"count": count or 0}
+
+
+@router.get("/user/me")
+def get_user_notifications(
+    status: Optional[str] = Query(None, alias="status"),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(25, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Получить уведомления текущего пользователя (для резидентской панели)."""
+    query = db.query(Notification).filter(Notification.user_id == current_user.id)
+    
+    # Фильтр по статусу
+    if status and status.upper() in {s.value for s in NotificationStatus}:
+        status_enum = NotificationStatus(status.upper())
+        query = query.filter(Notification.status == status_enum)
+    
+    total = query.count()
+    last_page = max(1, (total + per_page - 1) // per_page)
+    page = max(1, min(page, last_page))
+    
+    notifications = query.order_by(Notification.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
+    
+    result = []
+    for notif in notifications:
+        resident_code = None
+        resident_info = None
+        block_name = None
+        unit_number = None
+        
+        if notif.resident:
+            block_name = notif.resident.block.name if notif.resident.block else None
+            unit_number = notif.resident.unit_number
+            if block_name and unit_number:
+                resident_code = f"{block_name} / {unit_number}"
+                resident_info = f"Блок {block_name}, №{unit_number}"
+        
+        result.append(NotificationOut(
+            id=notif.id,
+            user_id=notif.user_id,
+            resident_id=notif.resident_id,
+            message=notif.message,
+            status=notif.status.value,
+            created_at=notif.created_at,
+            read_at=notif.read_at,
+            notification_type=notif.notification_type,
+            related_id=notif.related_id,
+            user_full_name=notif.user.full_name,
+            user_phone=notif.user.phone,
+            user_email=notif.user.email,
+            resident_code=resident_code,
+            resident_info=resident_info,
+            block_name=block_name,
+            unit_number=unit_number,
+        ))
+    
+    return {
+        "notifications": result,
+        "pagination": {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "last_page": last_page,
+        }
+    }
+
+
+@router.get("/user/me/unread-count")
+def get_user_unread_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Получить количество непрочитанных уведомлений текущего пользователя."""
+    from sqlalchemy import func
+    count = db.query(func.count(Notification.id)).filter(
+        Notification.user_id == current_user.id,
+        Notification.status == NotificationStatus.UNREAD
+    ).scalar()
     return {"count": count or 0}
 
 
