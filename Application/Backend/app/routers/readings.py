@@ -174,6 +174,14 @@ def list_readings(
             pass
     if meter_type in {"ELECTRIC", "GAS", "WATER", "SEWERAGE", "SERVICE", "RENT", "CONSTRUCTION"}:
         readings_q = readings_q.filter(ResidentMeter.meter_type == MeterType(meter_type))
+    if q:
+        like = f"%{q.strip()}%"
+        readings_q = readings_q.filter(
+            (Resident.unit_number.ilike(like)) |
+            (Resident.owner_full_name.ilike(like)) |
+            (Resident.owner_phone.ilike(like)) |
+            (Resident.owner_email.ilike(like))
+        )
 
     readings_q = readings_q.filter(
         MeterReading.reading_date >= from_dt,

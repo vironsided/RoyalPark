@@ -4,10 +4,19 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Query, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import desc
+from sqlalchemy import desc, or_
 
 from ..database import get_db
-from ..models import ReadingLog, ResidentMeter, Resident, Block, User, MeterType, PaymentLog
+from ..models import (
+    ReadingLog,
+    ResidentMeter,
+    Resident,
+    Block,
+    User,
+    MeterType,
+    PaymentLog,
+    RoleEnum,
+)
 
 router = APIRouter(prefix="/api/logs", tags=["logs-api"])
 
@@ -67,6 +76,7 @@ def get_reading_logs(
 ):
     """Получить логи чтений с фильтрацией и пагинацией (публичный endpoint)."""
     try:
+        allowed_roles = [RoleEnum.ROOT, RoleEnum.ADMIN, RoleEnum.OPERATOR]
         # Построение запроса с JOIN для получения связанных данных
         query = db.query(ReadingLog)\
             .options(
@@ -74,7 +84,14 @@ def get_reading_logs(
                 joinedload(ReadingLog.user)
             )\
             .join(ResidentMeter, ResidentMeter.id == ReadingLog.resident_meter_id)\
-            .join(Resident, Resident.id == ResidentMeter.resident_id)
+            .join(Resident, Resident.id == ResidentMeter.resident_id)\
+            .outerjoin(User, User.id == ReadingLog.user_id)\
+            .filter(
+                or_(
+                    ReadingLog.user_id.is_(None),  # системные логи
+                    User.role.in_(allowed_roles)   # только ROOT/ADMIN/OPERATOR
+                )
+            )
         
         # Фильтры
         if action and action.upper() in ["CREATE", "UPDATE", "DELETE"]:
@@ -199,10 +216,18 @@ def get_payment_logs(
 ):
     """Получить логи платежей с фильтрацией и пагинацией."""
     try:
+        allowed_roles = [RoleEnum.ROOT, RoleEnum.ADMIN, RoleEnum.OPERATOR]
         query = db.query(PaymentLog)\
             .options(
                 joinedload(PaymentLog.resident).joinedload(Resident.block),
                 joinedload(PaymentLog.user)
+            )\
+            .outerjoin(User, User.id == PaymentLog.user_id)\
+            .filter(
+                or_(
+                    PaymentLog.user_id.is_(None),  # системные действия
+                    User.role.in_(allowed_roles)   # только ROOT/ADMIN/OPERATOR
+                )
             )
         
         # Фильтры

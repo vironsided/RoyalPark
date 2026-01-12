@@ -85,12 +85,32 @@ def tenants_list(
 
     if block_id_int:
         query = query.join(User.resident_links).filter(Resident.block_id == block_id_int)
-        if unit_number:
-            unit_like = f"%{unit_number}%"
-            query = query.filter(Resident.unit_number.ilike(unit_like))
+    
+    if unit_number:
+        if not block_id_int:
+            # Если блок не выбран, но есть номер дома, всё равно джойним для фильтрации
+            query = query.join(User.resident_links)
+        
+        unit_number = unit_number.strip()
+        from sqlalchemy import func
+        if "-" in unit_number:
+            parts = unit_number.split("-")
+            if len(parts) == 2:
+                try:
+                    start = int(parts[0].strip())
+                    end = int(parts[1].strip())
+                    query = query.filter(
+                        func.cast(Resident.unit_number, func.Integer).between(start, end)
+                    )
+                except (ValueError, Exception):
+                    query = query.filter(Resident.unit_number.ilike(f"%{unit_number}%"))
+            else:
+                query = query.filter(Resident.unit_number.ilike(f"%{unit_number}%"))
+        else:
+            query = query.filter(Resident.unit_number.ilike(f"%{unit_number}%"))
+    
+    if block_id_int or unit_number:
         query = query.distinct()
-    else:
-        unit_number = ""
 
     total = query.count()
     last_page = max(1, (total + per_page - 1) // per_page)

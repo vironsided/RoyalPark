@@ -59,7 +59,7 @@
                     <option value="9">Сентябрь</option>
                     <option value="10">Октябрь</option>
                     <option value="11">Ноябрь</option>
-                    <option value="12" selected>Декабрь</option>
+                    <option value="12">Декабрь</option>
                 </select>
             </div>
 
@@ -261,11 +261,15 @@
     });
 
     const currentYear = new Date().getFullYear();
-    const select = document.getElementById("filterYear");
+    const currentMonth = new Date().getMonth() + 1;
+    const yearSelect = document.getElementById("filterYear");
+    const monthSelect = document.getElementById("filterMonth");
 
-
-    if (select.querySelector(`option[value="${currentYear}"]`)) {
-        select.value = currentYear;
+    if (yearSelect && yearSelect.querySelector(`option[value="${currentYear}"]`)) {
+        yearSelect.value = currentYear;
+    }
+    if (monthSelect) {
+        monthSelect.value = currentMonth.toString();
     }
 
     // Load all blocks for filter initially

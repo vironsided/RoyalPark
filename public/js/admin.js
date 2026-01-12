@@ -921,35 +921,30 @@ function checkMonthlyActivation() {
         return new Date(year, month, lastDay - 1, 0, 0, 0);
     }
 
-    let targetDate = getActivationDate(currentYear, currentMonth);
-    
-    // Проверяем, была ли уже рассылка в этом месяце (через localStorage для примера)
     const lastDone = localStorage.getItem('lastMonthlyNotifyMonthYear');
     const currentMonthKey = `${currentMonth}-${currentYear}`;
     const alreadyDoneThisMonth = (lastDone === currentMonthKey);
 
-    // Если сегодня уже позже дня активации ИЛИ сегодня день активации, но уже отправили
-    if (now >= targetDate.setHours(23,59,59) || (now >= targetDate && alreadyDoneThisMonth)) {
-        // Значит следующая активация только в следующем месяце
+    let targetDate = getActivationDate(currentYear, currentMonth);
+    
+    // Если уже отправили в этом месяце, цель — следующий месяц
+    if (alreadyDoneThisMonth) {
         targetDate = getActivationDate(currentYear, currentMonth + 1);
-    } else {
-        // Сбрасываем время для корректного сравнения
-        targetDate = getActivationDate(currentYear, currentMonth);
     }
 
     const diff = targetDate - now;
 
     if (diff <= 0 && !alreadyDoneThisMonth) {
         // Время пришло и еще не отправляли
-        btn.style.display = 'flex';
+        btn.style.setProperty('display', 'flex', 'important');
         btn.disabled = false;
-        timerBadge.style.display = 'none';
-        btn.title = "Готово к рассылке уведомлений";
+        timerBadge.style.setProperty('display', 'none', 'important');
+        btn.title = "Готово к рассылке уведомлений за текущий месяц";
     } else {
         // Показываем таймер
-        btn.style.display = 'none';
+        btn.style.setProperty('display', 'none', 'important');
         btn.disabled = true;
-        timerBadge.style.display = 'flex';
+        timerBadge.style.setProperty('display', 'flex', 'important');
         
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -960,15 +955,15 @@ function checkMonthlyActivation() {
         if (days > 0) timeStr += `${days}д `;
         timeStr += `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         
-        timerValue.innerText = timeStr;
+        if (timerValue) timerValue.innerText = timeStr;
         timerBadge.title = alreadyDoneThisMonth ? "Рассылка за этот месяц уже выполнена" : `Активация через ${timeStr}`;
     }
 
-    // Для дебага
+    // Для дебага (форсированная активация через URL)
     if (window.location.search.includes('debug_monthly=1')) {
-        btn.style.display = 'flex';
+        btn.style.setProperty('display', 'flex', 'important');
         btn.disabled = false;
-        timerBadge.style.display = 'none';
+        timerBadge.style.setProperty('display', 'none', 'important');
     }
 }
 

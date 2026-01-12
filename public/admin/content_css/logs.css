@@ -1,0 +1,215 @@
+/* Logs Page Styles */
+
+.logs-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.logs-table thead th {
+    background-color: rgba(102, 126, 234, 0.1);
+    color: #e4e6eb;
+    font-weight: 600;
+    padding: 12px;
+    text-align: left;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+.logs-table tbody td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e4e6eb;
+}
+
+.logs-table tbody tr:hover {
+    background-color: rgba(102, 126, 234, 0.05);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-success {
+    background-color: #10b981;
+    color: white;
+}
+
+.badge-danger {
+    background-color: #ef4444;
+    color: white;
+}
+
+.badge-warning {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.badge-info {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.logs-filters {
+    background-color: rgba(255, 255, 255, 0.02);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.logs-filters .form-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.logs-filters .form-select {
+    background-color: #1f2432 !important;
+    border: 1px solid #3a3f4a !important;
+    color: #e4e6eb !important;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color-scheme: dark;
+}
+
+.logs-filters .form-select:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+/* Стили для опций в выпадающих списках */
+.logs-filters .form-select option,
+.logs-filters .form-select optgroup {
+    background-color: #1f2432 !important;
+    color: #e4e6eb !important;
+}
+
+/* Pagination styles */
+.table-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 0 0 15px 15px;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-pagination {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.btn-pagination:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.btn-pagination:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-pagination.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.pagination-info {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+.pagination-per-page {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+.custom-pag-select {
+    position: relative;
+    display: inline-block;
+    min-width: 60px;
+}
+
+.custom-pag-select .select-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    min-width: 60px;
+    user-select: none;
+}
+
+.custom-pag-select .select-options {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    background: #1f2432 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+    overflow: hidden;
+    display: none;
+    z-index: 10000;
+    min-width: 100%;
+}
+
+.custom-pag-select.open .select-options {
+    display: block;
+}
+
+.custom-pag-select .select-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: #f6f7ff !important;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    background: #1f2432 !important;
+}
+
+.custom-pag-select .select-option:hover {
+    background: #3b4261 !important;
+    color: #ffffff !important;
+}
+
+.custom-pag-select .select-option.selected {
+    background: #667eea !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+

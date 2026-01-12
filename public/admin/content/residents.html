@@ -355,7 +355,7 @@
                     params.append('rtype', rtype);
                 }
                 if (houseNumber) {
-                    params.append('q', houseNumber);
+                    params.append('unit_number', houseNumber);
                 }
                 
                 let url = `${API_BASE}/api/residents?${params.toString()}`;
@@ -1518,6 +1518,21 @@
             setTimeout(async () => {
                 await loadBlocksAndTariffs();
                 await loadResidents();
+                
+                // Add Enter key support for filters
+                const filterInputs = ['filterBlock', 'filterHouse', 'filterStatus', 'filterType'];
+                filterInputs.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                applyFilters();
+                            }
+                        });
+                    }
+                });
+
                 // Initialize pagination dropdown
                 setTimeout(() => {
                     initCustomResidentPaginationDropdown();

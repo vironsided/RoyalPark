@@ -48,18 +48,19 @@ def to_baku_datetime(value: Any) -> datetime:
     """
     Приводит значение к datetime в зоне Asia/Baku.
     Поддерживаются: datetime, date, ISO-строка, None.
+    Считает naive datetimes (без часового пояса) как UTC.
     """
     if value is None:
         return now_baku()
 
     if isinstance(value, datetime):
-        if value.tzinfo and BAKU_TZ:
-            return value.astimezone(BAKU_TZ)
-        if BAKU_TZ:
-            return value.replace(tzinfo=BAKU_TZ)
-        return value
+        if value.tzinfo is None:
+            # Считаем, что наивные объекты в БД хранятся в UTC (utcnow)
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(BAKU_TZ)
 
     if isinstance(value, date):
+        # date приводим к началу дня в Baku
         base_time = time.min
         if BAKU_TZ:
             return datetime.combine(value, base_time, tzinfo=BAKU_TZ)
@@ -68,11 +69,9 @@ def to_baku_datetime(value: Any) -> datetime:
     if isinstance(value, str):
         try:
             parsed = datetime.fromisoformat(value)
-            if parsed.tzinfo and BAKU_TZ:
-                return parsed.astimezone(BAKU_TZ)
-            if BAKU_TZ:
-                return parsed.replace(tzinfo=BAKU_TZ)
-            return parsed
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed.astimezone(BAKU_TZ)
         except Exception:
             return now_baku()
 
@@ -162,7 +161,7 @@ def create_invoice_notification(db, invoice, created_by_user_id=None):
             status=NotificationStatus.UNREAD,
             notification_type="INVOICE", # Строка для надежности
             related_id=invoice.id,
-            created_at=now_baku().replace(tzinfo=None)
+            created_at=datetime.utcnow()
         )
         db.add(notification)
     

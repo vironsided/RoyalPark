@@ -273,7 +273,14 @@ def get_user_notifications(
     current_user: User = Depends(get_current_user),
 ):
     """Получить уведомления текущего пользователя (для резидентской панели)."""
-    query = db.query(Notification).filter(Notification.user_id == current_user.id)
+    # ВАЖНО: В личном кабинете жителя НЕ показываем его собственные обращения (APPEAL),
+    # так как они отображаются в отдельном разделе "Обращения".
+    # Показываем только уведомления о счетах, новостях и сообщения от администрации.
+    query = db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.notification_type != "APPEAL",
+        Notification.notification_type != None # Исключаем старые обращения без типа
+    )
     
     # Фильтр по статусу
     if status and status.upper() in {s.value for s in NotificationStatus}:
@@ -337,9 +344,12 @@ def get_user_unread_count(
 ):
     """Получить количество непрочитанных уведомлений текущего пользователя."""
     from sqlalchemy import func
+    # Считаем только те уведомления, которые не являются обращениями самого жителя
     count = db.query(func.count(Notification.id)).filter(
         Notification.user_id == current_user.id,
-        Notification.status == NotificationStatus.UNREAD
+        Notification.status == NotificationStatus.UNREAD,
+        Notification.notification_type != "APPEAL",
+        Notification.notification_type != None
     ).scalar()
     return {"count": count or 0}
 

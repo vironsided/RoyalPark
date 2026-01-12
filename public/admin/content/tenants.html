@@ -269,6 +269,20 @@
                 initCustomTenantPaginationDropdown();
                 loadTenants();
                 loadBlocksAndResidents();
+                
+                // Add Enter key support for filters
+                const filterIds = ['filterSearch', 'filterBlock', 'filterHouse'];
+                filterIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                window.applyFilters();
+                            }
+                        });
+                    }
+                });
             }, 100);
         });
 
@@ -1324,6 +1338,20 @@
 
                 // Загружаем жителей (с примененным фильтром, если он был установлен)
                 loadTenants();
+
+                // Add Enter key support for filters (re-binding for SPA content)
+                const filterIds = ['filterSearch', 'filterBlock', 'filterHouse'];
+                filterIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                window.applyFilters();
+                            }
+                        });
+                    }
+                });
             }
         };
 

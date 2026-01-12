@@ -112,6 +112,7 @@ def _list_residents_internal(
     status: Optional[str] = None,
     rtype: Optional[str] = None,
     q: Optional[str] = None,
+    unit_number: Optional[str] = None,
     page: int = 1,
     per_page: int = 25,
 ):
@@ -124,6 +125,30 @@ def _list_residents_internal(
         stmt = stmt.where(Resident.status == ResidentStatus(status))
     if rtype and rtype in {t.value for t in ResidentType}:
         stmt = stmt.where(Resident.resident_type == ResidentType(rtype))
+    if unit_number:
+        unit_number = unit_number.strip()
+        if "-" in unit_number:
+            parts = unit_number.split("-")
+            if len(parts) == 2:
+                try:
+                    start = int(parts[0].strip())
+                    end = int(parts[1].strip())
+                    # Для диапазонов пытаемся привести unit_number к числу в БД
+                    # Используем CAST если возможно, или просто сравниваем строки если нет
+                    # Но лучше всего для "101-105" просто искать по диапазону чисел
+                    # Мы будем использовать cast к INTEGER для unit_number если это возможно
+                    stmt = stmt.where(
+                        func.cast(Resident.unit_number, func.Integer).between(start, end)
+                    )
+                except (ValueError, Exception):
+                    # Если не удалось распарсить как числа, используем LIKE
+                    stmt = stmt.where(Resident.unit_number.ilike(f"%{unit_number}%"))
+            else:
+                stmt = stmt.where(Resident.unit_number.ilike(f"%{unit_number}%"))
+        else:
+            # Для одиночного номера используем или точное совпадение или префикс
+            stmt = stmt.where(Resident.unit_number.ilike(f"%{unit_number}%"))
+            
     if q:
         needle = f"%{q.strip().lower()}%"
         stmt = stmt.where(
@@ -141,6 +166,26 @@ def _list_residents_internal(
         count_stmt = count_stmt.where(Resident.status == ResidentStatus(status))
     if rtype and rtype in {t.value for t in ResidentType}:
         count_stmt = count_stmt.where(Resident.resident_type == ResidentType(rtype))
+    
+    # Дублируем логику фильтрации для count_stmt
+    if unit_number:
+        unit_number = unit_number.strip()
+        if "-" in unit_number:
+            parts = unit_number.split("-")
+            if len(parts) == 2:
+                try:
+                    start = int(parts[0].strip())
+                    end = int(parts[1].strip())
+                    count_stmt = count_stmt.where(
+                        func.cast(Resident.unit_number, func.Integer).between(start, end)
+                    )
+                except (ValueError, Exception):
+                    count_stmt = count_stmt.where(Resident.unit_number.ilike(f"%{unit_number}%"))
+            else:
+                count_stmt = count_stmt.where(Resident.unit_number.ilike(f"%{unit_number}%"))
+        else:
+            count_stmt = count_stmt.where(Resident.unit_number.ilike(f"%{unit_number}%"))
+
     if q:
         needle = f"%{q.strip().lower()}%"
         count_stmt = count_stmt.where(
@@ -210,6 +255,7 @@ def list_residents_api(
     status: Optional[str] = Query(None),
     rtype: Optional[str] = Query(None),
     q: Optional[str] = Query(None),
+    unit_number: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     per_page: int = Query(25, ge=1, le=100),
     actor: User = Depends(get_current_user),
@@ -223,6 +269,7 @@ def list_residents_api(
         status=status,
         rtype=rtype,
         q=q,
+        unit_number=unit_number,
         page=page,
         per_page=per_page,
     )
@@ -236,6 +283,7 @@ def list_residents_public(
     status: Optional[str] = Query(None),
     rtype: Optional[str] = Query(None),
     q: Optional[str] = Query(None),
+    unit_number: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     per_page: int = Query(25, ge=1, le=100),
 ):
@@ -249,6 +297,7 @@ def list_residents_public(
         status=status,
         rtype=rtype,
         q=q,
+        unit_number=unit_number,
         page=page,
         per_page=per_page,
     )

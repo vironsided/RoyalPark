@@ -275,6 +275,7 @@
         <!-- Right Column: Payment Details -->
         <div class="payment-right-column">
             <h3 class="payment-section-title">Детали оплаты</h3>
+            <div id="paymentCountdown" style="display:none;margin:0 0 12px 0;padding:10px 12px;border:1px solid #2563eb;border-radius:10px;background:rgba(37,99,235,0.08);color:#e5e7eb;font-weight:600;"></div>
             
             <div class="order-summary">
                 <div class="order-header">
@@ -373,6 +374,85 @@ var currentCardData = {
 // Currently selected saved card (from the list on the left)
 var selectedSavedCard = null;
 window.selectedSavedCard = null;
+
+// TTL for payment session data (10 minutes)
+var PAYMENT_DATA_TTL_MS = 1 * 60 * 1000;
+var paymentCountdownInterval = null;
+
+function redirectToDashboard() {
+    // мягкий редирект на главный экран пользователя
+    setTimeout(() => {
+        if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
+            window.userSpaRouter.navigate('dashboard', true);
+        } else {
+            window.location.href = '/user/dashboard.html';
+        }
+    }, 1200);
+}
+
+function clearPaymentSessionData() {
+    sessionStorage.removeItem('paymentScope');
+    sessionStorage.removeItem('paymentAmount');
+    sessionStorage.removeItem('paymentScopeLabel');
+    sessionStorage.removeItem('paymentResidentCode');
+    sessionStorage.removeItem('paymentResidentId');
+    sessionStorage.removeItem('paymentSummary');
+    sessionStorage.removeItem('paymentTimestamp');
+}
+
+function stopPaymentCountdown() {
+    if (paymentCountdownInterval) {
+        clearInterval(paymentCountdownInterval);
+        paymentCountdownInterval = null;
+    }
+    const timerEl = document.getElementById('paymentCountdown');
+    if (timerEl) {
+        timerEl.style.display = 'none';
+        timerEl.textContent = '';
+        timerEl.style.borderColor = '#2563eb';
+        timerEl.style.background = 'rgba(37,99,235,0.08)';
+    }
+}
+
+function startPaymentCountdown(paymentTimestamp) {
+    const timerEl = document.getElementById('paymentCountdown');
+    if (!timerEl || !paymentTimestamp) {
+        return;
+    }
+
+    stopPaymentCountdown();
+
+    const deadline = parseInt(paymentTimestamp, 10) + PAYMENT_DATA_TTL_MS;
+
+    const tick = () => {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) {
+            stopPaymentCountdown();
+            timerEl.style.display = 'block';
+            timerEl.style.borderColor = '#dc2626';
+            timerEl.style.background = 'rgba(220,38,38,0.08)';
+            timerEl.textContent = 'Время на оплату истекло. Данные очищены, начните заново.';
+            resetPaymentSummaryUIAfterExpiry();
+            redirectToDashboard();
+            return;
+        }
+
+        const minutes = Math.floor(remaining / 60000);
+        const seconds = Math.floor((remaining % 60000) / 1000);
+        timerEl.textContent = `Время на оплату: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        timerEl.style.display = 'block';
+    };
+
+    tick();
+    paymentCountdownInterval = setInterval(tick, 1000);
+}
+
+function resetPaymentSummaryUIAfterExpiry() {
+    clearPaymentSessionData();
+    if (typeof initPaymentSummary === 'function') {
+        initPaymentSummary();
+    }
+}
 
 // Card styles for different banks (один экземпляр на всё приложение)
 if (!window.bankStyles) {
@@ -1208,21 +1288,14 @@ async function initPaymentPage() {
     }
 
     try {
-        // Проверяем временную метку данных оплаты (данные действительны 5 минут)
+        // Проверяем временную метку данных оплаты (данные действительны 10 минут)
         const paymentTimestamp = sessionStorage.getItem('paymentTimestamp');
         const now = Date.now();
-        const PAYMENT_DATA_TTL = 5 * 60 * 1000; // 5 минут в миллисекундах
         
-        // Если данные устарели (старше 5 минут) или их нет, очищаем все данные оплаты
-        if (!paymentTimestamp || (now - parseInt(paymentTimestamp, 10)) > PAYMENT_DATA_TTL) {
-            // Очищаем старые данные оплаты
-            sessionStorage.removeItem('paymentScope');
-            sessionStorage.removeItem('paymentAmount');
-            sessionStorage.removeItem('paymentScopeLabel');
-            sessionStorage.removeItem('paymentResidentCode');
-            sessionStorage.removeItem('paymentResidentId');
-            sessionStorage.removeItem('paymentSummary');
-            sessionStorage.removeItem('paymentTimestamp');
+        // Если данные устарели (старше TTL) или их нет, очищаем все данные оплаты
+        if (!paymentTimestamp || (now - parseInt(paymentTimestamp, 10)) > PAYMENT_DATA_TTL_MS) {
+            clearPaymentSessionData();
+            stopPaymentCountdown();
         }
         
         const scope = sessionStorage.getItem('paymentScope') || 'month';
@@ -1250,8 +1323,14 @@ async function initPaymentPage() {
 
         // Проверяем, есть ли актуальные данные в sessionStorage (пользователь перешел через кнопку)
         // Данные считаются актуальными только если есть временная метка и она не устарела
-        const hasPaymentData = paymentTimestamp && (now - parseInt(paymentTimestamp, 10)) <= PAYMENT_DATA_TTL && 
+        const hasPaymentData = paymentTimestamp && (now - parseInt(paymentTimestamp, 10)) <= PAYMENT_DATA_TTL_MS && 
                                (amountRaw || residentCodeStored || paymentSummaryRaw || sessionStorage.getItem('paymentResidentId'));
+        
+        if (hasPaymentData) {
+            startPaymentCountdown(paymentTimestamp);
+        } else {
+            stopPaymentCountdown();
+        }
         
         // Если сумма из sessionStorage отсутствует или равна 0, пробуем взять её из summary/бэкенда
         // Но только если есть данные в sessionStorage (пользователь перешел через кнопку)
@@ -1635,11 +1714,8 @@ async function submitPayment(event) {
             );
 
             // Очищаем сессионные данные как при реальной оплате
-            sessionStorage.removeItem('paymentAmount');
-            sessionStorage.removeItem('paymentScope');
-            sessionStorage.removeItem('paymentScopeLabel');
-            sessionStorage.removeItem('paymentResidentCode');
-            sessionStorage.removeItem('paymentSummary');
+            clearPaymentSessionData();
+            stopPaymentCountdown();
 
             // Фильтр для черновиков на странице счетов
             sessionStorage.setItem('billsFilterStatuses', JSON.stringify(['DRAFT']));
@@ -1693,11 +1769,8 @@ async function submitPayment(event) {
             const residentCode = sessionStorage.getItem('paymentResidentCode');
             
             // Clear payment session data
-            sessionStorage.removeItem('paymentAmount');
-            sessionStorage.removeItem('paymentScope');
-            sessionStorage.removeItem('paymentScopeLabel');
-            sessionStorage.removeItem('paymentResidentCode');
-            sessionStorage.removeItem('paymentSummary');
+            clearPaymentSessionData();
+            stopPaymentCountdown();
             
             // Обновляем аванс на странице оплаты перед редиректом
             // Делаем это после небольшой задержки, чтобы бэкенд успел обработать платеж
@@ -1996,13 +2069,8 @@ function setupPaymentLayout() {
 // Функция для очистки данных оплаты из sessionStorage
 function clearPaymentData() {
     try {
-        sessionStorage.removeItem('paymentScope');
-        sessionStorage.removeItem('paymentAmount');
-        sessionStorage.removeItem('paymentScopeLabel');
-        sessionStorage.removeItem('paymentResidentCode');
-        sessionStorage.removeItem('paymentResidentId');
-        sessionStorage.removeItem('paymentSummary');
-        sessionStorage.removeItem('paymentTimestamp');
+        clearPaymentSessionData();
+        stopPaymentCountdown();
     } catch (e) {
         console.warn('Failed to clear payment data from sessionStorage', e);
     }
@@ -2013,23 +2081,14 @@ function setupPaymentDataCleanup() {
     let previousHash = window.location.hash;
     let wasOnReportPage = previousHash.includes('#report') || previousHash.endsWith('#report');
     
-    // Отслеживаем изменения hash - если пользователь ушел со страницы #report, очищаем данные
+    // Отслеживаем изменения hash - если пользователь ушел со страницы #report, останавливаем таймер
     const handleHashChange = () => {
         const currentHash = window.location.hash;
         const isOnReportPage = currentHash.includes('#report') || currentHash.endsWith('#report');
         
-        // Если были на странице оплаты и ушли на другую страницу - очищаем данные
+        // Если были на странице оплаты и ушли на другую страницу - просто остановим таймер
         if (wasOnReportPage && !isOnReportPage) {
-            // Небольшая задержка, чтобы дать возможность вернуться назад
-            // Если пользователь вернется в течение 100мс, данные сохранятся
-            setTimeout(() => {
-                const finalHash = window.location.hash;
-                const finalIsOnReportPage = finalHash.includes('#report') || finalHash.endsWith('#report');
-                // Очищаем только если все еще не на странице оплаты
-                if (!finalIsOnReportPage) {
-                    clearPaymentData();
-                }
-            }, 100);
+            stopPaymentCountdown();
         }
         
         wasOnReportPage = isOnReportPage;
@@ -2044,8 +2103,8 @@ function setupPaymentDataCleanup() {
         const currentHash = window.location.hash;
         const isOnReportPage = currentHash.includes('#report') || currentHash.endsWith('#report');
         if (isOnReportPage) {
-            // Очищаем данные при закрытии страницы, если были на странице оплаты
-            clearPaymentData();
+            // Останавливаем таймер, данные очистятся по TTL
+            stopPaymentCountdown();
         }
     });
     
@@ -2056,7 +2115,7 @@ function setupPaymentDataCleanup() {
             const currentHash = window.location.hash;
             const isOnReportPage = currentHash.includes('#report') || currentHash.endsWith('#report');
             if (isOnReportPage) {
-                clearPaymentData();
+                stopPaymentCountdown();
             }
         }
     });

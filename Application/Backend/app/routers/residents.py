@@ -162,7 +162,8 @@ def list_residents(
     block_id: Optional[int] = None,
     status: Optional[str] = None,      # ResidentStatus
     rtype: Optional[str] = None,       # ResidentType
-    q: Optional[str] = None,           # unit/owner/phone/email
+    q: Optional[str] = None,           # general search
+    unit_number: Optional[str] = None, # house number search
 ):
     """
     Страница списка резидентов с фильтрами и поиском.
@@ -176,6 +177,25 @@ def list_residents(
         stmt = stmt.where(Resident.status == ResidentStatus(status))
     if rtype in {t.value for t in ResidentType}:
         stmt = stmt.where(Resident.resident_type == ResidentType(rtype))
+    
+    if unit_number:
+        unit_number = unit_number.strip()
+        if "-" in unit_number:
+            parts = unit_number.split("-")
+            if len(parts) == 2:
+                try:
+                    start = int(parts[0].strip())
+                    end = int(parts[1].strip())
+                    stmt = stmt.where(
+                        func.cast(Resident.unit_number, func.Integer).between(start, end)
+                    )
+                except (ValueError, Exception):
+                    stmt = stmt.where(Resident.unit_number.ilike(f"%{unit_number}%"))
+            else:
+                stmt = stmt.where(Resident.unit_number.ilike(f"%{unit_number}%"))
+        else:
+            stmt = stmt.where(Resident.unit_number.ilike(f"%{unit_number}%"))
+
     if q:
         needle = f"%{q.strip().lower()}%"
         stmt = stmt.where(
@@ -210,6 +230,7 @@ def list_residents(
             "status_val": status or "",
             "rtype_val": rtype or "",
             "q": q or "",
+            "unit_number": unit_number or "",
             "ok": request.query_params.get("ok"),
             "error": request.query_params.get("error"),
         },

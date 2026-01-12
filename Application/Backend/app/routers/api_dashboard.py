@@ -52,6 +52,7 @@ class RecentActivityOut(BaseModel):
     description: str
     time: str
     icon: str  # "success", "warning", "info"
+    raw_time: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -173,14 +174,16 @@ def get_recent_activity(
             if block_name:
                 resident_info = f"{resident_info} (Блок {block_name})"
             
-            time_ago = get_time_ago(to_baku_datetime(payment.received_at))
+            dt_baku = to_baku_datetime(payment.received_at)
+            time_ago = get_time_ago(dt_baku)
             activities.append(RecentActivityOut(
                 id=payment.id,
                 type="payment",
                 title="Новый платеж получен",
                 description=f"{resident_info} - ₼{payment.amount_total:.2f}",
                 time=time_ago,
-                icon="success"
+                icon="success",
+                raw_time=dt_baku
             ))
         
         # Последние уведомления
@@ -190,7 +193,8 @@ def get_recent_activity(
             .limit(limit)\
             .all()
         for notif in recent_notifications:
-            time_ago = get_time_ago(to_baku_datetime(notif.created_at))
+            dt_baku = to_baku_datetime(notif.created_at)
+            time_ago = get_time_ago(dt_baku)
             
             # Формируем описание: блок и номер дома, если есть
             description = "Новое обращение"
@@ -210,11 +214,12 @@ def get_recent_activity(
                 title="Новое обращение",
                 description=description,
                 time=time_ago,
-                icon="warning" if notif.status == NotificationStatus.UNREAD else "info"
+                icon="warning" if notif.status == NotificationStatus.UNREAD else "info",
+                raw_time=dt_baku
             ))
         
         # Сортируем по времени (самые новые первые) и берем limit
-        activities.sort(key=lambda x: x.id, reverse=True)
+        activities.sort(key=lambda x: x.raw_time or datetime.min, reverse=True)
         activities = activities[:limit]
         
         return {"activities": activities}
@@ -313,16 +318,19 @@ def get_time_ago(dt: datetime) -> str:
     now = now_baku()
     diff = now - dt
     
+    # Если событие из будущего (из-за рассинхрона времени) или только что
+    if diff.total_seconds() < 60:
+        return "Только что"
+    
     if diff.days > 0:
         return f"{diff.days} {pluralize(diff.days, 'день', 'дня', 'дней')} назад"
-    elif diff.seconds >= 3600:
-        hours = diff.seconds // 3600
+    
+    hours = diff.seconds // 3600
+    if hours >= 1:
         return f"{hours} {pluralize(hours, 'час', 'часа', 'часов')} назад"
-    elif diff.seconds >= 60:
-        minutes = diff.seconds // 60
-        return f"{minutes} {pluralize(minutes, 'минуту', 'минуты', 'минут')} назад"
-    else:
-        return "Только что"
+    
+    minutes = diff.seconds // 60
+    return f"{minutes} {pluralize(minutes, 'минуту', 'минуты', 'минут')} назад"
 
 
 def pluralize(n: int, one: str, few: str, many: str) -> str:

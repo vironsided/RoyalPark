@@ -334,14 +334,20 @@
         }
     }
 
+    function formatValue(val) {
+        if (val === null || val === undefined) return '';
+        const num = parseFloat(val);
+        return Number(num.toFixed(4)).toString();
+    }
+
     function formatSteps(steps = [], purposeKey = '') {
         return steps.map(step => {
-            const price = step.price?.toFixed ? step.price.toFixed(4) : Number(step.price ?? 0).toFixed(4);
+            const price = formatValue(step.price ?? 0);
             const unit = step.unit || '';
 
             // Для аренды и услуг - просто цена и единица
             if (purposeKey === 'rent' || purposeKey === 'service') {
-                return `<span class="badge bg-secondary me-1">${price} / ${unit}</span>`;
+                return `<span class="badge bg-secondary me-1">${price} ₼ / ${unit}</span>`;
             }
 
             // Для строительства - даты
@@ -349,19 +355,19 @@
                 try {
                     const fromDate = new Date(step.from_date).toLocaleDateString('ru-RU');
                     const toDate = new Date(step.to_date).toLocaleDateString('ru-RU');
-                    return `<span class="badge bg-secondary me-1">${fromDate} - ${toDate}: ${price} / ${unit}</span>`;
+                    return `<span class="badge bg-secondary me-1">${fromDate} - ${toDate}: ${price} ₼ / ${unit}</span>`;
                 } catch (e) {
-                    return `<span class="badge bg-secondary me-1">${step.from_date} - ${step.to_date}: ${price} / ${unit}</span>`;
+                    return `<span class="badge bg-secondary me-1">${step.from_date} - ${step.to_date}: ${price} ₼ / ${unit}</span>`;
                 }
             }
 
             // Для остальных - числа
-            const from = step.from?.toFixed ? step.from.toFixed(4) : Number(step.from ?? 0).toFixed(4);
+            const from = formatValue(step.from ?? 0);
             if (step.to === null || step.to === undefined) {
-                return `<span class="badge bg-secondary me-1">${from}+: ${price} / ${unit}</span>`;
+                return `<span class="badge bg-secondary me-1">${from}+: ${price} ₼ / ${unit}</span>`;
             }
-            const to = step.to?.toFixed ? step.to.toFixed(4) : Number(step.to).toFixed(4);
-            return `<span class="badge bg-secondary me-1">${from}–${to}: ${price} / ${unit}</span>`;
+            const to = formatValue(step.to);
+            return `<span class="badge bg-secondary me-1">${from}–${to}: ${price} ₼ / ${unit}</span>`;
         }).join(' ');
     }
 

@@ -290,9 +290,16 @@ def resident_notifications_form(
         return RedirectResponse(url="/resident/login", status_code=302)
 
     residents = user.resident_links or []
+    from sqlalchemy import or_
     recent = (
         db.query(Notification)
-        .filter(Notification.user_id == user.id)
+        .filter(
+            Notification.user_id == user.id,
+            or_(
+                Notification.notification_type == "APPEAL",
+                Notification.notification_type == None
+            )
+        )
         .order_by(Notification.created_at.desc())
         .limit(20)
         .all()
@@ -334,6 +341,8 @@ def resident_notifications_submit(
         resident_id=resident.id,
         message=message,
         status=NotificationStatus.UNREAD,
+        notification_type="APPEAL",
+        created_at=datetime.utcnow()
     )
     db.add(notif)
     db.commit()

@@ -5,7 +5,7 @@ Returns JSON data for the resident's personal dashboard
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 from typing import List, Optional
@@ -706,7 +706,13 @@ def get_resident_appeals(
     notifications = (
         db.query(Notification)
         .join(Resident, Resident.id == Notification.resident_id)
-        .filter(Notification.user_id == user.id)
+        .filter(
+            Notification.user_id == user.id,
+            or_(
+                Notification.notification_type == "APPEAL",
+                Notification.notification_type == None
+            )
+        )
         .order_by(Notification.created_at.desc())
         .limit(50)
         .all()
@@ -757,6 +763,8 @@ def create_resident_appeal(
         resident_id=resident.id,
         message=message,
         status=NotificationStatus.UNREAD,
+        notification_type="APPEAL",
+        created_at=datetime.utcnow()
     )
     db.add(notif)
     db.commit()
@@ -1257,14 +1265,16 @@ def get_resident_dashboard(
         )
         monthly_gas_m3 = sum(Decimal(str(rd.consumption or 0)) for rd in gas_readings)
 
-    # Count active notifications
+    # Count active notifications (excluding resident's own appeals)
     active_notifications = 0
     if user:
         active_notifications = (
             db.query(func.count(Notification.id))
             .filter(
                 Notification.user_id == user.id,
-                Notification.status == NotificationStatus.UNREAD
+                Notification.status == NotificationStatus.UNREAD,
+                Notification.notification_type != "APPEAL",
+                Notification.notification_type != None
             )
             .scalar() or 0
         )
