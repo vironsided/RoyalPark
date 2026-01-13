@@ -646,6 +646,9 @@ function updateDashboardUI(data) {
 function updateStatsGrid(data) {
     const summary = data.summary || {};
     
+    // Обновляем бейдж "Мои счета" (черновики + выставленные + частично)
+    updateBillsNavBadge(summary);
+
     // 1. Неоплаченных счета (Unpaid bills)
     const unpaidCountEl = document.getElementById('stat-unpaid-count');
     const unpaidStatusEl = document.getElementById('stat-unpaid-status');
@@ -679,6 +682,21 @@ function updateStatsGrid(data) {
     const gasEl = document.getElementById('stat-gas');
     if (gasEl) {
         gasEl.textContent = (summary.monthly_gas_m3 || 0).toFixed(1);
+    }
+}
+
+// Update sidebar badge for bills ("Мои счета")
+function updateBillsNavBadge(summary) {
+    const badge = document.querySelector('.nav-item[data-user-route="bills"] .nav-badge');
+    if (!badge) return;
+
+    const count = summary?.unpaid_invoices_count || 0;
+    if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'inline-flex';
+    } else {
+        badge.textContent = '';
+        badge.style.display = 'none';
     }
 }
 

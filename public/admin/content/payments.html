@@ -200,6 +200,19 @@
         'TRANSFER': 'Банк',
         'ONLINE': 'Онлайн'
     };
+
+    function formatPaymentDate(dateStr) {
+        if (!dateStr) return '—';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mi = String(d.getMinutes()).padStart(2, '0');
+        const ss = String(d.getSeconds()).padStart(2, '0');
+        return `${yyyy}/${mm}/${dd} ${hh}:${mi}:${ss}`;
+    }
     
     let residents = [];
     let paymentsData = {
@@ -290,7 +303,7 @@
             tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Нет данных по текущим фильтрам</td></tr>';
         } else {
             tbody.innerHTML = payments.map(p => {
-                const date = p.received_at || '—';
+                const date = formatPaymentDate(p.received_at);
                 const resident = p.resident_code || '—';
                 const amount = typeof p.amount_total === 'number' ? p.amount_total.toFixed(2) : (p.amount_total || '0.00');
                 const method = methodLabels[p.method] || p.method || '—';

@@ -140,6 +140,19 @@
 
         const API_BASE = window.BACKEND_API_BASE || 'http://localhost:8000';
 
+        function formatUserDate(dateStr) {
+            if (!dateStr) return '—';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mi = String(d.getMinutes()).padStart(2, '0');
+            const ss = String(d.getSeconds()).padStart(2, '0');
+            return `${yyyy}/${mm}/${dd} ${hh}:${mi}:${ss}`;
+        }
+
         async function fetchUsers() {
             try {
                 const params = new URLSearchParams();
@@ -261,7 +274,7 @@
                 <td>${user.id}</td>
                 <td>${user.username}</td>
                 <td><span class="role-badge ${roleClass}">RoleEnum.${user.role}</span></td>
-                <td>${user.last_login_at || '—'}</td>
+                <td>${formatUserDate(user.last_login_at)}</td>
                 <td>${passwordBadge}</td>
                 <td>${actions}</td>
             `;
