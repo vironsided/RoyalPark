@@ -64,9 +64,16 @@
                 <label>Статус</label>
                 <select id="filterStatus">
                     <option value="all">Все</option>
+                    <!-- Быстрые фильтры (агрегированные состояния) -->
                     <option value="paid">Оплачен</option>
                     <option value="unpaid">Не оплачен</option>
                     <option value="overdue">Просрочен</option>
+                    <!-- Реальные статусы из InvoiceStatus (backend) -->
+                    <option value="draft">Черновик</option>
+                    <option value="issued">Выставлен</option>
+                    <option value="partial">Частично оплачен</option>
+                    <option value="overpaid">Переплата</option>
+                    <option value="canceled">Отменён</option>
                 </select>
             </div>
             

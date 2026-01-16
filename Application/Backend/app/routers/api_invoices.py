@@ -14,7 +14,7 @@ from ..models import (
     PaymentApplication, Payment, PaymentMethod
 )
 from ..deps import get_current_user
-from ..utils import to_baku_datetime, create_invoice_notification
+from ..utils import to_baku_datetime, create_invoice_notification, now_baku
 
 
 router = APIRouter(prefix="/api/invoices", tags=["invoices-api"])
@@ -87,8 +87,24 @@ def _list_invoices_internal(
         query = query.filter(Resident.block_id == block_id)
     if resident_id:
         query = query.filter(Invoice.resident_id == resident_id)
-    if status_val and status_val in {s.value for s in InvoiceStatus}:
-        query = query.filter(Invoice.status == InvoiceStatus(status_val))
+    # Фильтр по статусу:
+    # - Поддерживаем реальные статусы InvoiceStatus (PAID, ISSUED, ...)
+    # - Также поддерживаем агрегированные фильтры из UI: UNPAID, OVERDUE
+    if status_val:
+        s = status_val.strip().upper()
+        if s in {st.value for st in InvoiceStatus}:
+            query = query.filter(Invoice.status == InvoiceStatus(s))
+        elif s == "UNPAID":
+            # "Не оплачен" = не полностью оплачен и не отменён
+            query = query.filter(Invoice.status.in_([InvoiceStatus.DRAFT, InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL]))
+        elif s == "OVERDUE":
+            # "Просрочен" = due_date < сегодня (Baku) и счёт ещё не закрыт оплатой/отменой
+            today = now_baku().date()
+            query = query.filter(
+                Invoice.due_date.isnot(None),
+                Invoice.due_date < today,
+                Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL]),
+            )
     if year:
         query = query.filter(Invoice.period_year == year)
     if month:
