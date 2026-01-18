@@ -5,10 +5,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
+from sqlalchemy.exc import IntegrityError
 import json
 
 from ..database import get_db
-from ..models import Tariff, TariffStep, MeterType, CustomerType
+from ..models import Tariff, TariffStep, MeterType, CustomerType, ResidentMeter, MeterReading
 from ..deps import get_current_user
 from ..models import User
 
@@ -123,9 +124,13 @@ def list_tariffs_public(
     meter: Optional[str] = None,
     ctype: Optional[str] = None,
     q: Optional[str] = None,
+    include_inactive: bool = False,
 ):
     """ВРЕМЕННЫЙ endpoint без авторизации для теста SPA."""
-    query = db.execute(select(Tariff)).scalars().all()
+    stmt = select(Tariff)
+    if not include_inactive:
+        stmt = stmt.where(Tariff.is_active == True)  # noqa: E712
+    query = db.execute(stmt).scalars().all()
     
     if meter and meter in {m.value for m in MeterType}:
         query = [t for t in query if t.meter_type == MeterType(meter)]
@@ -161,11 +166,15 @@ def list_tariffs_api(
     meter: Optional[str] = None,
     ctype: Optional[str] = None,
     q: Optional[str] = None,
+    include_inactive: bool = False,
 ):
     """
     JSON-список тарифов для SPA-админки с фильтрами.
     """
-    query = db.execute(select(Tariff)).scalars().all()
+    stmt = select(Tariff)
+    if not include_inactive:
+        stmt = stmt.where(Tariff.is_active == True)  # noqa: E712
+    query = db.execute(stmt).scalars().all()
     
     if meter and meter in {m.value for m in MeterType}:
         query = [t for t in query if t.meter_type == MeterType(meter)]
@@ -508,10 +517,37 @@ def delete_tariff_api(
     tariff = db.get(Tariff, tariff_id)
     if not tariff:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Тариф не найден")
-    
-    db.delete(tariff)
-    db.commit()
-    return None
+
+    # Если тариф уже используется (счётчики/показания), физическое удаление запрещено FK (RESTRICT).
+    # Вместо этого деактивируем тариф, чтобы:
+    # - он не назначался новым счётчикам,
+    # - он исчезал из списков (по умолчанию),
+    # - история показаний/счетов оставалась консистентной.
+    in_meters = db.execute(
+        select(func.count(ResidentMeter.id)).where(ResidentMeter.tariff_id == tariff_id)
+    ).scalar_one() or 0
+    in_readings = db.execute(
+        select(func.count(MeterReading.id)).where(MeterReading.tariff_id == tariff_id)
+    ).scalar_one() or 0
+
+    if in_meters > 0 or in_readings > 0:
+        tariff.is_active = False
+        db.commit()
+        return None
+
+    try:
+        db.delete(tariff)
+        db.commit()
+        return None
+    except IntegrityError:
+        db.rollback()
+        # На всякий случай (если найдутся другие связи): деактивируем.
+        tariff = db.get(Tariff, tariff_id)
+        if not tariff:
+            return None
+        tariff.is_active = False
+        db.commit()
+        return None
 
 
 # ВРЕМЕННО: публичный endpoint для удаления
@@ -524,8 +560,29 @@ def delete_tariff_public(
     tariff = db.get(Tariff, tariff_id)
     if not tariff:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Тариф не найден")
-    
-    db.delete(tariff)
-    db.commit()
-    return None
+
+    in_meters = db.execute(
+        select(func.count(ResidentMeter.id)).where(ResidentMeter.tariff_id == tariff_id)
+    ).scalar_one() or 0
+    in_readings = db.execute(
+        select(func.count(MeterReading.id)).where(MeterReading.tariff_id == tariff_id)
+    ).scalar_one() or 0
+
+    if in_meters > 0 or in_readings > 0:
+        tariff.is_active = False
+        db.commit()
+        return None
+
+    try:
+        db.delete(tariff)
+        db.commit()
+        return None
+    except IntegrityError:
+        db.rollback()
+        tariff = db.get(Tariff, tariff_id)
+        if not tariff:
+            return None
+        tariff.is_active = False
+        db.commit()
+        return None
 

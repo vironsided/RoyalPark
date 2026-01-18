@@ -1047,9 +1047,20 @@
             readingDate = resident.reading_date;
         }
 
+        // В режиме редактирования “Показателей” мы редактируем месяц,
+        // который выбран в фильтрах (год/месяц сверху), а не “сегодня”.
+        // Это критично, иначе backend не найдёт existing-reading за нужный месяц
+        // и вы увидите “не тот тариф”.
+        const yearSel = document.getElementById('filterYear');
+        const monthSel = document.getElementById('filterMonth');
+        const y = (yearSel?.value || new Date().getFullYear().toString());
+        const m = (monthSel?.value || (new Date().getMonth() + 1).toString());
+        const mm = String(m).padStart(2, '0');
+        const monthDate = `${y}-${mm}-01`;
+
         // Set date BEFORE calling renderMeterDetails
         if (dateInput) {
-            dateInput.value = readingDate;
+            dateInput.value = monthDate;
         }
 
         if (residentSelect && residentId) {

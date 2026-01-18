@@ -10,7 +10,7 @@ from sqlalchemy import select, func
 from ..database import get_db
 from ..models import (
     User, RoleEnum, Block, Resident, ResidentMeter,
-    ResidentType, ResidentStatus, CustomerType, MeterType, Tariff
+    ResidentType, ResidentStatus, CustomerType, MeterType, Tariff, MeterReading
 )
 from ..deps import get_current_user
 
@@ -20,6 +20,7 @@ router = APIRouter(prefix="/api/residents", tags=["residents-api"])
 
 # Pydantic models
 class MeterIn(BaseModel):
+    id: Optional[int] = None  # existing ResidentMeter.id (optional; helps avoid losing history)
     meter_type: str  # MeterType value
     serial: str
     used: bool  # True если initial_reading > 0
@@ -98,6 +99,7 @@ def _parse_meters(meters_data: List[MeterIn]) -> List[dict]:
             raise ValueError("Initial reading cannot be negative")
         
         result.append({
+            "id": m.id,
             "meter_type": meter_type_enum,
             "serial": serial,
             "initial_reading": Decimal(str(m.initial)),
@@ -718,44 +720,102 @@ def update_resident_api(
     if payload.comment is not None:
         resident.comment = payload.comment.strip() if payload.comment else None
     
-    # Полная замена счётчиков
+    # Обновление/синхронизация счётчиков (БЕЗ физического удаления тех, у кого есть показания)
+    # Это предотвращает "пропадание показаний" из-за FK resident_meter_id ON DELETE CASCADE.
     if payload.meters is not None:
-        # Удаляем старые активные счётчики физически из базы
-        # Это предотвращает накопление дубликатов
-        from ..models import ResidentMeter
-        db.query(ResidentMeter).filter(
-            ResidentMeter.resident_id == resident.id,
-            ResidentMeter.is_active == True
-        ).delete(synchronize_session=False)
-        
-        # Разбор новых счётчиков
         try:
-            meters_data = _parse_meters(payload.meters)
+            incoming = _parse_meters(payload.meters)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
-        
-        # Проверка тарифов
-        for m_data in meters_data:
-            tariff = db.get(Tariff, m_data["tariff_id"])
+
+        existing_meters: list[ResidentMeter] = (
+            db.query(ResidentMeter)
+            .filter(ResidentMeter.resident_id == resident.id)
+            .all()
+        )
+        existing_by_id = {m.id: m for m in existing_meters}
+
+        if existing_by_id:
+            meters_with_readings = {
+                mid for (mid,) in db.query(MeterReading.resident_meter_id)
+                .filter(MeterReading.resident_meter_id.in_(list(existing_by_id.keys())))
+                .distinct()
+                .all()
+            }
+        else:
+            meters_with_readings = set()
+
+        seen_existing_ids: set[int] = set()
+
+        def validate_tariff(tariff_id: int, meter_type_enum: MeterType, existing_meter: ResidentMeter | None):
+            tariff = db.get(Tariff, tariff_id)
             if not tariff:
-                raise HTTPException(status_code=404, detail=f"Tariff {m_data['tariff_id']} not found")
-            if tariff.meter_type != m_data["meter_type"]:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Tariff {m_data['tariff_id']} meter_type mismatch"
-                )
-        
-        # Создание новых счётчиков
-        for m_data in meters_data:
-            meter = ResidentMeter(
-                resident_id=resident.id,
-                meter_type=m_data["meter_type"],
-                serial_number=m_data["serial"],
-                initial_reading=m_data["initial_reading"],
-                tariff_id=m_data["tariff_id"],
-                is_active=True,
-            )
-            db.add(meter)
+                raise HTTPException(status_code=404, detail=f"Tariff {tariff_id} not found")
+            if tariff.meter_type != meter_type_enum:
+                raise HTTPException(status_code=400, detail=f"Tariff {tariff_id} meter_type mismatch")
+            # Не даём назначать неактивные тарифы на новые/изменённые счётчики.
+            # Но разрешаем сохранить старую привязку (если она уже была).
+            if not tariff.is_active:
+                if not (existing_meter and existing_meter.tariff_id == tariff_id):
+                    raise HTTPException(status_code=400, detail=f"Tariff {tariff_id} is inactive")
+            return tariff
+
+        # 1) Upsert incoming meters
+        for m_data in incoming:
+            meter_id = m_data.get("id")
+            meter_type = m_data["meter_type"]
+            serial = m_data["serial"]
+            initial_reading = m_data["initial_reading"]
+            tariff_id = m_data["tariff_id"]
+
+            existing_meter: ResidentMeter | None = None
+            if meter_id is not None:
+                existing_meter = existing_by_id.get(int(meter_id))
+                if not existing_meter or existing_meter.resident_id != resident.id:
+                    raise HTTPException(status_code=400, detail=f"Meter {meter_id} not found for this resident")
+            else:
+                # Best-effort match for backwards compatibility (older SPA payload without meter id)
+                # Prefer active meters first to avoid accidentally reactivating historical ones.
+                candidates = [
+                    em for em in existing_meters
+                    if em.meter_type == meter_type
+                    and (em.serial_number or "") == (serial or "")
+                    and em.tariff_id == tariff_id
+                ]
+                candidates = sorted(candidates, key=lambda x: (not x.is_active, x.id))
+                existing_meter = candidates[0] if candidates else None
+
+            validate_tariff(tariff_id, meter_type, existing_meter)
+
+            if existing_meter:
+                # Обновляем существующий счётчик
+                existing_meter.is_active = True
+                existing_meter.serial_number = serial
+                existing_meter.tariff_id = tariff_id
+
+                # Не меняем initial_reading, если есть показания — иначе можем сломать базовую логику "опорного"
+                if existing_meter.id not in meters_with_readings:
+                    existing_meter.initial_reading = initial_reading
+                seen_existing_ids.add(existing_meter.id)
+            else:
+                # Создаём новый счётчик
+                db.add(ResidentMeter(
+                    resident_id=resident.id,
+                    meter_type=meter_type,
+                    serial_number=serial,
+                    initial_reading=initial_reading,
+                    tariff_id=tariff_id,
+                    is_active=True,
+                ))
+
+        # 2) Deactivate (or delete) meters that are missing in incoming payload
+        for em in existing_meters:
+            if em.id in seen_existing_ids:
+                continue
+            if em.id in meters_with_readings:
+                em.is_active = False
+            else:
+                db.delete(em)
     
     db.commit()
     db.refresh(resident)
@@ -861,44 +921,91 @@ def update_resident_public(
     if payload.comment is not None:
         resident.comment = payload.comment.strip() if payload.comment else None
     
-    # Полная замена счётчиков
+    # Обновление/синхронизация счётчиков (БЕЗ физического удаления тех, у кого есть показания)
     if payload.meters is not None:
-        # Удаляем старые активные счётчики физически из базы
-        # Это предотвращает накопление дубликатов
-        from ..models import ResidentMeter
-        db.query(ResidentMeter).filter(
-            ResidentMeter.resident_id == resident.id,
-            ResidentMeter.is_active == True
-        ).delete(synchronize_session=False)
-        
-        # Разбор новых счётчиков
         try:
-            meters_data = _parse_meters(payload.meters)
+            incoming = _parse_meters(payload.meters)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
-        
-        # Проверка тарифов
-        for m_data in meters_data:
-            tariff = db.get(Tariff, m_data["tariff_id"])
+
+        existing_meters: list[ResidentMeter] = (
+            db.query(ResidentMeter)
+            .filter(ResidentMeter.resident_id == resident.id)
+            .all()
+        )
+        existing_by_id = {m.id: m for m in existing_meters}
+
+        if existing_by_id:
+            meters_with_readings = {
+                mid for (mid,) in db.query(MeterReading.resident_meter_id)
+                .filter(MeterReading.resident_meter_id.in_(list(existing_by_id.keys())))
+                .distinct()
+                .all()
+            }
+        else:
+            meters_with_readings = set()
+
+        seen_existing_ids: set[int] = set()
+
+        def validate_tariff(tariff_id: int, meter_type_enum: MeterType, existing_meter: ResidentMeter | None):
+            tariff = db.get(Tariff, tariff_id)
             if not tariff:
-                raise HTTPException(status_code=404, detail=f"Tariff {m_data['tariff_id']} not found")
-            if tariff.meter_type != m_data["meter_type"]:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Tariff {m_data['tariff_id']} meter_type mismatch"
-                )
-        
-        # Создание новых счётчиков
-        for m_data in meters_data:
-            meter = ResidentMeter(
-                resident_id=resident.id,
-                meter_type=m_data["meter_type"],
-                serial_number=m_data["serial"],
-                initial_reading=m_data["initial_reading"],
-                tariff_id=m_data["tariff_id"],
-                is_active=True,
-            )
-            db.add(meter)
+                raise HTTPException(status_code=404, detail=f"Tariff {tariff_id} not found")
+            if tariff.meter_type != meter_type_enum:
+                raise HTTPException(status_code=400, detail=f"Tariff {tariff_id} meter_type mismatch")
+            if not tariff.is_active:
+                if not (existing_meter and existing_meter.tariff_id == tariff_id):
+                    raise HTTPException(status_code=400, detail=f"Tariff {tariff_id} is inactive")
+            return tariff
+
+        for m_data in incoming:
+            meter_id = m_data.get("id")
+            meter_type = m_data["meter_type"]
+            serial = m_data["serial"]
+            initial_reading = m_data["initial_reading"]
+            tariff_id = m_data["tariff_id"]
+
+            existing_meter: ResidentMeter | None = None
+            if meter_id is not None:
+                existing_meter = existing_by_id.get(int(meter_id))
+                if not existing_meter or existing_meter.resident_id != resident.id:
+                    raise HTTPException(status_code=400, detail=f"Meter {meter_id} not found for this resident")
+            else:
+                candidates = [
+                    em for em in existing_meters
+                    if em.meter_type == meter_type
+                    and (em.serial_number or "") == (serial or "")
+                    and em.tariff_id == tariff_id
+                ]
+                candidates = sorted(candidates, key=lambda x: (not x.is_active, x.id))
+                existing_meter = candidates[0] if candidates else None
+
+            validate_tariff(tariff_id, meter_type, existing_meter)
+
+            if existing_meter:
+                existing_meter.is_active = True
+                existing_meter.serial_number = serial
+                existing_meter.tariff_id = tariff_id
+                if existing_meter.id not in meters_with_readings:
+                    existing_meter.initial_reading = initial_reading
+                seen_existing_ids.add(existing_meter.id)
+            else:
+                db.add(ResidentMeter(
+                    resident_id=resident.id,
+                    meter_type=meter_type,
+                    serial_number=serial,
+                    initial_reading=initial_reading,
+                    tariff_id=tariff_id,
+                    is_active=True,
+                ))
+
+        for em in existing_meters:
+            if em.id in seen_existing_ids:
+                continue
+            if em.id in meters_with_readings:
+                em.is_active = False
+            else:
+                db.delete(em)
     
     db.commit()
     db.refresh(resident)

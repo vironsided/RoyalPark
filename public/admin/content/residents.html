@@ -308,8 +308,9 @@
                     }
                 }
                 
-                // Загружаем тарифы
-                let tariffsResp = await fetch(`${API_BASE}/api/tariffs`, { credentials: 'include' });
+                // Загружаем тарифы (включая архивные), чтобы при редактировании
+                // можно было отобразить уже назначенный (даже если он деактивирован).
+                let tariffsResp = await fetch(`${API_BASE}/api/tariffs?include_inactive=1`, { credentials: 'include' });
                 if (tariffsResp.ok) {
                     tariffs = await tariffsResp.json();
                 }
@@ -1017,9 +1018,17 @@
                 'construction': 'CONSTRUCTION'
             };
             const apiMeterType = meterTypeMap[meterType] || 'ELECTRIC';
-            const availableTariffs = tariffs.filter(t => t.meter_type === apiMeterType);
+            const availableTariffs = tariffs.filter(t => t.meter_type === apiMeterType && t.is_active);
+            const selectedTariffObj = tariffs.find(t => t.id === tariffId);
             
             let tariffSelectHtml = '<option value="">Выберите тариф</option>';
+            
+            // Если у редактируемого счётчика выбран архивный тариф — покажем его как выбранный вариант,
+            // но не будем предлагать архивные тарифы для выбора.
+            if (tariffId && selectedTariffObj && !selectedTariffObj.is_active) {
+                tariffSelectHtml += `<option value="${selectedTariffObj.id}" selected>${selectedTariffObj.name} (архив)</option>`;
+            }
+            
             availableTariffs.forEach(tariff => {
                 tariffSelectHtml += `<option value="${tariff.id}" ${tariff.id === tariffId ? 'selected' : ''}>${tariff.name}</option>`;
             });
@@ -1113,9 +1122,20 @@
                 'construction': 'CONSTRUCTION'
             };
             const apiMeterType = meterTypeMap[meterType] || 'ELECTRIC';
-            const availableTariffs = tariffs.filter(t => t.meter_type === apiMeterType);
+            const availableTariffs = tariffs.filter(t => t.meter_type === apiMeterType && t.is_active);
+            const currentSelectedId = parseInt(tariffSelect.value || 0);
+            const selectedTariffObj = tariffs.find(t => t.id === currentSelectedId);
             
             tariffSelect.innerHTML = '<option value="">Выберите тариф</option>';
+            
+            if (currentSelectedId && selectedTariffObj && !selectedTariffObj.is_active) {
+                const opt = document.createElement('option');
+                opt.value = String(selectedTariffObj.id);
+                opt.textContent = `${selectedTariffObj.name} (архив)`;
+                opt.selected = true;
+                tariffSelect.appendChild(opt);
+            }
+            
             availableTariffs.forEach(tariff => {
                 const option = document.createElement('option');
                 option.value = tariff.id;
@@ -1291,13 +1311,18 @@
                     
                     if (apiMeterType && tariffId) {
                         
-                        meters.push({
+                        const meterIdAttr = row.getAttribute('data-meter-id');
+                        const meterId = meterIdAttr ? parseInt(meterIdAttr) : null;
+                        const meterPayload = {
+                            // id нужен бэку, чтобы не удалять счётчик (и его показания) при редактировании
+                            ...(meterId ? { id: meterId } : {}),
                             meter_type: apiMeterType,
                             serial: serial,
                             used: used,
                             initial: initial,
                             tariff_id: tariffId
-                        });
+                        };
+                        meters.push(meterPayload);
                     }
                 });
                 

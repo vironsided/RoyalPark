@@ -6,7 +6,7 @@ import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
+from sqlalchemy import func, or_, exists
 
 from ..database import get_db
 from ..models import (
@@ -278,10 +278,23 @@ def get_resident_meters(
         except Exception as e:
             period_start = period_end = None
 
-    meters_list = db.query(ResidentMeter).filter(
-        ResidentMeter.resident_id == resident_id,
-        ResidentMeter.is_active == True  # Показываем только активные счётчики
-    ).options(
+    # ВАЖНО: В режиме редактирования месяца нужно показывать:
+    # - активные счётчики
+    # - И неактивные тоже, если в выбранном месяце по ним есть показания
+    # иначе при “удалении услуги у резидента” (deactivate meter) пропадёт возможность
+    # открыть/увидеть исторический тариф и редактировать показания.
+    meters_q = db.query(ResidentMeter).filter(ResidentMeter.resident_id == resident_id)
+    if period_start and period_end:
+        in_period = exists().where(
+            MeterReading.resident_meter_id == ResidentMeter.id,
+            MeterReading.reading_date >= period_start,
+            MeterReading.reading_date < period_end,
+        )
+        meters_q = meters_q.filter(or_(ResidentMeter.is_active == True, in_period))  # noqa: E712
+    else:
+        meters_q = meters_q.filter(ResidentMeter.is_active == True)  # noqa: E712
+
+    meters_list = meters_q.options(
         joinedload(ResidentMeter.tariff).joinedload(Tariff.steps)
     ).all()
     
@@ -321,9 +334,21 @@ def get_resident_meters(
                     MeterReading.reading_date >= period_start,
                     MeterReading.reading_date < period_end,
                 )
+                .options(joinedload(MeterReading.tariff).joinedload(Tariff.steps))
                 .order_by(MeterReading.reading_date.desc(), MeterReading.id.desc())
                 .first()
             )
+
+        # ВАЖНО:
+        # Для режима редактирования месяца (когда existing=True) нужно показывать тариф,
+        # по которому было рассчитано ИМЕННО ЭТО показание (existing.tariff),
+        # а не текущий тариф счётчика (m.tariff), т.к. тариф могли "удалить" (архивировать)
+        # или поменять у счётчика позже.
+        tariff_obj = None
+        if existing and getattr(existing, "tariff", None) is not None:
+            tariff_obj = existing.tariff
+        else:
+            tariff_obj = m.tariff
 
         if m.meter_type == MeterType.ELECTRIC:
             display_type = "Электричество"; unit = "кВт·ч"; is_fixed = False
@@ -344,8 +369,8 @@ def get_resident_meters(
 
         # Для CONSTRUCTION тарифов получаем диапазон дат
         date_range = None
-        if m.meter_type == MeterType.CONSTRUCTION and m.tariff.steps:
-            first_step = m.tariff.steps[0]
+        if m.meter_type == MeterType.CONSTRUCTION and tariff_obj and tariff_obj.steps:
+            first_step = tariff_obj.steps[0]
             if first_step.from_date and first_step.to_date:
                 date_range = {
                     "from_date": first_step.from_date.isoformat(),
@@ -354,8 +379,8 @@ def get_resident_meters(
 
         # Подготовка данных о тарифе для расчета суммы на frontend
         tariff_steps = []
-        if m.tariff.steps:
-            for step in sorted(m.tariff.steps, key=lambda s: s.from_value or 0):
+        if tariff_obj and tariff_obj.steps:
+            for step in sorted(tariff_obj.steps, key=lambda s: s.from_value or 0):
                 tariff_steps.append({
                     "from_value": float(step.from_value) if step.from_value is not None else None,
                     "to_value": float(step.to_value) if step.to_value is not None else None,
@@ -372,9 +397,9 @@ def get_resident_meters(
             "type": m.meter_type.value,
             "display_type": display_type,
             "serial": m.serial_number,
-            "tariff_id": m.tariff_id,
-            "tariff_name": m.tariff.name,
-            "vat_percent": m.tariff.vat_percent,
+            "tariff_id": (existing.tariff_id if existing else m.tariff_id),
+            "tariff_name": (tariff_obj.name if tariff_obj else None),
+            "vat_percent": (tariff_obj.vat_percent if tariff_obj else 0),
             "tariff_steps": tariff_steps,
             "prev_value": prev_value_float,
             "unit": unit,
