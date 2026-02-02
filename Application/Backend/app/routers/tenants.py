@@ -27,10 +27,10 @@ from ..deps import get_current_user, require_any_role
 from ..models import User, RoleEnum, Block, Resident
 from ..security import hash_password
 from ..utils import generate_temp_password
-from fastapi.templating import Jinja2Templates
+from ..utils import get_templates
 
 router = APIRouter(prefix="/tenants", tags=["tenants"])
-templates = Jinja2Templates(directory="app/templates")
+templates = get_templates()
 
 
 def _see_other(url: str) -> RedirectResponse:

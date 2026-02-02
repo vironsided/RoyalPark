@@ -10,7 +10,7 @@ from ..database import get_db
 from ..models import User, RoleEnum
 from ..deps import get_current_user, can_manage_user
 from ..security import hash_password, verify_password, get_user_id_from_session
-from ..utils import generate_temp_password
+from ..utils import generate_temp_password, to_baku_datetime
 
 
 router = APIRouter(prefix="/api/users", tags=["users-api"])
@@ -31,6 +31,24 @@ class UserOut(BaseModel):
 
     class Config:
         from_attributes = True
+    
+    @classmethod
+    def from_orm_with_tz(cls, obj: User):
+        """Создает UserOut с конвертацией времени в часовой пояс Баку"""
+        data = {
+            "id": obj.id,
+            "username": obj.username,
+            "full_name": obj.full_name,
+            "phone": obj.phone,
+            "email": obj.email,
+            "avatar_path": obj.avatar_path,
+            "role": obj.role,
+            "is_active": obj.is_active,
+            "require_password_change": obj.require_password_change,
+            "temp_password_plain": obj.temp_password_plain,
+            "last_login_at": to_baku_datetime(obj.last_login_at) if obj.last_login_at else None,
+        }
+        return cls(**data)
 
 
 class UserCreate(BaseModel):
@@ -77,7 +95,7 @@ def list_users_api(
     users = query.order_by(User.id.asc()).offset((page - 1) * per_page).limit(per_page).all()
     
     return {
-        "items": users,
+        "items": [UserOut.from_orm_with_tz(u) for u in users],
         "total": total,
         "page": page,
         "per_page": per_page,
@@ -115,7 +133,7 @@ def create_user_api(
     db.add(user)
     db.commit()
     db.refresh(user)
-    return user
+    return UserOut.from_orm_with_tz(user)
 
 
 # Функция для сохранения аватара
@@ -147,7 +165,7 @@ def get_current_user_profile(
     user: User = Depends(get_current_user),
 ):
     """Получение профиля текущего пользователя."""
-    return user
+    return UserOut.from_orm_with_tz(user)
 
 
 @router.put("/me", response_model=UserOut)
@@ -181,7 +199,7 @@ async def update_current_user_profile(
     
     db.commit()
     db.refresh(user)
-    return user
+    return UserOut.from_orm_with_tz(user)
 
 
 @router.post("/me/change-password", response_model=dict)
@@ -258,7 +276,7 @@ def update_user_api(
 
     db.commit()
     db.refresh(user)
-    return user
+    return UserOut.from_orm_with_tz(user)
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -308,6 +326,6 @@ def reset_password_api(
     target.temp_password_plain = temp_pass
     db.commit()
     db.refresh(target)
-    return target
+    return UserOut.from_orm_with_tz(target)
 
 

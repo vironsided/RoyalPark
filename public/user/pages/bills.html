@@ -17,27 +17,27 @@
                             </label>
                             <label class="status-checkbox">
                                 <input type="checkbox" class="user-status-checkbox" value="DRAFT">
-                                <span>DRAFT</span>
+                                <span data-i18n="status_draft" data-status-value="DRAFT">DRAFT</span>
                             </label>
                             <label class="status-checkbox">
                                 <input type="checkbox" class="user-status-checkbox" value="ISSUED" checked>
-                                <span>ISSUED</span>
+                                <span data-i18n="status_issued" data-status-value="ISSUED">ISSUED</span>
                             </label>
                             <label class="status-checkbox">
                                 <input type="checkbox" class="user-status-checkbox" value="PARTIAL" checked>
-                                <span>PARTIAL</span>
+                                <span data-i18n="status_partial" data-status-value="PARTIAL">PARTIAL</span>
                             </label>
                             <label class="status-checkbox">
                                 <input type="checkbox" class="user-status-checkbox" value="PAID">
-                                <span>PAID</span>
+                                <span data-i18n="status_paid" data-status-value="PAID">PAID</span>
                             </label>
                             <label class="status-checkbox">
                                 <input type="checkbox" class="user-status-checkbox" value="OVERPAID">
-                                <span>OVERPAID</span>
+                                <span data-i18n="status_overpaid" data-status-value="OVERPAID">OVERPAID</span>
                             </label>
                             <label class="status-checkbox">
                                 <input type="checkbox" class="user-status-checkbox" value="CANCELED">
-                                <span>CANCELED</span>
+                                <span data-i18n="status_canceled" data-status-value="CANCELED">CANCELED</span>
                             </label>
                         </div>
                     </div>
@@ -193,19 +193,52 @@
             }
 
             tableBody.innerHTML = invoices.map(inv => {
+                // Get current language
+                const lang = localStorage.getItem('language') || 'ru';
+                const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
+                
                 // Format period
-                const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-                    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-                let periodText = `${monthNames[inv.period_month - 1]} ${inv.period_year}`;
+                const monthKeys = [
+                    'month_january', 'month_february', 'month_march', 'month_april',
+                    'month_may', 'month_june', 'month_july', 'month_august',
+                    'month_september', 'month_october', 'month_november', 'month_december'
+                ];
+                const monthName = window.i18n?.translate?.(monthKeys[inv.period_month - 1], lang) ||
+                    ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+                     'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'][inv.period_month - 1];
+                let periodText = `${monthName} ${inv.period_year}`;
                 if (inv.period_dates && inv.period_dates.from && inv.period_dates.to) {
+                    try {
+                        const fromDate = new Date(inv.period_dates.from);
+                        const toDate = new Date(inv.period_dates.to);
+                        // Проверяем, что даты валидны
+                        if (!isNaN(fromDate.getTime()) && !isNaN(toDate.getTime())) {
+                            periodText = `${fromDate.toLocaleDateString(locale)} - ${toDate.toLocaleDateString(locale)}`;
+                        } else {
+                            // Если даты невалидны, используем исходные строки или fallback
+                            periodText = `${inv.period_dates.from} - ${inv.period_dates.to}`;
+                        }
+                    } catch (e) {
+                        // В случае ошибки используем исходные строки или fallback
                     periodText = `${inv.period_dates.from} - ${inv.period_dates.to}`;
+                    }
                 } else if (inv.period_dates && inv.period_dates.to) {
+                    try {
+                        const toDate = new Date(inv.period_dates.to);
+                        if (!isNaN(toDate.getTime())) {
+                            periodText = toDate.toLocaleDateString(locale);
+                        } else {
+                            periodText = inv.period_dates.to;
+                        }
+                    } catch (e) {
                     periodText = inv.period_dates.to;
+                    }
                 }
 
                 // Format status
                 const statusClass = getStatusClass(inv.status);
-                const statusText = inv.status;
+                const statusKey = `status_${inv.status.toLowerCase()}`;
+                const statusText = window.i18n?.translate?.(statusKey, lang) || inv.status;
 
                 // Format amounts
                 const totalFormatted = formatCurrency(inv.amount_total);
@@ -214,26 +247,32 @@
 
                 // Format due date
                 const dueDateText = inv.due_date 
-                    ? new Date(inv.due_date).toLocaleDateString('ru-RU')
+                    ? new Date(inv.due_date).toLocaleDateString(locale)
                     : '—';
 
                 // Invoice number
                 const invoiceNumber = inv.number || '—';
+                
+                // Get translations for paid and remaining
+                const paidLabel = window.i18n?.translate?.('user_bills_paid_label', lang) || 'Оплачено {amount}';
+                const remainingLabel = window.i18n?.translate?.('user_bills_remaining_label', lang) || 'Остаток {amount}';
+                const paidText = paidLabel.replace('{amount}', paidFormatted);
+                const remainingText = remainingLabel.replace('{amount}', remainingFormatted);
 
                 return `
                     <tr>
-                        <td>${periodText}</td>
+                        <td data-period-month="${inv.period_month}" data-period-year="${inv.period_year}">${periodText}</td>
                         <td>${inv.resident_code}</td>
                         <td>${invoiceNumber}</td>
-                        <td><span class="user-bill-status ${statusClass}">${statusText}</span></td>
+                        <td><span class="user-bill-status ${statusClass}" data-status="${inv.status}">${statusText}</span></td>
                         <td class="user-bill-amount">${totalFormatted}</td>
                         <td>
-                            <span class="user-bill-paid">Оплачено ${paidFormatted}</span>
-                            <span class="user-bill-remaining">Остаток ${remainingFormatted}</span>
+                            <span class="user-bill-paid" data-paid-amount="${inv.paid_amount}">${paidText}</span>
+                            <span class="user-bill-remaining" data-remaining-amount="${inv.remaining_amount}">${remainingText}</span>
                         </td>
-                        <td>${dueDateText}</td>
+                        <td data-due-date="${inv.due_date || ''}">${dueDateText}</td>
                         <td>
-                            <button class="user-bill-open-btn" data-user-route-target="invoice" data-invoice-id="${inv.id}" data-i18n="user_bills_open_btn">Открыть</button>
+                            <button class="user-bill-open-btn" data-user-route-target="invoice" data-invoice-id="${inv.id}" data-i18n="user_bills_open_btn">${window.i18n?.translate?.('user_bills_open_btn', lang) || 'Открыть'}</button>
                             <button class="user-bill-pdf-btn" type="button" data-invoice-id="${inv.id}">PDF</button>
                         </td>
                     </tr>
@@ -256,7 +295,9 @@
 
             // Format currency
             function formatCurrency(amount) {
-            return new Intl.NumberFormat('ru-RU', {
+            const lang = localStorage.getItem('language') || 'ru';
+            const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
+            return new Intl.NumberFormat(locale, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             }).format(amount);

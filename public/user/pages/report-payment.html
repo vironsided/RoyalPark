@@ -2,7 +2,7 @@
     <div class="payment-container">
         <!-- Left Column: Saved Cards -->
         <div class="payment-left-column">
-            <h3 class="payment-section-title">Выберите способ оплаты</h3>
+            <h3 class="payment-section-title" data-i18n="payment_select_method">Выберите способ оплаты</h3>
             
             <!-- Saved Cards -->
             <div class="saved-cards-container">
@@ -19,7 +19,7 @@
                                 </svg>
                                 <span class="pass-brand-name">ROYAL PARK</span>
                             </div>
-                            <div class="pass-type">RESIDENT PASS</div>
+                            <div class="pass-type" data-i18n="payment_resident_pass">RESIDENT PASS</div>
                         </div>
 
                         <div class="pass-chip-row">
@@ -37,17 +37,17 @@
                         </div>
 
                         <div class="pass-balance">
-                            <div class="pass-label">Advance Balance</div>
+                            <div class="pass-label" data-i18n="payment_advance_balance">Advance Balance</div>
                             <div class="pass-amount" id="passAdvanceAmount"></div>
                         </div>
 
                         <div class="pass-footer">
                             <div>
-                                <div class="pass-label">Resident Name</div>
+                                <div class="pass-label" data-i18n="payment_resident_name">Resident Name</div>
                                 <div class="pass-name" id="passResidentName"></div>
                             </div>
                             <div class="pass-expiry">
-                                <div class="pass-label">Valid Thru</div>
+                                <div class="pass-label" data-i18n="payment_valid_thru">Valid Thru</div>
                                 <div class="pass-exp">12/28</div>
                             </div>
                         </div>
@@ -100,11 +100,11 @@
 
                         <div class="card-bottom">
                             <div class="info-group">
-                                <label>CARD HOLDER NAME</label>
+                                <label data-i18n="payment_card_holder_name">CARD HOLDER NAME</label>
                                 <div class="value">ИВАН ИВАНОВ</div>
                             </div>
                             <div class="info-group align-right">
-                                <label>EXPIRY DATE</label>
+                                <label data-i18n="payment_expiry_date">EXPIRY DATE</label>
                                 <div class="value">12/28</div>
                             </div>
                         </div>
@@ -143,11 +143,11 @@
 
                         <div class="card-bottom">
                             <div class="info-group">
-                                <label>CARD HOLDER NAME</label>
+                                <label data-i18n="payment_card_holder_name">CARD HOLDER NAME</label>
                                 <div class="value">ПЕТР ПЕТРОВ</div>
                             </div>
                             <div class="info-group align-right">
-                                <label>EXPIRY DATE</label>
+                                <label data-i18n="payment_expiry_date">EXPIRY DATE</label>
                                 <div class="value">09/25</div>
                             </div>
                         </div>
@@ -156,15 +156,15 @@
 
                 <button class="add-card-btn">
                     <i class="bi bi-plus-lg"></i>
-                    <span>Добавить новую</span>
+                    <span data-i18n="payment_add_new_card">Добавить новую</span>
                 </button>
             </div>
         </div>
 
         <!-- Middle Column: Credit Card Form (hidden by default until user chooses to add a card) -->
         <div class="payment-middle-column is-hidden" id="paymentMiddleColumn">
-            <h3 class="payment-section-title">Оплата банковской картой</h3>
-            <p class="payment-amount-label">Сумма к оплате: <span id="paymentAmountLabel">0,00 ₼</span></p>
+            <h3 class="payment-section-title" data-i18n="payment_card_payment">Оплата банковской картой</h3>
+            <p class="payment-amount-label"><span data-i18n="payment_amount_label">Сумма к оплате</span>: <span id="paymentAmountLabel">0,00 ₼</span></p>
             
             <!-- Card Preview with 3D Flip -->
             <div class="card-preview-container" id="cardPreviewContainer" onclick="flipPreviewCard()">
@@ -193,15 +193,15 @@
                         </header>
                         <div class="card-details">
                             <div class="name-number">
-                                <h6>Card Number</h6>
+                                <h6 data-i18n="payment_card_number">Card Number</h6>
                                 <h5 class="number" id="cardPreviewNumber">**** **** **** ****</h5>
                                 <div class="card-holder-section">
-                                    <h6>Card Holder name</h6>
+                                    <h6 data-i18n="payment_card_holder_name">Card Holder name</h6>
                                     <h5 class="name" id="cardPreviewName">ИМЯ ФАМИЛИЯ</h5>
                                 </div>
                             </div>
                             <div class="valid-date">
-                                <h6>Expiry Date</h6>
+                                <h6 data-i18n="payment_expiry_date">Expiry Date</h6>
                                 <h5 id="cardPreviewExpiry">MM/YY</h5>
                             </div>
                         </div>
@@ -209,14 +209,14 @@
                     <div class="card-preview-back" id="cardPreviewBack">
                         <div class="magnetic-strip"></div>
                         <div class="text-end pe-3 mb-2">
-                            <small style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">Authorized Signature</small>
+                            <small style="color: rgba(255,255,255,0.7); font-size: 0.7rem;" data-i18n="payment_authorized_signature">Authorized Signature</small>
                         </div>
                         <div class="signature-area">
                             <span class="cvv-display" id="cardPreviewCVV">***</span>
                         </div>
                         <div class="d-flex justify-content-between px-3 align-items-center mt-auto">
                             <small style="color: rgba(255,255,255,0.6); font-size: 0.6rem; line-height: 1.2; max-width: 200px;">
-                                This card is property of the issuer.
+                                <span data-i18n="payment_card_property">This card is property of the issuer.</span>
                             </small>
                             <div class="mastercard-logo" id="cardPreviewBackLogo">
                                 <span class="mastercard-circle circle-red"></span>
@@ -236,45 +236,45 @@
 
             <form class="payment-card-form">
                 <div class="form-group">
-                    <label>Номер карты</label>
+                    <label data-i18n="payment_card_number">Номер карты</label>
                     <div class="card-input-wrapper">
-                        <input type="text" placeholder="2324 5566 6677 7898" maxlength="19" class="card-number-input" id="cardNumberInput">
+                        <input type="text" data-i18n-placeholder="payment_card_number_placeholder" placeholder="2324 5566 6677 7898" maxlength="19" class="card-number-input" id="cardNumberInput">
                         <div class="card-input-icon" id="cardInputIcon">MC</div>
                     </div>
                     <div class="card-bank-info" id="cardBankInfo"></div>
                 </div>
 
                 <div class="form-group">
-                    <label>Имя на карте</label>
-                    <input type="text" placeholder="Имя Фамилия" class="card-name-input" id="cardNameInput">
+                    <label data-i18n="payment_card_name">Имя на карте</label>
+                    <input type="text" data-i18n-placeholder="payment_card_name_placeholder" placeholder="Имя Фамилия" class="card-name-input" id="cardNameInput">
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Срок действия</label>
-                        <input type="text" placeholder="11/25" class="card-exp-input" id="cardExpInput">
+                        <label data-i18n="payment_card_expiry">Срок действия</label>
+                        <input type="text" data-i18n-placeholder="payment_card_expiry_placeholder" placeholder="11/25" class="card-exp-input" id="cardExpInput">
                     </div>
 
                     <div class="form-group">
-                        <label>CVV</label>
-                        <input type="text" placeholder="123" maxlength="3" class="card-cvv-input" id="cardCvvInput">
+                        <label data-i18n="payment_card_cvv">CVV</label>
+                        <input type="text" data-i18n-placeholder="payment_card_cvv_placeholder" placeholder="123" maxlength="3" class="card-cvv-input" id="cardCvvInput">
                     </div>
                 </div>
 
                 <div class="form-group checkbox-group">
                     <label class="checkbox-label">
                         <input type="checkbox" class="save-card-checkbox">
-                        <span>Сохранить карту</span>
+                        <span data-i18n="payment_save_card">Сохранить карту</span>
                     </label>
                 </div>
 
-                <button type="submit" class="pay-button">Оплатить</button>
+                <button type="submit" class="pay-button" data-i18n="payment_pay_button">Оплатить</button>
             </form>
         </div>
 
         <!-- Right Column: Payment Details -->
         <div class="payment-right-column">
-            <h3 class="payment-section-title">Детали оплаты</h3>
+            <h3 class="payment-section-title" data-i18n="payment_details_title">Детали оплаты</h3>
             <div id="paymentCountdown" style="display:none;margin:0 0 12px 0;padding:10px 12px;border:1px solid #2563eb;border-radius:10px;background:rgba(37,99,235,0.08);color:#e5e7eb;font-weight:600;"></div>
             
             <div class="order-summary">
@@ -284,23 +284,23 @@
                     </div>
                     <div class="order-info">
                         <div class="order-title">RoyalPark Residence</div>
-                        <div class="order-subtitle">Оплата счёта</div>
+                        <div class="order-subtitle" data-i18n="payment_order_subtitle">Оплата счёта</div>
                     </div>
                 </div>
 
                 <div class="order-details">
                     <div class="order-detail-item">
-                        <span class="detail-label">Тип платежа</span>
+                        <span class="detail-label" data-i18n="payment_type_label">Тип платежа</span>
                         <span class="detail-value" id="paymentType">—</span>
                     </div>
 
                     <div class="order-detail-item">
-                        <span class="detail-label">Резидент</span>
+                        <span class="detail-label" data-i18n="payment_resident_label">Резидент</span>
                         <span class="detail-value" id="paymentResident">—</span>
                     </div>
 
                     <div class="order-detail-item">
-                        <span class="detail-label">Период</span>
+                        <span class="detail-label" data-i18n="payment_period_label">Период</span>
                         <span class="detail-value" id="paymentDate">—</span>
                     </div>
 
@@ -310,14 +310,14 @@
                     </div> -->
 
                     <div class="order-detail-item">
-                        <span class="detail-label">Счёт</span>
+                        <span class="detail-label" data-i18n="payment_invoice_label">Счёт</span>
                         <span class="detail-value" id="invoiceNumber">—</span>
                     </div>
                 </div>
 
                 <div class="order-totals">
                     <div class="order-total-item final">
-                        <span class="total-label">Итого</span>
+                        <span class="total-label" data-i18n="payment_total_label">Итого</span>
                         <span class="total-value" id="total"></span>
                     </div>
                 </div>
@@ -327,11 +327,11 @@
                     <div class="custom-amount-checkbox">
                         <label class="custom-amount-label">
                             <input type="checkbox" id="customAmountCheckbox" class="custom-amount-checkbox-input">
-                            <span class="custom-amount-checkbox-text">Указать другую сумму для оплаты</span>
+                            <span class="custom-amount-checkbox-text" data-i18n="payment_custom_amount">Указать другую сумму для оплаты</span>
                         </label>
                     </div>
                     <div class="custom-amount-field-wrapper" id="customAmountFieldWrapper" style="display: none;">
-                        <label class="custom-amount-field-label">Сумма к оплате</label>
+                        <label class="custom-amount-field-label" data-i18n="payment_custom_amount_label">Сумма к оплате</label>
                         <div class="custom-amount-input-wrapper">
                             <input 
                                 type="number" 
@@ -350,7 +350,7 @@
 
             <!-- Default pay action when user doesn't add a new card -->
             <div class="default-pay-actions">
-                <button type="button" class="pay-button default-pay-button">Оплатить</button>
+                <button type="button" class="pay-button default-pay-button" data-i18n="payment_pay_button">Оплатить</button>
             </div>
         </div>
     </div>
@@ -431,7 +431,8 @@ function startPaymentCountdown(paymentTimestamp) {
             timerEl.style.display = 'block';
             timerEl.style.borderColor = '#dc2626';
             timerEl.style.background = 'rgba(220,38,38,0.08)';
-            timerEl.textContent = 'Время на оплату истекло. Данные очищены, начните заново.';
+            const lang = localStorage.getItem('language') || 'ru';
+            timerEl.textContent = window.i18n?.translate?.('payment_time_expired', lang) || 'Время на оплату истекло. Данные очищены, начните заново.';
             resetPaymentSummaryUIAfterExpiry();
             redirectToDashboard();
             return;
@@ -439,7 +440,9 @@ function startPaymentCountdown(paymentTimestamp) {
 
         const minutes = Math.floor(remaining / 60000);
         const seconds = Math.floor((remaining % 60000) / 1000);
-        timerEl.textContent = `Время на оплату: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        const lang = localStorage.getItem('language') || 'ru';
+        const timeLabel = window.i18n?.translate?.('payment_time_remaining', lang) || 'Время на оплату';
+        timerEl.textContent = `${timeLabel}: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         timerEl.style.display = 'block';
     };
 
@@ -714,7 +717,9 @@ function updateCardPreview(cardNumber, cardName, cardExp, cardData) {
     
     // Show bank info
     if (cardBankInfo && cardData?.bank) {
-        cardBankInfo.innerHTML = `<small>Банк: ${cardData.bank}${cardData.country ? ` (${cardData.country})` : ''}</small>`;
+        const lang = localStorage.getItem('language') || 'ru';
+        const bankLabel = window.i18n?.translate?.('payment_bank_label', lang) || 'Банк';
+        cardBankInfo.innerHTML = `<small>${bankLabel}: ${cardData.bank}${cardData.country ? ` (${cardData.country})` : ''}</small>`;
     } else if (cardBankInfo) {
         cardBankInfo.innerHTML = '';
     }
@@ -967,7 +972,9 @@ async function loadPaymentInvoices(scope, residentCode, preferredAmount = null, 
                 };
             } else {
                 // Несколько счетов — ведём на список счетов с фильтрацией
-                invoiceNumberEl.textContent = `Несколько счетов (${targetInvoices.length})`;
+                const lang = localStorage.getItem('language') || 'ru';
+                const multipleText = window.i18n?.translate?.('payment_multiple_invoices', lang) || 'Несколько счетов';
+                invoiceNumberEl.textContent = `${multipleText} (${targetInvoices.length})`;
                 invoiceNumberEl.style.cursor = 'pointer';
                 invoiceNumberEl.classList.add('invoice-link');
                 invoiceNumberEl.onclick = function () {
@@ -1241,7 +1248,9 @@ async function initPaymentPage() {
         }
 
         if (nameEl) {
-            nameEl.textContent = displayName || 'Резидент';
+            const lang = localStorage.getItem('language') || 'ru';
+            const residentLabel = window.i18n?.translate?.('payment_resident_label', lang) || 'Резидент';
+            nameEl.textContent = displayName || residentLabel;
         }
 
         if (advanceEl) {
@@ -1370,18 +1379,19 @@ async function initPaymentPage() {
         // (т.е. пользователь перешел на страницу оплаты через кнопку, а не напрямую)
         if (hasPaymentData) {
             // Устанавливаем поля только если есть данные
+            const lang = localStorage.getItem('language') || 'ru';
             if (subtitleEl) {
                 if (scope === 'all') {
-                    subtitleEl.textContent = 'Оплата всего долга';
+                    subtitleEl.textContent = window.i18n?.translate?.('payment_all_debt', lang) || 'Оплата всего долга';
                 } else {
-                    subtitleEl.textContent = 'Оплата за текущий месяц';
+                    subtitleEl.textContent = window.i18n?.translate?.('payment_current_month', lang) || 'Оплата за текущий месяц';
                 }
             }
 
             if (paymentTypeEl) {
                 const defaultScopeText = scope === 'all'
-                    ? 'Полное погашение долга по счетам'
-                    : 'Оплата счетов за текущий месяц';
+                    ? (window.i18n?.translate?.('payment_full_debt', lang) || 'Полное погашение долга по счетам')
+                    : (window.i18n?.translate?.('payment_month_bills', lang) || 'Оплата счетов за текущий месяц');
                 paymentTypeEl.textContent = scopeLabelStored || defaultScopeText;
             }
 
@@ -1398,7 +1408,8 @@ async function initPaymentPage() {
         } else {
             // Если нет данных в sessionStorage, оставляем все поля пустыми
             if (subtitleEl) {
-                subtitleEl.textContent = 'Оплата счёта';
+                const lang = localStorage.getItem('language') || 'ru';
+                subtitleEl.textContent = window.i18n?.translate?.('payment_invoice_payment', lang) || 'Оплата счёта';
             }
             
             if (paymentTypeEl) {
@@ -1659,10 +1670,13 @@ async function submitPayment(event) {
     let paymentComment = '';
     let paymentReference = '';
     let paymentMethod = 'CARD'; // Default method
+    const lang = localStorage.getItem('language') || 'ru';
 
     if (isUsingNewCardForm) {
-        paymentComment = `Оплата новой картой ****${cardNumber.slice(-4)}`;
-        paymentReference = `CARD: ${cardNumber.slice(-4)}`;
+        const last4 = cardNumber.slice(-4);
+        const commentTemplate = window.i18n?.translate?.('payment_comment_new_card', lang) || 'Оплата новой картой ****{last4}';
+        paymentComment = commentTemplate.replace('{last4}', last4);
+        paymentReference = `CARD: ${last4}`;
         paymentMethod = 'CARD';
     } else {
         const activeCard = window.selectedSavedCard || selectedSavedCard;
@@ -1675,23 +1689,26 @@ async function submitPayment(event) {
                 
                 if (amount > balance) {
                     const diff = amount - balance;
-                    showPaymentError(`Недостаточно средств на авансе. Доступно: ${balance.toFixed(2)} ₼. Не хватает: ${diff.toFixed(2)} ₼`);
+                    const errorMsg = window.i18n?.translate?.('payment_error_insufficient_advance', lang) || 
+                        `Недостаточно средств на авансе. Доступно: ${balance.toFixed(2)} ₼. Не хватает: ${diff.toFixed(2)} ₼`;
+                    showPaymentError(errorMsg);
                     return false;
                 }
                 
-                paymentComment = `Списание из аванса Royal Park Pass`;
+                paymentComment = window.i18n?.translate?.('payment_comment_advance', lang) || 'Списание из аванса Royal Park Pass';
                 paymentReference = `ADVANCE: PASS`;
                 paymentMethod = 'ADVANCE';
             } else {
                 const brandName = activeCard.brand || 'Card';
                 const cardSuffix = activeCard.last4 ? `****${activeCard.last4}` : '';
-                paymentComment = `Оплата картой ${brandName} ${cardSuffix}`;
+                const commentTemplate = window.i18n?.translate?.('payment_comment_saved_card', lang) || 'Оплата картой {brand} {suffix}';
+                paymentComment = commentTemplate.replace('{brand}', brandName).replace('{suffix}', cardSuffix);
                 paymentReference = `CARD: ${activeCard.last4 || 'SAVED'}`;
                 paymentMethod = 'CARD';
             }
         } else {
             // Fallback
-            paymentComment = 'Онлайн-оплата';
+            paymentComment = window.i18n?.translate?.('payment_comment_online', lang) || 'Онлайн-оплата';
             paymentReference = 'ONLINE';
         }
     }

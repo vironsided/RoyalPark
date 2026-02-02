@@ -157,9 +157,10 @@
                                 <div class="user-appeal-house">${item.dataset.apartment}</div>
                                 <div class="user-appeal-date">${item.dataset.created}</div>
                             </div>
-                            <span class="user-appeal-badge ${isRead ? 'user-appeal-badge-read' : 'user-appeal-badge-unread'}">
-                                ${isRead ? (window.languageManager?.translateKey?.('user_appeal_status_read') || 'Прочитано')
-                                         : (window.languageManager?.translateKey?.('user_appeal_status_unread') || 'Не прочитано')}
+                            <span class="user-appeal-badge ${isRead ? 'user-appeal-badge-read' : 'user-appeal-badge-unread'}" 
+                                  data-appeal-status="${isRead ? 'read' : 'unread'}">
+                                ${isRead ? (window.i18n?.translate?.('user_appeal_status_read', localStorage.getItem('language') || 'ru') || 'Прочитано')
+                                         : (window.i18n?.translate?.('user_appeal_status_unread', localStorage.getItem('language') || 'ru') || 'Не прочитано')}
                             </span>
                         </div>
                         <button type="button" class="btn btn-outline-info btn-sm user-appeal-view" data-i18n="apply">Просмотр</button>
@@ -212,15 +213,17 @@
                 };
 
                 // Локализуем статус по ключу (read/unread)
+                const lang = localStorage.getItem('language') || 'ru';
                 const statusKey = item.dataset.status;
                 const isRead = statusKey === 'read';
                 if (statusKey === 'read') {
-                    modalStatus.textContent = translateStatus('user_appeal_status_read', 'Read');
+                    modalStatus.textContent = window.i18n?.translate?.('user_appeal_status_read', lang) || 'Прочитано';
                 } else if (statusKey === 'unread') {
-                    modalStatus.textContent = translateStatus('user_appeal_status_unread', 'Unread');
+                    modalStatus.textContent = window.i18n?.translate?.('user_appeal_status_unread', lang) || 'Не прочитано';
                 } else {
                     modalStatus.textContent = statusKey || '—';
                 }
+                modalStatus.dataset.appealStatus = statusKey;
 
                 modalText.textContent = item.dataset.text || '—';
                 modalEdit.value = item.dataset.text || '';

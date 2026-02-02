@@ -101,7 +101,7 @@
           <tbody>
             {% for rd in history[m.id] %}
               <tr>
-                <td>{{ rd.reading_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ rd.reading_date | baku_datetime }}</td>
                 <td class="text-end">{{ '%.3f'|format(rd.value) }}</td>
                 <td class="text-end">{{ '%.3f'|format(rd.consumption) }}</td>
                 <td class="text-end text-danger fw-semibold">{{ '%.2f'|format(rd.amount_total) }}</td>

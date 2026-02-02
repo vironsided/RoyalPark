@@ -431,3 +431,126 @@
     bottom: calc(100% + 8px) !important;
 }
 
+/* Reading Details Modal Filter Dark Mode */
+[data-theme="dark"] .reading-details-filter {
+    background: rgba(36, 40, 49, 0.95) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .reading-details-filter label {
+    color: #e4e6eb !important;
+}
+
+[data-theme="dark"] .reading-details-filter input[type="month"] {
+    background: rgba(45, 49, 57, 0.9) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: #e4e6eb !important;
+    color-scheme: dark;
+}
+
+[data-theme="dark"] .reading-details-filter input[type="month"]:hover {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    background: rgba(45, 49, 57, 1) !important;
+}
+
+[data-theme="dark"] .reading-details-filter input[type="month"]:focus {
+    border-color: #667eea !important;
+    background: rgba(45, 49, 57, 1) !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
+    outline: none !important;
+}
+
+[data-theme="dark"] .reading-details-filter input[type="month"]::placeholder {
+    color: #8d9199 !important;
+}
+
+[data-theme="dark"] .reading-details-filter button {
+    transition: all 0.2s ease !important;
+}
+
+[data-theme="dark"] .reading-details-filter .reading-details-filter-btn-apply,
+[data-theme="dark"] .reading-details-filter button[onclick*="applyReadingDetailsFilter"] {
+    background: #667eea !important;
+    color: #fff !important;
+    border: none !important;
+}
+
+[data-theme="dark"] .reading-details-filter .reading-details-filter-btn-apply:hover,
+[data-theme="dark"] .reading-details-filter button[onclick*="applyReadingDetailsFilter"]:hover {
+    background: #5568d3 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3) !important;
+}
+
+[data-theme="dark"] .reading-details-filter .reading-details-filter-btn-reset,
+[data-theme="dark"] .reading-details-filter button[onclick*="resetReadingDetailsFilter"] {
+    background: transparent !important;
+    color: #e4e6eb !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-theme="dark"] .reading-details-filter .reading-details-filter-btn-reset:hover,
+[data-theme="dark"] .reading-details-filter button[onclick*="resetReadingDetailsFilter"]:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+[data-theme="dark"] .reading-details-filter span {
+    color: #e4e6eb !important;
+}
+
+/* Month input dark mode (general) */
+[data-theme="dark"] input[type="month"] {
+    background: #2d3139 !important;
+    color: #e4e6eb !important;
+    border-color: #3a3f4a !important;
+    color-scheme: dark;
+}
+
+[data-theme="dark"] input[type="month"]:hover {
+    background: #242831 !important;
+    border-color: #667eea !important;
+}
+
+[data-theme="dark"] input[type="month"]:focus {
+    background: #242831 !important;
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
+    outline: none !important;
+}
+
+/* Scrollbar dark mode for modals and reading details */
+[data-theme="dark"] .reading-details-body::-webkit-scrollbar,
+[data-theme="dark"] .readings-detail-modal::-webkit-scrollbar,
+[data-theme="dark"] .modal-content::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+[data-theme="dark"] .reading-details-body::-webkit-scrollbar-track,
+[data-theme="dark"] .readings-detail-modal::-webkit-scrollbar-track,
+[data-theme="dark"] .modal-content::-webkit-scrollbar-track {
+    background: rgba(36, 40, 49, 0.5);
+    border-radius: 4px;
+}
+
+[data-theme="dark"] .reading-details-body::-webkit-scrollbar-thumb,
+[data-theme="dark"] .readings-detail-modal::-webkit-scrollbar-thumb,
+[data-theme="dark"] .modal-content::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.5);
+    border-radius: 4px;
+}
+
+[data-theme="dark"] .reading-details-body::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .readings-detail-modal::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .modal-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.7);
+}
+
+/* Firefox scrollbar */
+[data-theme="dark"] .reading-details-body,
+[data-theme="dark"] .readings-detail-modal,
+[data-theme="dark"] .modal-content {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(102, 126, 234, 0.5) rgba(36, 40, 49, 0.5);
+}

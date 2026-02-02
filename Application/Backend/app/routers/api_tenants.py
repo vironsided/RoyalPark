@@ -9,7 +9,7 @@ from ..database import get_db
 from ..deps import get_current_user
 from ..models import User, RoleEnum, Block, Resident
 from ..security import hash_password
-from ..utils import generate_temp_password
+from ..utils import generate_temp_password, to_baku_datetime
 
 router = APIRouter(prefix="/api/tenants", tags=["tenants-api"])
 
@@ -132,7 +132,7 @@ def _list_tenants_internal(
             "full_name": u.full_name or "",
             "phone": u.phone or "",
             "email": u.email or "",
-            "last_login": u.last_login_at,
+            "last_login": to_baku_datetime(u.last_login_at) if u.last_login_at else None,
             "require_password_change": u.require_password_change,
             "temp_password": u.temp_password_plain or None,
             "comment": u.comment or "",

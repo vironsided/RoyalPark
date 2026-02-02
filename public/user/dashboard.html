@@ -32,7 +32,7 @@
                 <div class="sidebar-logo">
                     <div class="logo-text">
                         <h2>RoyalPark</h2>
-                        <p>Личный кабинет</p>
+                        <p data-i18n="user_personal_account">Личный кабинет</p>
                     </div>
                 </div>
                 <button class="toggle-sidebar" id="toggleSidebar">
@@ -335,7 +335,7 @@
                             <i class="bi bi-credit-card"></i>
                             <div>
                                 <div class="action-title" data-i18n="user_quick_pay_bills">Оплатить счета</div>
-                                <div class="action-subtitle">3 неоплаченных</div>
+                                <div class="action-subtitle" id="actionUnpaidCount" data-i18n-template="user_unpaid_count_template">3 неоплаченных</div>
                             </div>
                             <i class="bi bi-arrow-right"></i>
                         </button>
@@ -430,14 +430,14 @@
     <div class="account-modal-overlay" id="accountModal">
         <div class="account-modal">
             <div class="account-modal-header">
-                <h2>Настройки аккаунта</h2>
+                <h2 data-i18n="account_settings_title">Настройки аккаунта</h2>
                 <button class="account-modal-close" id="accountModalClose">&times;</button>
             </div>
             <div class="account-modal-body">
                 <!-- Tabs -->
                 <div class="account-tabs">
-                    <button class="account-tab-btn active" data-tab="profile">Профиль</button>
-                    <button class="account-tab-btn" data-tab="password">Пароль</button>
+                    <button class="account-tab-btn active" data-tab="profile" data-i18n="account_tab_profile">Профиль</button>
+                    <button class="account-tab-btn" data-tab="password" data-i18n="account_tab_password">Пароль</button>
                 </div>
 
                 <!-- Profile tab -->
@@ -445,22 +445,22 @@
                     <div class="account-profile-grid">
                         <div class="account-profile-form">
                             <div class="account-form-group">
-                                <label>Ф.И.О.</label>
-                                <input type="text" id="accountFullName" placeholder="Введите Ф.И.О.">
+                                <label data-i18n="account_full_name">Ф.И.О.</label>
+                                <input type="text" id="accountFullName" data-i18n-placeholder="account_full_name_placeholder" placeholder="Введите Ф.И.О.">
                             </div>
                             <div class="account-form-row">
                                 <div class="account-form-group">
-                                    <label>Телефон</label>
-                                    <input type="tel" id="accountPhoneInput" placeholder="Номер телефона">
+                                    <label data-i18n="account_phone">Телефон</label>
+                                    <input type="tel" id="accountPhoneInput" data-i18n-placeholder="account_phone_placeholder" placeholder="Номер телефона">
                                 </div>
                                 <div class="account-form-group">
-                                    <label>E-mail</label>
-                                    <input type="email" id="accountEmailInput" placeholder="E-mail">
+                                    <label data-i18n="account_email">E-mail</label>
+                                    <input type="email" id="accountEmailInput" data-i18n-placeholder="account_email_placeholder" placeholder="E-mail">
                                 </div>
                             </div>
                             <div class="account-form-row">
                                 <div class="account-form-group">
-                                    <label>Язык интерфейса</label>
+                                    <label data-i18n="account_interface_language">Язык интерфейса</label>
                                     <select id="accountLanguage">
                                         <option value="ru">Русский</option>
                                         <option value="az">Azərbaycan</option>
@@ -476,17 +476,21 @@
                                     </select>
                                 </div> -->
                             </div>
-                            <p class="account-hint">PNG/JPG/WebP, до 4 МБ.</p>
                         </div>
 
                         <div class="account-profile-avatar">
                             <div class="account-avatar-large" id="accountModalAvatar">ПО</div>
                             <div class="account-form-group">
-                                <label for="accountAvatarInput">Аватар</label>
-                                <input type="file" id="accountAvatarInput" accept="image/*">
+                                <label for="accountAvatarInput" data-i18n="account_avatar">Аватар</label>
+                                <div class="account-file-input-wrapper">
+                                    <input type="file" id="accountAvatarInput" accept="image/*" style="display: none;">
+                                    <button type="button" class="account-file-select-btn" id="accountFileSelectBtn" data-i18n="account_file_select_btn">Выбор файла</button>
+                                    <div class="account-file-status" id="accountFileStatus" data-i18n="account_file_no_selected">Не выбран ни один файл</div>
                             </div>
                         </div>
-                        <button class="account-btn account-btn-primary" id="accountModalSave">Сохранить изменения</button>
+                            <p class="account-hint" data-i18n="account_avatar_hint">PNG/JPG/WebP, до 4 МБ.</p>
+                        </div>
+                        <button class="account-btn account-btn-primary" id="accountModalSave" data-i18n="account_save_changes">Сохранить изменения</button>
                     </div>
                 </div>
 
@@ -494,23 +498,23 @@
                 <div class="account-tab-panel" id="accountTabPassword">
                     <div class="account-info-section">
                         <div class="account-form-group">
-                            <label>Текущий пароль</label>
-                            <input type="password" id="currentPassword" placeholder="Введите текущий пароль">
+                            <label data-i18n="account_current_password">Текущий пароль</label>
+                            <input type="password" id="currentPassword" data-i18n-placeholder="account_current_password_placeholder" placeholder="Введите текущий пароль">
                         </div>
                         <div class="account-form-group">
-                            <label>Новый пароль</label>
-                            <input type="password" id="newPassword" placeholder="Введите новый пароль">
+                            <label data-i18n="account_new_password">Новый пароль</label>
+                            <input type="password" id="newPassword" data-i18n-placeholder="account_new_password_placeholder" placeholder="Введите новый пароль">
                         </div>
                         <div class="account-form-group">
-                            <label>Подтвердите пароль</label>
-                            <input type="password" id="confirmPassword" placeholder="Подтвердите новый пароль">
+                            <label data-i18n="account_confirm_password">Подтвердите пароль</label>
+                            <input type="password" id="confirmPassword" data-i18n-placeholder="account_confirm_password_placeholder" placeholder="Подтвердите новый пароль">
                         </div>
-                        <button class="account-btn account-btn-primary" type="button" id="changePasswordBtn">Изменить пароль</button>
+                        <button class="account-btn account-btn-primary" type="button" id="changePasswordBtn" data-i18n="account_change_password">Изменить пароль</button>
                     </div>
                 </div>
             </div>
             <div class="account-modal-footer">
-                <button class="account-btn account-btn-secondary" id="accountModalCancel">Отмена</button>
+                <button class="account-btn account-btn-secondary" id="accountModalCancel" data-i18n="cancel">Отмена</button>
             </div>
         </div>
     </div>
@@ -655,7 +659,9 @@
                             const img = new Image();
                             img.onload = function() {
                                 avatarPreview.style.background = 'none';
-                                avatarPreview.style.backgroundImage = `url('${API_BASE_URL}${user.avatar_path}')`;
+                                // Add timestamp to avoid caching
+                                const timestamp = new Date().getTime();
+                                avatarPreview.style.backgroundImage = `url('${API_BASE_URL}${user.avatar_path}?t=${timestamp}')`;
                                 avatarPreview.style.backgroundSize = 'cover';
                                 avatarPreview.style.backgroundPosition = 'center';
                                 avatarPreview.style.backgroundRepeat = 'no-repeat';
@@ -666,7 +672,9 @@
                                 avatarPreview.style.backgroundImage = '';
                                 avatarPreview.textContent = initials;
                             };
-                            img.src = `${API_BASE_URL}${user.avatar_path}`;
+                            // Add timestamp to avoid caching
+                            const timestamp = new Date().getTime();
+                            img.src = `${API_BASE_URL}${user.avatar_path}?t=${timestamp}`;
                         } else {
                             avatarPreview.style.background = ''; // Restore default gradient
                             avatarPreview.style.backgroundImage = '';
@@ -701,6 +709,14 @@
                     
                     // Load user profile from backend
                     loadUserProfile();
+                    
+                    // Apply translations when modal opens
+                    setTimeout(() => {
+                        if (window.i18n && typeof window.i18n.applyLanguage === 'function') {
+                            const savedLang = localStorage.getItem('language') || 'ru';
+                            window.i18n.applyLanguage(savedLang);
+                        }
+                    }, 100);
                     
                     // Сохраняем начальное состояние полей, чтобы отследить изменения
                     setTimeout(() => {
@@ -756,13 +772,31 @@
                 });
             });
 
-            // Avatar preview
+            // Avatar preview and file selection
             const avatarInput = document.getElementById('accountAvatarInput');
             const avatarPreview = document.getElementById('accountModalAvatar');
+            const fileSelectBtn = document.getElementById('accountFileSelectBtn');
+            const fileStatus = document.getElementById('accountFileStatus');
+            
+            if (fileSelectBtn && avatarInput) {
+                fileSelectBtn.addEventListener('click', function() {
+                    avatarInput.click();
+                });
+            }
+            
             if (avatarInput && avatarPreview) {
                 avatarInput.addEventListener('change', function () {
                     const file = this.files && this.files[0];
-                    if (!file) return;
+                    if (file) {
+                        // Update file status
+                        if (fileStatus) {
+                            const fileName = file.name;
+                            const fileSize = (file.size / 1024 / 1024).toFixed(2);
+                            fileStatus.textContent = `${fileName} (${fileSize} МБ)`;
+                            fileStatus.classList.add('has-file');
+                        }
+                        
+                        // Update avatar preview
                     const reader = new FileReader();
                     reader.onload = function (e) {
                         avatarPreview.style.background = 'none'; // Clear gradient
@@ -773,6 +807,14 @@
                         avatarPreview.textContent = '';
                     };
                     reader.readAsDataURL(file);
+                    } else {
+                        // Reset file status
+                        if (fileStatus) {
+                            const noFileText = window.i18n?.translate?.('account_file_no_selected', window.i18n?.currentLanguage || 'ru') || 'Не выбран ни один файл';
+                            fileStatus.textContent = noFileText;
+                            fileStatus.classList.remove('has-file');
+                        }
+                    }
                 });
             }
 
@@ -958,7 +1000,9 @@
                             const img = new Image();
                             img.onload = function() {
                                 userAvatarEl.style.background = 'none';
-                                userAvatarEl.style.backgroundImage = `url('${API_BASE_URL}${user.avatar_path}')`;
+                                // Add timestamp to avoid caching
+                                const timestamp = new Date().getTime();
+                                userAvatarEl.style.backgroundImage = `url('${API_BASE_URL}${user.avatar_path}?t=${timestamp}')`;
                                 userAvatarEl.style.backgroundSize = 'cover';
                                 userAvatarEl.style.backgroundPosition = 'center';
                                 userAvatarEl.style.backgroundRepeat = 'no-repeat';
@@ -969,7 +1013,9 @@
                                 userAvatarEl.style.backgroundImage = '';
                                 userAvatarEl.textContent = initials;
                             };
-                            img.src = `${API_BASE_URL}${user.avatar_path}`;
+                            // Add timestamp to avoid caching
+                            const timestamp = new Date().getTime();
+                            img.src = `${API_BASE_URL}${user.avatar_path}?t=${timestamp}`;
                         } else {
                             userAvatarEl.style.background = ''; // Restore default gradient
                             userAvatarEl.style.backgroundImage = '';
@@ -987,7 +1033,8 @@
                     // Disable button during request
                     accountModalSave.disabled = true;
                     const originalText = accountModalSave.textContent;
-                    accountModalSave.textContent = 'Сохранение...';
+                    const savingText = window.i18n?.translate?.('account_saving', window.i18n?.currentLanguage || 'ru') || 'Сохранение...';
+                    accountModalSave.textContent = savingText;
                     
                     try {
                         // Save profile to backend
@@ -1031,17 +1078,26 @@
                             avatarInput.value = '';
                         }
                         
-                        // Close modal first
-                        closeAccountModal();
+                        // Reset file status
+                        const fileStatus = document.getElementById('accountFileStatus');
+                        if (fileStatus) {
+                            const noFileText = window.i18n?.translate?.('account_file_no_selected', window.i18n?.currentLanguage || 'ru') || 'Не выбран ни один файл';
+                            fileStatus.textContent = noFileText;
+                            fileStatus.classList.remove('has-file');
+                        }
                         
-                        // Wait for modal to close
-                        await new Promise(resolve => setTimeout(resolve, 300));
-                        
-                        // Reload profile data to update initial state
+                        // Reload profile data to update avatar preview with new path from server
+                        // Do this BEFORE closing modal so avatar updates in modal
                         await loadUserProfile();
                         setTimeout(() => {
                             initialAccountState = getAccountState();
                         }, 100);
+                        
+                        // Close modal after data is reloaded
+                        closeAccountModal();
+                        
+                        // Wait for modal to close
+                        await new Promise(resolve => setTimeout(resolve, 300));
                         
                         // Show success message after modal is closed
                         if (typeof showAlert === 'function') {

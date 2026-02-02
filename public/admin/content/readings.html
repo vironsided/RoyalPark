@@ -221,6 +221,16 @@
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
+        <div class="reading-details-filter" style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);">
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <label style="color: #fff; font-size: 14px;">Фильтр по месяцам:</label>
+                <input type="month" id="readingDetailsFromMonth" style="padding: 6px 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 14px;" placeholder="С месяца">
+                <span style="color: #fff;">—</span>
+                <input type="month" id="readingDetailsToMonth" style="padding: 6px 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 14px;" placeholder="По месяц">
+                <button onclick="applyReadingDetailsFilter()" style="padding: 6px 15px; border-radius: 4px; border: none; background: #667eea; color: #fff; cursor: pointer; font-size: 14px;">Применить</button>
+                <button onclick="resetReadingDetailsFilter()" style="padding: 6px 15px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: #fff; cursor: pointer; font-size: 14px;">Сбросить</button>
+            </div>
+        </div>
         <div class="reading-details-body" id="readingDetailsBody">
             <div class="text-muted">Выберите запись, чтобы увидеть детали</div>
         </div>
@@ -1073,29 +1083,25 @@
         }
     }
 
-    window.openReadingDetails = async function openReadingDetails(residentId) {
-        const modal = document.getElementById('readingDetailsModal');
-        const title = document.getElementById('readingDetailsTitle');
-        const body = document.getElementById('readingDetailsBody');
-        if (!modal || !title || !body) return;
+    // Сохраняем текущий residentId для фильтрации
+    let currentReadingDetailsResidentId = null;
 
-        const resident = readingsData?.rows?.find(r => r.resident_id === residentId);
-        if (!resident) {
-            title.textContent = 'Детали показаний';
-            body.innerHTML = '<div class="detail-empty">Резидент не найден</div>';
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-            return;
+    async function loadReadingDetailsData(residentId, fromMonth = null, toMonth = null) {
+        const body = document.getElementById('readingDetailsBody');
+        if (!body) return;
+
+        body.innerHTML = '<div class="text-muted text-center" style="padding: 20px;">Загрузка...</div>';
+
+        // Формируем URL с параметрами фильтрации
+        let url = `${API_BASE}/api/readings/resident/${residentId}/history`;
+        const params = new URLSearchParams();
+        if (fromMonth) params.append('from_month', fromMonth);
+        if (toMonth) params.append('to_month', toMonth);
+        if (params.toString()) {
+            url += '?' + params.toString();
         }
 
-        title.textContent = `Резидент: ${resident.resident_code}`;
-        body.innerHTML = '<div class="text-muted text-center" style="padding: 20px;">Загрузка...</div>';
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-
-        // Load detailed readings from API
         try {
-            let url = `${API_BASE}/api/readings/resident/${residentId}/history`;
             let response = await fetch(url, { credentials: 'include' });
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
@@ -1173,9 +1179,223 @@
             }).join('');
 
             body.innerHTML = metersHtml || '<div class="detail-empty">Нет данных</div>';
+            return data;
         } catch (error) {
             console.error('Error loading reading history:', error);
             body.innerHTML = '<div class="detail-empty">Ошибка загрузки данных: ' + error.message + '</div>';
+            throw error;
+        }
+    }
+
+    window.openReadingDetails = async function openReadingDetails(residentId) {
+        const modal = document.getElementById('readingDetailsModal');
+        const title = document.getElementById('readingDetailsTitle');
+        const body = document.getElementById('readingDetailsBody');
+        if (!modal || !title || !body) return;
+
+        const resident = readingsData?.rows?.find(r => r.resident_id === residentId);
+        if (!resident) {
+            title.textContent = 'Детали показаний';
+            body.innerHTML = '<div class="detail-empty">Резидент не найден</div>';
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            return;
+        }
+
+        // Сохраняем residentId для фильтрации
+        currentReadingDetailsResidentId = residentId;
+
+        title.textContent = `Резидент: ${resident.resident_code}`;
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        // Сбрасываем фильтры при открытии
+        const fromMonthInput = document.getElementById('readingDetailsFromMonth');
+        const toMonthInput = document.getElementById('readingDetailsToMonth');
+        if (fromMonthInput) fromMonthInput.value = '';
+        if (toMonthInput) toMonthInput.value = '';
+
+        // Загружаем данные без фильтрации
+        try {
+            const data = await loadReadingDetailsData(residentId);
+            
+            if (!data.meters || data.meters.length === 0) {
+                body.innerHTML = '<div class="detail-empty">Нет данных о показаниях</div>';
+                return;
+            }
+
+            // Группируем счётчики по типу, чтобы избежать дубликатов
+            const metersByType = {};
+            data.meters.forEach(meter => {
+                const key = `${meter.type}_${meter.tariff_name || ''}`;
+                if (!metersByType[key]) {
+                    metersByType[key] = {
+                        type: meter.type,
+                        tariff_name: meter.tariff_name,
+                        unit: meter.unit,
+                        serial_number: meter.serial_number,
+                        readings: []
+                    };
+                }
+                // Объединяем показания всех счётчиков этого типа
+                metersByType[key].readings.push(...meter.readings);
+            });
+
+            // Сортируем показания по дате (от новых к старым)
+            Object.values(metersByType).forEach(meter => {
+                meter.readings.sort((a, b) => new Date(b.date) - new Date(a.date));
+            });
+
+            const metersHtml = Object.values(metersByType).map(meter => {
+                const rowsHtml = meter.readings.map(reading => `
+                        <div class="detail-grid-row">
+                            <div>${reading.date}</div>
+                            <div>${reading.value.toFixed(3)}</div>
+                            <div>${reading.consumption.toFixed(3)}</div>
+                            <div class="detail-amount ${reading.amount > 0 ? 'detail-amount-alert' : ''}">${reading.amount.toFixed(2)}</div>
+                            <div>${reading.vat_percent}</div>
+                            <div>${reading.comment}</div>
+                        </div>
+                    `).join('');
+
+                // Показываем серийный номер, если он есть и не является фикс-услугой
+                const serialInfo = meter.serial_number && meter.serial_number !== '-'
+                    ? ` (№${meter.serial_number})`
+                    : '';
+
+                return `
+                        <div class="detail-meter-card">
+                            <div class="detail-meter-head">
+                                <span class="detail-meter-badge">${meter.type}${serialInfo}</span>
+                                <div class="detail-meter-info">
+                                    <span>тариф: ${meter.tariff_name || '—'}</span>
+                                </div>
+                                <span class="detail-unit-chip">${meter.unit}</span>
+                            </div>
+                            <div class="detail-grid detail-grid-head">
+                                <div>Дата</div>
+                                <div>Показание, ${meter.unit}</div>
+                                <div>Расход, ${meter.unit}</div>
+                                <div>Начислено</div>
+                                <div>НДС, %</div>
+                                <div>Комментарий</div>
+                            </div>
+                            <div class="detail-grid-body">
+                                ${rowsHtml || '<div class="detail-empty-row">Нет записей</div>'}
+                            </div>
+                        </div>
+                    `;
+            }).join('');
+
+            body.innerHTML = metersHtml || '<div class="detail-empty">Нет данных</div>';
+        } catch (error) {
+            console.error('Error loading reading history:', error);
+            body.innerHTML = '<div class="detail-empty">Ошибка загрузки данных: ' + error.message + '</div>';
+        }
+    }
+
+    window.applyReadingDetailsFilter = async function applyReadingDetailsFilter() {
+        if (!currentReadingDetailsResidentId) return;
+
+        const fromMonthInput = document.getElementById('readingDetailsFromMonth');
+        const toMonthInput = document.getElementById('readingDetailsToMonth');
+        const body = document.getElementById('readingDetailsBody');
+        
+        const fromMonth = fromMonthInput?.value || null;
+        const toMonth = toMonthInput?.value || null;
+
+        // Валидация: начальный месяц не должен быть позже конечного
+        if (fromMonth && toMonth && fromMonth > toMonth) {
+            alert('Начальный месяц не может быть позже конечного месяца');
+            return;
+        }
+
+        try {
+            const data = await loadReadingDetailsData(currentReadingDetailsResidentId, fromMonth, toMonth);
+            
+            if (!data.meters || data.meters.length === 0) {
+                body.innerHTML = '<div class="detail-empty">Нет данных за выбранный период</div>';
+                return;
+            }
+
+            // Группируем счётчики по типу
+            const metersByType = {};
+            data.meters.forEach(meter => {
+                const key = `${meter.type}_${meter.tariff_name || ''}`;
+                if (!metersByType[key]) {
+                    metersByType[key] = {
+                        type: meter.type,
+                        tariff_name: meter.tariff_name,
+                        unit: meter.unit,
+                        serial_number: meter.serial_number,
+                        readings: []
+                    };
+                }
+                metersByType[key].readings.push(...meter.readings);
+            });
+
+            // Сортируем показания по дате (от новых к старым)
+            Object.values(metersByType).forEach(meter => {
+                meter.readings.sort((a, b) => new Date(b.date) - new Date(a.date));
+            });
+
+            const metersHtml = Object.values(metersByType).map(meter => {
+                const rowsHtml = meter.readings.map(reading => `
+                        <div class="detail-grid-row">
+                            <div>${reading.date}</div>
+                            <div>${reading.value.toFixed(3)}</div>
+                            <div>${reading.consumption.toFixed(3)}</div>
+                            <div class="detail-amount ${reading.amount > 0 ? 'detail-amount-alert' : ''}">${reading.amount.toFixed(2)}</div>
+                            <div>${reading.vat_percent}</div>
+                            <div>${reading.comment}</div>
+                        </div>
+                    `).join('');
+
+                const serialInfo = meter.serial_number && meter.serial_number !== '-'
+                    ? ` (№${meter.serial_number})`
+                    : '';
+
+                return `
+                        <div class="detail-meter-card">
+                            <div class="detail-meter-head">
+                                <span class="detail-meter-badge">${meter.type}${serialInfo}</span>
+                                <div class="detail-meter-info">
+                                    <span>тариф: ${meter.tariff_name || '—'}</span>
+                                </div>
+                                <span class="detail-unit-chip">${meter.unit}</span>
+                            </div>
+                            <div class="detail-grid detail-grid-head">
+                                <div>Дата</div>
+                                <div>Показание, ${meter.unit}</div>
+                                <div>Расход, ${meter.unit}</div>
+                                <div>Начислено</div>
+                                <div>НДС, %</div>
+                                <div>Комментарий</div>
+                            </div>
+                            <div class="detail-grid-body">
+                                ${rowsHtml || '<div class="detail-empty-row">Нет записей</div>'}
+                            </div>
+                        </div>
+                    `;
+            }).join('');
+
+            body.innerHTML = metersHtml || '<div class="detail-empty">Нет данных за выбранный период</div>';
+        } catch (error) {
+            console.error('Error loading filtered reading history:', error);
+            body.innerHTML = '<div class="detail-empty">Ошибка загрузки данных: ' + error.message + '</div>';
+        }
+    }
+
+    window.resetReadingDetailsFilter = async function resetReadingDetailsFilter() {
+        const fromMonthInput = document.getElementById('readingDetailsFromMonth');
+        const toMonthInput = document.getElementById('readingDetailsToMonth');
+        
+        if (fromMonthInput) fromMonthInput.value = '';
+        if (toMonthInput) toMonthInput.value = '';
+
+        // Перезагружаем данные без фильтрации
+        if (currentReadingDetailsResidentId) {
+            await applyReadingDetailsFilter();
         }
     }
 

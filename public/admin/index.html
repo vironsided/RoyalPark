@@ -441,44 +441,45 @@
                                     </select>
                                 </div>
                             </div>
-                            <p class="account-hint">PNG/JPG/WebP, до 4 МБ.</p>
                         </div>
 
                         <div class="account-profile-avatar">
                             <div class="account-avatar-large" id="accountModalAvatar">CA</div>
                             <div class="account-form-group">
                                 <label for="accountAvatarInput">Аватар</label>
-                                <input type="file" id="accountAvatarInput" accept="image/*">
+                                <div class="account-file-input-wrapper">
+                                    <input type="file" id="accountAvatarInput" accept="image/*" style="display: none;">
+                                    <button type="button" class="account-file-select-btn" id="accountFileSelectBtn">Выбор файла</button>
+                                    <div class="account-file-status" id="accountFileStatus">Не выбран ни один файл</div>
+                                </div>
                             </div>
+                            <p class="account-hint">PNG/JPG/WebP, до 4 МБ.</p>
                         </div>
-                        <button class="account-btn account-btn-primary" id="accountModalSave">Сохранить
-                            изменения</button>
+                        <button class="account-btn account-btn-primary" id="accountModalSave">Сохранить изменения</button>
                     </div>
                 </div>
 
                 <!-- Password tab -->
                 <div class="account-tab-panel" id="accountTabPassword">
-                    <form id="changePasswordForm" onsubmit="event.preventDefault();">
-                        <div class="account-info-section">
-                            <div class="account-form-group">
-                                <label>Текущий пароль</label>
-                                <input type="password" id="currentPassword" placeholder="Введите текущий пароль"
-                                    autocomplete="current-password">
-                            </div>
-                            <div class="account-form-group">
-                                <label>Новый пароль</label>
-                                <input type="password" id="newPassword" placeholder="Введите новый пароль"
-                                    autocomplete="new-password">
-                            </div>
-                            <div class="account-form-group">
-                                <label>Подтвердите пароль</label>
-                                <input type="password" id="confirmPassword" placeholder="Подтвердите новый пароль"
-                                    autocomplete="new-password">
-                            </div>
-                            <button class="account-btn account-btn-primary" type="button"
-                                id="changePasswordBtn">Изменить пароль</button>
+                    <div class="account-info-section">
+                        <div class="account-form-group">
+                            <label>Текущий пароль</label>
+                            <input type="password" id="currentPassword" placeholder="Введите текущий пароль"
+                                autocomplete="current-password">
                         </div>
-                    </form>
+                        <div class="account-form-group">
+                            <label>Новый пароль</label>
+                            <input type="password" id="newPassword" placeholder="Введите новый пароль"
+                                autocomplete="new-password">
+                        </div>
+                        <div class="account-form-group">
+                            <label>Подтвердите пароль</label>
+                            <input type="password" id="confirmPassword" placeholder="Подтвердите новый пароль"
+                                autocomplete="new-password">
+                        </div>
+                        <button class="account-btn account-btn-primary" type="button"
+                            id="changePasswordBtn">Изменить пароль</button>
+                    </div>
                 </div>
             </div>
             <div class="account-modal-footer">
@@ -1135,11 +1136,23 @@
             async function loadUserProfile() {
                 try {
                     const response = await fetch(`${API_BASE}/api/users/me`, {
-                        credentials: 'include' // Отправляем cookies для сессии
+                        method: 'GET',
+                        credentials: 'include', // Отправляем cookies для сессии
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
                     });
+                    
                     if (!response.ok) {
+                        if (response.status === 401) {
+                            // Неавторизован - перенаправляем на страницу входа
+                            console.warn('Unauthorized access, redirecting to login');
+                            window.location.href = '/login.html';
+                            return;
+                        }
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
+                    
                     const user = await response.json();
                     currentUserData = user;
 
@@ -1197,8 +1210,11 @@
                     initialAccountState = getAccountState();
                 } catch (error) {
                     console.error('Error loading user profile:', error);
-                    if (window.showError) {
-                        showError('Ошибка загрузки профиля: ' + error.message);
+                    // Не показываем ошибку, если это 401 - уже перенаправили на логин
+                    if (error.message && !error.message.includes('401')) {
+                        if (window.showError) {
+                            showError('Ошибка загрузки профиля: ' + error.message);
+                        }
                     }
                 }
             }
@@ -1381,11 +1397,33 @@
             });
 
             // Avatar preview
+            // Обработчик для кнопки выбора файла
+            const fileSelectBtn = document.getElementById('accountFileSelectBtn');
             const avatarInput = document.getElementById('accountAvatarInput');
+            const fileStatus = document.getElementById('accountFileStatus');
             const avatarPreview = document.getElementById('accountModalAvatar');
+            
+            if (fileSelectBtn && avatarInput) {
+                fileSelectBtn.addEventListener('click', function() {
+                    avatarInput.click();
+                });
+            }
+            
             if (avatarInput && avatarPreview) {
                 avatarInput.addEventListener('change', function () {
                     const file = this.files && this.files[0];
+                    
+                    // Обновляем статус файла
+                    if (fileStatus) {
+                        if (file) {
+                            fileStatus.textContent = file.name;
+                            fileStatus.classList.add('has-file');
+                        } else {
+                            fileStatus.textContent = 'Не выбран ни один файл';
+                            fileStatus.classList.remove('has-file');
+                        }
+                    }
+                    
                     if (!file) {
                         // Если файл удален, показываем инициалы из текущего пользователя
                         const userNameEl = document.querySelector('.user-name');

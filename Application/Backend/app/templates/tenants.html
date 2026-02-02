@@ -109,7 +109,7 @@
               <td>{{ t.full_name or '—' }}</td>
               <td class="text-secondary">{{ t.phone or '—' }}</td>
               <td class="text-secondary">{{ t.email or '—' }}</td>
-              <td class="text-secondary">{{ t.last_login_at or '—' }}</td>
+              <td class="text-secondary">{{ t.last_login_at | baku_datetime }}</td>
               <td>
                 {% if t.require_password_change %}
                   {% if t.temp_password_plain %}

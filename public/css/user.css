@@ -440,6 +440,12 @@
     gap: 1rem;
 }
 
+/* Скрыть карточки "Аванс" и "К оплате сейчас" */
+.resident-stats-row > div:nth-child(2),
+.resident-stats-row > div:nth-child(3) {
+    display: none;
+}
+
 .resident-stat-label {
     font-size: 0.85rem;
     color: var(--text-secondary);

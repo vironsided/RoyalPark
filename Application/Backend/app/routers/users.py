@@ -8,10 +8,10 @@ from ..models import User, RoleEnum
 from ..deps import get_current_user, can_manage_user
 from ..utils import generate_temp_password
 from ..security import hash_password
-from fastapi.templating import Jinja2Templates
+from ..utils import get_templates
 
 router = APIRouter(prefix="/users")
-templates = Jinja2Templates(directory="app/templates")
+templates = get_templates()
 
 
 @router.get("/", response_class=HTMLResponse)

@@ -70,7 +70,7 @@
                     <tr>
                         <th data-i18n="user_invoice_items_th_description">Описание</th>
                         <th data-i18n="user_invoice_items_th_charged">Начислено</th>
-                        <th>НДС</th>
+                        <th data-i18n="user_invoice_items_th_vat">НДС</th>
                         <th data-i18n="user_invoice_items_th_total">Итого</th>
                     </tr>
                 </thead>
@@ -169,28 +169,68 @@
             
             const periodEl = document.getElementById('invoicePeriod');
             if (periodEl) {
-                const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-                    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-                let periodText = `${monthNames[invoice.period_month - 1]} ${invoice.period_year}`;
+                const lang = localStorage.getItem('language') || 'ru';
+                const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
+                const monthKeys = [
+                    'month_january', 'month_february', 'month_march', 'month_april',
+                    'month_may', 'month_june', 'month_july', 'month_august',
+                    'month_september', 'month_october', 'month_november', 'month_december'
+                ];
+                const monthName = window.i18n?.translate?.(monthKeys[invoice.period_month - 1], lang) ||
+                    ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+                     'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'][invoice.period_month - 1];
+                let periodText = `${monthName} ${invoice.period_year}`;
                 if (invoice.period_dates && invoice.period_dates.from && invoice.period_dates.to) {
+                    try {
+                        const fromDate = new Date(invoice.period_dates.from);
+                        const toDate = new Date(invoice.period_dates.to);
+                        // Проверяем, что даты валидны
+                        if (!isNaN(fromDate.getTime()) && !isNaN(toDate.getTime())) {
+                            periodText = `${fromDate.toLocaleDateString(locale)} - ${toDate.toLocaleDateString(locale)}`;
+                        } else {
+                            // Если даты невалидны, используем исходные строки или fallback
+                            periodText = `${invoice.period_dates.from} - ${invoice.period_dates.to}`;
+                        }
+                    } catch (e) {
+                        // В случае ошибки используем исходные строки или fallback
                     periodText = `${invoice.period_dates.from} - ${invoice.period_dates.to}`;
+                    }
                 } else if (invoice.period_dates && invoice.period_dates.to) {
+                    try {
+                        const toDate = new Date(invoice.period_dates.to);
+                        if (!isNaN(toDate.getTime())) {
+                            periodText = toDate.toLocaleDateString(locale);
+                        } else {
+                            periodText = invoice.period_dates.to;
+                        }
+                    } catch (e) {
                     periodText = invoice.period_dates.to;
+                    }
                 }
                 periodEl.textContent = periodText;
+                periodEl.dataset.periodMonth = invoice.period_month;
+                periodEl.dataset.periodYear = invoice.period_year;
             }
             
             const statusEl = document.getElementById('invoiceStatus');
             if (statusEl) {
+                const lang = localStorage.getItem('language') || 'ru';
                 const statusClass = getStatusClass(invoice.status);
-                statusEl.innerHTML = `<span class="user-bill-status ${statusClass}">${invoice.status}</span>`;
+                const statusKey = `status_${invoice.status.toLowerCase()}`;
+                const statusText = window.i18n?.translate?.(statusKey, lang) || invoice.status;
+                statusEl.innerHTML = `<span class="user-bill-status ${statusClass}" data-status="${invoice.status}">${statusText}</span>`;
             }
             
             const dueDateEl = document.getElementById('invoiceDueDate');
             if (dueDateEl) {
+                const lang = localStorage.getItem('language') || 'ru';
+                const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
                 dueDateEl.textContent = invoice.due_date 
-                    ? new Date(invoice.due_date).toLocaleDateString('ru-RU')
+                    ? new Date(invoice.due_date).toLocaleDateString(locale)
                     : '—';
+                if (invoice.due_date) {
+                    dueDateEl.dataset.dueDate = invoice.due_date;
+                }
             }
             
             const totalEl = document.getElementById('invoiceTotal');
@@ -205,13 +245,88 @@
             renderInvoiceLines(invoice.lines || [], invoice.amount_total);
         }
 
+        // Translate payment comment (make it globally available)
+        window.translatePaymentComment = function translatePaymentComment(comment, lang) {
+            if (!comment || comment === '—') return comment;
+            
+            // Проверяем, что язык передан корректно
+            if (!lang) {
+                lang = localStorage.getItem('language') || 'ru';
+            }
+            
+            // Паттерны для распознавания комментариев (распознаем на любом языке, но переводим на текущий)
+            const patterns = [
+                {
+                    // "Оплата новой картой ****4567" или "Payment with new card ****4567" или "Yeni kartla ödəniş ****4567"
+                    regex: /^(?:Оплата новой картой|Payment with new card|Yeni kartla ödəniş)\s+\*\*\*\*(\d+)$/i,
+                    format: (match, last4) => {
+                        const template = window.translations?.[lang]?.payment_comment_new_card || 
+                                       window.translations?.ru?.payment_comment_new_card || 
+                                       'Оплата новой картой ****{last4}';
+                        return template.replace('{last4}', last4);
+                    }
+                },
+                {
+                    // "Списание из аванса Royal Park Pass" или "Deduction from Royal Park Pass advance" или "Royal Park Pass avansından çıxarış"
+                    regex: /^(?:Списание из аванса|Deduction from|Royal Park Pass avansından çıxarış).*Royal Park Pass/i,
+                    format: () => {
+                        return window.translations?.[lang]?.payment_comment_advance || 
+                               window.translations?.ru?.payment_comment_advance || 
+                               'Списание из аванса Royal Park Pass';
+                    }
+                },
+                {
+                    // "Оплата картой MasterCard ****4567" или "Payment with MasterCard ****4567 card" или "MasterCard ****4567 kartı ilə ödəniş"
+                    regex: /^(?:Оплата картой|Payment with|kartı ilə ödəniş)\s+([A-Za-z\s]+?)\s+\*\*\*\*(\d+)/i,
+                    format: (match, brand, last4) => {
+                        const suffix = `****${last4}`;
+                        const template = window.translations?.[lang]?.payment_comment_saved_card || 
+                                       window.translations?.ru?.payment_comment_saved_card || 
+                                       'Оплата картой {brand} {suffix}';
+                        return template.replace('{brand}', brand.trim()).replace('{suffix}', suffix);
+                    }
+                },
+                {
+                    // "Онлайн-оплата" или "Online payment" или "Onlayn ödəniş"
+                    regex: /^(?:Онлайн-оплата|Online payment|Onlayn ödəniş)$/i,
+                    format: () => {
+                        return window.translations?.[lang]?.payment_comment_online || 
+                               window.translations?.ru?.payment_comment_online || 
+                               'Онлайн-оплата';
+                    }
+                }
+            ];
+            
+            // Пробуем найти подходящий паттерн
+            for (const pattern of patterns) {
+                const match = comment.match(pattern.regex);
+                if (match) {
+                    const translated = pattern.format(match, ...match.slice(1));
+                    return translated;
+                }
+            }
+            
+            // Если паттерн не найден, возвращаем оригинал
+            return comment;
+        }
+
         // Render payments table
         function renderPayments(payments, invoice) {
             const tbody = document.getElementById('paymentsTableBody');
             if (!tbody) return;
             
+            const lang = localStorage.getItem('language') || 'ru';
+            
             if (payments.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Оплаты по этому счёту отсутствуют.</td></tr>';
+                let emptyText = 'Оплаты по этому счёту отсутствуют.';
+                if (window.i18n && window.i18n.translate) {
+                    emptyText = window.i18n.translate('invoice_payments_empty', lang);
+                    // Если вернулся сам ключ, значит перевод не найден - используем fallback
+                    if (emptyText === 'invoice_payments_empty') {
+                        emptyText = 'Оплаты по этому счёту отсутствуют.';
+                    }
+                }
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted" data-i18n-empty="invoice_payments_empty">${emptyText}</td></tr>`;
             } else {
                 tbody.innerHTML = payments.map(p => {
                     // Определяем метод оплаты
@@ -220,23 +335,32 @@
                     
                     // Проверка 1: Если метод явно "ADVANCE"
                     if (p.method === 'ADVANCE') {
-                        methodDisplay = window.i18n ? window.i18n.translate('user_invoice_payment_method_advance') : 'Аванс';
+                        methodDisplay = window.i18n ? window.i18n.translate('user_invoice_payment_method_advance', lang) : 'Аванс';
                         if (commentDisplay === '—' || !commentDisplay) {
                             commentDisplay = 'Royal Park Pass';
+                        } else {
+                            // Переводим комментарий
+                            commentDisplay = translatePaymentComment(commentDisplay, lang);
                         }
                     }
                     // Проверка 2: Если в reference есть "ADVANCE" (дополнительная защита)
                     else if (p.reference && p.reference.includes('ADVANCE')) {
-                        methodDisplay = window.i18n ? window.i18n.translate('user_invoice_payment_method_advance') : 'Аванс';
-                        commentDisplay = 'Royal Park Pass';
+                        methodDisplay = window.i18n ? window.i18n.translate('user_invoice_payment_method_advance', lang) : 'Аванс';
+                        commentDisplay = translatePaymentComment(commentDisplay, lang) || 'Royal Park Pass';
+                    } else {
+                        // Переводим комментарий для обычных платежей
+                        commentDisplay = translatePaymentComment(commentDisplay, lang);
                     }
+                    
+                    // Сохраняем оригинальный комментарий для последующего перевода
+                    const originalComment = p.comment || '—';
                     
                     return `
                         <tr>
                             <td>${formatDateTime(p.date || p.received_at)}</td>
                             <td>${methodDisplay}</td>
                             <td>${formatCurrency(p.amount)}</td>
-                            <td>${commentDisplay}</td>
+                            <td data-original-comment="${originalComment.replace(/"/g, '&quot;')}">${commentDisplay}</td>
                         </tr>
                     `;
                 }).join('');
@@ -245,12 +369,69 @@
             // Update payments summary
             const summaryEl = document.getElementById('paymentsSummary');
             if (summaryEl) {
-                summaryEl.innerHTML = `
-                    <span>Оплачено: <strong>${formatCurrency(invoice.paid_amount)}</strong> · 
-                    Остаток: <strong>${formatCurrency(invoice.remaining_amount)}</strong> из 
-                    <strong>${formatCurrency(invoice.amount_total)}</strong></span>
-                `;
+                const lang = localStorage.getItem('language') || 'ru';
+                const summaryTemplate = window.i18n?.translate?.('user_invoice_payments_summary', lang) || 'Оплачено: {paid} · Остаток: {remaining} из {total}';
+                const paidFormatted = formatCurrency(invoice.paid_amount);
+                const remainingFormatted = formatCurrency(invoice.remaining_amount);
+                const totalFormatted = formatCurrency(invoice.amount_total);
+                const summaryText = summaryTemplate
+                    .replace('{paid}', `<strong>${paidFormatted}</strong>`)
+                    .replace('{remaining}', `<strong>${remainingFormatted}</strong>`)
+                    .replace('{total}', `<strong>${totalFormatted}</strong>`);
+                summaryEl.innerHTML = `<span data-paid-amount="${invoice.paid_amount}" data-remaining-amount="${invoice.remaining_amount}" data-total-amount="${invoice.amount_total}">${summaryText}</span>`;
             }
+        }
+
+        // Translate service description
+        function translateServiceDescription(description, lang) {
+            if (!description) return '—';
+            
+            // Паттерны для распознавания типов услуг
+            const patterns = [
+                {
+                    regex: /^Электричество\s+([\d.]+)\s*кВт·ч$/i,
+                    serviceKey: 'meter_electricity',
+                    unitKey: 'user_unit_kwh',
+                    format: (amount, service, unit) => `${service} ${amount} ${unit}`
+                },
+                {
+                    regex: /^Вода\s+([\d.]+)\s*м³$/i,
+                    serviceKey: 'meter_cold_water',
+                    unitKey: 'user_unit_m3',
+                    format: (amount, service, unit) => {
+                        // Для "Вода" используем простой перевод
+                        let waterText = 'Вода';
+                        if (lang === 'az') waterText = 'Su';
+                        else if (lang === 'en') waterText = 'Water';
+                        return `${waterText} ${amount} ${unit}`;
+                    }
+                },
+                {
+                    regex: /^Газ\s+([\d.]+)\s*м³$/i,
+                    serviceKey: 'meter_gas',
+                    unitKey: 'user_unit_m3',
+                    format: (amount, service, unit) => `${service} ${amount} ${unit}`
+                },
+                {
+                    regex: /^Горячая\s+вода\s+([\d.]+)\s*м³$/i,
+                    serviceKey: 'meter_hot_water',
+                    unitKey: 'user_unit_m3',
+                    format: (amount, service, unit) => `${service} ${amount} ${unit}`
+                }
+            ];
+            
+            for (const pattern of patterns) {
+                const match = description.match(pattern.regex);
+                if (match) {
+                    const amount = match[1];
+                    const service = window.i18n?.translate?.(pattern.serviceKey, lang) || description.split(' ')[0];
+                    const unit = window.i18n?.translate?.(pattern.unitKey, lang) || match[0].split(amount)[1].trim();
+                    return pattern.format(amount, service, unit);
+            }
+            }
+            
+            // Если не найден паттерн, возвращаем оригинал
+            return description;
         }
 
         // Render invoice lines
@@ -259,18 +440,24 @@
             if (!tbody) return;
             
             if (lines.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Позиции отсутствуют</td></tr>';
+                const lang = localStorage.getItem('language') || 'ru';
+                const emptyText = window.i18n?.translate?.('user_invoice_items_empty', lang) || 'Позиции отсутствуют';
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">${emptyText}</td></tr>`;
                 return;
             }
             
-            tbody.innerHTML = lines.map(line => `
+            const lang = localStorage.getItem('language') || 'ru';
+            tbody.innerHTML = lines.map(line => {
+                const translatedDescription = translateServiceDescription(line.description, lang);
+                return `
                 <tr>
-                    <td>${line.description || '—'}</td>
+                        <td data-original-description="${line.description || ''}">${translatedDescription}</td>
                     <td>${formatCurrency(line.amount_net)}</td>
                     <td>${formatCurrency(line.amount_vat)}</td>
                     <td class="total-value">${formatCurrency(line.amount_total)}</td>
                 </tr>
-            `).join('') + `
+                `;
+            }).join('') + `
                 <tr class="total-row">
                     <td colspan="3" data-i18n="user_invoice_items_total_row">Итого к оплате</td>
                     <td class="total-value">${formatCurrency(total)}</td>
@@ -293,7 +480,9 @@
 
         // Format currency
         function formatCurrency(amount) {
-            return new Intl.NumberFormat('ru-RU', {
+            const lang = localStorage.getItem('language') || 'ru';
+            const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
+            return new Intl.NumberFormat(locale, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             }).format(amount);
@@ -302,8 +491,10 @@
         function formatDateTime(value) {
             if (!value) return '—';
             try {
+                const lang = localStorage.getItem('language') || 'ru';
+                const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
                 const dt = new Date(value);
-                return dt.toLocaleString('ru-RU', {
+                return dt.toLocaleString(locale, {
                     timeZone: 'Asia/Baku',
                     day: '2-digit',
                     month: '2-digit',

@@ -14,6 +14,31 @@ const translations = {
         cancel: "Отмена",
         apply: "Применить",
         reset: "Сбросить",
+        
+        // Account settings
+        account_settings_title: "Настройки аккаунта",
+        account_tab_profile: "Профиль",
+        account_tab_password: "Пароль",
+        account_full_name: "Ф.И.О.",
+        account_full_name_placeholder: "Введите Ф.И.О.",
+        account_phone: "Телефон",
+        account_phone_placeholder: "Номер телефона",
+        account_email: "E-mail",
+        account_email_placeholder: "E-mail",
+        account_avatar: "Аватар",
+        account_file_select_btn: "Выбор файла",
+        account_file_no_selected: "Не выбран ни один файл",
+        account_interface_language: "Язык интерфейса",
+        account_avatar_hint: "PNG/JPG/WebP, до 4 МБ.",
+        account_save_changes: "Сохранить изменения",
+        account_current_password: "Текущий пароль",
+        account_current_password_placeholder: "Введите текущий пароль",
+        account_new_password: "Новый пароль",
+        account_new_password_placeholder: "Введите новый пароль",
+        account_confirm_password: "Подтвердите пароль",
+        account_confirm_password_placeholder: "Подтвердите новый пароль",
+        account_change_password: "Изменить пароль",
+        account_saving: "Сохранение...",
         error_loading_data: "Ошибка загрузки данных",
         show_menu: "Показать меню",
         
@@ -169,6 +194,11 @@ const translations = {
         status_processing: "В обработке",
         status_pending: "В обработке",
         status_failed: "Отклонено",
+        status_draft: "Черновик",
+        status_issued: "Выставлен",
+        status_partial: "Частично оплачен",
+        status_overpaid: "Переплата",
+        status_canceled: "Отменен",
         
         // Filters
         filters_title: "Фильтры платежей",
@@ -216,6 +246,11 @@ const translations = {
         filters_applied: "Фильтры применены успешно!",
         filters_reset: "Фильтры сброшены",
         user_nav_notifications: "Уведомления",
+        notifications: "Уведомления",
+        notifications_empty: "Нет уведомлений",
+        notifications_load_error: "Не удалось загрузить уведомления",
+        notifications_badge_new: "НОВАЯ",
+        notification_invoice_issued: "Выставлен счет для {house_info}. Сумма: {amount}. Период: {period}. Оплатить с {from_date} по {to_date}",
 
         // User portal (ЛК жильца)
         user_dashboard_welcome: "Добро пожаловать!",
@@ -247,6 +282,7 @@ const translations = {
         user_invoice_due_date_label: "Срок оплаты",
         user_invoice_total_label: "Итого",
         user_invoice_payments_title: "Оплаты по счёту",
+        invoice_payments_empty: "Оплаты по этому счёту отсутствуют.",
         user_invoice_payments_th_date: "Дата",
         user_invoice_payments_th_method: "Метод",
         user_invoice_payments_th_amount: "Сумма",
@@ -280,6 +316,55 @@ const translations = {
         user_nav_user_home: "Главная",
         user_nav_user_bills: "Мои счета",
         user_nav_user_report: "Оплатить счета",
+        
+        // Payment page
+        payment_select_method: "Выберите способ оплаты",
+        payment_add_new_card: "Добавить новую",
+        payment_card_payment: "Оплата банковской картой",
+        payment_amount_label: "Сумма к оплате",
+        payment_card_number: "Номер карты",
+        payment_card_number_placeholder: "2324 5566 6677 7898",
+        payment_card_name: "Имя на карте",
+        payment_card_name_placeholder: "Имя Фамилия",
+        payment_card_expiry: "Срок действия",
+        payment_card_expiry_placeholder: "11/25",
+        payment_card_cvv: "CVV",
+        payment_card_cvv_placeholder: "123",
+        payment_save_card: "Сохранить карту",
+        payment_pay_button: "Оплатить",
+        payment_details_title: "Детали оплаты",
+        payment_order_subtitle: "Оплата счёта",
+        payment_type_label: "Тип платежа",
+        payment_resident_label: "Резидент",
+        payment_period_label: "Период",
+        payment_invoice_label: "Счёт",
+        payment_total_label: "Итого",
+        payment_custom_amount: "Указать другую сумму для оплаты",
+        payment_custom_amount_label: "Сумма к оплате",
+        payment_time_expired: "Время на оплату истекло. Данные очищены, начните заново.",
+        payment_time_remaining: "Время на оплату",
+        payment_all_debt: "Оплата всего долга",
+        payment_current_month: "Оплата за текущий месяц",
+        payment_full_debt: "Полное погашение долга по счетам",
+        payment_month_bills: "Оплата счетов за текущий месяц",
+        payment_invoice_payment: "Оплата счёта",
+        payment_multiple_invoices: "Несколько счетов",
+        payment_bank_label: "Банк",
+        payment_card_holder_name: "Имя держателя карты",
+        payment_expiry_date: "Срок действия",
+        payment_authorized_signature: "Authorized Signature",
+        payment_card_property: "This card is property of the issuer.",
+        payment_advance_balance: "Баланс аванса",
+        payment_resident_name: "Имя резидента",
+        payment_valid_thru: "Действительно до",
+        payment_resident_pass: "КАРТА РЕЗИДЕНТА",
+        
+        // Payment comments
+        payment_comment_new_card: "Оплата новой картой ****{last4}",
+        payment_comment_advance: "Списание из аванса Royal Park Pass",
+        payment_comment_saved_card: "Оплата картой {brand} {suffix}",
+        payment_comment_online: "Онлайн-оплата",
+        
         user_nav_user_requests: "Заявки",
         user_nav_user_documents: "Документы",
         user_nav_user_news: "Новости",
@@ -317,6 +402,7 @@ const translations = {
         user_btn_pay_all: "Оплатить всё",
         user_balance: "Баланс",
         user_unpaid_bills: "Неоплаченных счета",
+        user_unpaid_count: "неоплаченных",
         user_requires_payment: "Требует оплаты",
         user_kwh_per_month: "кВт⋅ч за месяц",
         user_electricity: "Электричество",
@@ -403,6 +489,31 @@ const translations = {
         user_appeals_hint: "Максимум 2000 символов.",
         user_appeal_status_read: "Прочитано",
         user_appeal_status_unread: "Не прочитано",
+        
+        // Pagination
+        pagination_page: "Стр.",
+        pagination_of: "из",
+        pagination_total: "всего",
+        pagination_on: "На",
+        pagination_per_page: "странице:",
+        
+        // Additional labels
+        user_personal_account: "Личный кабинет",
+        user_due_date_prefix: "Срок оплаты:",
+        
+        // Months
+        month_january: "Январь",
+        month_february: "Февраль",
+        month_march: "Март",
+        month_april: "Апрель",
+        month_may: "Май",
+        month_june: "Июнь",
+        month_july: "Июль",
+        month_august: "Август",
+        month_september: "Сентябрь",
+        month_october: "Октябрь",
+        month_november: "Ноябрь",
+        month_december: "Декабрь",
     },
     
     // 🇦🇿 AZƏRBAYCANCA
@@ -417,6 +528,31 @@ const translations = {
         cancel: "Ləğv et",
         apply: "Tətbiq et",
         reset: "Sıfırla",
+        
+        // Account settings
+        account_settings_title: "Hesab parametrləri",
+        account_tab_profile: "Profil",
+        account_tab_password: "Şifrə",
+        account_full_name: "Ad Soyad",
+        account_full_name_placeholder: "Ad Soyad daxil edin",
+        account_phone: "Telefon",
+        account_phone_placeholder: "Telefon nömrəsi",
+        account_email: "E-mail",
+        account_email_placeholder: "E-mail",
+        account_avatar: "Avatar",
+        account_file_select_btn: "Fayl seç",
+        account_file_no_selected: "Heç bir fayl seçilməyib",
+        account_interface_language: "İnterfeys dili",
+        account_avatar_hint: "PNG/JPG/WebP, maksimum 4 MB.",
+        account_save_changes: "Dəyişiklikləri yadda saxla",
+        account_current_password: "Cari şifrə",
+        account_current_password_placeholder: "Cari şifrəni daxil edin",
+        account_new_password: "Yeni şifrə",
+        account_new_password_placeholder: "Yeni şifrəni daxil edin",
+        account_confirm_password: "Şifrəni təsdiqləyin",
+        account_confirm_password_placeholder: "Yeni şifrəni təsdiqləyin",
+        account_change_password: "Şifrəni dəyiş",
+        account_saving: "Yadda saxlanılır...",
         error_loading_data: "Məlumat yüklənmədi",
         show_menu: "Menyunu göstər",
         
@@ -572,6 +708,11 @@ const translations = {
         status_processing: "İşlənir",
         status_pending: "İşlənir",
         status_failed: "Rədd edilib",
+        status_draft: "Qaralama",
+        status_issued: "Verilmiş",
+        status_partial: "Qismən ödənilib",
+        status_overpaid: "Artıq ödəniş",
+        status_canceled: "Ləğv edilib",
         
         // Filters
         filters_title: "Ödəniş filterləri",
@@ -619,6 +760,11 @@ const translations = {
         filters_applied: "Filterlər uğurla tətbiq edildi!",
         filters_reset: "Filterlər sıfırlandı",
         user_nav_notifications: "Bildirişlər",
+        notifications: "Bildirişlər",
+        notifications_empty: "Bildiriş yoxdur",
+        notifications_load_error: "Bildirişləri yükləmək mümkün olmadı",
+        notifications_badge_new: "YENİ",
+        notification_invoice_issued: "Blok {house_info} üçün hesab tərtib edilib. Məbləğ: {amount}. Dövr: {period}. Ödəniş {from_date} - {to_date} tarixləri arasında mümkündür",
 
         // User portal (istifadəçi kabineti)
         user_dashboard_welcome: "Xoş gəlmisiniz!",
@@ -650,6 +796,8 @@ const translations = {
         user_invoice_due_date_label: "Ödəniş müddəti",
         user_invoice_total_label: "Cəmi",
         user_invoice_payments_title: "Hesab üzrə ödənişlər",
+        invoice_payments_empty: "Bu hesab üzrə ödənişlər yoxdur.",
+        user_invoice_items_empty: "Pozisiyalar yoxdur",
         user_invoice_payments_th_date: "Tarix",
         user_invoice_payments_th_method: "Metod",
         user_invoice_payments_th_amount: "Məbləğ",
@@ -735,8 +883,58 @@ const translations = {
         user_report_footer_note: "Göndərdikdən sonra operator məlumatı yoxlayacaq və ödənişi hesablarınıza tətbiq edəcək.",
         user_report_cancel_btn: "Ləğv et",
         user_report_submit_btn: "Göndər",
+        
+        // Payment page
+        payment_select_method: "Ödəniş üsulunu seçin",
+        payment_add_new_card: "Yeni əlavə et",
+        payment_card_payment: "Bank kartı ilə ödəniş",
+        payment_amount_label: "Ödəniləcək məbləğ",
+        payment_card_number: "Kart nömrəsi",
+        payment_card_number_placeholder: "2324 5566 6677 7898",
+        payment_card_name: "Kartdakı ad",
+        payment_card_name_placeholder: "Ad Soyad",
+        payment_card_expiry: "Etibarlılıq müddəti",
+        payment_card_expiry_placeholder: "11/25",
+        payment_card_cvv: "CVV",
+        payment_card_cvv_placeholder: "123",
+        payment_save_card: "Kartı yadda saxla",
+        payment_pay_button: "Ödə",
+        payment_details_title: "Ödəniş detalları",
+        payment_order_subtitle: "Hesab ödənişi",
+        payment_type_label: "Ödəniş növü",
+        payment_resident_label: "Rezident",
+        payment_period_label: "Dövr",
+        payment_invoice_label: "Hesab",
+        payment_total_label: "Cəmi",
+        payment_custom_amount: "Ödəniş üçün başqa məbləğ göstər",
+        payment_custom_amount_label: "Ödəniləcək məbləğ",
+        payment_time_expired: "Ödəniş müddəti bitdi. Məlumatlar təmizləndi, yenidən başlayın.",
+        payment_time_remaining: "Ödəniş müddəti",
+        payment_all_debt: "Bütün borcun ödənilməsi",
+        payment_current_month: "Cari ay üçün ödəniş",
+        payment_full_debt: "Hesablar üzrə borcun tam ödənilməsi",
+        payment_month_bills: "Cari ay üçün hesabların ödənilməsi",
+        payment_invoice_payment: "Hesab ödənişi",
+        payment_multiple_invoices: "Bir neçə hesab",
+        payment_bank_label: "Bank",
+        payment_card_holder_name: "Kart sahibinin adı",
+        payment_expiry_date: "Etibarlılıq müddəti",
+        payment_authorized_signature: "Rəsmi imza",
+        payment_card_property: "Bu kart emitentə məxsusdur.",
+        payment_advance_balance: "Avans balansı",
+        payment_resident_pass: "REZİDENT KARTI",
+        
+        // Payment comments
+        payment_comment_new_card: "Yeni kartla ödəniş ****{last4}",
+        payment_comment_advance: "Royal Park Pass avansından çıxarış",
+        payment_comment_saved_card: "{brand} {suffix} kartı ilə ödəniş",
+        payment_comment_online: "Onlayn ödəniş",
+        payment_resident_name: "Rezident adı",
+        payment_valid_thru: "Etibarlılıq müddəti",
+        
         user_balance: "Balans",
         user_unpaid_bills: "Ödənilməmiş hesablar",
+        user_unpaid_count: "ödənilməmiş",
         user_requires_payment: "Ödəniş tələb olunur",
         user_kwh_per_month: "kVt⋅s ay üzrə",
         user_electricity: "Elektrik",
@@ -806,6 +1004,31 @@ const translations = {
         user_appeals_hint: "Maksimum 2000 simvol.",
         user_appeal_status_read: "Oxunub",
         user_appeal_status_unread: "Oxunmayıb",
+        
+        // Pagination
+        pagination_page: "Səh.",
+        pagination_of: "dən",
+        pagination_total: "cəmi",
+        pagination_on: "Hər",
+        pagination_per_page: "səhifədə:",
+        
+        // Additional labels
+        user_personal_account: "Şəxsi kabinet",
+        user_due_date_prefix: "Ödəniş müddəti:",
+        
+        // Months
+        month_january: "Yanvar",
+        month_february: "Fevral",
+        month_march: "Mart",
+        month_april: "Aprel",
+        month_may: "May",
+        month_june: "İyun",
+        month_july: "İyul",
+        month_august: "Avqust",
+        month_september: "Sentyabr",
+        month_october: "Oktyabr",
+        month_november: "Noyabr",
+        month_december: "Dekabr",
     },
     
     // en ENGLISH
@@ -820,6 +1043,31 @@ const translations = {
         cancel: "Cancel",
         apply: "Apply",
         reset: "Reset",
+        
+        // Account settings
+        account_settings_title: "Account Settings",
+        account_tab_profile: "Profile",
+        account_tab_password: "Password",
+        account_full_name: "Full Name",
+        account_full_name_placeholder: "Enter full name",
+        account_phone: "Phone",
+        account_phone_placeholder: "Phone number",
+        account_email: "E-mail",
+        account_email_placeholder: "E-mail",
+        account_avatar: "Avatar",
+        account_file_select_btn: "Choose file",
+        account_file_no_selected: "No file selected",
+        account_interface_language: "Interface Language",
+        account_avatar_hint: "PNG/JPG/WebP, up to 4 MB.",
+        account_save_changes: "Save Changes",
+        account_current_password: "Current Password",
+        account_current_password_placeholder: "Enter current password",
+        account_new_password: "New Password",
+        account_new_password_placeholder: "Enter new password",
+        account_confirm_password: "Confirm Password",
+        account_confirm_password_placeholder: "Confirm new password",
+        account_change_password: "Change Password",
+        account_saving: "Saving...",
         error_loading_data: "Error loading data",
         show_menu: "Show menu",
         
@@ -975,6 +1223,11 @@ const translations = {
         status_processing: "Processing",
         status_pending: "Pending",
         status_failed: "Failed",
+        status_draft: "Draft",
+        status_issued: "Issued",
+        status_partial: "Partially paid",
+        status_overpaid: "Overpaid",
+        status_canceled: "Canceled",
         
         // Filters
         filters_title: "Payment Filters",
@@ -1022,6 +1275,11 @@ const translations = {
         filters_applied: "Filters applied successfully!",
         filters_reset: "Filters reset",
         user_nav_notifications: "Notifications",
+        notifications: "Notifications",
+        notifications_empty: "No notifications",
+        notifications_load_error: "Failed to load notifications",
+        notifications_badge_new: "NEW",
+        notification_invoice_issued: "Invoice issued for {house_info}. Amount: {amount}. Period: {period}. Pay between {from_date} and {to_date}",
 
         // User portal
         user_dashboard_welcome: "Welcome!",
@@ -1053,6 +1311,8 @@ const translations = {
         user_invoice_due_date_label: "Due date",
         user_invoice_total_label: "Total",
         user_invoice_payments_title: "Payments for invoice",
+        invoice_payments_empty: "No payments for this invoice.",
+        user_invoice_items_empty: "No items",
         user_invoice_payments_th_date: "Date",
         user_invoice_payments_th_method: "Method",
         user_invoice_payments_th_amount: "Amount",
@@ -1123,6 +1383,7 @@ const translations = {
         user_btn_pay_all: "Pay all",
         user_balance: "Balance",
         user_unpaid_bills: "Unpaid bills",
+        user_unpaid_count: "unpaid",
         user_requires_payment: "Requires payment",
         user_kwh_per_month: "kWh per month",
         user_electricity: "Electricity",
@@ -1177,6 +1438,54 @@ const translations = {
         user_report_footer_note: "After submission, an operator will verify the information and apply the payment to your bills.",
         user_report_cancel_btn: "Cancel",
         user_report_submit_btn: "Submit",
+        
+        // Payment page
+        payment_select_method: "Select payment method",
+        payment_add_new_card: "Add new",
+        payment_card_payment: "Card payment",
+        payment_amount_label: "Amount to pay",
+        payment_card_number: "Card number",
+        payment_card_number_placeholder: "2324 5566 6677 7898",
+        payment_card_name: "Name on card",
+        payment_card_name_placeholder: "First Last",
+        payment_card_expiry: "Expiry date",
+        payment_card_expiry_placeholder: "11/25",
+        payment_card_cvv: "CVV",
+        payment_card_cvv_placeholder: "123",
+        payment_save_card: "Save card",
+        payment_pay_button: "Pay",
+        payment_details_title: "Payment details",
+        payment_order_subtitle: "Invoice payment",
+        payment_type_label: "Payment type",
+        payment_resident_label: "Resident",
+        payment_period_label: "Period",
+        payment_invoice_label: "Invoice",
+        payment_total_label: "Total",
+        payment_custom_amount: "Enter a different amount to pay",
+        payment_custom_amount_label: "Amount to pay",
+        payment_time_expired: "Payment time expired. Data cleared, please start over.",
+        payment_time_remaining: "Time to pay",
+        payment_all_debt: "Pay all debt",
+        payment_current_month: "Payment for current month",
+        payment_full_debt: "Full debt repayment",
+        payment_month_bills: "Payment of current month bills",
+        payment_invoice_payment: "Invoice payment",
+        payment_multiple_invoices: "Multiple invoices",
+        payment_bank_label: "Bank",
+        payment_card_holder_name: "Card holder name",
+        payment_expiry_date: "Expiry date",
+        payment_authorized_signature: "Authorized Signature",
+        payment_card_property: "This card is property of the issuer.",
+        payment_advance_balance: "Advance Balance",
+        payment_resident_name: "Resident Name",
+        payment_valid_thru: "Valid Thru",
+        payment_resident_pass: "RESIDENT PASS",
+        
+        // Payment comments
+        payment_comment_new_card: "Payment with new card ****{last4}",
+        payment_comment_advance: "Deduction from Royal Park Pass advance",
+        payment_comment_saved_card: "Payment with {brand} {suffix} card",
+        payment_comment_online: "Online payment",
 
         // Resident detail (meters)
         user_resident_block_label: "Block",
@@ -1209,6 +1518,31 @@ const translations = {
         user_appeals_hint: "Maximum 2000 characters.",
         user_appeal_status_read: "Read",
         user_appeal_status_unread: "Unread",
+        
+        // Pagination
+        pagination_page: "Page",
+        pagination_of: "of",
+        pagination_total: "total",
+        pagination_on: "On",
+        pagination_per_page: "page:",
+        
+        // Additional labels
+        user_personal_account: "Personal Account",
+        user_due_date_prefix: "Due date:",
+        
+        // Months
+        month_january: "January",
+        month_february: "February",
+        month_march: "March",
+        month_april: "April",
+        month_may: "May",
+        month_june: "June",
+        month_july: "July",
+        month_august: "August",
+        month_september: "September",
+        month_october: "October",
+        month_november: "November",
+        month_december: "December",
     }
 };
 
@@ -1378,6 +1712,15 @@ class LanguageManager {
                 }
         });
         
+        // Update file status if no file is selected
+        const fileStatus = container.querySelector('#accountFileStatus');
+        if (fileStatus && !fileStatus.classList.contains('has-file')) {
+            const noFileKey = fileStatus.getAttribute('data-i18n');
+            if (noFileKey) {
+                fileStatus.textContent = this.translate(noFileKey, lang);
+            }
+        }
+        
         // Translate titles
             container.querySelectorAll('[data-i18n-title]').forEach(element => {
             const key = element.getAttribute('data-i18n-title');
@@ -1385,6 +1728,388 @@ class LanguageManager {
             element.title = this.translate(key, lang);
                 }
             });
+        
+        // Update resident due date elements (dynamically generated)
+        container.querySelectorAll('.resident-due-date').forEach(element => {
+            const dueDateStr = element.dataset.residentDueDate;
+            const dueState = element.dataset.residentDueState || '';
+            if (dueDateStr) {
+                const dueDate = new Date(dueDateStr);
+                const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
+                const formattedDate = dueDate.toLocaleDateString(locale, { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric' 
+                });
+                const dueDatePrefix = this.translate('user_due_date_prefix', lang);
+                element.textContent = `${dueDatePrefix} ${formattedDate}`;
+                
+                // Reapply styling based on due_state
+                element.className = 'resident-due-date';
+                if (dueState === 'over') {
+                    element.classList.add('due-over');
+                } else if (dueState === 'soon') {
+                    element.classList.add('due-soon');
+                } else if (dueState === 'ok') {
+                    element.classList.add('due-ok');
+                }
+            }
+        });
+        
+        // Update bill items (latest bills section)
+        container.querySelectorAll('.bill-item').forEach(billItem => {
+            const billDate = billItem.querySelector('.bill-date');
+            const billTitle = billItem.querySelector('.bill-title');
+            const badge = billItem.querySelector('.badge');
+            
+            if (billDate && billDate.dataset.periodMonth && billDate.dataset.periodYear) {
+                // Update month name
+                const monthKeys = [
+                    'month_january', 'month_february', 'month_march', 'month_april',
+                    'month_may', 'month_june', 'month_july', 'month_august',
+                    'month_september', 'month_october', 'month_november', 'month_december'
+                ];
+                const monthKey = monthKeys[parseInt(billDate.dataset.periodMonth) - 1];
+                let monthName = this.translate(monthKey, lang);
+                // If translate returns the key itself, use fallback
+                if (monthName === monthKey) {
+                    const fallbackMonths = lang === 'az' 
+                        ? ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun', 'İyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr']
+                        : lang === 'en'
+                        ? ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+                        : ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+                    monthName = fallbackMonths[parseInt(billDate.dataset.periodMonth) - 1];
+                }
+                billDate.textContent = `${monthName} ${billDate.dataset.periodYear}`;
+            }
+            
+            if (billTitle && billTitle.dataset.invoiceNumber) {
+                // Update invoice prefix
+                const invoicePrefixKey = this.translate('user_invoice_title_prefix', lang);
+                const invoicePrefix = invoicePrefixKey.replace(':', ' #');
+                billTitle.textContent = `${invoicePrefix}${billTitle.dataset.invoiceNumber}`;
+            }
+            
+            if (badge && badge.dataset.isPaid !== undefined) {
+                // Update badge text
+                const isPaid = badge.dataset.isPaid === 'true';
+                badge.textContent = isPaid 
+                    ? this.translate('status_paid', lang)
+                    : this.translate('user_to_pay_status', lang);
+            }
+        });
+        
+        // Update unpaid count in quick actions
+        const actionUnpaidEl = container.querySelector('#actionUnpaidCount');
+        if (actionUnpaidEl && actionUnpaidEl.dataset.unpaidCount !== undefined) {
+            const unpaidCount = actionUnpaidEl.dataset.unpaidCount;
+            const unpaidText = this.translate('user_unpaid_count', lang);
+            actionUnpaidEl.textContent = `${unpaidCount} ${unpaidText}`;
+        }
+        
+        // Update bill paid/remaining labels in bills table
+        container.querySelectorAll('.user-bill-paid').forEach(element => {
+            const paidAmount = element.dataset.paidAmount;
+            if (paidAmount !== undefined) {
+                const lang = this.currentLanguage || localStorage.getItem('language') || 'ru';
+                const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
+                const paidFormatted = new Intl.NumberFormat(locale, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(parseFloat(paidAmount));
+                const paidLabel = this.translate('user_bills_paid_label', lang);
+                element.textContent = paidLabel.replace('{amount}', paidFormatted);
+            }
+        });
+        
+        container.querySelectorAll('.user-bill-remaining').forEach(element => {
+            const remainingAmount = element.dataset.remainingAmount;
+            if (remainingAmount !== undefined) {
+                const lang = this.currentLanguage || localStorage.getItem('language') || 'ru';
+                const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
+                const remainingFormatted = new Intl.NumberFormat(locale, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(parseFloat(remainingAmount));
+                const remainingLabel = this.translate('user_bills_remaining_label', lang);
+                element.textContent = remainingLabel.replace('{amount}', remainingFormatted);
+            }
+        });
+        
+        // Update period text in bills table
+        container.querySelectorAll('td[data-period-month][data-period-year]').forEach(element => {
+            const month = parseInt(element.dataset.periodMonth);
+            const year = element.dataset.periodYear;
+            if (month && year) {
+                const monthKeys = [
+                    'month_january', 'month_february', 'month_march', 'month_april',
+                    'month_may', 'month_june', 'month_july', 'month_august',
+                    'month_september', 'month_october', 'month_november', 'month_december'
+                ];
+                const monthName = this.translate(monthKeys[month - 1], lang);
+                element.textContent = `${monthName} ${year}`;
+            }
+        });
+        
+        // Update due date in bills table
+        container.querySelectorAll('td[data-due-date]').forEach(element => {
+            const dueDateStr = element.dataset.dueDate;
+            if (dueDateStr) {
+                const dueDate = new Date(dueDateStr);
+                const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
+                element.textContent = dueDate.toLocaleDateString(locale);
+            } else {
+                element.textContent = '—';
+            }
+        });
+        
+        // Update status text in bills table
+        container.querySelectorAll('.user-bill-status[data-status]').forEach(element => {
+            const status = element.dataset.status;
+            if (status) {
+                const statusKey = `status_${status.toLowerCase()}`;
+                const translated = this.translate(statusKey, lang);
+                if (translated && translated !== statusKey) {
+                    element.textContent = translated;
+                }
+            }
+        });
+        
+        // Update status labels in filter dropdown
+        container.querySelectorAll('span[data-status-value]').forEach(element => {
+            const statusValue = element.dataset.statusValue;
+            if (statusValue) {
+                const statusKey = `status_${statusValue.toLowerCase()}`;
+                const translated = this.translate(statusKey, lang);
+                if (translated && translated !== statusKey) {
+                    element.textContent = translated;
+                }
+            }
+        });
+        
+        // Update buttons with data-i18n attribute
+        container.querySelectorAll('button[data-i18n]').forEach(button => {
+            const i18nKey = button.getAttribute('data-i18n');
+            if (i18nKey) {
+                const translated = this.translate(i18nKey, lang);
+                if (translated && translated !== i18nKey) {
+                    button.textContent = translated;
+                }
+            }
+        });
+        
+        // Update appeal status badges
+        container.querySelectorAll('.user-appeal-badge[data-appeal-status]').forEach(badge => {
+            const status = badge.dataset.appealStatus;
+            if (status === 'read') {
+                badge.textContent = this.translate('user_appeal_status_read', lang);
+            } else if (status === 'unread') {
+                badge.textContent = this.translate('user_appeal_status_unread', lang);
+            }
+        });
+        
+        // Update appeal status in modal
+        const modalStatus = container.querySelector('[data-appeal-status]');
+        if (modalStatus && modalStatus.dataset.appealStatus) {
+            const status = modalStatus.dataset.appealStatus;
+            if (status === 'read') {
+                modalStatus.textContent = this.translate('user_appeal_status_read', lang);
+            } else if (status === 'unread') {
+                modalStatus.textContent = this.translate('user_appeal_status_unread', lang);
+            }
+        }
+        
+        // Update pagination labels
+        container.querySelectorAll('.pagination-info [data-i18n], .pagination-per-page [data-i18n]').forEach(el => {
+            const i18nKey = el.getAttribute('data-i18n');
+            if (i18nKey) {
+                const translated = this.translate(i18nKey, lang);
+                if (translated && translated !== i18nKey) {
+                    el.textContent = translated;
+                }
+            }
+        });
+        
+        // Update invoice period
+        const invoicePeriodEl = container.querySelector('#invoicePeriod');
+        if (invoicePeriodEl && invoicePeriodEl.dataset.periodMonth && invoicePeriodEl.dataset.periodYear) {
+            const month = parseInt(invoicePeriodEl.dataset.periodMonth);
+            const year = invoicePeriodEl.dataset.periodYear;
+            const monthKeys = [
+                'month_january', 'month_february', 'month_march', 'month_april',
+                'month_may', 'month_june', 'month_july', 'month_august',
+                'month_september', 'month_october', 'month_november', 'month_december'
+            ];
+            const monthName = this.translate(monthKeys[month - 1], lang);
+            invoicePeriodEl.textContent = `${monthName} ${year}`;
+        }
+        
+        // Update invoice due date
+        const invoiceDueDateEl = container.querySelector('#invoiceDueDate');
+        if (invoiceDueDateEl && invoiceDueDateEl.dataset.dueDate) {
+            const dueDate = new Date(invoiceDueDateEl.dataset.dueDate);
+            const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
+            invoiceDueDateEl.textContent = dueDate.toLocaleDateString(locale);
+        }
+        
+        // Update payments summary
+        const paymentsSummaryEl = container.querySelector('#paymentsSummary');
+        if (paymentsSummaryEl) {
+            const summarySpan = paymentsSummaryEl.querySelector('span[data-paid-amount]');
+            if (summarySpan) {
+                const paidAmount = parseFloat(summarySpan.dataset.paidAmount || 0);
+                const remainingAmount = parseFloat(summarySpan.dataset.remainingAmount || 0);
+                const totalAmount = parseFloat(summarySpan.dataset.totalAmount || 0);
+                const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
+                const summaryTemplate = this.translate('user_invoice_payments_summary', lang);
+                const paidFormatted = new Intl.NumberFormat(locale, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(paidAmount);
+                const remainingFormatted = new Intl.NumberFormat(locale, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(remainingAmount);
+                const totalFormatted = new Intl.NumberFormat(locale, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(totalAmount);
+                const summaryTextNew = summaryTemplate
+                    .replace('{paid}', `<strong>${paidFormatted}</strong>`)
+                    .replace('{remaining}', `<strong>${remainingFormatted}</strong>`)
+                    .replace('{total}', `<strong>${totalFormatted}</strong>`);
+                summarySpan.innerHTML = summaryTextNew;
+            }
+        }
+        
+        // Update empty payments message
+        container.querySelectorAll('td[data-i18n-empty="invoice_payments_empty"]').forEach(element => {
+            const emptyText = this.translate('invoice_payments_empty', lang);
+            element.textContent = emptyText;
+        });
+        
+        // Update payment comments in invoice view
+        container.querySelectorAll('td[data-original-comment]').forEach(element => {
+            const originalComment = element.dataset.originalComment;
+            if (originalComment && originalComment !== '—') {
+                // Используем глобальную функцию перевода, если она доступна
+                if (window.translatePaymentComment && typeof window.translatePaymentComment === 'function') {
+                    try {
+                        const translated = window.translatePaymentComment(originalComment, lang);
+                        if (translated) {
+                            element.textContent = translated;
+                        }
+                    } catch (e) {
+                        console.warn('Error translating payment comment:', e);
+                    }
+                }
+            }
+        });
+        
+        // Update invoice print page elements
+        // Update invoice status in print page
+        const invoiceStatusPrint = container.querySelector('#invoiceStatus[data-status]');
+        if (invoiceStatusPrint && invoiceStatusPrint.dataset.status) {
+            const statusKey = `status_${invoiceStatusPrint.dataset.status.toLowerCase()}`;
+            invoiceStatusPrint.textContent = this.translate(statusKey, lang);
+        }
+        
+        // Update generated date in print page
+        const generatedDateEl = container.querySelector('#generatedDate');
+        if (generatedDateEl) {
+            const now = new Date();
+            const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
+            generatedDateEl.textContent = now.toLocaleString(locale);
+        }
+        
+        // Update invoice payments summary in print page
+        const invoicePaymentsSummaryEl = container.querySelector('#invoicePaymentsSummary');
+        if (invoicePaymentsSummaryEl) {
+            const summaryTemplate = this.translate('user_invoice_print_payments_summary', lang);
+            // Пытаемся найти значения из текущего текста или используем 0
+            const currentText = invoicePaymentsSummaryEl.textContent || '';
+            const paidMatch = currentText.match(/[\d.]+/);
+            const paidStr = paidMatch ? paidMatch[0] : '0.00';
+            const remainingMatch = currentText.match(/[\d.]+/g);
+            const remainingStr = remainingMatch && remainingMatch.length > 1 ? remainingMatch[1] : '0.00';
+            const totalStr = remainingMatch && remainingMatch.length > 2 ? remainingMatch[2] : '0.00';
+            
+            const summaryText = summaryTemplate
+                .replace('{paid}', `<strong>${paidStr}</strong>`)
+                .replace('{remaining}', `<strong>${remainingStr}</strong>`)
+                .replace('{total}', `<strong>${totalStr}</strong>`);
+            invoicePaymentsSummaryEl.innerHTML = summaryText;
+        }
+        
+        // Update invoice due date in print page (if not already set with data attribute)
+        const invoiceDueDatePrint = container.querySelector('#invoiceDueDate');
+        if (invoiceDueDatePrint && !invoiceDueDatePrint.dataset.dueDate) {
+            const dueDateText = invoiceDueDatePrint.textContent;
+            if (dueDateText && dueDateText !== '—') {
+                try {
+                    const date = new Date(dueDateText);
+                    if (!isNaN(date.getTime())) {
+                        const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
+                        invoiceDueDatePrint.textContent = date.toLocaleDateString(locale);
+                    }
+                } catch (e) {
+                    // Ignore errors
+                }
+            }
+        }
+        
+        // Update invoice line descriptions
+        container.querySelectorAll('td[data-original-description]').forEach(element => {
+            const originalDescription = element.dataset.originalDescription;
+            if (originalDescription) {
+                // Паттерны для распознавания типов услуг
+                const patterns = [
+                    {
+                        regex: /^Электричество\s+([\d.]+)\s*кВт·ч$/i,
+                        serviceKey: 'meter_electricity',
+                        unitKey: 'user_unit_kwh',
+                        format: (amount, service, unit) => `${service} ${amount} ${unit}`
+                    },
+                    {
+                        regex: /^Вода\s+([\d.]+)\s*м³$/i,
+                        serviceKey: 'meter_cold_water',
+                        unitKey: 'user_unit_m3',
+                        format: (amount, service, unit, lang) => {
+                            // Для "Вода" используем простой перевод
+                            let waterText = 'Вода';
+                            if (lang === 'az') waterText = 'Su';
+                            else if (lang === 'en') waterText = 'Water';
+                            return `${waterText} ${amount} ${unit}`;
+                        }
+                    },
+                    {
+                        regex: /^Газ\s+([\d.]+)\s*м³$/i,
+                        serviceKey: 'meter_gas',
+                        unitKey: 'user_unit_m3',
+                        format: (amount, service, unit) => `${service} ${amount} ${unit}`
+                    },
+                    {
+                        regex: /^Горячая\s+вода\s+([\d.]+)\s*м³$/i,
+                        serviceKey: 'meter_hot_water',
+                        unitKey: 'user_unit_m3',
+                        format: (amount, service, unit) => `${service} ${amount} ${unit}`
+                    }
+                ];
+                
+                let translated = originalDescription;
+                for (const pattern of patterns) {
+                    const match = originalDescription.match(pattern.regex);
+                    if (match) {
+                        const amount = match[1];
+                        const service = this.translate(pattern.serviceKey, lang);
+                        const unit = this.translate(pattern.unitKey, lang);
+                        translated = pattern.format(amount, service, unit);
+                        break;
+                    }
+                }
+                element.textContent = translated;
+            }
+        });
         });
     }
     

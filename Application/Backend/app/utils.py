@@ -9,6 +9,28 @@ except ImportError:  # pragma: no cover
     ZoneInfo = None
     ZoneInfoNotFoundError = Exception
 
+# Shared Jinja2 templates instance with timezone filter
+_templates_instance = None
+
+def get_templates():
+    """Получить общий экземпляр Jinja2Templates с настроенными фильтрами"""
+    global _templates_instance
+    if _templates_instance is None:
+        from fastapi.templating import Jinja2Templates
+        _templates_instance = Jinja2Templates(directory="app/templates")
+        
+        def format_baku_datetime(value):
+            """Конвертирует UTC datetime в часовой пояс Баку и форматирует для отображения"""
+            if value is None:
+                return '—'
+            if isinstance(value, datetime):
+                dt_baku = to_baku_datetime(value)
+                return dt_baku.strftime('%d.%m.%Y, %H:%M:%S')
+            return str(value)
+        
+        _templates_instance.env.filters['baku_datetime'] = format_baku_datetime
+    return _templates_instance
+
 # Основная таймзона проекта (GMT+4, Asia/Baku). Если нет tzdata — используем фиксированный UTC+4.
 def _load_baku_tz():
     if not ZoneInfo:

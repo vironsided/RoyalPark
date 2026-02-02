@@ -521,12 +521,15 @@ function updateDashboardUI(data) {
             if (dueDateEl) {
                 if (resident.due_date) {
                     const dueDate = new Date(resident.due_date);
-                    const formattedDate = dueDate.toLocaleDateString('ru-RU', { 
+                    const lang = localStorage.getItem('language') || 'ru';
+                    const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
+                    const formattedDate = dueDate.toLocaleDateString(locale, { 
                         day: '2-digit', 
                         month: '2-digit', 
                         year: 'numeric' 
                     });
-                    dueDateEl.textContent = `Срок оплаты: ${formattedDate}`;
+                    const dueDatePrefix = window.i18n?.translate?.('user_due_date_prefix', lang) || 'Срок оплаты:';
+                    dueDateEl.textContent = `${dueDatePrefix} ${formattedDate}`;
                     dueDateEl.style.display = 'flex';
                     
                     // Apply styling based on due_state
@@ -538,6 +541,9 @@ function updateDashboardUI(data) {
                     } else if (resident.due_state === 'ok') {
                         dueDateEl.classList.add('due-ok');
                     }
+                    // Store resident data for language updates
+                    dueDateEl.dataset.residentDueDate = resident.due_date;
+                    dueDateEl.dataset.residentDueState = resident.due_state || '';
                 } else {
                     dueDateEl.style.display = 'none';
                 }
@@ -683,6 +689,16 @@ function updateStatsGrid(data) {
     if (gasEl) {
         gasEl.textContent = (summary.monthly_gas_m3 || 0).toFixed(1);
     }
+    
+    // 5. Update unpaid count in quick actions
+    const unpaidCount = summary.unpaid_invoices_count || 0;
+    const actionUnpaidEl = document.getElementById('actionUnpaidCount');
+    if (actionUnpaidEl) {
+        const lang = localStorage.getItem('language') || 'ru';
+        const unpaidText = window.i18n?.translate?.('user_unpaid_count', lang) || 'неоплаченных';
+        actionUnpaidEl.textContent = `${unpaidCount} ${unpaidText}`;
+        actionUnpaidEl.dataset.unpaidCount = unpaidCount;
+    }
 }
 
 // Update sidebar badge for bills ("Мои счета")
@@ -777,23 +793,55 @@ function createBillItem(invoice) {
     const iconClass = isPaid ? 'bill-paid' : 'bill-pending';
     const icon = isPaid ? 'bi-check-circle' : 'bi-receipt';
     const badgeClass = isPaid ? 'badge-success' : 'badge-warning';
-    const badgeText = isPaid ? 'Оплачено' : 'К оплате';
+    
+    // Get translations
+    const lang = localStorage.getItem('language') || 'ru';
+    const badgeText = isPaid 
+        ? (window.i18n?.translate?.('status_paid', lang) || 'Оплачено')
+        : (window.i18n?.translate?.('user_to_pay_status', lang) || 'К оплате');
 
-    const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-        'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-    const periodText = `${monthNames[invoice.period_month - 1]} ${invoice.period_year}`;
+    // Get month names from translations
+    const monthKeys = [
+        'month_january', 'month_february', 'month_march', 'month_april',
+        'month_may', 'month_june', 'month_july', 'month_august',
+        'month_september', 'month_october', 'month_november', 'month_december'
+    ];
+    const monthKey = monthKeys[invoice.period_month - 1];
+    
+    // Fallback months for each language
+    const fallbackMonths = {
+        'ru': ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
+        'az': ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun', 'İyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'],
+        'en': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    };
+    
+    let monthName;
+    if (window.i18n && typeof window.i18n.translate === 'function') {
+        monthName = window.i18n.translate(monthKey, lang);
+        // If translate returns the key itself, use fallback
+        if (monthName === monthKey || !monthName) {
+            monthName = (fallbackMonths[lang] || fallbackMonths['ru'])[invoice.period_month - 1];
+        }
+    } else {
+        monthName = (fallbackMonths[lang] || fallbackMonths['ru'])[invoice.period_month - 1];
+    }
+    const periodText = `${monthName} ${invoice.period_year}`;
+    
+    // Get invoice prefix (use "Счёт #" format)
+    const invoicePrefixKey = window.i18n?.translate?.('user_invoice_title_prefix', lang) || 'Счёт:';
+    const invoicePrefix = invoicePrefixKey.replace(':', ' #');
 
     item.innerHTML = `
         <div class="bill-icon ${iconClass}">
             <i class="bi ${icon}"></i>
         </div>
         <div class="bill-details">
-            <div class="bill-title">Счёт #${invoice.number || invoice.id}</div>
-            <div class="bill-date">${periodText}</div>
+            <div class="bill-title" data-invoice-number="${invoice.number || invoice.id}">${invoicePrefix}${invoice.number || invoice.id}</div>
+            <div class="bill-date" data-period-month="${invoice.period_month}" data-period-year="${invoice.period_year}">${periodText}</div>
         </div>
         <div class="bill-amount">
             <div class="bill-sum">${formatCurrency(invoice.amount_total)}</div>
-            <span class="badge ${badgeClass}">${badgeText}</span>
+            <span class="badge ${badgeClass}" data-is-paid="${isPaid}">${badgeText}</span>
         </div>
     `;
 

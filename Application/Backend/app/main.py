@@ -152,10 +152,20 @@ def run_bootstrap_schema():
 def create_app() -> FastAPI:
     app = FastAPI(title="FastAPI Admin (Dark)")
     app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY, session_cookie=settings.COOKIE_NAME)
+    
+    # Инициализируем общий экземпляр шаблонов с фильтрами
+    from .utils import get_templates
+    get_templates()
 
     # Разрешаем запросы с фронта (для разработки разрешаем все localhost origins)
     app.add_middleware(
         CORSMiddleware,
+        allow_origins=[
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+        ],
         allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
         allow_credentials=True,
         allow_methods=["*"],

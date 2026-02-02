@@ -24,6 +24,12 @@
                     bodyClass: 'resident-detail-page',
                     parentNav: 'dashboard'
                 },
+                // Хаб «Обслуживание» для мобильной навигации
+                service: {
+                    type: 'remote',
+                    path: '/user/pages/service.html',
+                    bodyClass: ''
+                },
                 appeals: {
                     type: 'remote',
                     path: '/user/pages/appeals.html',
@@ -78,6 +84,14 @@
                     breadcrumb: [
                         { text: 'Главная', icon: 'bi-house-door', key: 'home', route: 'dashboard' },
                         { text: 'Резидент', key: 'user_resident_info' }
+                    ]
+                },
+                service: {
+                    title: 'Обслуживание',
+                    titleKey: 'nav_maintenance',
+                    breadcrumb: [
+                        { text: 'Главная', icon: 'bi-house-door', key: 'home', route: 'dashboard' },
+                        { text: 'Обслуживание', key: 'nav_maintenance' }
                     ]
                 },
                 appeals: {

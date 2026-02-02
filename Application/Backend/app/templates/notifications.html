@@ -47,7 +47,7 @@
         <tbody>
           {% for n in notifications %}
             <tr data-id="{{ n.id }}">
-              <td>{{ n.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+              <td>{{ n.created_at | baku_datetime }}</td>
               <td>{{ n.resident.block.name if n.resident and n.resident.block else '—' }}</td>
               <td>{{ n.resident.unit_number if n.resident else '—' }}</td>
               <td>{{ n.user.full_name or n.user.username }}</td>

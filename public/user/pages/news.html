@@ -14,12 +14,12 @@
                 </button>
             </div>
             <div class="pagination-info">
-                <span>Стр. <span id="userNewsCurrentPage">1</span> из <span id="userNewsTotalPages">1</span> · всего
+                <span><span data-i18n="pagination_page">Стр.</span> <span id="userNewsCurrentPage">1</span> <span data-i18n="pagination_of">из</span> <span id="userNewsTotalPages">1</span> · <span data-i18n="pagination_total">всего</span>
                     <span id="userNewsTotalItems">0</span></span>
             </div>
             <div class="pagination-per-page">
-                <span>На</span>
-                <span>странице:</span>
+                <span data-i18n="pagination_on">На</span>
+                <span data-i18n="pagination_per_page">странице:</span>
                 <div class="custom-pag-select" id="customUserNewsItemsPerPage">
                     <select id="userNewsItemsPerPage" onchange="changeUserNewsItemsPerPage()" style="display: none;">
                         <option value="10">10</option>
@@ -855,6 +855,31 @@ html[data-theme="dark"] .table-pagination {
 
         if (select) select.value = String(itemsPerPage);
         if (selectText) selectText.textContent = itemsPerPage;
+        
+        // Apply translations for pagination labels
+        const lang = getCurrentLanguage();
+        if (window.i18n && typeof window.i18n.translate === 'function') {
+            const paginationInfo = document.querySelector('.pagination-info');
+            if (paginationInfo) {
+                paginationInfo.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    const translated = window.i18n.translate(key, lang);
+                    if (translated && translated !== key) {
+                        el.textContent = translated;
+                    }
+                });
+            }
+            const paginationPerPage = document.querySelector('.pagination-per-page');
+            if (paginationPerPage) {
+                paginationPerPage.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    const translated = window.i18n.translate(key, lang);
+                    if (translated && translated !== key) {
+                        el.textContent = translated;
+                    }
+                });
+            }
+        }
 
         if (pagesContainer) {
             pagesContainer.innerHTML = '';

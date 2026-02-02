@@ -2731,7 +2731,7 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
     background: #ffffff;
     border-radius: 24px;
     width: 90%;
-    max-width: 600px;
+    max-width: 800px;
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -2739,6 +2739,41 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Убираем скролл для модального окна "Настройки аккаунта" */
+#accountModal .account-modal {
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    max-height: 90vh !important;
+}
+
+#accountModal .account-modal-header {
+    flex-shrink: 0;
+}
+
+#accountModal .account-modal-body {
+    overflow: visible !important;
+    max-height: none !important;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Фиксируем footer внутри модального окна "Настройки аккаунта" */
+#accountModal .account-modal-footer {
+    flex-shrink: 0;
+    margin-top: auto;
+    padding: 1rem 2rem !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 0 0 24px 24px !important;
+}
+
+#accountModal .account-modal-footer button {
+    white-space: nowrap;
+    padding: 0.75rem 1.5rem !important;
+    font-size: 0.9rem !important;
+    max-width: 100%;
 }
 
 .account-modal-overlay.show .account-modal {
@@ -3037,6 +3072,82 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
     color: #888;
 }
 
+.account-file-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.account-file-select-btn {
+    width: 100%;
+    padding: 0.85rem 1.2rem;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #374151;
+    color: #ffffff;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.account-file-select-btn:hover {
+    background: #4b5563;
+    border-color: #6b7280;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.account-file-select-btn:active {
+    transform: translateY(1px);
+}
+
+.account-file-status {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: rgba(55, 65, 81, 0.5);
+    border: 1px solid rgba(229, 231, 235, 0.2);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #9ca3af;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    text-align: center;
+    min-height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.account-file-status.has-file {
+    color: #d1d5db;
+    border-color: rgba(229, 231, 235, 0.3);
+}
+
+[data-theme="dark"] .account-file-select-btn {
+    background: #374151;
+    border-color: rgba(229, 231, 235, 0.2);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .account-file-select-btn:hover {
+    background: #4b5563;
+    border-color: rgba(229, 231, 235, 0.3);
+}
+
+[data-theme="dark"] .account-file-status {
+    background: rgba(55, 65, 81, 0.5);
+    border-color: rgba(229, 231, 235, 0.2);
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .account-file-status.has-file {
+    color: #d1d5db;
+    border-color: rgba(229, 231, 235, 0.3);
+}
+
 @media (max-width: 768px) {
     .account-profile-grid {
         grid-template-columns: 1fr;
@@ -3052,6 +3163,41 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
     background: rgba(36, 40, 49, 0.98);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Убираем скролл для модального окна "Настройки аккаунта" в темной теме */
+[data-theme="dark"] #accountModal .account-modal {
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    max-height: 90vh !important;
+}
+
+[data-theme="dark"] #accountModal .account-modal-header {
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] #accountModal .account-modal-body {
+    overflow: visible !important;
+    max-height: none !important;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Фиксируем footer внутри модального окна "Настройки аккаунта" в темной теме */
+[data-theme="dark"] #accountModal .account-modal-footer {
+    flex-shrink: 0;
+    margin-top: auto;
+    padding: 1rem 2rem !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 0 0 24px 24px !important;
+}
+
+[data-theme="dark"] #accountModal .account-modal-footer button {
+    white-space: nowrap;
+    padding: 0.75rem 1.5rem !important;
+    font-size: 0.9rem !important;
+    max-width: 100%;
 }
 
 [data-theme="dark"] .account-tabs {
@@ -3254,28 +3400,66 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
     }
 }
 
-/* === Notifications Modal Scrollbar (dark, inside body only) === */
-#notificationsModal .account-modal-body {
-    max-height: 70vh;
+/* === Notifications Modal Scrollbar (dark theme) === */
+/* Убираем скролл с самого модального окна, оставляем только на body */
+[data-theme="dark"] #notificationsModal .account-modal {
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    max-height: 90vh !important;
+}
+
+[data-theme="dark"] #notificationsModal .account-modal-header {
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] #notificationsModal .account-modal-body {
+    flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+    /* Скрываем дефолтный скроллбар и применяем кастомный */
     scrollbar-width: thin;
-    scrollbar-color: #3a3f4a #1f2432;
+    scrollbar-color: rgba(102, 126, 234, 0.5) rgba(36, 40, 49, 0.5);
 }
 
-#notificationsModal .account-modal-body::-webkit-scrollbar {
-    width: 10px;
+[data-theme="dark"] #notificationsModal .account-modal-body::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
 }
 
-#notificationsModal .account-modal-body::-webkit-scrollbar-track {
-    background: #1f2432;
+[data-theme="dark"] #notificationsModal .account-modal-body::-webkit-scrollbar-track {
+    background: rgba(36, 40, 49, 0.5);
+    border-radius: 4px;
 }
 
-#notificationsModal .account-modal-body::-webkit-scrollbar-thumb {
-    background: #3a3f4a;
-    border-radius: 10px;
+[data-theme="dark"] #notificationsModal .account-modal-body::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.5);
+    border-radius: 4px;
 }
 
-#notificationsModal .account-modal-body::-webkit-scrollbar-thumb:hover {
-    background: #4b5161;
+[data-theme="dark"] #notificationsModal .account-modal-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.7);
+}
+
+/* Убираем скролл с notificationsList, если он есть - скролл должен быть только на body */
+[data-theme="dark"] #notificationsList {
+    overflow: visible !important;
+}
+
+/* Фиксируем footer внутри модального окна */
+[data-theme="dark"] #notificationsModal .account-modal-footer {
+    flex-shrink: 0;
+    padding: 1rem 2rem !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 0 0 24px 24px !important;
+}
+
+[data-theme="dark"] #notificationsModal .account-modal-footer button {
+    white-space: nowrap;
+    padding: 0.75rem 1.5rem !important;
+    font-size: 0.9rem !important;
+    max-width: 100%;
+    word-wrap: break-word;
 }
 

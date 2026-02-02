@@ -1,5 +1,5 @@
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 import json
 
@@ -783,9 +783,12 @@ def get_resident_meters_public(
 def get_reading_history(
     resident_id: int,
     db: Session = Depends(get_db),
+    from_month: Optional[str] = Query(None, description="Начальный месяц в формате YYYY-MM"),
+    to_month: Optional[str] = Query(None, description="Конечный месяц в формате YYYY-MM"),
 ):
     """
     Получить детальную историю показаний для резидента по всем счётчикам.
+    Поддерживает фильтрацию по диапазону месяцев.
     """
     r = db.get(Resident, resident_id)
     if not r:
@@ -794,11 +797,42 @@ def get_reading_history(
     meters = r.meters
     result = []
     
+    # Парсим даты фильтрации по месяцам
+    start_date = None
+    end_date = None
+    if from_month:
+        try:
+            year, month = map(int, from_month.split('-'))
+            # Начало первого дня месяца
+            start_date = datetime(year, month, 1)
+        except (ValueError, AttributeError):
+            pass
+    
+    if to_month:
+        try:
+            year, month = map(int, to_month.split('-'))
+            # Конец последнего дня месяца (начало следующего месяца минус 1 секунда)
+            if month == 12:
+                end_date = datetime(year + 1, 1, 1) - timedelta(seconds=1)
+            else:
+                end_date = datetime(year, month + 1, 1) - timedelta(seconds=1)
+        except (ValueError, AttributeError):
+            pass
+    
     for m in meters:
-        readings = (
+        query = (
             db.query(MeterReading)
             .filter(MeterReading.resident_meter_id == m.id)
-            .order_by(MeterReading.reading_date.desc(), MeterReading.id.desc())
+        )
+        
+        # Применяем фильтр по датам, если указан
+        if start_date:
+            query = query.filter(MeterReading.reading_date >= start_date)
+        if end_date:
+            query = query.filter(MeterReading.reading_date <= end_date)
+        
+        readings = (
+            query.order_by(MeterReading.reading_date.desc(), MeterReading.id.desc())
             .all()
         )
         
