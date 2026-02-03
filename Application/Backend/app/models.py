@@ -437,7 +437,7 @@ class Notification(Base):
     
     # Используем функцию из .utils (импорт внутри метода или через default)
     # Но проще изменить default на текущее время Баку в самом приложении
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False, default=datetime.utcnow)
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
 
     user: Mapped["User"] = relationship("User", lazy="joined")

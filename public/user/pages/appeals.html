@@ -15,7 +15,8 @@
                 <div class="user-appeals-field">
                     <label for="appealText" data-i18n="user_appeals_description">Опишите проблему</label>
                     <textarea id="appealText" rows="17" data-i18n-placeholder="user_appeals_placeholder" placeholder="Например: в доме 12Б не работает уличное освещение..."></textarea>
-                    <small class="user-appeals-hint" data-i18n="user_appeals_hint">Максимум 2000 символов.</small>
+                    <small class="user-appeals-hint" data-i18n="user_appeals_hint">Минимум 5 символов. Максимум 2000 символов.</small>
+                    <div class="user-appeals-error" id="appealError" style="display: none; color: #dc3545; margin-top: 8px; font-size: 14px;"></div>
                 </div>
 
                 <div class="user-appeals-actions">
@@ -328,14 +329,43 @@
             }
 
             if (form && textarea && emptyState) {
+                const errorDiv = document.getElementById('appealError');
+                
+                const showError = (message) => {
+                    if (errorDiv) {
+                        errorDiv.textContent = message;
+                        errorDiv.style.display = 'block';
+                    }
+                };
+                
+                const hideError = () => {
+                    if (errorDiv) {
+                        errorDiv.style.display = 'none';
+                        errorDiv.textContent = '';
+                    }
+                };
+
                 form.addEventListener('submit', (e) => {
                     e.preventDefault();
+                    hideError();
+                    
                     const text = textarea.value.trim();
-                    if (!text) return;
+                    if (!text) {
+                        showError('Пожалуйста, введите текст обращения');
+                        return;
+                    }
+                    
+                    if (text.length < 5) {
+                        showError('Текст обращения должен содержать минимум 5 символов');
+                        return;
+                    }
 
                     const select = document.getElementById('appealHouse');
                     const residentId = select ? Number(select.value) : null;
-                    if (!residentId) return;
+                    if (!residentId) {
+                        showError('Пожалуйста, выберите дом');
+                        return;
+                    }
 
                     fetch(`${API_BASE_URL}/api/resident/appeals`, {
                         method: 'POST',
@@ -348,9 +378,18 @@
                             message: text
                         })
                     })
-                        .then(resp => {
+                        .then(async resp => {
                             if (!resp.ok) {
-                                throw new Error(`HTTP ${resp.status}`);
+                                let errorMessage = `Ошибка ${resp.status}`;
+                                try {
+                                    const errorData = await resp.json();
+                                    if (errorData.detail) {
+                                        errorMessage = errorData.detail;
+                                    }
+                                } catch (e) {
+                                    // Если не удалось распарсить JSON, используем стандартное сообщение
+                                }
+                                throw new Error(errorMessage);
                             }
                             return resp.json();
                         })
@@ -363,9 +402,11 @@
                                 message: el.dataset.text
                             }))]);
                             textarea.value = '';
+                            hideError();
                         })
                         .catch(err => {
                             console.error('Failed to submit appeal:', err);
+                            showError(err.message || 'Не удалось отправить обращение. Попробуйте позже.');
                         });
                 });
             }

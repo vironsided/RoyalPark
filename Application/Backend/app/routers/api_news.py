@@ -198,8 +198,9 @@ def create_news(
     db.commit()
     db.refresh(news)
     
-    # Создаем уведомления для пользователей, если новость опубликована
-    if news.is_active and news.published_at <= datetime.utcnow():
+    # Создаем уведомления для пользователей, если новость активна и опубликована
+    # Функция create_news_notification сама проверит время и создаст уведомления
+    if news.is_active and news.published_at:
         create_news_notification(db, news)
     
     title_dict = json.loads(news.title)
@@ -295,7 +296,9 @@ def update_news(
     db.refresh(news)
     
     # Создаем уведомления для пользователей, если новость стала активной и опубликована
-    if news.is_active and news.published_at <= datetime.utcnow():
+    # Функция create_news_notification сама проверит время и создаст уведомления
+    # Создаем уведомления только если новость стала активной или была обновлена
+    if news.is_active and news.published_at:
         create_news_notification(db, news)
     
     title_dict = json.loads(news.title) if isinstance(news.title, str) else news.title

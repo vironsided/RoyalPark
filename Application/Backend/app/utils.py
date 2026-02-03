@@ -204,17 +204,20 @@ def create_news_notification(db, news):
     
     # Проверяем, что новость активна
     if not news.is_active:
+        print(f"News {news.id} is not active, skipping notifications")
         return
     
-    # Проверяем, что published_at установлена и не в будущем
-    # Используем небольшой допуск (1 секунда) для учета задержек между операциями
+    # Проверяем, что published_at установлена
     now = datetime.utcnow()
     if not news.published_at:
+        print(f"News {news.id} has no published_at, skipping notifications")
         return
     
-    # Если published_at в будущем более чем на 1 секунду, не создаем уведомления
+    # Если published_at в будущем более чем на 5 минут, не создаем уведомления
+    # (для запланированных новостей - уведомления создадутся позже)
     time_diff = (news.published_at - now).total_seconds()
-    if time_diff > 1.0:
+    if time_diff > 300:  # 5 минут вместо 1 секунды
+        print(f"News {news.id} is scheduled for future (diff: {time_diff}s), skipping notifications")
         return
     
     # Получаем всех активных пользователей-резидентов
@@ -224,6 +227,7 @@ def create_news_notification(db, news):
     ).all()
     
     if not users:
+        print(f"No active resident users found for news {news.id}")
         return
     
     # Парсим заголовок для сообщения (используем русский по умолчанию)
@@ -236,6 +240,7 @@ def create_news_notification(db, news):
     message = f"Опубликована новость: {title_ru}"
     
     # Создаем уведомления для каждого пользователя
+    notifications_created = 0
     for user in users:
         # Проверяем, нет ли уже такого уведомления
         existing = db.query(Notification).filter(
@@ -252,12 +257,15 @@ def create_news_notification(db, news):
                 message=message,
                 status=NotificationStatus.UNREAD,
                 notification_type=NotificationType.NEWS.value,
-                related_id=news.id
+                related_id=news.id,
+                created_at=datetime.utcnow()
             )
             db.add(notification)
+            notifications_created += 1
     
     try:
         db.commit()
+        print(f"Created {notifications_created} notifications for news {news.id} ({len(users)} total users)")
     except Exception as e:
         db.rollback()
         print(f"Error creating news notifications: {e}")
