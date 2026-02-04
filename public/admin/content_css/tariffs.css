@@ -670,3 +670,78 @@
             color: #ffffff !important;
             font-weight: 600;
         }
+
+        /* Стили для виджетов на странице тарифов - темный фон как у solid-green в панели пользователя */
+        /* Максимальная специфичность для переопределения стилей admin.css */
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-orange,
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-blue,
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-red,
+        body #spa-content .content-wrapper .stats-grid .stat-card.solid-orange,
+        body #spa-content .content-wrapper .stats-grid .stat-card.solid-blue,
+        body #spa-content .content-wrapper .stats-grid .stat-card.solid-red,
+        .content-wrapper .stats-grid .stat-card.solid-orange,
+        .content-wrapper .stats-grid .stat-card.solid-blue,
+        .content-wrapper .stats-grid .stat-card.solid-red {
+            background: #242831 !important;
+            background-color: #242831 !important;
+            background-image: none !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3) !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-orange:hover,
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-blue:hover,
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-red:hover,
+        body #spa-content .content-wrapper .stats-grid .stat-card.solid-orange:hover,
+        body #spa-content .content-wrapper .stats-grid .stat-card.solid-blue:hover,
+        body #spa-content .content-wrapper .stats-grid .stat-card.solid-red:hover,
+        .content-wrapper .stats-grid .stat-card.solid-orange:hover,
+        .content-wrapper .stats-grid .stat-card.solid-blue:hover,
+        .content-wrapper .stats-grid .stat-card.solid-red:hover {
+            background: #2a2f3a !important;
+            background-color: #2a2f3a !important;
+            background-image: none !important;
+            border-color: rgba(255, 255, 255, 0.15) !important;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+            transform: translateY(-5px) !important;
+        }
+
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-orange .stat-value,
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-blue .stat-value,
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-red .stat-value,
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-orange .stat-label,
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-blue .stat-label,
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-red .stat-label,
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-orange .stat-change,
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-blue .stat-change,
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-red .stat-change,
+        .content-wrapper .stats-grid .stat-card .stat-value,
+        .content-wrapper .stats-grid .stat-card .stat-label,
+        .content-wrapper .stats-grid .stat-card .stat-change {
+            color: white !important;
+        }
+
+        /* Иконки с цветным фоном */
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-orange .stat-icon,
+        body #spa-content .content-wrapper .stats-grid .stat-card.solid-orange .stat-icon,
+        .content-wrapper .stats-grid .stat-card.solid-orange .stat-icon {
+            background: linear-gradient(135deg, #f5a623 0%, #e8830c 100%) !important;
+            background-color: transparent !important;
+        }
+
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-blue .stat-icon,
+        body #spa-content .content-wrapper .stats-grid .stat-card.solid-blue .stat-icon,
+        .content-wrapper .stats-grid .stat-card.solid-blue .stat-icon {
+            background: linear-gradient(135deg, #4facfe 0%, #2e86de 100%) !important;
+            background-color: transparent !important;
+        }
+
+        #spa-content .content-wrapper .stats-grid .stat-card.solid-red .stat-icon,
+        body #spa-content .content-wrapper .stats-grid .stat-card.solid-red .stat-icon,
+        .content-wrapper .stats-grid .stat-card.solid-red .stat-icon {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5253 100%) !important;
+            background-color: transparent !important;
+        }

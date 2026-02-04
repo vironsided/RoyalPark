@@ -98,13 +98,32 @@
      text-overflow: ellipsis;
  }
 
- .block-info {
-     font-size: 0.9rem;
-     opacity: 0.9;
-     display: flex;
-     flex-direction: column;
-     gap: 4px;
- }
+.block-info {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.block-status-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.85rem;
+    margin-top: 4px;
+    align-items: center;
+}
+
+.block-active-count {
+    color: #38ef7d;
+    font-weight: 500;
+}
+
+.block-inactive-count {
+    color: #ff6b6b;
+    font-weight: 500;
+}
 
  .complex-plan-wrapper {
      margin-top: 32px;

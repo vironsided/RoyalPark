@@ -10,7 +10,8 @@ from sqlalchemy import func, and_
 from ..database import get_db
 from ..models import (
     User, Resident, Payment, Invoice, Block,
-    Notification, NotificationStatus, PaymentMethod
+    Notification, NotificationStatus, PaymentMethod,
+    MeterReading, ResidentMeter, MeterType, Tariff
 )
 from ..utils import now_baku, to_baku_datetime
 
@@ -27,6 +28,12 @@ class DashboardStatsOut(BaseModel):
     totalPayments: int
     totalInvoices: int
     unpaidInvoices: int
+    monthly_kwh: float = 0.0
+    monthly_water_m3: float = 0.0
+    monthly_gas_m3: float = 0.0
+    monthly_electricity_amount: float = 0.0
+    monthly_water_amount: float = 0.0
+    monthly_gas_amount: float = 0.0
 
     class Config:
         from_attributes = True
@@ -104,6 +111,90 @@ def get_dashboard_stats(
             Invoice.status != InvoiceStatus.PAID
         ).scalar() or 0
         
+        # Calculate monthly utility consumptions (electricity, water, gas) for all residents
+        monthly_kwh = Decimal("0")
+        monthly_water_m3 = Decimal("0")
+        monthly_gas_m3 = Decimal("0")
+        
+        today_now = now_baku()
+        month_start = datetime(today_now.year, today_now.month, 1)
+        month_end = datetime(today_now.year + (1 if today_now.month == 12 else 0), 
+                             (1 if today_now.month == 12 else today_now.month + 1), 1)
+        
+        # Electricity consumption
+        electric_readings = (
+            db.query(MeterReading)
+            .join(ResidentMeter, ResidentMeter.id == MeterReading.resident_meter_id)
+            .filter(
+                ResidentMeter.meter_type == MeterType.ELECTRIC,
+                MeterReading.reading_date >= month_start,
+                MeterReading.reading_date < month_end
+            )
+            .all()
+        )
+        monthly_kwh = sum(Decimal(str(rd.consumption or 0)) for rd in electric_readings)
+        
+        # Water consumption
+        water_readings = (
+            db.query(MeterReading)
+            .join(ResidentMeter, ResidentMeter.id == MeterReading.resident_meter_id)
+            .filter(
+                ResidentMeter.meter_type == MeterType.WATER,
+                MeterReading.reading_date >= month_start,
+                MeterReading.reading_date < month_end
+            )
+            .all()
+        )
+        monthly_water_m3 = sum(Decimal(str(rd.consumption or 0)) for rd in water_readings)
+        
+        # Gas consumption
+        gas_readings = (
+            db.query(MeterReading)
+            .join(ResidentMeter, ResidentMeter.id == MeterReading.resident_meter_id)
+            .filter(
+                ResidentMeter.meter_type == MeterType.GAS,
+                MeterReading.reading_date >= month_start,
+                MeterReading.reading_date < month_end
+            )
+            .all()
+        )
+        monthly_gas_m3 = sum(Decimal(str(rd.consumption or 0)) for rd in gas_readings)
+        
+        # Calculate monthly utility amounts (money) for all residents
+        # Import compute_amount function from readings router
+        from .readings import compute_amount
+        
+        monthly_electricity_amount = Decimal("0")
+        monthly_water_amount = Decimal("0")
+        monthly_gas_amount = Decimal("0")
+        
+        # Calculate electricity amount
+        for rd in electric_readings:
+            if rd.resident_meter and rd.resident_meter.tariff_id:
+                tariff = db.get(Tariff, rd.resident_meter.tariff_id)
+                if tariff:
+                    consumption = Decimal(str(rd.consumption or 0))
+                    _, _, amount_total, _ = compute_amount(consumption, tariff)
+                    monthly_electricity_amount += amount_total
+        
+        # Calculate water amount
+        for rd in water_readings:
+            if rd.resident_meter and rd.resident_meter.tariff_id:
+                tariff = db.get(Tariff, rd.resident_meter.tariff_id)
+                if tariff:
+                    consumption = Decimal(str(rd.consumption or 0))
+                    _, _, amount_total, _ = compute_amount(consumption, tariff)
+                    monthly_water_amount += amount_total
+        
+        # Calculate gas amount
+        for rd in gas_readings:
+            if rd.resident_meter and rd.resident_meter.tariff_id:
+                tariff = db.get(Tariff, rd.resident_meter.tariff_id)
+                if tariff:
+                    consumption = Decimal(str(rd.consumption or 0))
+                    _, _, amount_total, _ = compute_amount(consumption, tariff)
+                    monthly_gas_amount += amount_total
+        
         return DashboardStatsOut(
             totalUsers=total_users,
             totalBuildings=total_buildings,
@@ -112,7 +203,13 @@ def get_dashboard_stats(
             activeRequests=active_requests,
             totalPayments=total_payments,
             totalInvoices=total_invoices,
-            unpaidInvoices=unpaid_invoices
+            unpaidInvoices=unpaid_invoices,
+            monthly_kwh=float(monthly_kwh),
+            monthly_water_m3=float(monthly_water_m3),
+            monthly_gas_m3=float(monthly_gas_m3),
+            monthly_electricity_amount=float(monthly_electricity_amount),
+            monthly_water_amount=float(monthly_water_amount),
+            monthly_gas_amount=float(monthly_gas_amount)
         )
     except Exception as e:
         return {"error": str(e)}

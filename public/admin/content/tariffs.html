@@ -2,6 +2,45 @@
 <div class="content-wrapper">
     <h2 class="mb-4">Тарифы по блокам</h2>
 
+    <!-- Stats Grid -->
+    <div class="stats-grid" style="margin-bottom: 2rem;">
+        <!-- Электричество -->
+        <div class="stat-card solid-orange">
+            <div class="stat-icon orange">
+                <i class="bi bi-lightning-charge"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-value" id="stat-electricity-tariffs">0.00</div>
+                <div class="stat-label">₼ за месяц</div>
+                <div class="stat-change">Электричество</div>
+            </div>
+        </div>
+
+        <!-- Вода -->
+        <div class="stat-card solid-blue">
+            <div class="stat-icon blue">
+                <i class="bi bi-droplet"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-value" id="stat-water-tariffs">0.00</div>
+                <div class="stat-label">₼ за месяц</div>
+                <div class="stat-change">Вода</div>
+            </div>
+        </div>
+
+        <!-- Газ -->
+        <div class="stat-card solid-red">
+            <div class="stat-icon red">
+                <i class="bi bi-fire"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-value" id="stat-gas-tariffs">0.00</div>
+                <div class="stat-label">₼ за месяц</div>
+                <div class="stat-change">Газ</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Filters -->
     <div class="filters-container">
         <div class="filters-row">
@@ -1217,4 +1256,60 @@
     };
 
     window.addEventListener('spa:contentLoaded', window._tariffsContentLoadedHandler);
+
+    // Load utility statistics for widgets
+    async function loadUtilityStats() {
+        try {
+            const response = await fetch(`${API_BASE}/api/dashboard/stats`, { credentials: 'include' });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const stats = await response.json();
+            console.log('Utility stats loaded:', stats);
+
+            // Update electricity widget (amount in currency)
+            const electricityEl = document.getElementById('stat-electricity-tariffs');
+            if (electricityEl) {
+                electricityEl.textContent = (stats.monthly_electricity_amount || 0).toFixed(2);
+            }
+
+            // Update water widget (amount in currency)
+            const waterEl = document.getElementById('stat-water-tariffs');
+            if (waterEl) {
+                waterEl.textContent = (stats.monthly_water_amount || 0).toFixed(2);
+            }
+
+            // Update gas widget (amount in currency)
+            const gasEl = document.getElementById('stat-gas-tariffs');
+            if (gasEl) {
+                gasEl.textContent = (stats.monthly_gas_amount || 0).toFixed(2);
+            }
+        } catch (error) {
+            console.error('Error loading utility stats:', error);
+            // Set default values on error
+            const electricityEl = document.getElementById('stat-electricity-tariffs');
+            const waterEl = document.getElementById('stat-water-tariffs');
+            const gasEl = document.getElementById('stat-gas-tariffs');
+            if (electricityEl) electricityEl.textContent = '0.00';
+            if (waterEl) waterEl.textContent = '0.00';
+            if (gasEl) gasEl.textContent = '0.00';
+        }
+    }
+
+    // Load utility stats when page loads
+    initTariffsPage().then(() => {
+        loadUtilityStats();
+    });
+
+    // Also load stats when content is loaded via SPA router
+    const originalContentLoadedHandler = window._tariffsContentLoadedHandler;
+    if (originalContentLoadedHandler) {
+        window._tariffsContentLoadedHandler = (e) => {
+            originalContentLoadedHandler(e);
+            setTimeout(() => {
+                loadUtilityStats();
+            }, 200);
+        };
+    }
 </script>

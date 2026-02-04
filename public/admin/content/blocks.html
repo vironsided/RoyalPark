@@ -41,6 +41,19 @@
             </div>
         </div>
 
+        <div class="stat-card solid-red">
+            <div class="stat-icon red">
+                <svg width="40" height="40" fill="white">
+                    <use href="/images/icons.svg#icon-apartments"></use>
+                </svg>
+            </div>
+            <div class="stat-details">
+                <div class="stat-value">0</div>
+                <div class="stat-label">Неактивные дома</div>
+                <div class="stat-change negative">Требуют внимания</div>
+            </div>
+        </div>
+
         <!-- <div class="stat-card solid-red">
             <div class="stat-icon purple">
                 <svg width="40" height="40" fill="white">
@@ -144,6 +157,8 @@
                         <ul class="list-unstyled">
                             <!-- <li><strong>Этажей:</strong> <span id="blockFloors">-</span></li> -->
                             <li><strong>Домов:</strong> <span id="blockApartments">-</span></li>
+                            <li><strong>Активных:</strong> <span id="blockActive">-</span></li>
+                            <li><strong>Неактивных:</strong> <span id="blockInactive">-</span></li>
                             <!-- <li><strong>Жителей:</strong> <span id="blockResidents">-</span></li> -->
                             <li><strong>Заселенность:</strong> <span id="blockOccupancy">-</span></li>
                         </ul>
@@ -232,6 +247,7 @@
             console.log('Loaded residents:', residents.length);
             console.log('Sample resident:', residents[0]);
             updateActiveResidentsCount();
+            updateInactiveResidentsCount();
             updateOccupancyPercentage();
             // Обновляем карточки блоков с новыми данными о резидентах
             // Только если блоки уже загружены
@@ -251,6 +267,7 @@
             console.error('Load residents error:', e);
             residents = [];
             updateActiveResidentsCount();
+            updateInactiveResidentsCount();
             updateOccupancyPercentage();
             // Обновляем карточки блоков даже при ошибке, но только если блоки уже загружены
             if (blocksLoaded) {
@@ -297,6 +314,32 @@
         statValue.textContent = activeResidentsCount;
     }
 
+    // Обновление счетчика неактивных домов (резидентов) в карточке статистики
+    function updateInactiveResidentsCount() {
+        const statValue = document.querySelector('.stat-card.solid-red .stat-value');
+        if (!statValue) {
+            console.warn('Stat card for inactive residents not found');
+            return;
+        }
+
+        if (!residents || residents.length === 0) {
+            console.warn('No residents data available');
+            statValue.textContent = '0';
+            return;
+        }
+
+        // Подсчитываем только неактивные резиденты (дома)
+        // API возвращает статус как строку 'ACTIVE' или 'INACTIVE'
+        const inactiveResidentsCount = residents.filter(r => {
+            if (!r) return false;
+            const status = String(r.status || '').trim().toUpperCase();
+            return status === 'INACTIVE';
+        }).length;
+
+        console.log(`Inactive residents count: ${inactiveResidentsCount} out of ${residents.length} total`);
+        statValue.textContent = inactiveResidentsCount;
+    }
+
     // Обновление процента заселенности в карточке статистики
     function updateOccupancyPercentage() {
         const statValue = document.querySelector('.stat-card.solid-orange .stat-value');
@@ -323,7 +366,14 @@
         // Фильтруем резидентов по block_id
         const blockResidents = residents.filter(r => r.block_id === blockId);
         const totalResidents = blockResidents.length;
-        const activeResidents = blockResidents.filter(r => r.status === 'ACTIVE').length;
+        const activeResidents = blockResidents.filter(r => {
+            const status = String(r.status || '').trim().toUpperCase();
+            return status === 'ACTIVE';
+        }).length;
+        const inactiveResidents = blockResidents.filter(r => {
+            const status = String(r.status || '').trim().toUpperCase();
+            return status === 'INACTIVE';
+        }).length;
 
         // Вычисляем процент заселённости
         const occupancyPercentage = totalResidents > 0
@@ -333,6 +383,7 @@
         return {
             total: totalResidents,
             active: activeResidents,
+            inactive: inactiveResidents,
             occupancy: occupancyPercentage
         };
     }
@@ -384,6 +435,10 @@
                 <div class="block-name">Блок ${block.name}</div>
                 <div class="block-info">
                     <div>${stats.total} ${stats.total === 1 ? 'дом' : stats.total < 5 ? 'дома' : 'домов'}</div>
+                    <div class="block-status-info">
+                        <span class="block-active-count">Активных: ${stats.active}</span>
+                        <span class="block-inactive-count">Неактивных: ${stats.inactive}</span>
+                    </div>
                     <div>${stats.occupancy}% заселённость</div>
                 </div>
             `;
@@ -419,9 +474,13 @@
         if (selectedBlockId) {
             const stats = getBlockStats(selectedBlockId);
             document.getElementById('blockApartments').textContent = stats.total;
+            document.getElementById('blockActive').textContent = stats.active;
+            document.getElementById('blockInactive').textContent = stats.inactive;
             document.getElementById('blockOccupancy').textContent = `${stats.occupancy}%`;
         } else {
             document.getElementById('blockApartments').textContent = '-';
+            document.getElementById('blockActive').textContent = '-';
+            document.getElementById('blockInactive').textContent = '-';
             document.getElementById('blockOccupancy').textContent = '-';
         }
 
@@ -472,6 +531,7 @@
             document.getElementById('newBlockName').value = '';
             updateBlocksCount();
             updateActiveResidentsCount(); // Обновляем счетчик активных домов
+            updateInactiveResidentsCount(); // Обновляем счетчик неактивных домов
             // Резиденты не меняются при создании блока, но можно перезагрузить для актуальности
             await loadResidents();
             updateOccupancyPercentage();
@@ -561,6 +621,7 @@
             await loadBlocks();
             updateBlocksCount();
             updateActiveResidentsCount(); // Обновляем счетчик активных домов
+            updateInactiveResidentsCount(); // Обновляем счетчик неактивных домов
             // Обновляем tooltip-ы после переименования
             updatePlanTooltips();
 
@@ -632,6 +693,7 @@
             await loadBlocks();
             updateBlocksCount();
             updateActiveResidentsCount(); // Обновляем счетчик активных домов
+            updateInactiveResidentsCount(); // Обновляем счетчик неактивных домов
 
             // Hide block details
             document.getElementById('blockDetails').style.display = 'none';
@@ -754,6 +816,7 @@
 
         // Обновляем счетчики после завершения обеих загрузок
         updateActiveResidentsCount();
+        updateInactiveResidentsCount();
         updateOccupancyPercentage();
 
         // Небольшая задержка для гарантии что DOM обновлен после SPA-перехода

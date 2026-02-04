@@ -933,7 +933,7 @@
     };
 
     // Load residents based on selected block
-    window.loadResidents = async function loadResidents() {
+    window.loadResidents = async function loadResidents(skipFilter = false, selectResidentId = null) {
         const blockName = document.getElementById('modalBlock').value;
         const residentSelect = document.getElementById('modalResident');
         hideMeterDetails();
@@ -975,30 +975,135 @@
 
                 console.log('Using block:', block);
 
-                let url = `${API_BASE}/api/residents?block_id=${block.id}`;
-                console.log('Fetching residents from:', url);
-                let response = await fetch(url, { credentials: 'include' });
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const data = await response.json();
-                console.log('Residents data received:', data);
-                console.log('Data type:', Array.isArray(data) ? 'Array' : 'Object');
-
-                // Handle paginated response (with items) or direct array
+                // Load all residents for the block (with pagination if needed)
                 let residentsList = [];
-                if (Array.isArray(data)) {
-                    residentsList = data;
-                } else if (data.items) {
-                    residentsList = data.items;
-                } else if (data.residents) {
-                    residentsList = data.residents;
+                let page = 1;
+                const perPage = 100; // API limit
+                let hasMore = true;
+
+                while (hasMore) {
+                    let url = `${API_BASE}/api/residents?block_id=${block.id}&per_page=${perPage}&page=${page}`;
+                    console.log('Fetching residents from:', url);
+                    let response = await fetch(url, { credentials: 'include' });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    console.log('Residents data received (page', page, '):', data);
+
+                    // Handle paginated response (with items) or direct array
+                    let pageResidents = [];
+                    if (Array.isArray(data)) {
+                        pageResidents = data;
+                        hasMore = false; // If it's an array, assume no pagination
+                    } else if (data.items) {
+                        pageResidents = data.items;
+                        // Check if there are more pages
+                        const total = data.total || 0;
+                        const lastPage = data.last_page || 1;
+                        hasMore = page < lastPage;
+                    } else if (data.residents) {
+                        pageResidents = data.residents;
+                        hasMore = false;
+                    }
+
+                    residentsList = residentsList.concat(pageResidents);
+                    page++;
+
+                    // Safety limit to prevent infinite loops
+                    if (page > 100) {
+                        console.warn('Reached page limit, stopping pagination');
+                        break;
+                    }
                 }
 
-                console.log('Residents count:', residentsList.length);
-                console.log('Residents list:', residentsList);
-                populateResidentsSelect(residentsList);
+                console.log('Total residents loaded:', residentsList.length);
+
+                // If skipFilter is true (e.g., when editing), show all residents
+                if (skipFilter) {
+                    console.log('Skipping filter - showing all residents');
+                    populateResidentsSelect(residentsList, selectResidentId);
+                    return;
+                }
+
+                // Get year and month from modal date input (not from filter dropdowns)
+                // This allows filtering based on the date selected in the modal
+                const modalDateInput = document.getElementById('modalDate');
+                let year, month;
+                
+                if (modalDateInput && modalDateInput.value) {
+                    // Parse date from modal (format: YYYY-MM-DD)
+                    const dateStr = modalDateInput.value;
+                    const dateParts = dateStr.split('-');
+                    if (dateParts.length === 3) {
+                        year = dateParts[0];
+                        month = dateParts[1];
+                        console.log('Using date from modal:', year, month);
+                    } else {
+                        // Fallback to current date if parsing fails
+                        const now = new Date();
+                        year = now.getFullYear().toString();
+                        month = (now.getMonth() + 1).toString();
+                        console.log('Failed to parse modal date, using current:', year, month);
+                    }
+                } else {
+                    // Fallback to filter dropdowns if modal date is not set
+                    const yearSelect = document.getElementById('filterYear');
+                    const monthSelect = document.getElementById('filterMonth');
+                    year = yearSelect?.value || new Date().getFullYear().toString();
+                    month = monthSelect?.value || (new Date().getMonth() + 1).toString();
+                    console.log('Modal date not set, using filters:', year, month);
+                }
+
+                // Get residents who already have readings for the selected period
+                let residentsWithReadings = new Set();
+                let readingsPage = 1;
+                let hasMoreReadings = true;
+
+                while (hasMoreReadings) {
+                    const readingsUrl = `${API_BASE}/api/readings?block_id=${block.id}&year=${year}&month=${month}&per_page=100&page=${readingsPage}`;
+                    console.log('Fetching readings from:', readingsUrl);
+                    let readingsResponse = await fetch(readingsUrl, { credentials: 'include' });
+                    
+                    if (readingsResponse.ok) {
+                        const readingsData = await readingsResponse.json();
+                        if (readingsData.rows && Array.isArray(readingsData.rows)) {
+                            readingsData.rows.forEach(row => {
+                                if (row.resident_id) {
+                                    residentsWithReadings.add(row.resident_id);
+                                }
+                            });
+                            
+                            // Check pagination
+                            const pagination = readingsData.pagination || {};
+                            const lastPage = pagination.last_page || 1;
+                            hasMoreReadings = readingsPage < lastPage;
+                            readingsPage++;
+                        } else {
+                            hasMoreReadings = false;
+                        }
+                    } else {
+                        hasMoreReadings = false;
+                    }
+
+                    // Safety limit
+                    if (readingsPage > 100) {
+                        console.warn('Reached readings page limit');
+                        break;
+                    }
+                }
+
+                console.log('Residents with readings:', Array.from(residentsWithReadings));
+
+                // Filter out residents who already have readings for this period
+                const filteredResidents = residentsList.filter(resident => {
+                    return !residentsWithReadings.has(resident.id);
+                });
+
+                console.log('Residents count after filtering:', filteredResidents.length);
+                console.log('Filtered residents list:', filteredResidents);
+                populateResidentsSelect(filteredResidents, selectResidentId);
             } catch (error) {
                 console.error('Error loading residents:', error);
                 residentSelect.innerHTML = '<option value="">— ошибка загрузки —</option>';
@@ -1009,7 +1114,7 @@
         }
     }
 
-    function populateResidentsSelect(residentsList) {
+    function populateResidentsSelect(residentsList, selectResidentId = null) {
         const residentSelect = document.getElementById('modalResident');
         console.log('Populating residents select with', residentsList.length, 'residents');
         residentSelect.innerHTML = '<option value="">— выберите —</option>';
@@ -1024,6 +1129,12 @@
             residentSelect.appendChild(option);
             console.log('Added resident option:', option.textContent, 'ID:', resident.id);
         });
+        
+        // If selectResidentId is provided, select it after populating
+        if (selectResidentId) {
+            residentSelect.value = selectResidentId;
+            console.log('Selected resident ID:', selectResidentId);
+        }
     }
 
     window.openReadingEditor = async function openReadingEditor(residentId) {
@@ -1043,24 +1154,10 @@
         const dateInput = document.getElementById('modalDate');
         const commentField = document.getElementById('modalComment');
 
-        if (blockSelect) {
-            blockSelect.value = resident.block_name;
-            await loadResidents();
-        }
-
-        // Устанавливаем сегодняшнюю дату по умолчанию
-        const today = new Date().toISOString().split('T')[0];
-        
-        // Try to get reading date from resident data (if available from API)
-        let readingDate = today; // По умолчанию сегодняшняя дата
-        if (resident.reading_date) {
-            readingDate = resident.reading_date;
-        }
-
-        // В режиме редактирования “Показателей” мы редактируем месяц,
-        // который выбран в фильтрах (год/месяц сверху), а не “сегодня”.
+        // В режиме редактирования "Показателей" мы редактируем месяц,
+        // который выбран в фильтрах (год/месяц сверху), а не "сегодня".
         // Это критично, иначе backend не найдёт existing-reading за нужный месяц
-        // и вы увидите “не тот тариф”.
+        // и вы увидите "не тот тариф".
         const yearSel = document.getElementById('filterYear');
         const monthSel = document.getElementById('filterMonth');
         const y = (yearSel?.value || new Date().getFullYear().toString());
@@ -1073,13 +1170,23 @@
             dateInput.value = monthDate;
         }
 
+        if (blockSelect) {
+            blockSelect.value = resident.block_name;
+            // When editing, skip filtering to show all residents including the one being edited
+            // Pass residentId to select it after loading
+            await loadResidents(true, residentId);
+        }
+
+        // Render meter details after resident is selected
         if (residentSelect && residentId) {
+            // Small delay to ensure select is populated
             setTimeout(() => {
-                residentSelect.disabled = false;
-                residentSelect.value = residentId;
+                if (residentSelect.value !== residentId.toString()) {
+                    residentSelect.value = residentId;
+                }
                 // Now renderMeterDetails will use the correct date
                 renderMeterDetails(residentId);
-            }, 300);
+            }, 100);
         }
     }
 
@@ -1662,14 +1769,31 @@
         renderMeterDetails(residentId);
     });
 
-    // Add event listener for date change to reload meter details
+    // Add event listener for date change to reload meter details and update residents list
     const modalDateInput = document.getElementById('modalDate');
     if (modalDateInput) {
         modalDateInput.addEventListener('change', function () {
             const residentId = document.getElementById('modalResident')?.value;
+            const blockName = document.getElementById('modalBlock')?.value;
+            
+            // If block is selected, reload residents list with new date filter
+            if (blockName) {
+                console.log('📅 Date changed, reloading residents list for block:', blockName);
+                // Save current resident ID to restore it after reload (if it's still in the list)
+                const savedResidentId = residentId ? parseInt(residentId) : null;
+                loadResidents(false, savedResidentId); // false = apply filter, savedResidentId = try to restore selection
+            }
+            
+            // If resident is already selected, reload meter details
             if (residentId) {
                 console.log('📅 Date changed, reloading meter details for resident:', residentId);
-                renderMeterDetails(residentId);
+                // Small delay to ensure residents list is updated first
+                setTimeout(() => {
+                    const currentResidentId = document.getElementById('modalResident')?.value;
+                    if (currentResidentId) {
+                        renderMeterDetails(parseInt(currentResidentId));
+                    }
+                }, 300);
             }
         });
     }
