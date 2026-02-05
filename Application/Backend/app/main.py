@@ -72,12 +72,24 @@ def run_bootstrap_schema():
           content TEXT NOT NULL,
           icon VARCHAR(50) NOT NULL DEFAULT 'info',
           icon_color VARCHAR(50) NOT NULL DEFAULT '#667eea',
+          target_blocks TEXT NULL,
           is_active BOOLEAN NOT NULL DEFAULT TRUE,
           priority INTEGER NOT NULL DEFAULT 0,
           published_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
           expires_at TIMESTAMP WITHOUT TIME ZONE NULL,
           created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
           updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+          created_by_id INTEGER NULL REFERENCES users(id) ON DELETE SET NULL
+        );
+        """,
+        # Meter reading photos table
+        """
+        CREATE TABLE IF NOT EXISTS meter_reading_photos (
+          id SERIAL PRIMARY KEY,
+          meter_reading_id INTEGER NOT NULL UNIQUE REFERENCES meter_readings(id) ON DELETE CASCADE,
+          file_path VARCHAR(255) NOT NULL,
+          created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+          expires_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
           created_by_id INTEGER NULL REFERENCES users(id) ON DELETE SET NULL
         );
         """,
@@ -137,6 +149,7 @@ def run_bootstrap_schema():
         # Новые поля для уведомлений
         "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS notification_type VARCHAR(20);",
         "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS related_id INTEGER;",
+        "ALTER TABLE news ADD COLUMN IF NOT EXISTS target_blocks TEXT;",
 
     ]
     from .database import engine
@@ -146,6 +159,7 @@ def run_bootstrap_schema():
 
     # Гарантируем папку для аватаров
     os.makedirs("uploads/avatars", exist_ok=True)
+    os.makedirs("uploads/meter_readings", exist_ok=True)
 
 
 

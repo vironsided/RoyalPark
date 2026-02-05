@@ -306,6 +306,156 @@
             color: rgba(255, 255, 255, 1);
         }
 
+        .meter-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .meter-photo-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            min-width: 160px;
+        }
+
+        .meter-delete-cell {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .meter-photo-btn {
+            padding: 6px 8px;
+            border-radius: 8px;
+            line-height: 1;
+        }
+
+        .meter-photo-preview {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 80px;
+            flex-wrap: wrap;
+        }
+
+        .meter-photo-preview img {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .meter-photo-link {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            padding: 0;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .meter-photo-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(88, 104, 255, 0.95);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+            font-size: 12px;
+            box-shadow: 0 6px 12px rgba(88, 104, 255, 0.35);
+        }
+
+        .meter-photo-link:hover .meter-photo-overlay {
+            opacity: 1;
+        }
+
+        .meter-photo-placeholder {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .meter-photo-name {
+            font-size: 0.72rem;
+            color: rgba(255, 255, 255, 0.75);
+            max-width: 140px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .hidden-file-input {
+            display: none;
+        }
+
+        .photo-picker-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 10000;
+            padding: 16px;
+        }
+
+        .photo-picker-modal.active {
+            display: flex;
+        }
+
+        .photo-picker-sheet {
+            width: min(420px, 100%);
+            background: #1f2432;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 24px 40px rgba(0, 0, 0, 0.35);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .photo-picker-title {
+            font-weight: 600;
+            color: #f2f4ff;
+            text-align: center;
+        }
+
+        .photo-picker-btn,
+        .photo-picker-cancel {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .photo-picker-cancel {
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
         .meter-amount {
             display: inline-flex;
             align-items: center;
@@ -492,7 +642,7 @@
 
         .detail-grid {
             display: grid;
-            grid-template-columns: 1.1fr 1fr 1fr 1fr 0.6fr 1.5fr;
+            grid-template-columns: 1.1fr 1fr 1fr 1fr 0.6fr 1.4fr 0.8fr;
             gap: 8px;
         }
 
@@ -512,13 +662,26 @@
 
         .detail-grid-row {
             display: grid;
-            grid-template-columns: 1.1fr 1fr 1fr 1fr 0.6fr 1.5fr;
+            grid-template-columns: 1.1fr 1fr 1fr 1fr 0.6fr 1.4fr 0.8fr;
             gap: 8px;
             background: rgba(255, 255, 255, 0.03);
             padding: 10px 12px;
             border-radius: 10px;
             font-size: 0.92rem;
             align-items: center;
+        }
+
+        .detail-photo-link img {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .detail-photo-empty {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
         }
 
         .detail-empty-row {
@@ -732,6 +895,45 @@
             background: #ffffff;
             color: #212529;
             border: 1px solid #dee2e6;
+        }
+
+        body:not([data-theme="dark"]) .meter-photo-placeholder {
+            color: #6c768f;
+        }
+
+        body:not([data-theme="dark"]) .meter-photo-name {
+            color: #6c768f;
+        }
+
+        body:not([data-theme="dark"]) .meter-photo-preview img {
+            border-color: rgba(0, 0, 0, 0.12);
+        }
+
+        body:not([data-theme="dark"]) .photo-picker-sheet {
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+        }
+
+        body:not([data-theme="dark"]) .photo-picker-title {
+            color: #1a1d2e;
+        }
+
+        body:not([data-theme="dark"]) .photo-picker-btn {
+            background: rgba(0, 0, 0, 0.04);
+            color: #1a1d2e;
+            border-color: rgba(0, 0, 0, 0.12);
+        }
+
+        body:not([data-theme="dark"]) .photo-picker-cancel {
+            color: #6c768f;
+        }
+
+        body:not([data-theme="dark"]) .detail-photo-link img {
+            border-color: rgba(0, 0, 0, 0.12);
+        }
+
+        body:not([data-theme="dark"]) .detail-photo-empty {
+            color: #6c768f;
         }
 
         /* Dark theme support */

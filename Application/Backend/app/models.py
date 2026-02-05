@@ -312,6 +312,23 @@ class MeterReading(Base):
     created_by = relationship("User", foreign_keys=[created_by_id], lazy="joined")
 
 
+class MeterReadingPhoto(Base):
+    __tablename__ = "meter_reading_photos"
+    __table_args__ = (
+        UniqueConstraint("meter_reading_id", name="uq_meter_reading_photos_reading_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    meter_reading_id: Mapped[int] = mapped_column(ForeignKey("meter_readings.id", ondelete="CASCADE"), nullable=False)
+    meter_reading = relationship("MeterReading", lazy="joined")
+
+    file_path: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_by = relationship("User", foreign_keys=[created_by_id], lazy="joined")
+
+
 class ReadingLog(Base):
     __tablename__ = "reading_logs"
 
@@ -461,6 +478,8 @@ class News(Base):
     
     icon: Mapped[str] = mapped_column(String(50), nullable=False, default='info')  
     icon_color: Mapped[str] = mapped_column(String(50), nullable=False, default='#667eea')  
+    # JSON list of block names (e.g., ["A","B"]), null means "all"
+    target_blocks: Mapped[str | None] = mapped_column(Text, nullable=True)
     
     
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)

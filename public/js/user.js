@@ -1233,9 +1233,18 @@ window.loadDashboardNews = async function loadDashboardNews() {
             
             return true;
         });
+
+        const residentBlocks = (window.dashboardData?.residents || [])
+            .map(r => (r.code || '').split('/')[0].trim())
+            .filter(Boolean);
+        const filteredByBlock = activeNews.filter(news => {
+            const targetBlocks = Array.isArray(news.target_blocks) ? news.target_blocks : [];
+            if (!targetBlocks.length) return true;
+            return targetBlocks.some(b => residentBlocks.includes(b));
+        });
         
         // Сортируем по приоритету и дате, берем первые 3
-        const sortedNews = [...activeNews].sort((a, b) => {
+        const sortedNews = [...filteredByBlock].sort((a, b) => {
             if (b.priority !== a.priority) {
                 return b.priority - a.priority;
             }

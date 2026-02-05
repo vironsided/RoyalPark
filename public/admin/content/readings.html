@@ -143,7 +143,7 @@
 <div class="modal-overlay" id="recordReadingModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>Запись показателя</h2>
+            <h2 id="recordReadingTitle">Запись показателя</h2>
             <button class="modal-close" onclick="closeRecordModal()">
                 <i class="bi bi-x-lg"></i>
             </button>
@@ -182,12 +182,13 @@
                                 <th>Новое / Отметить</th>
                                 <th>Расход</th>
                                 <th>Сумма</th>
+                                <th>Фото</th>
                                 <th>Удалить последнее</th>
                             </tr>
                         </thead>
                         <tbody id="meterTableBody">
                             <tr>
-                                <td colspan="7" class="text-muted text-center">Выберите резидента, чтобы увидеть тарифы
+                                <td colspan="8" class="text-muted text-center">Выберите резидента, чтобы увидеть тарифы
                                 </td>
                             </tr>
                         </tbody>
@@ -199,6 +200,21 @@
                     <textarea id="modalComment" rows="2" placeholder="Например, показания снял охранник..."></textarea>
                 </div>
             </div>
+
+            <div class="photo-picker-modal" id="photoPickerModal">
+                <div class="photo-picker-sheet">
+                    <div class="photo-picker-title">Добавить фото</div>
+                    <button type="button" class="photo-picker-btn" data-source="camera">
+                        <i class="bi bi-camera"></i> Сфотографировать
+                    </button>
+                    <button type="button" class="photo-picker-btn" data-source="gallery">
+                        <i class="bi bi-image"></i> Загрузить из галереи
+                    </button>
+                    <button type="button" class="photo-picker-cancel">Отмена</button>
+                </div>
+            </div>
+            <input type="file" id="meterPhotoInputCamera" accept="image/*" capture="environment" class="hidden-file-input">
+            <input type="file" id="meterPhotoInputGallery" accept="image/*" class="hidden-file-input">
 
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeRecordModal()">
@@ -251,6 +267,12 @@
         totalPages: 1
     };
 
+    const meterPhotoFiles = new Map();
+    const meterPhotoObjectUrls = new Map();
+    let activePhotoMeterId = null;
+    let meterPhotoPickerInitialized = false;
+    let isReadingEditMode = false;
+
     // Set today's date as default
     document.addEventListener('DOMContentLoaded', function () {
         console.log('DOMContentLoaded - readings page');
@@ -261,6 +283,7 @@
                 modalDate.value = today;
             }
             initCustomReadingPaginationDropdown();
+            initMeterPhotoPicker();
             console.log('Calling loadReadings from DOMContentLoaded');
             if (typeof window.loadReadings === 'function') {
                 window.loadReadings();
@@ -755,6 +778,12 @@
     window.openRecordModal = function openRecordModal() {
         document.getElementById('recordReadingModal').classList.add('active');
         document.body.style.overflow = 'hidden';
+        initMeterPhotoPicker();
+        isReadingEditMode = false;
+        const title = document.getElementById('recordReadingTitle');
+        if (title) {
+            title.textContent = 'Запись показателя';
+        }
         
         // Устанавливаем сегодняшнюю дату по умолчанию
         const today = new Date().toISOString().split('T')[0];
@@ -771,6 +800,12 @@
         document.getElementById('modalResident').disabled = true;
         document.getElementById('modalResident').innerHTML = '<option value="">— выберите блок —</option>';
         hideMeterDetails();
+        resetMeterPhotoState();
+        isReadingEditMode = false;
+        const title = document.getElementById('recordReadingTitle');
+        if (title) {
+            title.textContent = 'Запись показателя';
+        }
     }
 
     // Close modal on overlay click
@@ -1139,6 +1174,11 @@
 
     window.openReadingEditor = async function openReadingEditor(residentId) {
         openRecordModal();
+        isReadingEditMode = true;
+        const title = document.getElementById('recordReadingTitle');
+        if (title) {
+            title.textContent = 'Редактирование показателя';
+        }
 
         // Find resident in readingsData
         const resident = readingsData?.rows?.find(r => r.resident_id === residentId);
@@ -1253,6 +1293,13 @@
                             <div class="detail-amount ${reading.amount > 0 ? 'detail-amount-alert' : ''}">${reading.amount.toFixed(2)}</div>
                             <div>${reading.vat_percent}</div>
                             <div>${reading.comment}</div>
+                            <div>
+                                ${reading.photo_url ? `
+                                    <a href="${reading.photo_url}" target="_blank" class="detail-photo-link">
+                                        <img src="${reading.photo_url}" alt="Фото счётчика">
+                                    </a>
+                                ` : '<span class="detail-photo-empty">—</span>'}
+                            </div>
                         </div>
                     `).join('');
 
@@ -1277,6 +1324,7 @@
                                 <div>Начислено</div>
                                 <div>НДС, %</div>
                                 <div>Комментарий</div>
+                                <div>Фото</div>
                             </div>
                             <div class="detail-grid-body">
                                 ${rowsHtml || '<div class="detail-empty-row">Нет записей</div>'}
@@ -1552,6 +1600,164 @@
         document.body.style.overflow = 'auto';
     }
 
+    function isMobilePhotoMode() {
+        return window.matchMedia('(pointer: coarse)').matches ||
+            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+    }
+
+    function resolvePhotoUrl(url) {
+        if (!url) return '';
+        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:') || url.startsWith('data:')) {
+            return url;
+        }
+        return `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`;
+    }
+
+    function resetMeterPhotoState() {
+        meterPhotoFiles.clear();
+        meterPhotoObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+        meterPhotoObjectUrls.clear();
+
+        document.querySelectorAll('#meterTableBody tr[data-meter-id]').forEach(row => {
+            const preview = row.querySelector('.meter-photo-preview');
+            if (!preview) return;
+            const existingUrl = resolvePhotoUrl(row.dataset.existingPhotoUrl || '');
+            if (existingUrl) {
+                const parts = existingUrl.split('/');
+                const fileName = parts[parts.length - 1] || 'Фото загружено';
+                preview.innerHTML = `
+                    <button type="button" class="meter-photo-link" onclick="openMeterPhotoPicker(${row.dataset.meterId}, event)">
+                        <img src="${existingUrl}" alt="Фото счётчика">
+                        <span class="meter-photo-overlay"><i class="bi bi-camera"></i></span>
+                    </button>
+                    <span class="meter-photo-name">${fileName}</span>
+                `;
+            } else {
+                preview.innerHTML = `
+                    <button type="button" class="btn btn-sm btn-outline-primary meter-photo-btn"
+                            onclick="openMeterPhotoPicker(${row.dataset.meterId}, event)">
+                        <i class="bi bi-camera"></i>
+                    </button>
+                    <span class="meter-photo-placeholder">Нет фото</span>
+                `;
+            }
+        });
+    }
+
+    function updateMeterPhotoPreview(meterId, file) {
+        const row = document.querySelector(`#meterTableBody tr[data-meter-id="${meterId}"]`);
+        if (!row) return;
+        const preview = row.querySelector('.meter-photo-preview');
+        if (!preview) return;
+
+        const existingUrl = meterPhotoObjectUrls.get(meterId);
+        if (existingUrl) {
+            URL.revokeObjectURL(existingUrl);
+            meterPhotoObjectUrls.delete(meterId);
+        }
+
+        const objectUrl = URL.createObjectURL(file);
+        meterPhotoObjectUrls.set(meterId, objectUrl);
+        preview.innerHTML = `
+            <button type="button" class="meter-photo-link" onclick="openMeterPhotoPicker(${meterId}, event)">
+                <img src="${objectUrl}" alt="Фото счётчика">
+                <span class="meter-photo-overlay"><i class="bi bi-camera"></i></span>
+            </button>
+            <span class="meter-photo-name">${file.name}</span>
+        `;
+    }
+
+    function closePhotoPicker(clearActive = true) {
+        const modal = document.getElementById('photoPickerModal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+        if (clearActive) {
+            activePhotoMeterId = null;
+        }
+    }
+
+    window.openMeterPhotoPicker = function openMeterPhotoPicker(meterId, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        activePhotoMeterId = meterId;
+
+        if (!isMobilePhotoMode()) {
+            const galleryInput = document.getElementById('meterPhotoInputGallery');
+            if (galleryInput) {
+                galleryInput.click();
+            }
+            return;
+        }
+
+        const modal = document.getElementById('photoPickerModal');
+        if (modal) {
+            modal.classList.add('active');
+        }
+    }
+
+    function handleMeterPhotoSelected(file) {
+        if (!file || !activePhotoMeterId) {
+            closePhotoPicker(true);
+            return;
+        }
+
+        meterPhotoFiles.set(activePhotoMeterId, file);
+        updateMeterPhotoPreview(activePhotoMeterId, file);
+        closePhotoPicker(true);
+    }
+
+    function initMeterPhotoPicker() {
+        if (meterPhotoPickerInitialized) {
+            return;
+        }
+        const cameraInput = document.getElementById('meterPhotoInputCamera');
+        const galleryInput = document.getElementById('meterPhotoInputGallery');
+        const modal = document.getElementById('photoPickerModal');
+
+        if (cameraInput) {
+            cameraInput.addEventListener('change', () => {
+                handleMeterPhotoSelected(cameraInput.files?.[0]);
+                cameraInput.value = '';
+            });
+        }
+
+        if (galleryInput) {
+            galleryInput.addEventListener('change', () => {
+                handleMeterPhotoSelected(galleryInput.files?.[0]);
+                galleryInput.value = '';
+            });
+        }
+
+        if (modal) {
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    closePhotoPicker();
+                }
+            });
+
+            modal.querySelectorAll('.photo-picker-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const source = btn.getAttribute('data-source');
+                    closePhotoPicker(false);
+                    if (source === 'camera') {
+                        cameraInput?.click();
+                    } else {
+                        galleryInput?.click();
+                    }
+                });
+            });
+
+            const cancelBtn = modal.querySelector('.photo-picker-cancel');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => closePhotoPicker(true));
+            }
+        }
+        meterPhotoPickerInitialized = true;
+    }
+
     // Record Reading Function
     let isSubmitting = false; // Флаг для предотвращения двойной отправки
     window.recordReading = async function recordReading(event) {
@@ -1595,6 +1801,15 @@
                 if (typeof showError === 'function') {
                     showError('Выберите дату показаний');
                 }
+                isSubmitting = false;
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalText || 'Записать';
+                }
+                return;
+            }
+
+            if (!validateRequiredMeterPhotos()) {
                 isSubmitting = false;
                 if (submitButton) {
                     submitButton.disabled = false;
@@ -1674,6 +1889,15 @@
                     showSuccess('Показания успешно записаны!');
                 }
 
+                try {
+                    await uploadMeterPhotos(dateStr);
+                } catch (photoError) {
+                    console.error('Photo upload error:', photoError);
+                    if (typeof showWarning === 'function') {
+                        showWarning('Показания сохранены, но фото не загрузились.');
+                    }
+                }
+
                 // Update filters to the month of the saved reading
                 const savedDate = new Date(dateStr);
                 const savedYear = savedDate.getFullYear();
@@ -1705,6 +1929,66 @@
                 submitButton.textContent = originalText || 'Записать';
             }
         }
+    }
+
+    async function uploadMeterPhotos(dateStr) {
+        if (!dateStr || meterPhotoFiles.size === 0) {
+            return;
+        }
+
+        for (const [meterId, file] of meterPhotoFiles.entries()) {
+            const formData = new FormData();
+            formData.append('date_str', dateStr);
+            formData.append('file', file);
+
+            const response = await fetch(`${API_BASE}/api/readings/meter/${meterId}/photo`, {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text().catch(() => '');
+                throw new Error(errorText || `HTTP ${response.status}`);
+            }
+        }
+
+        resetMeterPhotoState();
+    }
+
+    function validateRequiredMeterPhotos() {
+        const rows = document.querySelectorAll('#meterTableBody tr[data-meter-id]');
+        const requiresTypes = new Set(['GAS', 'WATER', 'ELECTRIC']);
+        for (const row of rows) {
+            const meterType = row.dataset.meterType;
+            if (!requiresTypes.has(meterType)) {
+                continue;
+            }
+            const input = row.querySelector('.meter-input');
+            if (!input) {
+                continue;
+            }
+            const hasValue = input.value !== null && input.value !== '';
+            const meterId = parseInt(row.dataset.meterId || '0', 10);
+            const hasNewPhoto = meterPhotoFiles.has(meterId);
+            const existingPhotoUrl = row.dataset.existingPhotoUrl || '';
+            const hasAnyPhoto = hasNewPhoto || !!existingPhotoUrl;
+
+            if (hasValue && !hasAnyPhoto) {
+                if (typeof showError === 'function') {
+                    showError('Загрузите фото счётчика для внесённого показания.');
+                }
+                return false;
+            }
+
+            if (!hasValue && hasNewPhoto) {
+                if (typeof showError === 'function') {
+                    showError('Сначала внесите показание, затем загрузите фото счётчика.');
+                }
+                return false;
+            }
+        }
+        return true;
     }
 
     function collectMeterData() {
@@ -1755,9 +2039,10 @@
             section.classList.add('hidden');
             document.getElementById('meterTableBody').innerHTML = `
                     <tr>
-                        <td colspan="7" class="text-muted text-center">Выберите резидента, чтобы увидеть тарифы</td>
+                        <td colspan="8" class="text-muted text-center">Выберите резидента, чтобы увидеть тарифы</td>
                     </tr>`;
         }
+        resetMeterPhotoState();
     }
 
     document.getElementById('modalResident').addEventListener('change', function () {
@@ -1886,9 +2171,14 @@
     function renderMeterTable(meters) {
         const tbody = document.getElementById('meterTableBody');
         if (!tbody) return;
+        const showDelete = isReadingEditMode;
+        const deleteHeader = document.querySelector('.meter-table thead th:last-child');
+        if (deleteHeader) {
+            deleteHeader.textContent = showDelete ? 'Удалить последнее' : '';
+        }
 
         if (meters.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center">Для выбранного резидента нет счётчиков</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-muted text-center">Для выбранного резидента нет счётчиков</td></tr>';
             return;
         }
 
@@ -1975,11 +2265,20 @@
                             <td><span class="meter-consumption">${consumption.toFixed(3)}</span></td>
                             <td><span class="meter-amount">${initialAmount.toFixed(2)}</span></td>
                             <td>
-                                <button type="button" class="btn btn-sm btn-danger" 
-                                        onclick="deleteLastReading(${meter.meter_id}, this, event)"
-                                        title="Удалить последнее показание">
-                                    Удалить
-                                </button>
+                                <div class="meter-photo-cell">
+                                    <span class="meter-photo-placeholder">—</span>
+                                </div>
+                            </td>
+                            <td>
+                                ${showDelete ? `
+                                    <div class="meter-delete-cell">
+                                        <button type="button" class="btn btn-sm btn-danger" 
+                                                onclick="deleteLastReading(${meter.meter_id}, this, event)"
+                                                title="Удалить последнее показание">
+                                            Удалить
+                                        </button>
+                                    </div>
+                                ` : ''}
                             </td>
                         </tr>
                     `;
@@ -1990,6 +2289,8 @@
 
             // Если есть существующее значение, используем его для поля ввода
             const inputValue = (existing !== null && existing !== undefined) ? existing.toFixed(3) : '';
+            const supportsPhoto = ['GAS', 'WATER', 'ELECTRIC'].includes(meter.type);
+            const existingPhotoUrl = meter.existing_photo_url || '';
 
             // Рассчитываем consumption и amount для существующего значения
             let initialConsumption = 0;
@@ -2006,7 +2307,9 @@
                         data-prev-value="${prev}" 
                         data-tariff-id="${meter.tariff_id}"
                         data-tariff-steps='${tariffStepsJson}'
-                        data-vat-percent="${vatPercent}">
+                        data-vat-percent="${vatPercent}"
+                        data-meter-type="${meter.type}"
+                        data-existing-photo-url="${existingPhotoUrl}">
                         <td><span class="meter-type-pill">${meter.display_type}</span></td>
                         <td>${meter.tariff_name}</td>
                         <td>${(prev !== null && prev !== undefined) ? prev.toFixed(3) : '0.000'} ${meter.unit}</td>
@@ -2022,15 +2325,40 @@
                         <td><span class="meter-consumption">${initialConsumption.toFixed(3)}</span></td>
                         <td><span class="meter-amount">${initialAmount.toFixed(2)}</span></td>
                         <td>
-                            <button type="button" class="btn btn-sm btn-danger" 
-                                    onclick="deleteLastReading(${meter.meter_id}, this, event)"
-                                    title="Удалить последнее показание">
-                                Удалить
-                            </button>
+                            <div class="meter-photo-cell">
+                                ${supportsPhoto ? `
+                                    <div class="meter-photo-preview">
+                                        ${existingPhotoUrl ? `
+                                            <button type="button" class="meter-photo-link" onclick="openMeterPhotoPicker(${meter.meter_id}, event)">
+                                                <img src="${resolvePhotoUrl(existingPhotoUrl)}" alt="Фото счётчика">
+                                                <span class="meter-photo-overlay"><i class="bi bi-camera"></i></span>
+                                            </button>
+                                        ` : `
+                                            <button type="button" class="btn btn-sm btn-outline-primary meter-photo-btn"
+                                                    onclick="openMeterPhotoPicker(${meter.meter_id}, event)">
+                                                <i class="bi bi-camera"></i>
+                                            </button>
+                                            <span class="meter-photo-placeholder">Нет фото</span>
+                                        `}
+                                    </div>
+                                ` : '<span class="meter-photo-placeholder">—</span>'}
+                            </div>
+                        </td>
+                        <td>
+                            ${showDelete ? `
+                                <div class="meter-delete-cell">
+                                    <button type="button" class="btn btn-sm btn-danger" 
+                                            onclick="deleteLastReading(${meter.meter_id}, this, event)"
+                                            title="Удалить последнее показание">
+                                        Удалить
+                                    </button>
+                                </div>
+                            ` : ''}
                         </td>
                     </tr>
                 `;
         }).join('');
+        resetMeterPhotoState();
     }
 
     window.handleMeterInput = async function handleMeterInput(input, meterId) {

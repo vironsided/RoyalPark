@@ -34,6 +34,7 @@ class NewsCreate(BaseModel):
     priority: int = 0
     published_at: Optional[str] = None  # Accept ISO string, convert to datetime
     expires_at: Optional[str] = None  # Accept ISO string, convert to datetime
+    target_blocks: Optional[List[str]] = None
 
 
 class NewsUpdate(BaseModel):
@@ -45,6 +46,7 @@ class NewsUpdate(BaseModel):
     priority: Optional[int] = None
     published_at: Optional[str] = None  # Accept ISO string
     expires_at: Optional[str] = None  # Accept ISO string
+    target_blocks: Optional[List[str]] = None
 
 
 class NewsOut(BaseModel):
@@ -60,6 +62,7 @@ class NewsOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     created_by_name: Optional[str] = None
+    target_blocks: Optional[List[str]] = None
 
     class Config:
         from_attributes = True
@@ -76,6 +79,7 @@ def get_public_news(
     db: Session = Depends(get_db),
     lang: Optional[str] = Query("ru", regex="^(ru|az|en)$"),
     limit: int = Query(10, ge=1, le=100),
+    blocks: Optional[str] = Query(None, description="Comma-separated block names"),
 ):
     """
     Get list of active news for users.
@@ -94,14 +98,27 @@ def get_public_news(
         or_(News.expires_at.is_(None), News.expires_at > now)
     )
     
-    total = query.count()
-    items = query.order_by(News.priority.desc(), News.published_at.desc()).limit(limit).all()
+    items = query.order_by(News.priority.desc(), News.published_at.desc()).all()
+
+    block_filter = []
+    if blocks:
+        block_filter = [b.strip() for b in blocks.split(",") if b.strip()]
     
     result_items = []
     for item in items:
         # Parse JSON fields
         title_dict = json.loads(item.title) if isinstance(item.title, str) else item.title
         content_dict = json.loads(item.content) if isinstance(item.content, str) else item.content
+        target_blocks = None
+        if item.target_blocks:
+            try:
+                target_blocks = json.loads(item.target_blocks)
+            except Exception:
+                target_blocks = None
+
+        if block_filter and target_blocks:
+            if not any(b in target_blocks for b in block_filter):
+                continue
         
         result_items.append(NewsOut(
             id=item.id,
@@ -115,10 +132,12 @@ def get_public_news(
             expires_at=item.expires_at,
             created_at=item.created_at,
             updated_at=item.updated_at,
-            created_by_name=item.created_by.full_name if item.created_by else None
+            created_by_name=item.created_by.full_name if item.created_by else None,
+            target_blocks=target_blocks,
         ))
     
-    return {"items": result_items, "total": total}
+    result_items = result_items[:limit]
+    return {"items": result_items, "total": len(result_items)}
 
 
 # Admin endpoints - CRUD operations
@@ -139,6 +158,12 @@ def list_news_admin(
     for item in items:
         title_dict = json.loads(item.title) if isinstance(item.title, str) else item.title
         content_dict = json.loads(item.content) if isinstance(item.content, str) else item.content
+        target_blocks = None
+        if item.target_blocks:
+            try:
+                target_blocks = json.loads(item.target_blocks)
+            except Exception:
+                target_blocks = None
         
         result_items.append(NewsOut(
             id=item.id,
@@ -152,7 +177,8 @@ def list_news_admin(
             expires_at=item.expires_at,
             created_at=item.created_at,
             updated_at=item.updated_at,
-            created_by_name=item.created_by.full_name if item.created_by else None
+            created_by_name=item.created_by.full_name if item.created_by else None,
+            target_blocks=target_blocks,
         ))
     
     return {"items": result_items, "total": total}
@@ -192,6 +218,7 @@ def create_news(
         published_at=published_at_dt,
         expires_at=expires_at_dt,
         created_by_id=user.id,
+        target_blocks=json.dumps(payload.target_blocks) if payload.target_blocks else None,
     )
     
     db.add(news)
@@ -218,7 +245,8 @@ def create_news(
         expires_at=news.expires_at,
         created_at=news.created_at,
         updated_at=news.updated_at,
-        created_by_name=news.created_by.full_name if news.created_by else None
+        created_by_name=news.created_by.full_name if news.created_by else None,
+        target_blocks=payload.target_blocks if payload.target_blocks else None,
     )
 
 
@@ -236,6 +264,13 @@ def get_news_admin(
     title_dict = json.loads(news.title) if isinstance(news.title, str) else news.title
     content_dict = json.loads(news.content) if isinstance(news.content, str) else news.content
     
+    target_blocks = None
+    if news.target_blocks:
+        try:
+            target_blocks = json.loads(news.target_blocks)
+        except Exception:
+            target_blocks = None
+
     return NewsOut(
         id=news.id,
         title=title_dict,
@@ -248,7 +283,8 @@ def get_news_admin(
         expires_at=news.expires_at,
         created_at=news.created_at,
         updated_at=news.updated_at,
-        created_by_name=news.created_by.full_name if news.created_by else None
+        created_by_name=news.created_by.full_name if news.created_by else None,
+        target_blocks=target_blocks,
     )
 
 
@@ -289,6 +325,8 @@ def update_news(
                 pass
         else:
             news.expires_at = None  # Clear expiration if empty string
+    if payload.target_blocks is not None:
+        news.target_blocks = json.dumps(payload.target_blocks) if payload.target_blocks else None
     
     news.updated_at = datetime.utcnow()
     
@@ -304,6 +342,13 @@ def update_news(
     title_dict = json.loads(news.title) if isinstance(news.title, str) else news.title
     content_dict = json.loads(news.content) if isinstance(news.content, str) else news.content
     
+    target_blocks = None
+    if news.target_blocks:
+        try:
+            target_blocks = json.loads(news.target_blocks)
+        except Exception:
+            target_blocks = None
+
     return NewsOut(
         id=news.id,
         title=title_dict,
@@ -316,7 +361,8 @@ def update_news(
         expires_at=news.expires_at,
         created_at=news.created_at,
         updated_at=news.updated_at,
-        created_by_name=news.created_by.full_name if news.created_by else None
+        created_by_name=news.created_by.full_name if news.created_by else None,
+        target_blocks=target_blocks,
     )
 
 

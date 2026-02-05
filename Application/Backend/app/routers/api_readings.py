@@ -2,8 +2,11 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 import json
+import os
+import shutil
+from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, UploadFile, File, Form
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, or_, exists
@@ -11,11 +14,11 @@ from sqlalchemy import func, or_, exists
 from ..database import get_db
 from ..models import (
     User, RoleEnum, Block, Resident, ResidentMeter,
-    MeterType, Tariff, MeterReading, ReadingLog,
+    MeterType, Tariff, MeterReading, ReadingLog, MeterReadingPhoto,
     Invoice, InvoiceLine, InvoiceStatus
 )
 from ..deps import get_current_user
-from .readings import compute_amount
+from .readings import compute_amount, get_gas_annual_prev
 from .payments import auto_apply_advance
 
 
@@ -62,6 +65,39 @@ class ReadingCreate(BaseModel):
     date_str: str  # "YYYY-MM-DD"
     items: List[ReadingCreateItem]
     note: Optional[str] = None
+
+
+PHOTO_TTL_DAYS = 90
+
+
+def _photo_disk_path(photo: MeterReadingPhoto) -> str:
+    return os.path.join("uploads", photo.file_path)
+
+
+def cleanup_expired_meter_photos(db: Session) -> None:
+    now = datetime.utcnow()
+    expired = db.query(MeterReadingPhoto).filter(MeterReadingPhoto.expires_at <= now).all()
+    for photo in expired:
+        try:
+            path = _photo_disk_path(photo)
+            if os.path.exists(path):
+                os.remove(path)
+        except Exception:
+            pass
+        db.delete(photo)
+
+
+def delete_meter_photo_for_reading(db: Session, reading_id: int) -> None:
+    photo = db.query(MeterReadingPhoto).filter(MeterReadingPhoto.meter_reading_id == reading_id).first()
+    if not photo:
+        return
+    try:
+        path = _photo_disk_path(photo)
+        if os.path.exists(path):
+            os.remove(path)
+    except Exception:
+        pass
+    db.delete(photo)
 
 
 # ====== List readings ======
@@ -265,6 +301,7 @@ def get_resident_meters(
     """
     Данные для модалки: список счётчиков резидента.
     """
+    cleanup_expired_meter_photos(db)
     r = db.get(Resident, resident_id)
     if not r:
         raise HTTPException(status_code=404, detail="Resident not found")
@@ -391,6 +428,12 @@ def get_resident_meters(
         
         prev_value_float = float(prev_value)
         existing_value_float = float(existing.value) if existing else None
+
+        existing_photo_url = None
+        if existing:
+            photo = db.query(MeterReadingPhoto).filter(MeterReadingPhoto.meter_reading_id == existing.id).first()
+            if photo:
+                existing_photo_url = f"/uploads/{photo.file_path}"
         
         meters.append({
             "meter_id": m.id,
@@ -407,6 +450,7 @@ def get_resident_meters(
             "date_range": date_range,
             "existing": bool(existing),
             "existing_value": existing_value_float,
+            "existing_photo_url": existing_photo_url,
         })
 
     return {"meters": meters}
@@ -461,6 +505,120 @@ def create_readings(
     return create_readings_internal(data, user, db)
 
 
+@router.post("/meter/{meter_id}/photo")
+def upload_meter_photo(
+    meter_id: int,
+    date_str: str = Form(...),
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    cleanup_expired_meter_photos(db)
+
+    if not file or not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Invalid image file")
+
+    try:
+        reading_date = datetime.strptime(date_str, "%Y-%m-%d")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid date format")
+
+    period_start = datetime(reading_date.year, reading_date.month, 1)
+    period_end = datetime(
+        reading_date.year + (1 if reading_date.month == 12 else 0),
+        (1 if reading_date.month == 12 else reading_date.month + 1),
+        1,
+    )
+
+    reading = (
+        db.query(MeterReading)
+        .filter(
+            MeterReading.resident_meter_id == meter_id,
+            MeterReading.reading_date >= period_start,
+            MeterReading.reading_date < period_end,
+        )
+        .order_by(MeterReading.reading_date.desc(), MeterReading.id.desc())
+        .first()
+    )
+    if not reading:
+        raise HTTPException(status_code=404, detail="Reading not found for this month")
+
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"}:
+        ext = ".jpg"
+    filename = f"{meter_id}_{reading.id}_{uuid4().hex}{ext}"
+    relative_path = os.path.join("meter_readings", filename)
+    os.makedirs(os.path.join("uploads", "meter_readings"), exist_ok=True)
+    full_path = os.path.join("uploads", relative_path)
+
+    with open(full_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    expires_at = datetime.utcnow() + timedelta(days=PHOTO_TTL_DAYS)
+    existing = db.query(MeterReadingPhoto).filter(MeterReadingPhoto.meter_reading_id == reading.id).first()
+    if existing:
+        try:
+            old_path = _photo_disk_path(existing)
+            if os.path.exists(old_path):
+                os.remove(old_path)
+        except Exception:
+            pass
+        existing.file_path = relative_path.replace("\\", "/")
+        existing.created_at = datetime.utcnow()
+        existing.expires_at = expires_at
+        existing.created_by_id = user.id
+    else:
+        db.add(MeterReadingPhoto(
+            meter_reading_id=reading.id,
+            file_path=relative_path.replace("\\", "/"),
+            created_at=datetime.utcnow(),
+            expires_at=expires_at,
+            created_by_id=user.id,
+        ))
+
+    db.commit()
+    return {"ok": True, "photo_url": f"/uploads/{relative_path.replace('\\', '/')}"}
+
+
+@router.delete("/meter/{meter_id}/photo")
+def delete_meter_photo(
+    meter_id: int,
+    date_str: str = Query(..., description="YYYY-MM-DD"),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    cleanup_expired_meter_photos(db)
+
+    try:
+        reading_date = datetime.strptime(date_str, "%Y-%m-%d")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid date format")
+
+    period_start = datetime(reading_date.year, reading_date.month, 1)
+    period_end = datetime(
+        reading_date.year + (1 if reading_date.month == 12 else 0),
+        (1 if reading_date.month == 12 else reading_date.month + 1),
+        1,
+    )
+
+    reading = (
+        db.query(MeterReading)
+        .filter(
+            MeterReading.resident_meter_id == meter_id,
+            MeterReading.reading_date >= period_start,
+            MeterReading.reading_date < period_end,
+        )
+        .order_by(MeterReading.reading_date.desc(), MeterReading.id.desc())
+        .first()
+    )
+    if not reading:
+        raise HTTPException(status_code=404, detail="Reading not found for this month")
+
+    delete_meter_photo_for_reading(db, reading.id)
+    db.commit()
+    return {"ok": True}
+
+
 def create_readings_internal(
     data: ReadingCreate,
     user: User,
@@ -469,6 +627,7 @@ def create_readings_internal(
     """
     Internal function for creating/updating readings.
     """
+    cleanup_expired_meter_photos(db)
     r = db.get(Resident, data.resident_id)
     if not r:
         raise HTTPException(status_code=404, detail="Resident not found")
@@ -567,7 +726,8 @@ def create_readings_internal(
             raise HTTPException(status_code=404, detail=f"Tariff {m.tariff_id} not found")
 
         # Расчёт суммы по тарифу
-        amount_net, amount_vat, amount_total, steps_detail = compute_amount(consumption, tariff)
+        annual_prev = get_gas_annual_prev(db, m.id, period_start) if m.meter_type == MeterType.GAS else None
+        amount_net, amount_vat, amount_total, steps_detail = compute_amount(consumption, tariff, annual_prev=annual_prev)
 
         if existing:
             # Обновляем существующую запись
@@ -790,6 +950,7 @@ def get_reading_history(
     Получить детальную историю показаний для резидента по всем счётчикам.
     Поддерживает фильтрацию по диапазону месяцев.
     """
+    cleanup_expired_meter_photos(db)
     r = db.get(Resident, resident_id)
     if not r:
         raise HTTPException(status_code=404, detail="Resident not found")
@@ -835,6 +996,12 @@ def get_reading_history(
             query.order_by(MeterReading.reading_date.desc(), MeterReading.id.desc())
             .all()
         )
+
+        photo_map = {}
+        reading_ids = [rd.id for rd in readings]
+        if reading_ids:
+            photos = db.query(MeterReadingPhoto).filter(MeterReadingPhoto.meter_reading_id.in_(reading_ids)).all()
+            photo_map = {p.meter_reading_id: f"/uploads/{p.file_path}" for p in photos}
         
         # Определяем тип для отображения
         if m.meter_type == MeterType.ELECTRIC:
@@ -871,6 +1038,7 @@ def get_reading_history(
                 "amount": float(rd.amount_total),
                 "vat_percent": rd.vat_percent,
                 "comment": rd.note or "—",
+                "photo_url": photo_map.get(rd.id),
             })
         
         result.append({
@@ -944,6 +1112,7 @@ def delete_last_reading_public(
         user_id=user.id,
         details="deleted"
     ))
+    delete_meter_photo_for_reading(db, last.id)
     db.delete(last)
 
     inv = db.query(Invoice).filter(
@@ -1009,6 +1178,7 @@ def delete_last_reading(
         user_id=user.id,
         details="deleted"
     ))
+    delete_meter_photo_for_reading(db, last.id)
     db.delete(last)
 
     # Пересчитываем/удаляем инвойс периода

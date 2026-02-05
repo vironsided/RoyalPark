@@ -14,6 +14,7 @@
                 <tr>
                     <th style="width: 60px;" data-i18n="admin_news_th_icon">Иконка</th>
                     <th data-i18n="admin_news_th_title">Заголовок</th>
+                    <th style="width: 140px;">Блоки</th>
                     <th style="width: 120px;" data-i18n="admin_news_th_priority">Приоритет</th>
                     <th style="width: 150px;" data-i18n="admin_news_th_published">Опубликовано</th>
                     <th style="width: 100px;" data-i18n="admin_news_th_status">Статус</th>
@@ -38,8 +39,8 @@
                                 </button>
                             </div>
                             <div class="pagination-info">
-                                <span>Стр. <span id="newsCurrentPage">1</span> из <span id="newsTotalPages">1</span> · всего
-                                    <span id="newsTotalItems">0</span></span>
+                        <span>Стр. <span id="newsCurrentPage">1</span> из <span id="newsTotalPages">1</span> · всего
+                            <span id="newsTotalItems">0</span></span>
                             </div>
                             <div class="pagination-per-page">
                                 <span>На</span>
@@ -177,6 +178,17 @@
                         <input type="number" class="form-control" id="newsPriority" value="0" min="0" max="100">
                         <small class="text-muted" data-i18n="admin_news_label_priority_hint">Чем выше, тем важнее</small>
                     </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Кому отправить</label>
+                        <div class="news-targets">
+                            <label class="form-check">
+                                <input class="form-check-input" type="checkbox" id="newsTargetAll" checked>
+                                <span class="form-check-label">Всем</span>
+                            </label>
+                            <div class="block-checkbox-grid" id="newsTargetBlocks"></div>
+                            <small class="text-muted">Если выбран “Всем”, блоки игнорируются</small>
+                        </div>
+                    </div>
                     <div class="col-md-4">
                         <label class="form-label" data-i18n="admin_news_label_published_at">Дата публикации</label>
                         <div class="date-input-wrapper">
@@ -266,6 +278,33 @@
 .icon-option.selected span {
     color: var(--icon-color);
     font-weight: 600;
+}
+
+.news-targets {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.block-checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+}
+
+.block-checkbox-grid .form-check {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.news-targets .form-check-input {
+    accent-color: #667eea;
 }
 
 .news-icon-preview {
@@ -1023,6 +1062,7 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
     const API_BASE = 'http://localhost:8000';
     let editingNewsId = null;
     let newsList = [];
+    let blocks = [];
 
     // Pagination state
     let paginationState = {
@@ -1228,11 +1268,13 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 initCustomNewsPaginationDropdown();
+                loadBlocksForNews();
                 loadNews();
             });
         } else {
             setTimeout(() => {
                 initCustomNewsPaginationDropdown();
+                loadBlocksForNews();
                 loadNews();
             }, 100);
         }
@@ -1283,7 +1325,7 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
             const tbody = document.getElementById('newsTableBody');
             if (tbody) {
                 const errorMsg = window.i18n ? window.i18n.translate('error_loading_data') : 'Ошибка загрузки данных';
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger" data-i18n="error_loading_data">${errorMsg}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger" data-i18n="error_loading_data">${errorMsg}</td></tr>`;
             }
             newsList = [];
             paginationState.totalItems = 0;
@@ -1300,7 +1342,7 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
         
         if (!newsList.length) {
             const noNewsText = window.i18n ? window.i18n.translate('user_no_news') : 'Нет новостей';
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted" data-i18n="user_no_news">${noNewsText}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" data-i18n="user_no_news">${noNewsText}</td></tr>`;
             return;
         }
         
@@ -1344,6 +1386,9 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
             const activeText = window.i18n ? window.i18n.translate('admin_news_status_active') : 'Активна';
             const inactiveText = window.i18n ? window.i18n.translate('admin_news_status_inactive') : 'Неактивна';
             
+            const targetBlocks = Array.isArray(news.target_blocks) ? news.target_blocks : [];
+            const blockLabel = targetBlocks.length ? targetBlocks.join(', ') : 'Всем';
+
             return `
                 <tr>
                     <td>
@@ -1352,6 +1397,7 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
                         </div>
                     </td>
                     <td>${escapeHtml(titleText)}</td>
+                    <td><span class="badge bg-info text-dark">${escapeHtml(blockLabel)}</span></td>
                     <td><span class="badge bg-secondary">${news.priority}</span></td>
                     <td>${publishedDate}</td>
                     <td>
@@ -1394,6 +1440,49 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
         });
     }
 
+    async function loadBlocksForNews() {
+        try {
+            const response = await fetch(`${API_BASE}/api/blocks`, { credentials: 'include' });
+            if (!response.ok) return;
+            const data = await response.json();
+            blocks = Array.isArray(data) ? data : (data.blocks || []);
+            renderBlockTargets();
+        } catch (error) {
+            console.error('Error loading blocks for news:', error);
+        }
+    }
+
+    function renderBlockTargets() {
+        const container = document.getElementById('newsTargetBlocks');
+        if (!container) return;
+        container.innerHTML = (blocks || []).map(block => `
+            <label class="form-check">
+                <input class="form-check-input" type="checkbox" value="${block.name}">
+                <span class="form-check-label">${block.name}</span>
+            </label>
+        `).join('');
+
+        const targetAll = document.getElementById('newsTargetAll');
+        if (targetAll) {
+            targetAll.addEventListener('change', () => {
+                const disabled = targetAll.checked;
+                document.querySelectorAll('#newsTargetBlocks input[type="checkbox"]').forEach(cb => {
+                    cb.checked = false;
+                    cb.disabled = disabled;
+                });
+            });
+        }
+    }
+
+    function getSelectedTargetBlocks() {
+        const targetAll = document.getElementById('newsTargetAll');
+        if (targetAll && targetAll.checked) {
+            return [];
+        }
+        return Array.from(document.querySelectorAll('#newsTargetBlocks input[type="checkbox"]:checked'))
+            .map(cb => cb.value);
+    }
+
     window.openCreateNewsModal = function openCreateNewsModal() {
         editingNewsId = null;
         const modalTitle = document.getElementById('newsModalTitle');
@@ -1413,6 +1502,13 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
         document.getElementById('newsIsActive').checked = true;
         document.getElementById('newsPublishedAt').value = '';
         document.getElementById('newsExpiresAt').value = '';
+        loadBlocksForNews();
+        const targetAll = document.getElementById('newsTargetAll');
+        if (targetAll) targetAll.checked = true;
+        document.querySelectorAll('#newsTargetBlocks input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+            cb.disabled = true;
+        });
         
         // Reset icon selection
         document.querySelectorAll('.icon-option').forEach(opt => opt.classList.remove('selected'));
@@ -1497,6 +1593,17 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
             }
             document.getElementById('selectedIcon').value = news.icon;
             document.getElementById('selectedIconColor').value = news.icon_color;
+
+            await loadBlocksForNews();
+            const targetAll = document.getElementById('newsTargetAll');
+            const targetBlocks = Array.isArray(news.target_blocks) ? news.target_blocks : [];
+            if (targetAll) {
+                targetAll.checked = targetBlocks.length === 0;
+            }
+            document.querySelectorAll('#newsTargetBlocks input[type="checkbox"]').forEach(cb => {
+                cb.checked = targetBlocks.includes(cb.value);
+                cb.disabled = targetBlocks.length === 0;
+            });
             
             // Reset tabs to first tab (Russian)
             const tabButtons = document.querySelectorAll('#newsModal .account-tab-btn');
@@ -1582,7 +1689,8 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
             priority: parseInt(document.getElementById('newsPriority').value) || 0,
             is_active: document.getElementById('newsIsActive').checked,
             published_at: publishedAt,
-            expires_at: expiresAt
+            expires_at: expiresAt,
+            target_blocks: getSelectedTargetBlocks()
         };
         
         try {

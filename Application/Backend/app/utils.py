@@ -220,11 +220,34 @@ def create_news_notification(db, news):
         print(f"News {news.id} is scheduled for future (diff: {time_diff}s), skipping notifications")
         return
     
+    target_blocks = None
+    if getattr(news, "target_blocks", None):
+        try:
+            target_blocks = json.loads(news.target_blocks)
+        except Exception:
+            target_blocks = None
+
     # Получаем всех активных пользователей-резидентов
-    users = db.query(User).filter(
-        User.role == RoleEnum.RESIDENT,
-        User.is_active == True
-    ).all()
+    if target_blocks:
+        from .models import Resident, Block, user_residents
+        users = (
+            db.query(User)
+            .join(user_residents, User.id == user_residents.c.user_id)
+            .join(Resident, Resident.id == user_residents.c.resident_id)
+            .join(Block, Block.id == Resident.block_id)
+            .filter(
+                User.role == RoleEnum.RESIDENT,
+                User.is_active == True,
+                Block.name.in_(target_blocks),
+            )
+            .distinct()
+            .all()
+        )
+    else:
+        users = db.query(User).filter(
+            User.role == RoleEnum.RESIDENT,
+            User.is_active == True
+        ).all()
     
     if not users:
         print(f"No active resident users found for news {news.id}")

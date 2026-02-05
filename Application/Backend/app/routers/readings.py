@@ -52,7 +52,17 @@ def money(x: Decimal) -> Decimal:
     return x.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
-def compute_amount(consumption: Decimal, tariff: Tariff) -> tuple[Decimal, Decimal, Decimal, list[dict]]:
+def get_gas_annual_prev(db: Session, meter_id: int, period_start: datetime) -> Decimal:
+    year_start = datetime(period_start.year, 1, 1)
+    total = db.query(func.coalesce(func.sum(MeterReading.consumption), 0)).filter(
+        MeterReading.resident_meter_id == meter_id,
+        MeterReading.reading_date >= year_start,
+        MeterReading.reading_date < period_start,
+    ).scalar()
+    return Decimal(str(total or 0))
+
+
+def compute_amount(consumption: Decimal, tariff: Tariff, annual_prev: Decimal | None = None) -> tuple[Decimal, Decimal, Decimal, list[dict]]:
     """
     Возвращает (amount_net, amount_vat, amount_total, breakdown[])
     Для CONSTRUCTION тарифов (date-based) используем первую ступень с ценой.
@@ -76,6 +86,39 @@ def compute_amount(consumption: Decimal, tariff: Tariff) -> tuple[Decimal, Decim
                 "price": float(price),
                 "sum": float(money(part)),
             })
+    elif tariff.meter_type == MeterType.GAS and annual_prev is not None:
+        # Газ: ступени считаются по годовому объёму (накопительно)
+        cursor = Decimal(annual_prev)
+        remaining = Decimal(consumption)
+        for st in tariff.steps:
+            if remaining <= 0:
+                break
+            st_from = Decimal(st.from_value) if st.from_value is not None else Decimal("0")
+            st_to = Decimal(st.to_value) if st.to_value is not None else None
+            price = Decimal(st.price)
+
+            if st_to is not None and cursor >= st_to:
+                continue
+
+            step_start = max(cursor, st_from)
+            if st_to is None:
+                capacity = remaining
+            else:
+                capacity = max(Decimal("0"), st_to - step_start)
+
+            chunk = remaining if remaining <= capacity else capacity
+            if chunk > 0:
+                part = chunk * price
+                total_net += part
+                breakdown.append({
+                    "from": float(st_from),
+                    "to": (None if st_to is None else float(st_to)),
+                    "qty": float(chunk),
+                    "price": float(price),
+                    "sum": float(money(part)),
+                })
+                remaining -= chunk
+                cursor += chunk
     else:
         # Обычные тарифы с value-based steps
         # предполагается, что tariff.steps отсортированы по from_value
@@ -500,7 +543,8 @@ def create_readings(
             consumption = new_value - prev_val
 
         t = db.get(Tariff, m.tariff_id)
-        net, vat, total, _ = compute_amount(consumption, t)
+        annual_prev = get_gas_annual_prev(db, m.id, period_start) if m.meter_type == MeterType.GAS else None
+        net, vat, total, _ = compute_amount(consumption, t, annual_prev=annual_prev)
 
         # запись за этот месяц (если есть)
         existing = (
