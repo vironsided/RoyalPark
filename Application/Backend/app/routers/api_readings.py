@@ -179,7 +179,7 @@ def list_readings(
         else:
             unit = "мес."
 
-        entry = rows.setdefault(res_id, {"resident": meter.resident, "meters": {}})
+        entry = rows.setdefault(res_id, {"resident": meter.resident, "meters": {}, "max_reading_date": None})
         mrow = entry["meters"].setdefault(meter.id, {
             "meter": meter,
             "unit": unit,
@@ -188,6 +188,11 @@ def list_readings(
         })
         mrow["consumption"] += Decimal(rd.consumption)
         mrow["total"] += Decimal(rd.amount_total)
+
+        # Нужна "последняя" запись за период для сортировки (новые сверху)
+        cur_max = entry.get("max_reading_date")
+        if cur_max is None or rd.reading_date > cur_max:
+            entry["max_reading_date"] = rd.reading_date
 
     paid_resident_ids = set(
         rid for (rid,) in db.query(Resident.id)
@@ -205,28 +210,13 @@ def list_readings(
         resident = data["resident"]
         meters_list = []
         total_amount = Decimal("0")
-        reading_date = None  # Get first reading date for this resident
+        reading_date = data.get("max_reading_date")  # last reading date for sorting/display
         
         for meter_id, mdata in data["meters"].items():
             meter = mdata["meter"]
             consumption = float(mdata["consumption"])
             total = float(mdata["total"])
             total_amount += Decimal(total)
-            
-            # Get reading date from first reading for this meter
-            if not reading_date:
-                first_reading = (
-                    db.query(MeterReading)
-                    .filter(
-                        MeterReading.resident_meter_id == meter.id,
-                        MeterReading.reading_date >= from_dt,
-                        MeterReading.reading_date < to_dt,
-                    )
-                    .order_by(MeterReading.reading_date.asc(), MeterReading.id.asc())
-                    .first()
-                )
-                if first_reading:
-                    reading_date = first_reading.reading_date
             
             # Определяем тип для отображения
             if meter.meter_type == MeterType.ELECTRIC:
@@ -263,7 +253,13 @@ def list_readings(
             "total_amount": float(total_amount),
             "is_paid": res_id in paid_resident_ids,
             "reading_date": reading_date.strftime("%Y-%m-%d") if reading_date else None,
+            "_reading_date_dt": reading_date,
         })
+
+    # Сортировка: новые (по последней дате показаний) сверху
+    result_rows.sort(key=lambda r: r.get("_reading_date_dt") or datetime.min, reverse=True)
+    for r in result_rows:
+        r.pop("_reading_date_dt", None)
 
     # Apply pagination
     total = len(result_rows)

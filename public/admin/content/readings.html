@@ -1626,10 +1626,15 @@
                 const parts = existingUrl.split('/');
                 const fileName = parts[parts.length - 1] || 'Фото загружено';
                 preview.innerHTML = `
-                    <button type="button" class="meter-photo-link" onclick="openMeterPhotoPicker(${row.dataset.meterId}, event)">
-                        <img src="${existingUrl}" alt="Фото счётчика">
-                        <span class="meter-photo-overlay"><i class="bi bi-camera"></i></span>
-                    </button>
+                    <div class="meter-photo-actions">
+                        <button type="button" class="meter-photo-link" onclick="openMeterPhotoPicker(${row.dataset.meterId}, event)" title="Заменить фото">
+                            <img src="${existingUrl}" alt="Фото счётчика">
+                            <span class="meter-photo-overlay"><i class="bi bi-camera"></i></span>
+                        </button>
+                        <button type="button" class="meter-photo-view" onclick="viewMeterPhoto(${row.dataset.meterId}, event)" title="Просмотреть фото">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
                     <span class="meter-photo-name">${fileName}</span>
                 `;
             } else {
@@ -1659,10 +1664,15 @@
         const objectUrl = URL.createObjectURL(file);
         meterPhotoObjectUrls.set(meterId, objectUrl);
         preview.innerHTML = `
-            <button type="button" class="meter-photo-link" onclick="openMeterPhotoPicker(${meterId}, event)">
-                <img src="${objectUrl}" alt="Фото счётчика">
-                <span class="meter-photo-overlay"><i class="bi bi-camera"></i></span>
-            </button>
+            <div class="meter-photo-actions">
+                <button type="button" class="meter-photo-link" onclick="openMeterPhotoPicker(${meterId}, event)" title="Заменить фото">
+                    <img src="${objectUrl}" alt="Фото счётчика">
+                    <span class="meter-photo-overlay"><i class="bi bi-camera"></i></span>
+                </button>
+                <button type="button" class="meter-photo-view" onclick="viewMeterPhoto(${meterId}, event)" title="Просмотреть фото">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </div>
             <span class="meter-photo-name">${file.name}</span>
         `;
     }
@@ -1695,6 +1705,29 @@
         const modal = document.getElementById('photoPickerModal');
         if (modal) {
             modal.classList.add('active');
+        }
+    }
+
+    window.viewMeterPhoto = function viewMeterPhoto(meterId, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        const newUrl = meterPhotoObjectUrls.get(meterId);
+        if (newUrl) {
+            window.open(newUrl, '_blank', 'noopener');
+            return;
+        }
+        const row = document.querySelector(`#meterTableBody tr[data-meter-id="${meterId}"]`);
+        const existingUrl = row ? resolvePhotoUrl(row.dataset.existingPhotoUrl || '') : '';
+        if (existingUrl) {
+            window.open(existingUrl, '_blank', 'noopener');
+            return;
+        }
+        if (typeof showWarning === 'function') {
+            showWarning('Нет фото для просмотра');
+        } else {
+            alert('Нет фото для просмотра');
         }
     }
 
@@ -1801,15 +1834,6 @@
                 if (typeof showError === 'function') {
                     showError('Выберите дату показаний');
                 }
-                isSubmitting = false;
-                if (submitButton) {
-                    submitButton.disabled = false;
-                    submitButton.textContent = originalText || 'Записать';
-                }
-                return;
-            }
-
-            if (!validateRequiredMeterPhotos()) {
                 isSubmitting = false;
                 if (submitButton) {
                     submitButton.disabled = false;
@@ -1954,41 +1978,6 @@
         }
 
         resetMeterPhotoState();
-    }
-
-    function validateRequiredMeterPhotos() {
-        const rows = document.querySelectorAll('#meterTableBody tr[data-meter-id]');
-        const requiresTypes = new Set(['GAS', 'WATER', 'ELECTRIC']);
-        for (const row of rows) {
-            const meterType = row.dataset.meterType;
-            if (!requiresTypes.has(meterType)) {
-                continue;
-            }
-            const input = row.querySelector('.meter-input');
-            if (!input) {
-                continue;
-            }
-            const hasValue = input.value !== null && input.value !== '';
-            const meterId = parseInt(row.dataset.meterId || '0', 10);
-            const hasNewPhoto = meterPhotoFiles.has(meterId);
-            const existingPhotoUrl = row.dataset.existingPhotoUrl || '';
-            const hasAnyPhoto = hasNewPhoto || !!existingPhotoUrl;
-
-            if (hasValue && !hasAnyPhoto) {
-                if (typeof showError === 'function') {
-                    showError('Загрузите фото счётчика для внесённого показания.');
-                }
-                return false;
-            }
-
-            if (!hasValue && hasNewPhoto) {
-                if (typeof showError === 'function') {
-                    showError('Сначала внесите показание, затем загрузите фото счётчика.');
-                }
-                return false;
-            }
-        }
-        return true;
     }
 
     function collectMeterData() {

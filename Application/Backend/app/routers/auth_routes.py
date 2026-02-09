@@ -84,6 +84,9 @@ async def api_login(login_data: LoginRequest, db: Session = Depends(get_db)):
 class PasswordChangeRequest(BaseModel):
     new_password: str
     confirm_password: str
+    full_name: str
+    phone: str
+    email: str
 
 
 @router.post("/api/auth/force-change-password")
@@ -102,8 +105,21 @@ async def api_force_change_password(
     if len(payload.new_password) < 6:
         raise HTTPException(status_code=400, detail="Пароль должен быть не менее 6 символов")
 
+    full_name = (payload.full_name or "").strip()
+    phone = (payload.phone or "").strip()
+    email = (payload.email or "").strip()
+    if not full_name:
+        raise HTTPException(status_code=400, detail="ФИО обязательно")
+    if not phone:
+        raise HTTPException(status_code=400, detail="Телефон обязателен")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email обязателен")
+
     from ..security import hash_password
     user.password_hash = hash_password(payload.new_password)
+    user.full_name = full_name
+    user.phone = phone
+    user.email = email
     user.require_password_change = False
     user.temp_password_plain = None
     user.last_password_change_at = datetime.utcnow()
@@ -135,7 +151,10 @@ def check_session(user: User = Depends(get_current_user)):
         "user_id": user.id,
         "username": user.username,
         "role": user.role.value,
-        "require_password_change": user.require_password_change
+        "require_password_change": user.require_password_change,
+        "full_name": user.full_name,
+        "phone": user.phone,
+        "email": user.email,
     })
 
 

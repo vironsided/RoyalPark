@@ -204,6 +204,18 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Opening Debt (only on create) -->
+                <div class="form-section" id="residentDebtSection">
+                    <h4>Начальные данные</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Долг (на момент запуска системы), ₼</label>
+                            <input type="number" id="residentDebt" min="0" step="0.01" value="0" placeholder="0.00">
+                            <small class="text-muted">Если у резидента уже был долг до внедрения системы — укажите его здесь.</small>
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- Services -->
                 <div class="form-section">
@@ -602,6 +614,7 @@
         function setResidentModalMode(mode) {
             const titleEl = document.getElementById('residentModalTitle');
             const submitBtn = document.getElementById('residentSubmitBtn');
+            const debtSection = document.getElementById('residentDebtSection');
             
             if (!titleEl || !submitBtn) {
                 console.warn('Modal elements not found, skipping mode set');
@@ -611,9 +624,12 @@
             if (mode === 'edit') {
                 titleEl.textContent = 'Редактировать резидента';
                 submitBtn.textContent = 'Сохранить';
+                // Долг можно редактировать тоже
+                if (debtSection) debtSection.style.display = '';
             } else {
                 titleEl.textContent = 'Создать резидента';
                 submitBtn.textContent = 'Создать';
+                if (debtSection) debtSection.style.display = '';
             }
         }
         
@@ -670,6 +686,9 @@
                 
                 const residentEmail = document.getElementById('residentEmail');
                 if (residentEmail) residentEmail.value = '';
+
+                const residentDebt = document.getElementById('residentDebt');
+                if (residentDebt) residentDebt.value = '0';
                 
                 // Очищаем счётчики
                 const servicesContainer = document.getElementById('servicesContainer');
@@ -752,6 +771,7 @@
                 document.getElementById('residentName').value = resident.owner_full_name || '';
                 document.getElementById('residentPhone').value = resident.owner_phone || '';
                 document.getElementById('residentEmail').value = resident.owner_email || '';
+                document.getElementById('residentDebt').value = (resident.debt ?? 0);
                 
                 // Загружаем счётчики - проверяем на дубликаты
                 if (resident.meters && Array.isArray(resident.meters)) {
@@ -1243,6 +1263,14 @@
                 const ownerFullName = document.getElementById('residentName').value.trim();
                 const ownerPhone = document.getElementById('residentPhone').value.trim();
                 const ownerEmail = document.getElementById('residentEmail').value.trim();
+                const debtRaw = document.getElementById('residentDebt')?.value ?? '0';
+                const openingDebt = parseFloat(String(debtRaw).replace(',', '.')) || 0;
+
+                if (openingDebt < 0) {
+                    if (typeof showError === 'function') showError('Долг не может быть отрицательным');
+                    document.getElementById('residentDebt')?.focus();
+                    return;
+                }
                 
                 // Собираем счётчики
                 const meters = [];
@@ -1342,7 +1370,9 @@
                     owner_full_name: ownerFullName || null,
                     owner_phone: ownerPhone || null,
                     owner_email: ownerEmail || null,
-                    meters: meters
+                    meters: meters,
+                    // debt поддерживаем и при создании, и при редактировании
+                    debt: openingDebt
                 };
                 
                 let url, method;

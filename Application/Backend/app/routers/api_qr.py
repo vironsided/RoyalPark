@@ -25,12 +25,18 @@ class QRTokenVerifyResponse(BaseModel):
     user_id: int
     username: str
     temp_password: str
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
 
 
 class ChangePasswordRequest(BaseModel):
     token: str
     new_password: str
     confirm_password: str
+    full_name: str
+    phone: str
+    email: str
 
 
 def generate_secure_token() -> str:
@@ -144,7 +150,10 @@ def verify_qr_token(
         valid=True,
         user_id=user.id,
         username=user.username,
-        temp_password=user.temp_password_plain
+        temp_password=user.temp_password_plain,
+        full_name=user.full_name,
+        phone=user.phone,
+        email=user.email,
     )
 
 
@@ -185,9 +194,23 @@ def change_password_via_qr(
     user = db.get(User, qr_token.user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
+
+    # Проверяем профильные поля
+    full_name = (payload.full_name or "").strip()
+    phone = (payload.phone or "").strip()
+    email = (payload.email or "").strip()
+    if not full_name:
+        raise HTTPException(status_code=400, detail="ФИО обязательно")
+    if not phone:
+        raise HTTPException(status_code=400, detail="Телефон обязателен")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email обязателен")
     
     # Устанавливаем новый пароль
     user.password_hash = hash_password(payload.new_password)
+    user.full_name = full_name
+    user.phone = phone
+    user.email = email
     user.require_password_change = False
     user.temp_password_plain = None
     user.last_password_change_at = datetime.utcnow()
