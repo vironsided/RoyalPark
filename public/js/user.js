@@ -1398,8 +1398,15 @@ window.addEventListener('beforeunload', () => {
     let notifications = [];
     
     // Format time
+    function parseServerDate(dateString) {
+        if (!dateString) return null;
+        const hasTimezone = /Z$|[+-]\d{2}:\d{2}$/.test(dateString);
+        return new Date(hasTimezone ? dateString : `${dateString}Z`);
+    }
+
     function formatTime(dateString) {
-        const date = new Date(dateString);
+        const date = parseServerDate(dateString);
+        if (!date || isNaN(date.getTime())) return '';
         const now = new Date();
         const diff = now - date;
         const minutes = Math.floor(diff / 60000);
