@@ -1364,15 +1364,24 @@
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
 
-        // Сбрасываем фильтры при открытии
+        // Устанавливаем фильтр по умолчанию на текущий (выбранный) месяц
         const fromMonthInput = document.getElementById('readingDetailsFromMonth');
         const toMonthInput = document.getElementById('readingDetailsToMonth');
-        if (fromMonthInput) fromMonthInput.value = '';
-        if (toMonthInput) toMonthInput.value = '';
+        const yearSel = document.getElementById('filterYear');
+        const monthSel = document.getElementById('filterMonth');
 
-        // Загружаем данные без фильтрации
+        const now = new Date();
+        const year = parseInt(yearSel?.value || now.getFullYear().toString(), 10);
+        const month = parseInt(monthSel?.value || (now.getMonth() + 1).toString(), 10);
+        const mm = String(month).padStart(2, '0');
+        const defaultMonthValue = `${year}-${mm}`; // формат YYYY-MM для <input type="month">
+
+        if (fromMonthInput) fromMonthInput.value = defaultMonthValue;
+        if (toMonthInput) toMonthInput.value = defaultMonthValue;
+
+        // Загружаем данные за выбранный по умолчанию месяц
         try {
-            const data = await loadReadingDetailsData(residentId);
+            const data = await loadReadingDetailsData(residentId, defaultMonthValue, defaultMonthValue);
             
             if (!data.meters || data.meters.length === 0) {
                 body.innerHTML = '<div class="detail-empty">Нет данных о показаниях</div>';
