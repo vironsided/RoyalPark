@@ -117,6 +117,45 @@
        gap: 15px;
    }
 
+  .payments-filters-actions-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+  }
+
+  .payments-export-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+  }
+
+  .payments-export-controls select {
+      min-width: 160px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.05) !important;
+      color: #fefefe !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      border-radius: 8px;
+      font-size: 0.95rem;
+  }
+
+  .payments-filters-actions .btn-export {
+      padding: 10px 18px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: #ffffff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+  }
+
+  .payments-filters-actions .btn-export:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+  }
+
    .payments-filters-actions .btn-filter {
        padding: 10px 20px;
        background: rgba(255, 255, 255, 0.05);

@@ -50,9 +50,20 @@
         </div>
         
         <div class="payments-filters-actions">
-            <button class="btn-filter" onclick="applyPaymentFilters()">
-                <i class="bi bi-funnel"></i> Фильтр
-            </button>
+            <div class="payments-filters-actions-left">
+                <button class="btn-filter" onclick="applyPaymentFilters()">
+                    <i class="bi bi-funnel"></i> Фильтр
+                </button>
+                <div class="payments-export-controls">
+                    <select id="paymentExportFormat" aria-label="Формат экспорта">
+                        <option value="csv">Excel (CSV)</option>
+                        <option value="pdf">PDF (печать)</option>
+                    </select>
+                    <button class="btn-export" type="button" onclick="exportPayments()">
+                        <i class="bi bi-box-arrow-down"></i> Экспорт
+                    </button>
+                </div>
+            </div>
             <button class="btn-accept-payment" onclick="acceptPayment()">
                 Принять платеж
             </button>
@@ -238,34 +249,9 @@
             tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Загрузка...</td></tr>';
         }
         
-        const params = new URLSearchParams();
+        const params = buildPaymentFilterParams();
         params.append('page', paginationState.currentPage);
         params.append('per_page', paginationState.itemsPerPage);
-        
-        const residentId = document.getElementById('filterResident')?.value;
-        if (residentId && residentId !== 'all') {
-            params.append('resident_id', residentId);
-        }
-        
-        const method = document.getElementById('filterMethod')?.value;
-        if (method && method !== 'all') {
-            params.append('method', method);
-        }
-        
-        const dateFrom = document.getElementById('filterDateFrom')?.value;
-        if (dateFrom) {
-            params.append('date_from', dateFrom);
-        }
-        
-        const dateTo = document.getElementById('filterDateTo')?.value;
-        if (dateTo) {
-            params.append('date_to', dateTo);
-        }
-        
-        const search = document.getElementById('filterSearch')?.value.trim();
-        if (search) {
-            params.append('q', search);
-        }
         
         try {
             let response = await fetch(`${API_BASE}/api/payments?${params.toString()}`, { credentials: 'include' });
@@ -291,6 +277,238 @@
             }
         }
     }
+
+    function buildPaymentFilterParams() {
+        const params = new URLSearchParams();
+
+        const residentId = document.getElementById('filterResident')?.value;
+        if (residentId && residentId !== 'all') {
+            params.append('resident_id', residentId);
+        }
+
+        const method = document.getElementById('filterMethod')?.value;
+        if (method && method !== 'all') {
+            params.append('method', method);
+        }
+
+        const dateFrom = document.getElementById('filterDateFrom')?.value;
+        if (dateFrom) {
+            params.append('date_from', dateFrom);
+        }
+
+        const dateTo = document.getElementById('filterDateTo')?.value;
+        if (dateTo) {
+            params.append('date_to', dateTo);
+        }
+
+        const search = document.getElementById('filterSearch')?.value.trim();
+        if (search) {
+            params.append('q', search);
+        }
+
+        return params;
+    }
+
+    async function fetchPaymentsPage(page, perPage) {
+        const params = buildPaymentFilterParams();
+        params.append('page', page);
+        params.append('per_page', perPage);
+
+        const response = await fetch(`${API_BASE}/api/payments?${params.toString()}`, { credentials: 'include' });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    }
+
+    async function fetchAllFilteredPayments() {
+        const perPage = 100;
+        let page = 1;
+        let lastPage = 1;
+        const allItems = [];
+
+        while (page <= lastPage) {
+            const data = await fetchPaymentsPage(page, perPage);
+            const items = Array.isArray(data) ? data : (data.items || []);
+            allItems.push(...items);
+            lastPage = data.last_page || 1;
+            page += 1;
+        }
+
+        return allItems;
+    }
+
+    function toCsvValue(value) {
+        const str = value === null || value === undefined ? '' : String(value);
+        const escaped = str.replace(/"/g, '""');
+        return `"${escaped}"`;
+    }
+
+    function buildExportRows(items) {
+        return items.map(p => ({
+            date: formatExportDate(p.received_at),
+            resident: p.resident_code || '—',
+            amount: typeof p.amount_total === 'number' ? p.amount_total.toFixed(2) : (p.amount_total || '0.00'),
+            method: methodLabels[p.method] || p.method || '—',
+            leftover: typeof p.leftover === 'number' ? p.leftover.toFixed(2) : '0.00',
+            reference: p.reference || '—'
+        }));
+    }
+
+    function formatExportDate(dateStr) {
+        if (!dateStr) return '—';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return String(dateStr);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mi = String(d.getMinutes()).padStart(2, '0');
+        const ss = String(d.getSeconds()).padStart(2, '0');
+        // Prefix with tab to force Excel to keep text and avoid "####"
+        return `\t${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+    }
+
+    function downloadCsv(rows) {
+        const header = ['Дата', 'Резидент', 'Сумма', 'Метод', 'Остаток', 'Ссылка'];
+        const lines = [header.map(toCsvValue).join(';')];
+        rows.forEach(row => {
+            lines.push([
+                row.date,
+                row.resident,
+                row.amount,
+                row.method,
+                row.leftover,
+                row.reference
+            ].map(toCsvValue).join(';'));
+        });
+
+        const csvContent = '\ufeff' + lines.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `payments_export_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    function openPrintView(rows) {
+        const tableRows = rows.map(row => `
+            <tr>
+                <td>${row.date}</td>
+                <td>${row.resident}</td>
+                <td>${row.amount}</td>
+                <td>${row.method}</td>
+                <td>${row.leftover}</td>
+                <td>${row.reference}</td>
+            </tr>
+        `).join('');
+
+        const html = `
+            <html>
+            <head>
+                <title>Экспорт платежей</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+                    h2 { margin: 0 0 12px; }
+                    p { margin: 0 0 18px; color: #555; }
+                    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+                    th { background: #f3f4f6; }
+                </style>
+            </head>
+            <body>
+                <h2>Отчет по платежам</h2>
+                <p>Сформировано: ${new Date().toLocaleString()}</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Резидент</th>
+                            <th>Сумма</th>
+                            <th>Метод</th>
+                            <th>Остаток</th>
+                            <th>Ссылка</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows || '<tr><td colspan="6">Нет данных для экспорта</td></tr>'}
+                    </tbody>
+                </table>
+            </body>
+            </html>
+        `;
+
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        iframe.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow?.document;
+        if (!doc || !iframe.contentWindow) {
+            iframe.remove();
+            throw new Error('Не удалось подготовить печать. Разрешите всплывающие окна или попробуйте CSV.');
+        }
+
+        doc.open();
+        doc.write(html);
+        doc.close();
+
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => iframe.remove(), 1000);
+    }
+
+    window.exportPayments = async function() {
+        const exportBtn = document.querySelector('.btn-export');
+        const formatSelect = document.getElementById('paymentExportFormat');
+        const format = formatSelect ? formatSelect.value : 'csv';
+
+        if (exportBtn) {
+            exportBtn.disabled = true;
+            exportBtn.textContent = 'Экспорт...';
+        }
+
+        try {
+            const items = await fetchAllFilteredPayments();
+            const rows = buildExportRows(items);
+
+            if (rows.length === 0) {
+                if (typeof showNotification === 'function') {
+                    showNotification('info', 'Нет данных для экспорта по текущим фильтрам.');
+                }
+                return;
+            }
+
+            if (format === 'pdf') {
+                openPrintView(rows);
+            } else {
+                downloadCsv(rows);
+            }
+
+            if (typeof showNotification === 'function') {
+                showNotification('success', 'Экспорт выполнен.');
+            }
+        } catch (error) {
+            console.error('Export payments error:', error);
+            if (typeof showError === 'function') {
+                showError('Ошибка экспорта: ' + error.message);
+            }
+        } finally {
+            if (exportBtn) {
+                exportBtn.disabled = false;
+                exportBtn.innerHTML = '<i class="bi bi-box-arrow-down"></i> Экспорт';
+            }
+        }
+    };
     
     // Render table function
     function renderTable() {

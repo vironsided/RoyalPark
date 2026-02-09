@@ -518,6 +518,49 @@ html[data-theme="dark"] .table-pagination {
         return localStorage.getItem('language') || 'ru';
     };
     
+    async function getResidentBlocks() {
+        const fromDashboard = (window.dashboardData?.residents || [])
+            .map(r => (r.code || '').split('/')[0].trim())
+            .filter(Boolean);
+        if (fromDashboard.length) {
+            return Array.from(new Set(fromDashboard));
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/resident/dashboard`, {
+                credentials: 'include'
+            });
+            if (!response.ok) {
+                return [];
+            }
+            const data = await response.json();
+            const blocks = (data.residents || [])
+                .map(r => (r.code || '').split('/')[0].trim())
+                .filter(Boolean);
+            return Array.from(new Set(blocks));
+        } catch (error) {
+            console.warn('Failed to load resident blocks for news:', error);
+            return [];
+        }
+    }
+
+    async function fetchPublicNews() {
+        const blocks = await getResidentBlocks();
+        const params = new URLSearchParams();
+        params.append('limit', '100');
+        if (blocks.length) {
+            params.append('blocks', blocks.join(','));
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/news/public?${params.toString()}`, {
+            credentials: 'include'
+        });
+        if (!response.ok) {
+            throw new Error('Failed to load news');
+        }
+        return response.json();
+    }
+
     // Load news
     async function loadNews() {
         const newsList = document.getElementById('newsList');
@@ -527,36 +570,11 @@ html[data-theme="dark"] .table-pagination {
         
         try {
             const lang = getCurrentLanguage();
-            // Используем админский эндпоинт, но фильтруем только активные новости
-            const response = await fetch(`${API_BASE_URL}/api/news/admin?per_page=100`, {
-                credentials: 'include'
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to load news');
-            }
-            
-            const data = await response.json();
-            
-            // Фильтруем только активные и опубликованные новости
-            const now = new Date();
-            const activeNews = (data.items || []).filter(news => {
-                if (!news.is_active) return false;
-                
-                const publishedAt = new Date(news.published_at);
-                if (publishedAt > now) return false;
-                
-                if (news.expires_at) {
-                    const expiresAt = new Date(news.expires_at);
-                    if (expiresAt <= now) return false;
-                }
-                
-                return true;
-            });
-            
+            const data = await fetchPublicNews();
+            const activeNews = data.items || [];
+
             // Сохраняем данные в кэш для быстрой перерисовки при смене языка
             cachedNewsData = activeNews;
-            
             renderNews(activeNews, lang);
         } catch (error) {
             console.error('Error loading news:', error);
@@ -726,16 +744,14 @@ html[data-theme="dark"] .table-pagination {
             }
             
             if (!news) {
-                // Загружаем с сервера если нет в кэше
-                const response = await fetch(`${API_BASE_URL}/api/news/admin/${newsId}`, {
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to load news');
-                }
-                
-                news = await response.json();
+                const data = await fetchPublicNews();
+                const items = data.items || [];
+                cachedNewsData = items;
+                news = items.find(n => n.id === newsId) || null;
+            }
+
+            if (!news) {
+                throw new Error('News not found for current user');
             }
             
             // Парсим JSON поля
