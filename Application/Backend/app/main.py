@@ -64,6 +64,8 @@ def run_bootstrap_schema():
         # НОВОЕ: путь к аватару
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_path varchar(255);",
         "ALTER TABLE payment_applications ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();",
+        # Tariffs: фиксированная часть для ELECTRIC/GAS
+        "ALTER TABLE tariffs ADD COLUMN IF NOT EXISTS stable_tariff NUMERIC(18,2) NOT NULL DEFAULT 0;",
         # News table
         """
         CREATE TABLE IF NOT EXISTS news (
@@ -119,6 +121,8 @@ def run_bootstrap_schema():
         "ALTER TABLE tariff_steps ADD COLUMN IF NOT EXISTS to_date DATE;",
         "ALTER TABLE tariff_steps ALTER COLUMN from_value DROP NOT NULL;",
         "ALTER TABLE tariff_steps ALTER COLUMN to_value DROP NOT NULL;",
+        # WATER: канализация как % от суммы воды (хранится в tariffs)
+        "ALTER TABLE tariffs ADD COLUMN IF NOT EXISTS sewerage_percent NUMERIC(5,2) NOT NULL DEFAULT 0;",
         "ALTER TABLE payment_applications ADD COLUMN IF NOT EXISTS reference VARCHAR(100);",
         # Убираем уникальное ограничение uq_payment_invoice, чтобы разрешить несколько применений одного платежа к одному счету
         "DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_payment_invoice') THEN ALTER TABLE payment_applications DROP CONSTRAINT uq_payment_invoice; END IF; END $$;",

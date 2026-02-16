@@ -17,13 +17,123 @@ from ..models import (
     Invoice, InvoiceStatus, InvoiceLine,
     Payment, PaymentApplication, PaymentMethod,
     Notification, NotificationStatus, MeterReading,
-    user_residents, PaymentLog
+    user_residents, PaymentLog,
+    Tariff, MeterType, CustomerType
 )
 from ..security import get_user_id_from_session
 from ..utils import now_baku, to_baku_datetime
 
 
 router = APIRouter(prefix="/api/resident", tags=["resident-api"])
+
+
+def _money2(x: Decimal) -> Decimal:
+    return (x or Decimal("0")).quantize(Decimal("0.01"))
+
+
+def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
+    if not inv or not inv.id:
+        return
+
+    rows = (
+        db.query(InvoiceLine, MeterReading, ResidentMeter.meter_type)
+        .join(InvoiceLine, InvoiceLine.meter_reading_id == MeterReading.id)
+        .join(ResidentMeter, ResidentMeter.id == MeterReading.resident_meter_id)
+        .filter(InvoiceLine.invoice_id == inv.id)
+        .all()
+    )
+
+    has_real_sewerage = any(mt == MeterType.SEWERAGE for _ln, _rd, mt in rows)
+    auto_line = (
+        db.query(InvoiceLine)
+        .filter(
+            InvoiceLine.invoice_id == inv.id,
+            InvoiceLine.meter_reading_id.is_(None),
+            InvoiceLine.description.ilike("Канализация%"),
+        )
+        .first()
+    )
+
+    if has_real_sewerage:
+        for ln, rd, mt in rows:
+            if mt == MeterType.WATER:
+                ln.amount_net = _money2(Decimal(str(rd.amount_net or 0)))
+                ln.amount_vat = _money2(Decimal(str(rd.amount_vat or 0)))
+                ln.amount_total = _money2(Decimal(str(rd.amount_total or 0)))
+        if auto_line:
+            db.delete(auto_line)
+        return
+
+    water_rows = [(ln, rd) for ln, rd, mt in rows if mt == MeterType.WATER]
+    if not water_rows:
+        if auto_line:
+            db.delete(auto_line)
+        return
+
+    sew_net = Decimal("0")
+    sew_vat = Decimal("0")
+    sew_total = Decimal("0")
+    water_cons = Decimal("0")
+
+    for ln, rd in water_rows:
+        water_cons += Decimal(str(rd.consumption or 0))
+
+        base_net = _money2(Decimal(str(rd.amount_net or 0)))
+        base_vat = _money2(Decimal(str(rd.amount_vat or 0)))
+        base_total = _money2(Decimal(str(rd.amount_total or 0)))
+
+        t = db.get(Tariff, rd.tariff_id) if rd.tariff_id else None
+        percent = Decimal(str(getattr(t, "sewerage_percent", 0) or 0))
+        if percent <= 0:
+            ln.amount_net = base_net
+            ln.amount_vat = base_vat
+            ln.amount_total = base_total
+            continue
+
+        k = percent / Decimal("100")
+
+        if getattr(t, "customer_type", None) == CustomerType.INDIVIDUAL:
+            new_net = _money2(base_net * (Decimal("1") - k))
+            new_vat = _money2(base_vat * (Decimal("1") - k))
+            new_total = _money2(base_total * (Decimal("1") - k))
+
+            ln.amount_net = new_net
+            ln.amount_vat = new_vat
+            ln.amount_total = new_total
+
+            sew_net += (base_net - new_net)
+            sew_vat += (base_vat - new_vat)
+            sew_total += (base_total - new_total)
+        else:
+            ln.amount_net = base_net
+            ln.amount_vat = base_vat
+            ln.amount_total = base_total
+
+            sew_net += _money2(base_net * k)
+            sew_vat += _money2(base_vat * k)
+            sew_total += _money2(base_total * k)
+
+    if sew_total <= 0:
+        if auto_line:
+            db.delete(auto_line)
+        return
+
+    desc = f"Канализация  {float(water_cons)} м³"
+
+    if auto_line:
+        auto_line.description = desc
+        auto_line.amount_net = _money2(sew_net)
+        auto_line.amount_vat = _money2(sew_vat)
+        auto_line.amount_total = _money2(sew_total)
+    else:
+        db.add(InvoiceLine(
+            invoice_id=inv.id,
+            meter_reading_id=None,
+            description=desc,
+            amount_net=_money2(sew_net),
+            amount_vat=_money2(sew_vat),
+            amount_total=_money2(sew_total),
+        ))
 
 
 @router.post("/apply-advance")
@@ -301,6 +411,8 @@ def get_resident_invoice_detail(
     block = resident.block if resident else None
     
     # Get invoice lines
+    _ensure_auto_sewerage_line(db, inv)
+    db.flush()
     lines = db.query(InvoiceLine).filter(InvoiceLine.invoice_id == inv.id).all()
     
     # Get payments for this invoice

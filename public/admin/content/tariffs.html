@@ -101,6 +101,7 @@
                             <th>Назначение</th>
                             <th>Тип клиента</th>
                             <th>НДС, %</th>
+                            <th>Стабильный тариф</th>
                             <th>Ступени</th>
                             <th class="text-center">Действия</th>
                         </tr>
@@ -163,6 +164,22 @@
                 <input type="number" id="tariffVAT" value="0" min="0" max="100">
             </div>
 
+            <div class="form-group" id="stableTariffGroup" style="display:none;">
+                <label>Стабильный тариф</label>
+                <input type="number" id="tariffStableTariff" value="0" min="0" step="0.01">
+                <small style="display:block; opacity:0.75; margin-top:6px;">
+                    Фиксированная сумма в месяц (только Электричество/Газ). Добавляется независимо от расхода.
+                </small>
+            </div>
+
+            <div class="form-group" id="seweragePercentGroup" style="display:none;">
+                <label>Канализация, % от воды</label>
+                <input type="number" id="tariffSeweragePercent" value="0" min="0" max="100" step="0.01">
+                <small style="display:block; opacity:0.75; margin-top:6px;">
+                    Будет добавлена отдельной строкой в счёт как процент от суммы воды.
+                </small>
+            </div>
+
             <div class="tariff-steps">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h4>Ступени</h4>
@@ -212,6 +229,7 @@
 <script>
     const API_BASE = 'http://localhost:8000';
     let tariffsData = [];
+    let seweragePercentDirty = false;
 
     // Маппинг типов для отображения
     const meterTypeMap = {
@@ -266,6 +284,7 @@
                     clientType: customerTypeMap[t.customer_type]?.key || t.customer_type.toLowerCase(),
                     clientTypeLabel: customerTypeMap[t.customer_type]?.label || t.customer_type,
                     vat: t.vat_percent,
+                    stableTariff: t.stable_tariff ?? 0,
                     steps: (t.steps || []).map(s => {
                         if (isConstruction) {
                             // Для строительства - даты
@@ -329,7 +348,7 @@
         if (!data.length) {
             tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="empty-table">
+                        <td colspan="8" class="empty-table">
                             Нет тарифов по указанным параметрам
                         </td>
                     </tr>
@@ -352,6 +371,7 @@
                         </span>
                     </td>
                     <td>${tariff.vat}%</td>
+                    <td>${formatValue(tariff.stableTariff ?? 0)} ₼</td>
                     <td>${formatSteps(tariff.steps, tariff.purposeKey)}</td>
                     <td>
                         <div class="table-actions">
@@ -462,6 +482,7 @@
                     clientType: customerTypeMap[t.customer_type]?.key || t.customer_type.toLowerCase(),
                     clientTypeLabel: customerTypeMap[t.customer_type]?.label || t.customer_type,
                     vat: t.vat_percent,
+                    stableTariff: t.stable_tariff ?? 0,
                     steps: (t.steps || []).map(s => {
                         if (isConstruction) {
                             return {
@@ -506,6 +527,10 @@
         document.getElementById('createTariffModal').classList.add('active');
         document.body.style.overflow = 'hidden';
 
+        seweragePercentDirty = false;
+        updateSeweragePercentVisibility();
+        updateStableTariffVisibility();
+
         // Если не редактируем, очищаем контейнер и добавляем первую ступень по умолчанию
         if (!editingTariffId) {
             const stepsContainer = document.getElementById('tariffStepsContainer');
@@ -532,6 +557,7 @@
         document.getElementById('createTariffModal').classList.remove('active');
         document.body.style.overflow = 'auto';
         document.getElementById('createTariffForm').reset();
+        seweragePercentDirty = false;
 
         // Очищаем контейнер ступеней
         const stepsContainer = document.getElementById('tariffStepsContainer');
@@ -593,7 +619,72 @@
         unitInputs.forEach(input => {
             input.value = unit;
         });
+        updateSeweragePercentVisibility();
+        updateStableTariffVisibility();
     };
+
+    function updateStableTariffVisibility() {
+        const purpose = document.getElementById('tariffPurpose')?.value;
+        const group = document.getElementById('stableTariffGroup');
+        if (!group) return;
+        const supported = (purpose === 'electricity' || purpose === 'gas');
+        group.style.display = supported ? '' : 'none';
+        if (!supported) {
+            const input = document.getElementById('tariffStableTariff');
+            if (input) input.value = '0';
+        }
+    }
+
+    function updateSeweragePercentVisibility() {
+        const purpose = document.getElementById('tariffPurpose')?.value;
+        const group = document.getElementById('seweragePercentGroup');
+        if (!group) return;
+        group.style.display = (purpose === 'water') ? '' : 'none';
+        if (purpose !== 'water') {
+            const input = document.getElementById('tariffSeweragePercent');
+            if (input) input.value = '0';
+        }
+        // Авторасчёт только для индивидуальных тарифов (если не редактировали вручную)
+        maybeAutoComputeSeweragePercent();
+    }
+
+    function getFirstStepPriceFromForm() {
+        const firstRow = document.querySelector('#tariffStepsContainer .step-row');
+        if (!firstRow) return null;
+        const inputs = firstRow.querySelectorAll('input');
+        const priceInput = inputs[inputs.length - 1];
+        const v = parseFloat(priceInput?.value);
+        if (!isFinite(v) || v <= 0) return null;
+        return v;
+    }
+
+    function findSewerageTariffFirstPrice(customerTypeKey) {
+        // Используем уже загруженный список тарифов: ищем Канализацию того же типа клиента
+        const t = (tariffsData || []).find(x => x.purposeKey === 'sewerage' && x.clientType === customerTypeKey);
+        const p = t?.steps?.[0]?.price;
+        const v = parseFloat(p);
+        if (!isFinite(v) || v <= 0) return null;
+        return v;
+    }
+
+    function maybeAutoComputeSeweragePercent() {
+        const purpose = document.getElementById('tariffPurpose')?.value;
+        if (purpose !== 'water') return;
+
+        const type = document.getElementById('tariffType')?.value; // individual|legal
+        if (type !== 'individual') return;
+
+        const input = document.getElementById('tariffSeweragePercent');
+        if (!input) return;
+        if (seweragePercentDirty) return;
+
+        const waterPrice = getFirstStepPriceFromForm();
+        const sewerPrice = findSewerageTariffFirstPrice('individual');
+        if (!waterPrice || !sewerPrice) return;
+
+        const percent = Math.max(0, Math.min(100, (sewerPrice / waterPrice) * 100));
+        input.value = (Math.round(percent * 100) / 100).toString();
+    }
 
     // Обработчик изменения типа тарифа (добавляем после загрузки DOM)
     (function () {
@@ -819,6 +910,11 @@
         }
 
         container.appendChild(newStep);
+
+        // после добавления/изменения ступеней попробуем авторасчитать % канализации (если нужно)
+        setTimeout(() => {
+            maybeAutoComputeSeweragePercent();
+        }, 0);
     }
 
     window.removeStep = function (button) {
@@ -840,6 +936,11 @@
         const purpose = document.getElementById('tariffPurpose').value;
         const type = document.getElementById('tariffType').value;
         const vat = parseInt(document.getElementById('tariffVAT').value) || 0;
+        const seweragePercent = parseFloat(document.getElementById('tariffSeweragePercent')?.value) || 0;
+        const stableTariffRaw = parseFloat(document.getElementById('tariffStableTariff')?.value);
+        const stableTariff = (purpose === 'electricity' || purpose === 'gas')
+            ? (isFinite(stableTariffRaw) ? stableTariffRaw : 0)
+            : 0;
 
         if (!name) {
             if (typeof showWarning === 'function') {
@@ -938,6 +1039,8 @@
             meter_type: meterTypeMap[purpose] || purpose.toUpperCase(),
             customer_type: customerTypeMap[type] || type.toUpperCase(),
             vat_percent: vat,
+            stable_tariff: stableTariff,
+            sewerage_percent: (purpose === 'water') ? seweragePercent : 0,
             steps: steps
         };
 
@@ -1017,7 +1120,7 @@
                 await performDeleteTariff(tariffId, wasEditing);
             }
         }
-    }
+    };
 
     async function performDeleteTariff(tariffId, wasEditing) {
         try {
@@ -1093,6 +1196,19 @@
             document.getElementById('tariffPurpose').value = purposeValue;
             document.getElementById('tariffType').value = clientTypeMap[fullTariff.customer_type] || fullTariff.customer_type.toLowerCase();
             document.getElementById('tariffVAT').value = fullTariff.vat_percent;
+
+            const stableInput = document.getElementById('tariffStableTariff');
+            if (stableInput) {
+                stableInput.value = (fullTariff.stable_tariff ?? 0);
+            }
+
+            const sewerageInput = document.getElementById('tariffSeweragePercent');
+            if (sewerageInput) {
+                sewerageInput.value = (fullTariff.sewerage_percent ?? 0);
+            }
+            seweragePercentDirty = false;
+            updateSeweragePercentVisibility();
+            updateStableTariffVisibility();
 
             // Очищаем контейнер ступеней
             const stepsContainer = document.getElementById('tariffStepsContainer');
@@ -1211,7 +1327,27 @@
                 alert('Не удалось загрузить тариф');
             }
         }
-    }
+    };
+
+    // Dirty-flag для ручного изменения процента канализации
+    (function initSeweragePercentHandlers() {
+        const input = document.getElementById('tariffSeweragePercent');
+        if (input && !input._initialized) {
+            input._initialized = true;
+            input.addEventListener('input', () => {
+                seweragePercentDirty = true;
+            });
+        }
+
+        const typeSelect = document.getElementById('tariffType');
+        if (typeSelect && !typeSelect._initializedSewerage) {
+            typeSelect._initializedSewerage = true;
+            typeSelect.addEventListener('change', () => {
+                seweragePercentDirty = false;
+                updateSeweragePercentVisibility();
+            });
+        }
+    })();
 
     // Инициализация при загрузке страницы (для SPA роутера)
     // Вызываем сразу, так как скрипт выполняется после вставки контента в DOM

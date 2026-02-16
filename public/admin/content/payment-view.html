@@ -16,6 +16,10 @@
             <div class="value" id="paymentResident">X / 2</div>
         </div>
         <div class="payment-summary-item">
+            <label>Житель</label>
+            <div class="value" id="paymentResidentUser">—</div>
+        </div>
+        <div class="payment-summary-item">
             <label>Ссылка / Комментарий</label>
             <div class="value" id="paymentLink">123456</div>
         </div>
@@ -100,6 +104,12 @@
             'ONLINE': 'Онлайн'
         };
 
+        function setResidentUserName(value) {
+            const el = document.getElementById('paymentResidentUser');
+            if (!el) return;
+            el.textContent = value && String(value).trim() ? String(value).trim() : '—';
+        }
+
         // Get payment ID from URL
         const urlParams = new URLSearchParams(window.location.search);
         let paymentId = urlParams.get('id') || window.__currentPaymentId || window.location.hash.split('/').pop() || window.location.hash.split('=').pop();
@@ -126,6 +136,9 @@
 
                 const payment = await response.json();
                 currentPayment = payment;
+
+                // "Житель" приходит прямо из API payments (без доп. запросов)
+                setResidentUserName(payment.resident_user_full_name);
 
                 // Load open invoices for distribution
                 await loadOpenInvoices(id);

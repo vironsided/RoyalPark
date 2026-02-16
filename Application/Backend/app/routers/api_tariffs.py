@@ -42,6 +42,8 @@ class TariffOut(BaseModel):
     meter_type: str
     customer_type: str
     vat_percent: int
+    stable_tariff: float = 0.0
+    sewerage_percent: float = 0.0
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -57,6 +59,8 @@ class TariffCreate(BaseModel):
     meter_type: str
     customer_type: str
     vat_percent: int
+    stable_tariff: Optional[float] = 0.0
+    sewerage_percent: Optional[float] = 0.0
     steps: List[TariffStepCreate]
 
 
@@ -65,6 +69,8 @@ class TariffUpdate(BaseModel):
     meter_type: Optional[str] = None
     customer_type: Optional[str] = None
     vat_percent: Optional[int] = None
+    stable_tariff: Optional[float] = None
+    sewerage_percent: Optional[float] = None
     is_active: Optional[bool] = None
     steps: Optional[List[TariffStepCreate]] = None
 
@@ -222,6 +228,19 @@ def create_tariff_public(
     
     if not (0 <= payload.vat_percent <= 100):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="НДС должен быть от 0 до 100")
+
+    stable_tariff = float(payload.stable_tariff or 0)
+    if stable_tariff < 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Стабильный тариф не может быть отрицательным")
+    if payload.meter_type not in {MeterType.ELECTRIC.value, MeterType.GAS.value}:
+        stable_tariff = 0.0
+    stable_tariff_dec = _to_decimal(stable_tariff)
+
+    sewerage_percent = float(payload.sewerage_percent or 0)
+    if sewerage_percent < 0 or sewerage_percent > 100:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Процент канализации должен быть от 0 до 100")
+    if payload.meter_type != MeterType.WATER.value:
+        sewerage_percent = 0.0
     
     exists = db.execute(
         select(Tariff.id).where(
@@ -244,6 +263,8 @@ def create_tariff_public(
             meter_type=MeterType(payload.meter_type),
             customer_type=CustomerType(payload.customer_type),
             vat_percent=payload.vat_percent,
+            stable_tariff=stable_tariff_dec,
+            sewerage_percent=sewerage_percent,
             created_by_id=None,
         )
         db.add(tariff)
@@ -295,6 +316,19 @@ def create_tariff_api(
     
     if not (0 <= payload.vat_percent <= 100):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="НДС должен быть от 0 до 100")
+
+    stable_tariff = float(payload.stable_tariff or 0)
+    if stable_tariff < 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Стабильный тариф не может быть отрицательным")
+    if payload.meter_type not in {MeterType.ELECTRIC.value, MeterType.GAS.value}:
+        stable_tariff = 0.0
+    stable_tariff_dec = _to_decimal(stable_tariff)
+
+    sewerage_percent = float(payload.sewerage_percent or 0)
+    if sewerage_percent < 0 or sewerage_percent > 100:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Процент канализации должен быть от 0 до 100")
+    if payload.meter_type != MeterType.WATER.value:
+        sewerage_percent = 0.0
     
     # Проверка уникальности
     exists = db.execute(
@@ -318,6 +352,8 @@ def create_tariff_api(
             meter_type=MeterType(payload.meter_type),
             customer_type=CustomerType(payload.customer_type),
             vat_percent=payload.vat_percent,
+            stable_tariff=stable_tariff_dec,
+            sewerage_percent=sewerage_percent,
             created_by_id=actor.id,
         )
         db.add(tariff)
@@ -393,6 +429,28 @@ def update_tariff_api(
         if not (0 <= payload.vat_percent <= 100):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="НДС должен быть от 0 до 100")
         tariff.vat_percent = payload.vat_percent
+
+    # ELECTRIC/GAS-only: фиксированная часть
+    effective_meter_type = payload.meter_type or tariff.meter_type.value
+    if payload.stable_tariff is not None:
+        st = float(payload.stable_tariff or 0)
+        if st < 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Стабильный тариф не может быть отрицательным")
+        tariff.stable_tariff = _to_decimal(st) if effective_meter_type in {MeterType.ELECTRIC.value, MeterType.GAS.value} else _to_decimal(0)
+    else:
+        if effective_meter_type not in {MeterType.ELECTRIC.value, MeterType.GAS.value}:
+            tariff.stable_tariff = _to_decimal(0)
+
+    # WATER-only: процент канализации
+    if payload.sewerage_percent is not None:
+        sp = float(payload.sewerage_percent or 0)
+        if sp < 0 or sp > 100:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Процент канализации должен быть от 0 до 100")
+        tariff.sewerage_percent = sp if effective_meter_type == MeterType.WATER.value else 0.0
+    else:
+        # Если тариф перестал быть WATER — сбросим
+        if effective_meter_type != MeterType.WATER.value:
+            tariff.sewerage_percent = 0.0
     
     if payload.is_active is not None:
         tariff.is_active = payload.is_active
@@ -472,6 +530,26 @@ def update_tariff_public(
         if not (0 <= payload.vat_percent <= 100):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="НДС должен быть от 0 до 100")
         tariff.vat_percent = payload.vat_percent
+
+    # ELECTRIC/GAS-only: фиксированная часть
+    effective_meter_type = payload.meter_type or tariff.meter_type.value
+    if payload.stable_tariff is not None:
+        st = float(payload.stable_tariff or 0)
+        if st < 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Стабильный тариф не может быть отрицательным")
+        tariff.stable_tariff = _to_decimal(st) if effective_meter_type in {MeterType.ELECTRIC.value, MeterType.GAS.value} else _to_decimal(0)
+    else:
+        if effective_meter_type not in {MeterType.ELECTRIC.value, MeterType.GAS.value}:
+            tariff.stable_tariff = _to_decimal(0)
+
+    if payload.sewerage_percent is not None:
+        sp = float(payload.sewerage_percent or 0)
+        if sp < 0 or sp > 100:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Процент канализации должен быть от 0 до 100")
+        tariff.sewerage_percent = sp if effective_meter_type == MeterType.WATER.value else 0.0
+    else:
+        if effective_meter_type != MeterType.WATER.value:
+            tariff.sewerage_percent = 0.0
     
     if payload.is_active is not None:
         tariff.is_active = payload.is_active

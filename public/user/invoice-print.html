@@ -292,6 +292,19 @@
                         }
                     },
                     {
+                        regex: /^Канализация(?:\s*\(авто\))?\s+([\d.]+)\s*м³$/i,
+                        serviceKey: 'meter_sewerage',
+                        unitKey: 'user_unit_m3',
+                        format: (amount, service, unit) => {
+                            let text = service || 'Канализация';
+                            if (!service) {
+                                if (lang === 'az') text = 'Kanalizasiya';
+                                else if (lang === 'en') text = 'Sewerage';
+                            }
+                            return `${text} ${amount} ${unit}`;
+                        }
+                    },
+                    {
                         regex: /^Газ\s+([\d.]+)\s*м³$/i,
                         serviceKey: 'meter_gas',
                         unitKey: 'user_unit_m3',

@@ -36,7 +36,7 @@ from ..deps import get_current_user, require_any_role
 from ..models import (
     User, RoleEnum,
     Block, Resident, ResidentMeter, MeterType,
-    Tariff,
+    Tariff, CustomerType,
     MeterReading, ReadingLog,
     Invoice, InvoiceLine, InvoiceStatus,
 )
@@ -47,114 +47,144 @@ router = APIRouter(prefix="/readings", tags=["readings"])
 templates = Jinja2Templates(directory="app/templates")
 
 
-# ====== расчёт по ступеням тарифа ======
-def money(x: Decimal) -> Decimal:
-    return x.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+# ====== расчёт по ступеням тарифа (вынесено в API-роутер) ======
+# Бизнес-логика расчёта (включая stable_tariff) находится в `api_readings.py`.
+from .api_readings import money, compute_amount, get_gas_annual_prev  # noqa: E402
 
 
-def get_gas_annual_prev(db: Session, meter_id: int, period_start: datetime) -> Decimal:
-    year_start = datetime(period_start.year, 1, 1)
-    total = db.query(func.coalesce(func.sum(MeterReading.consumption), 0)).filter(
-        MeterReading.resident_meter_id == meter_id,
-        MeterReading.reading_date >= year_start,
-        MeterReading.reading_date < period_start,
-    ).scalar()
-    return Decimal(str(total or 0))
-
-
-def compute_amount(consumption: Decimal, tariff: Tariff, annual_prev: Decimal | None = None) -> tuple[Decimal, Decimal, Decimal, list[dict]]:
+def _upsert_auto_sewerage_line_for_invoice(
+    db: Session,
+    inv: Invoice,
+    all_period_readings: list[MeterReading],
+) -> None:
     """
-    Возвращает (amount_net, amount_vat, amount_total, breakdown[])
-    Для CONSTRUCTION тарифов (date-based) используем первую ступень с ценой.
+    Канализация как % от воды.
+
+    Правила:
+    - Если есть реальные показания SEWERAGE в периоде — авто-строку НЕ добавляем (и удаляем, если была).
+    - Процент берём из WATER-тарифа (Tariff.sewerage_percent), применяем ПО КАЖДОМУ water-reading.
+    - Для INDIVIDUAL (физ.лицо): сумма воды делится — Вода = (1-p) * вода, Канализация = p * вода (итог не меняется).
+    - Для LEGAL (юр.лицо): канализация добавляется сверху — Канализация = p * вода (итог увеличивается).
+    - Авто-строка имеет meter_reading_id = NULL и description начинается с "Канализация".
     """
-    left = Decimal(consumption)
-    total_net = Decimal("0")
-    breakdown = []
+    if not inv or not inv.id:
+        return
 
-    # Для тарифов с date-based steps (CONSTRUCTION) - используем первую ступень
-    if tariff.meter_type == MeterType.CONSTRUCTION:
-        # Для CONSTRUCTION всегда используем первую ступень с ценой
-        if tariff.steps:
-            first_step = tariff.steps[0]
-            price = Decimal(first_step.price)
-            part = left * price
-            total_net = part
-            breakdown.append({
-                "from": None,
-                "to": None,
-                "qty": float(left),
-                "price": float(price),
-                "sum": float(money(part)),
-            })
-    elif tariff.meter_type == MeterType.GAS and annual_prev is not None:
-        # Газ: ступени считаются по годовому объёму (накопительно)
-        cursor = Decimal(annual_prev)
-        remaining = Decimal(consumption)
-        for st in tariff.steps:
-            if remaining <= 0:
-                break
-            st_from = Decimal(st.from_value) if st.from_value is not None else Decimal("0")
-            st_to = Decimal(st.to_value) if st.to_value is not None else None
-            price = Decimal(st.price)
+    readings = all_period_readings or []
 
-            if st_to is not None and cursor >= st_to:
-                continue
+    # Если в периоде есть реальные начисления канализации — автостроку удаляем и выходим
+    has_real_sewerage = any(
+        (rd.resident_meter and rd.resident_meter.meter_type == MeterType.SEWERAGE)
+        for rd in readings
+    )
 
-            step_start = max(cursor, st_from)
-            if st_to is None:
-                capacity = remaining
-            else:
-                capacity = max(Decimal("0"), st_to - step_start)
+    auto_line = (
+        db.query(InvoiceLine)
+        .filter(
+            InvoiceLine.invoice_id == inv.id,
+            InvoiceLine.meter_reading_id.is_(None),
+            InvoiceLine.description.ilike("Канализация%"),
+        )
+        .first()
+    )
 
-            chunk = remaining if remaining <= capacity else capacity
-            if chunk > 0:
-                part = chunk * price
-                total_net += part
-                breakdown.append({
-                    "from": float(st_from),
-                    "to": (None if st_to is None else float(st_to)),
-                    "qty": float(chunk),
-                    "price": float(price),
-                    "sum": float(money(part)),
-                })
-                remaining -= chunk
-                cursor += chunk
+    if has_real_sewerage:
+        # восстанавливаем воду как есть (на случай, если раньше делили)
+        for rd in readings:
+            if rd.resident_meter and rd.resident_meter.meter_type == MeterType.WATER:
+                line = db.query(InvoiceLine).filter(InvoiceLine.invoice_id == inv.id, InvoiceLine.meter_reading_id == rd.id).first()
+                if line:
+                    line.amount_net = money(Decimal(str(rd.amount_net or 0)))
+                    line.amount_vat = money(Decimal(str(rd.amount_vat or 0)))
+                    line.amount_total = money(Decimal(str(rd.amount_total or 0)))
+        if auto_line:
+            db.delete(auto_line)
+        return
+
+    water_readings = [
+        rd for rd in readings
+        if rd.resident_meter and rd.resident_meter.meter_type == MeterType.WATER
+    ]
+    if not water_readings:
+        if auto_line:
+            db.delete(auto_line)
+        return
+
+    sew_net = Decimal("0")
+    sew_vat = Decimal("0")
+    sew_total = Decimal("0")
+    water_cons = Decimal("0")
+
+    for rd in water_readings:
+        water_cons += Decimal(str(rd.consumption or 0))
+
+        # линия воды в счёте
+        line = db.query(InvoiceLine).filter(InvoiceLine.invoice_id == inv.id, InvoiceLine.meter_reading_id == rd.id).first()
+        if not line:
+            continue
+
+        base_net = money(Decimal(str(rd.amount_net or 0)))
+        base_vat = money(Decimal(str(rd.amount_vat or 0)))
+        base_total = money(Decimal(str(rd.amount_total or 0)))
+
+        t = db.get(Tariff, rd.tariff_id) if rd.tariff_id else None
+        percent = Decimal(str(getattr(t, "sewerage_percent", 0) or 0))
+        if percent <= 0:
+            # если % не задан — вода как есть
+            line.amount_net = base_net
+            line.amount_vat = base_vat
+            line.amount_total = base_total
+            continue
+
+        k = percent / Decimal("100")
+
+        # Режим выбираем по типу WATER тарифа (а не по resident.customer_type):
+        # - INDIVIDUAL: делим сумму воды (вода уменьшается)
+        # - LEGAL: добавляем канализацию сверху
+        if getattr(t, "customer_type", None) == CustomerType.INDIVIDUAL:
+            # делим сумму воды: вода = (1-k), канализация = k (итог не меняется)
+            new_net = money(base_net * (Decimal("1") - k))
+            new_vat = money(base_vat * (Decimal("1") - k))
+            new_total = money(base_total * (Decimal("1") - k))
+
+            line.amount_net = new_net
+            line.amount_vat = new_vat
+            line.amount_total = new_total
+
+            sew_net += (base_net - new_net)
+            sew_vat += (base_vat - new_vat)
+            sew_total += (base_total - new_total)
+        else:
+            # LEGAL: вода как есть, канализация сверху
+            line.amount_net = base_net
+            line.amount_vat = base_vat
+            line.amount_total = base_total
+
+            sew_net += money(base_net * k)
+            sew_vat += money(base_vat * k)
+            sew_total += money(base_total * k)
+
+    if sew_total <= 0:
+        if auto_line:
+            db.delete(auto_line)
+        return
+
+    desc = f"Канализация  {float(water_cons)} м³"
+
+    if auto_line:
+        auto_line.description = desc
+        auto_line.amount_net = money(sew_net)
+        auto_line.amount_vat = money(sew_vat)
+        auto_line.amount_total = money(sew_total)
     else:
-        # Обычные тарифы с value-based steps
-        # предполагается, что tariff.steps отсортированы по from_value
-        for st in tariff.steps:
-            if left <= 0:
-                break
-            # Обработка NULL from_value (может быть для некоторых тарифов)
-            if st.from_value is None:
-                st_from = Decimal("0")
-            else:
-                st_from = Decimal(st.from_value)
-            st_to = Decimal(st.to_value) if st.to_value is not None else None
-            price = Decimal(st.price)
-
-            # Сколько попадает в текущую ступень
-            if st_to is None:
-                chunk = left
-            else:
-                width = st_to - st_from
-                chunk = left if left <= width else width
-
-            if chunk > 0:
-                part = chunk * price
-                total_net += part
-                breakdown.append({
-                    "from": float(st_from),
-                    "to": (None if st_to is None else float(st_to)),
-                    "qty": float(chunk),
-                    "price": float(price),
-                    "sum": float(money(part)),
-                })
-                left -= chunk
-
-    vat = money(total_net * Decimal(tariff.vat_percent) / Decimal(100))
-    total = money(total_net + vat)
-    return (money(total_net), vat, total, breakdown)
+        db.add(InvoiceLine(
+            invoice_id=inv.id,
+            meter_reading_id=None,
+            description=desc,
+            amount_net=money(sew_net),
+            amount_vat=money(sew_vat),
+            amount_total=money(sew_total),
+        ))
 
 
 # ====== Страницы ======
@@ -785,6 +815,9 @@ def create_readings(
                 line.amount_net = rd.amount_net
                 line.amount_vat = rd.amount_vat
                 line.amount_total = rd.amount_total
+
+        # --- АВТО: Канализация как % от воды (если настроено в WATER тарифе) ---
+        _upsert_auto_sewerage_line_for_invoice(db, inv, all_period_readings)
 
         # --- ПЕРЕСЧЁТ ИТОГОВ СЧЁТА по фактическим строкам в БД ---
         db.flush()  # Важно: сохраняем все изменения перед пересчетом

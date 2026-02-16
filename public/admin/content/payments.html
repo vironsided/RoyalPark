@@ -80,6 +80,7 @@
                         <tr>
                             <th>Дата</th>
                             <th>Резидент</th>
+                            <th>Житель</th>
                             <th>Сумма</th>
                             <th>Метод</th>
                             <th>Остаток</th>
@@ -212,6 +213,16 @@
         'ONLINE': 'Онлайн'
     };
 
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     function formatPaymentDate(dateStr) {
         if (!dateStr) return '—';
         const d = new Date(dateStr);
@@ -246,7 +257,7 @@
     async function loadPayments() {
         const tbody = document.getElementById('paymentsTable');
         if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Загрузка...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Загрузка...</td></tr>';
         }
         
         const params = buildPaymentFilterParams();
@@ -270,7 +281,7 @@
         } catch (error) {
             console.error('Error loading payments:', error);
             if (tbody) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Ошибка загрузки данных</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Ошибка загрузки данных</td></tr>';
             }
             if (typeof showError === 'function') {
                 showError('Ошибка загрузки платежей: ' + error.message);
@@ -348,6 +359,7 @@
         return items.map(p => ({
             date: formatExportDate(p.received_at),
             resident: p.resident_code || '—',
+            resident_user_full_name: p.resident_user_full_name || '—',
             amount: typeof p.amount_total === 'number' ? p.amount_total.toFixed(2) : (p.amount_total || '0.00'),
             method: methodLabels[p.method] || p.method || '—',
             leftover: typeof p.leftover === 'number' ? p.leftover.toFixed(2) : '0.00',
@@ -370,12 +382,13 @@
     }
 
     function downloadCsv(rows) {
-        const header = ['Дата', 'Резидент', 'Сумма', 'Метод', 'Остаток', 'Ссылка'];
+        const header = ['Дата', 'Резидент', 'Житель', 'Сумма', 'Метод', 'Остаток', 'Ссылка'];
         const lines = [header.map(toCsvValue).join(';')];
         rows.forEach(row => {
             lines.push([
                 row.date,
                 row.resident,
+                row.resident_user_full_name,
                 row.amount,
                 row.method,
                 row.leftover,
@@ -400,6 +413,7 @@
             <tr>
                 <td>${row.date}</td>
                 <td>${row.resident}</td>
+                <td>${row.resident_user_full_name}</td>
                 <td>${row.amount}</td>
                 <td>${row.method}</td>
                 <td>${row.leftover}</td>
@@ -428,6 +442,7 @@
                         <tr>
                             <th>Дата</th>
                             <th>Резидент</th>
+                            <th>Житель</th>
                             <th>Сумма</th>
                             <th>Метод</th>
                             <th>Остаток</th>
@@ -435,7 +450,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        ${tableRows || '<tr><td colspan="6">Нет данных для экспорта</td></tr>'}
+                        ${tableRows || '<tr><td colspan="7">Нет данных для экспорта</td></tr>'}
                     </tbody>
                 </table>
             </body>
@@ -518,11 +533,12 @@
         const payments = paymentsData.items || [];
         
         if (payments.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Нет данных по текущим фильтрам</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Нет данных по текущим фильтрам</td></tr>';
         } else {
             tbody.innerHTML = payments.map(p => {
                 const date = formatPaymentDate(p.received_at);
                 const resident = p.resident_code || '—';
+                const residentUserFullName = p.resident_user_full_name || '—';
                 const amount = typeof p.amount_total === 'number' ? p.amount_total.toFixed(2) : (p.amount_total || '0.00');
                 const method = methodLabels[p.method] || p.method || '—';
                 const leftover = typeof p.leftover === 'number' ? p.leftover.toFixed(2) : '0.00';
@@ -531,6 +547,7 @@
                 return `<tr>
                     <td>${date}</td>
                     <td><strong>${resident}</strong></td>
+                    <td>${escapeHtml(residentUserFullName)}</td>
                     <td class="amount-red">${amount} ₼</td>
                     <td>${method}</td>
                     <td>

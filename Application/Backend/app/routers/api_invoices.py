@@ -11,7 +11,8 @@ from ..database import get_db
 from ..models import (
     User, RoleEnum, Block, Resident,
     Invoice, InvoiceStatus, InvoiceLine,
-    PaymentApplication, Payment, PaymentMethod
+    PaymentApplication, Payment, PaymentMethod,
+    Tariff, ResidentMeter, MeterReading, MeterType, CustomerType
 )
 from ..deps import get_current_user
 from ..utils import to_baku_datetime, create_invoice_notification, now_baku
@@ -435,6 +436,7 @@ class InvoiceDetailOut(BaseModel):
     id: int
     resident_id: int
     resident_code: str  # "A / 205"
+    resident_user_full_name: Optional[str] = None  # ФИО (или username) жителя (User), привязанного к резиденту
     number: Optional[str] = None
     status: str
     due_date: Optional[date] = None
@@ -453,6 +455,158 @@ class InvoiceDetailOut(BaseModel):
         from_attributes = True
 
 
+def _resident_user_names_map(db: Session, resident_ids: list[int]) -> dict[int, str]:
+    """
+    Возвращает отображаемое имя 'жителя' (User) для каждого resident_id.
+    Если привязано несколько пользователей — склеиваем через ", ".
+    Имя берём из User.full_name, иначе fallback на User.username.
+    """
+    if not resident_ids:
+        return {}
+
+    from .payments import user_residents
+
+    rows = (
+        db.query(user_residents.c.resident_id, User.full_name, User.username)
+        .join(User, User.id == user_residents.c.user_id)
+        .filter(user_residents.c.resident_id.in_(resident_ids))
+        .filter(User.is_active.is_(True))
+        .filter(User.role == RoleEnum.RESIDENT)
+        .all()
+    )
+
+    acc: dict[int, list[str]] = {}
+    for rid, full_name, username in rows:
+        name = (full_name or "").strip() or (username or "").strip()
+        if not name:
+            continue
+        rid_i = int(rid)
+        acc.setdefault(rid_i, [])
+        if name not in acc[rid_i]:
+            acc[rid_i].append(name)
+
+    return {rid: ", ".join(names) for rid, names in acc.items()}
+
+
+def _money2(x: Decimal) -> Decimal:
+    # Приводим к 2 знакам после запятой (денежное округление)
+    return (x or Decimal("0")).quantize(Decimal("0.01"))
+
+
+def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
+    """
+    Гарантирует наличие синтетической строки "Канализация (авто)" как % от суммы воды.
+    Логику держим здесь, чтобы:
+    - новые счета работали сразу,
+    - старые счета (созданные до внедрения) подтягивали строку при открытии.
+    """
+    if not inv or not inv.id:
+        return
+
+    # Реальные показания/начисления по счёту (только те, что привязаны к meter_reading_id)
+    rows = (
+        db.query(InvoiceLine, MeterReading, ResidentMeter.meter_type)
+        .join(InvoiceLine, InvoiceLine.meter_reading_id == MeterReading.id)
+        .join(ResidentMeter, ResidentMeter.id == MeterReading.resident_meter_id)
+        .filter(InvoiceLine.invoice_id == inv.id)
+        .all()
+    )
+
+    has_real_sewerage = any(mt == MeterType.SEWERAGE for _ln, _rd, mt in rows)
+
+    auto_line = (
+        db.query(InvoiceLine)
+        .filter(
+            InvoiceLine.invoice_id == inv.id,
+            InvoiceLine.meter_reading_id.is_(None),
+            InvoiceLine.description.ilike("Канализация%"),
+        )
+        .first()
+    )
+
+    if has_real_sewerage:
+        # На случай, если раньше применяли "деление" для INDIVIDUAL — восстановим воду из MeterReading
+        for ln, rd, mt in rows:
+            if mt == MeterType.WATER:
+                ln.amount_net = _money2(Decimal(str(rd.amount_net or 0)))
+                ln.amount_vat = _money2(Decimal(str(rd.amount_vat or 0)))
+                ln.amount_total = _money2(Decimal(str(rd.amount_total or 0)))
+        if auto_line:
+            db.delete(auto_line)
+        return
+
+    water_rows = [(ln, rd) for ln, rd, mt in rows if mt == MeterType.WATER]
+    if not water_rows:
+        if auto_line:
+            db.delete(auto_line)
+        return
+
+    sew_net = Decimal("0")
+    sew_vat = Decimal("0")
+    sew_total = Decimal("0")
+    water_cons = Decimal("0")
+
+    for ln, rd in water_rows:
+        water_cons += Decimal(str(rd.consumption or 0))
+
+        base_net = _money2(Decimal(str(rd.amount_net or 0)))
+        base_vat = _money2(Decimal(str(rd.amount_vat or 0)))
+        base_total = _money2(Decimal(str(rd.amount_total or 0)))
+
+        t = db.get(Tariff, rd.tariff_id) if rd.tariff_id else None
+        percent = Decimal(str(getattr(t, "sewerage_percent", 0) or 0))
+        if percent <= 0:
+            ln.amount_net = base_net
+            ln.amount_vat = base_vat
+            ln.amount_total = base_total
+            continue
+
+        k = percent / Decimal("100")
+
+        if getattr(t, "customer_type", None) == CustomerType.INDIVIDUAL:
+            new_net = _money2(base_net * (Decimal("1") - k))
+            new_vat = _money2(base_vat * (Decimal("1") - k))
+            new_total = _money2(base_total * (Decimal("1") - k))
+
+            ln.amount_net = new_net
+            ln.amount_vat = new_vat
+            ln.amount_total = new_total
+
+            sew_net += (base_net - new_net)
+            sew_vat += (base_vat - new_vat)
+            sew_total += (base_total - new_total)
+        else:
+            ln.amount_net = base_net
+            ln.amount_vat = base_vat
+            ln.amount_total = base_total
+
+            sew_net += _money2(base_net * k)
+            sew_vat += _money2(base_vat * k)
+            sew_total += _money2(base_total * k)
+
+    if sew_total <= 0:
+        if auto_line:
+            db.delete(auto_line)
+        return
+
+    desc = f"Канализация  {float(water_cons)} м³"
+
+    if auto_line:
+        auto_line.description = desc
+        auto_line.amount_net = _money2(sew_net)
+        auto_line.amount_vat = _money2(sew_vat)
+        auto_line.amount_total = _money2(sew_total)
+    else:
+        db.add(InvoiceLine(
+            invoice_id=inv.id,
+            meter_reading_id=None,
+            description=desc,
+            amount_net=_money2(sew_net),
+            amount_vat=_money2(sew_vat),
+            amount_total=_money2(sew_total),
+        ))
+
+
 def _get_invoice_detail_internal(db: Session, invoice_id: int):
     """Внутренняя функция для получения деталей счета (без авторизации)."""
     inv = db.get(Invoice, invoice_id)
@@ -462,6 +616,10 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
     resident = inv.resident
     block = resident.block if resident else None
     
+    # Автодобавление "Канализация" как % от воды (если настроено)
+    _ensure_auto_sewerage_line(db, inv)
+    db.flush()
+
     # Получаем строки счета
     lines = db.query(InvoiceLine).filter(InvoiceLine.invoice_id == inv.id).all()
     
@@ -548,11 +706,14 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
             "comment": display_comment,
         }
         payments.append(payment_data)
+
+    resident_user_names = _resident_user_names_map(db, [int(inv.resident_id)]) if inv.resident_id else {}
     
     return {
         "id": inv.id,
         "resident_id": inv.resident_id,
         "resident_code": f"{block.name if block else ''} / {resident.unit_number}" if block else resident.unit_number,
+        "resident_user_full_name": resident_user_names.get(int(inv.resident_id)) if inv.resident_id else None,
         "number": inv.number,
         "status": inv.status.value,
         "due_date": inv.due_date,

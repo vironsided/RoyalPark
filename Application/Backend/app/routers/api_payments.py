@@ -38,6 +38,7 @@ class PaymentOut(BaseModel):
     resident_id: int
     resident_code: str  # "A / 205"
     resident_info: str  # "Блок A, №205"
+    resident_user_full_name: Optional[str] = None  # ФИО(или username) жителя (User), привязанного к этому резиденту
     block_name: str
     unit_number: str
     received_at: datetime
@@ -70,6 +71,39 @@ class InvoiceForDistribution(BaseModel):
     amount_total: float
     paid_amount: float
     left_to_pay: float
+
+
+def _resident_user_names_map(db: Session, resident_ids: list[int]) -> dict[int, str]:
+    """
+    Возвращает отображаемое имя 'жителя' (User) для каждого resident_id.
+    Если привязано несколько пользователей — склеиваем через ", ".
+    Имя берём из User.full_name, иначе fallback на User.username.
+    """
+    if not resident_ids:
+        return {}
+
+    # Import from .payments because that module already exposes the association Table
+    from .payments import user_residents
+
+    rows = (
+        db.query(user_residents.c.resident_id, User.full_name, User.username)
+        .join(User, User.id == user_residents.c.user_id)
+        .filter(user_residents.c.resident_id.in_(resident_ids))
+        .filter(User.is_active.is_(True))
+        .filter(User.role == RoleEnum.RESIDENT)
+        .all()
+    )
+
+    acc: dict[int, list[str]] = {}
+    for rid, full_name, username in rows:
+        name = (full_name or "").strip() or (username or "").strip()
+        if not name:
+            continue
+        acc.setdefault(int(rid), [])
+        if name not in acc[int(rid)]:
+            acc[int(rid)].append(name)
+
+    return {rid: ", ".join(names) for rid, names in acc.items()}
 
 
 def _list_payments_internal(
@@ -117,6 +151,10 @@ def _list_payments_internal(
     
     # Получаем блоки для формирования данных
     blocks = {b.id: b for b in db.query(Block).all()}
+
+    # Маппинг resident_id -> "ФИО жителя"
+    resident_ids = sorted({int(p.resident_id) for p in items if p.resident_id})
+    resident_user_names = _resident_user_names_map(db, resident_ids)
     
     result = []
     for p in items:
@@ -131,6 +169,7 @@ def _list_payments_internal(
             "resident_id": p.resident_id,
             "resident_code": f"{block.name if block else ''} / {resident.unit_number}" if block else resident.unit_number,
             "resident_info": f"Блок {block.name if block else ''}, №{resident.unit_number}" if block else f"№{resident.unit_number}",
+            "resident_user_full_name": resident_user_names.get(int(p.resident_id)) if p.resident_id else None,
             "block_name": block.name if block else "",
             "unit_number": resident.unit_number,
             "received_at": to_baku_datetime(p.received_at),
@@ -219,12 +258,15 @@ def get_payment_api(
     
     applied_total = float(p.applied_total)
     leftover = float(p.leftover)
+
+    resident_user_names = _resident_user_names_map(db, [int(p.resident_id)]) if p.resident_id else {}
     
     return {
         "id": p.id,
         "resident_id": p.resident_id,
         "resident_code": f"{block.name if block else ''} / {resident.unit_number}" if block else resident.unit_number,
         "resident_info": f"Блок {block.name if block else ''}, №{resident.unit_number}" if block else f"№{resident.unit_number}",
+        "resident_user_full_name": resident_user_names.get(int(p.resident_id)) if p.resident_id else None,
         "block_name": block.name if block else "",
         "unit_number": resident.unit_number,
         "received_at": to_baku_datetime(p.received_at),

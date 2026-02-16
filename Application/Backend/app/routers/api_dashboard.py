@@ -161,8 +161,8 @@ def get_dashboard_stats(
         monthly_gas_m3 = sum(Decimal(str(rd.consumption or 0)) for rd in gas_readings)
         
         # Calculate monthly utility amounts (money) for all residents
-        # Import compute_amount function from readings router
-        from .readings import compute_amount
+        # Import compute_amount function from API readings router
+        from .api_readings import compute_amount
         
         monthly_electricity_amount = Decimal("0")
         monthly_water_amount = Decimal("0")

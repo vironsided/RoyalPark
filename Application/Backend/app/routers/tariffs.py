@@ -266,6 +266,7 @@ def create_tariff(
     meter_type: str = Form(...),
     customer_type: str = Form(...),
     vat_percent: int = Form(...),
+    stable_tariff: str = Form("0"),
     steps_json: str = Form(...),
 ):
     """
@@ -281,6 +282,16 @@ def create_tariff(
         return _see_other("/tariffs?error=bad_customer")
     if not (0 <= int(vat_percent) <= 100):
         return _see_other("/tariffs?error=bad_vat")
+
+    # Стабильный тариф: применяется только для ELECTRIC/GAS, иначе принудительно 0
+    try:
+        stable_fee = _to_decimal(stable_tariff or 0)
+    except (InvalidOperation, Exception):
+        return _see_other("/tariffs?error=bad_stable_tariff")
+    if stable_fee < 0:
+        return _see_other("/tariffs?error=bad_stable_tariff")
+    if meter_type not in {MeterType.ELECTRIC.value, MeterType.GAS.value}:
+        stable_fee = Decimal("0")
 
     # Разбор ступеней
     is_construction = meter_type == MeterType.CONSTRUCTION.value
@@ -310,6 +321,7 @@ def create_tariff(
             meter_type=MeterType(meter_type),
             customer_type=CustomerType(customer_type),
             vat_percent=int(vat_percent),
+            stable_tariff=stable_fee,
             created_by_id=user.id,
         )
         db.add(t)
@@ -372,6 +384,7 @@ def get_tariff_json(
         "meter_type": t.meter_type.value,
         "customer_type": t.customer_type.value,
         "vat_percent": t.vat_percent,
+        "stable_tariff": float(getattr(t, "stable_tariff", 0) or 0),
     }
     if t.meter_type == MeterType.CONSTRUCTION:
         payload["steps"] = [
@@ -405,6 +418,7 @@ def update_tariff(
     meter_type: str = Form(...),
     customer_type: str = Form(...),
     vat_percent: int = Form(...),
+    stable_tariff: str = Form("0"),
     steps_json: str = Form(...),
 ):
     """
@@ -424,6 +438,15 @@ def update_tariff(
         return _see_other("/tariffs?error=bad_customer")
     if not (0 <= int(vat_percent) <= 100):
         return _see_other("/tariffs?error=bad_vat")
+
+    try:
+        stable_fee = _to_decimal(stable_tariff or 0)
+    except (InvalidOperation, Exception):
+        return _see_other("/tariffs?error=bad_stable_tariff")
+    if stable_fee < 0:
+        return _see_other("/tariffs?error=bad_stable_tariff")
+    if meter_type not in {MeterType.ELECTRIC.value, MeterType.GAS.value}:
+        stable_fee = Decimal("0")
 
     # Разбор ступеней
     is_construction = meter_type == MeterType.CONSTRUCTION.value
@@ -453,6 +476,7 @@ def update_tariff(
         t.meter_type = MeterType(meter_type)
         t.customer_type = CustomerType(customer_type)
         t.vat_percent = int(vat_percent)
+        t.stable_tariff = stable_fee
 
         # Полная замена ступеней:
         # 1) Удаляем старые (bulk delete)

@@ -18,11 +18,125 @@ from ..models import (
     Invoice, InvoiceLine, InvoiceStatus
 )
 from ..deps import get_current_user
-from .readings import compute_amount, get_gas_annual_prev
 from .payments import auto_apply_advance
 
 
 router = APIRouter(prefix="/api/readings", tags=["readings-api"])
+
+def money(x: Decimal) -> Decimal:
+    """Округление денег до 2 знаков."""
+    return x.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def get_gas_annual_prev(db: Session, meter_id: int, period_start: datetime) -> Decimal:
+    """Газ: годовой объём ДО начала периода (для накопительного тарифа)."""
+    year_start = datetime(period_start.year, 1, 1)
+    total = db.query(func.coalesce(func.sum(MeterReading.consumption), 0)).filter(
+        MeterReading.resident_meter_id == meter_id,
+        MeterReading.reading_date >= year_start,
+        MeterReading.reading_date < period_start,
+    ).scalar()
+    return Decimal(str(total or 0))
+
+
+def compute_amount(
+    consumption: Decimal,
+    tariff: Tariff,
+    annual_prev: Decimal | None = None,
+) -> tuple[Decimal, Decimal, Decimal, list[dict]]:
+    """
+    Возвращает (amount_net, amount_vat, amount_total, breakdown[])
+    Для CONSTRUCTION тарифов (date-based) используем первую ступень с ценой.
+    """
+    left = Decimal(consumption)
+    total_net = Decimal("0")
+    breakdown = []
+
+    # Для тарифов с date-based steps (CONSTRUCTION) - используем первую ступень
+    if tariff.meter_type == MeterType.CONSTRUCTION:
+        if tariff.steps:
+            first_step = tariff.steps[0]
+            price = Decimal(first_step.price)
+            part = left * price
+            total_net = part
+            breakdown.append({
+                "from": None,
+                "to": None,
+                "qty": float(left),
+                "price": float(price),
+                "sum": float(money(part)),
+            })
+    elif tariff.meter_type == MeterType.GAS and annual_prev is not None:
+        # Газ: ступени считаются по годовому объёму (накопительно)
+        cursor = Decimal(annual_prev)
+        remaining = Decimal(consumption)
+        for st in tariff.steps:
+            if remaining <= 0:
+                break
+            st_from = Decimal(st.from_value) if st.from_value is not None else Decimal("0")
+            st_to = Decimal(st.to_value) if st.to_value is not None else None
+            price = Decimal(st.price)
+
+            if st_to is not None and cursor >= st_to:
+                continue
+
+            step_start = max(cursor, st_from)
+            if st_to is None:
+                capacity = remaining
+            else:
+                capacity = max(Decimal("0"), st_to - step_start)
+
+            chunk = remaining if remaining <= capacity else capacity
+            if chunk > 0:
+                part = chunk * price
+                total_net += part
+                breakdown.append({
+                    "from": float(st_from),
+                    "to": (None if st_to is None else float(st_to)),
+                    "qty": float(chunk),
+                    "price": float(price),
+                    "sum": float(money(part)),
+                })
+                remaining -= chunk
+                cursor += chunk
+    else:
+        # Обычные тарифы с value-based steps
+        for st in tariff.steps:
+            if left <= 0:
+                break
+            st_from = Decimal("0") if st.from_value is None else Decimal(st.from_value)
+            st_to = Decimal(st.to_value) if st.to_value is not None else None
+            price = Decimal(st.price)
+
+            if st_to is None:
+                chunk = left
+            else:
+                width = st_to - st_from
+                chunk = left if left <= width else width
+
+            if chunk > 0:
+                part = chunk * price
+                total_net += part
+                breakdown.append({
+                    "from": float(st_from),
+                    "to": (None if st_to is None else float(st_to)),
+                    "qty": float(chunk),
+                    "price": float(price),
+                    "sum": float(money(part)),
+                })
+                left -= chunk
+
+    # Фиксированная часть (stable_tariff) — добавляется независимо от расхода.
+    try:
+        stable_fee = Decimal(str(getattr(tariff, "stable_tariff", 0) or 0))
+    except Exception:
+        stable_fee = Decimal("0")
+    if stable_fee > 0:
+        total_net += stable_fee
+
+    vat = money(total_net * Decimal(tariff.vat_percent) / Decimal(100))
+    total = money(total_net + vat)
+    return (money(total_net), vat, total, breakdown)
 
 
 # Pydantic models

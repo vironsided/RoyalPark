@@ -229,6 +229,17 @@
               <label class="form-label" for="t_vat">НДС, %</label>
               <input type="number" name="vat_percent" id="t_vat" class="form-control" min="0" max="100" value="0" required>
             </div>
+            <div class="col-md-3" id="stableTariffWrap">
+              <label class="form-label" for="t_stable_tariff">Стабильный тариф</label>
+              <input type="number"
+                     name="stable_tariff"
+                     id="t_stable_tariff"
+                     class="form-control"
+                     min="0"
+                     step="0.01"
+                     value="0">
+              <div class="form-text">Фиксированная сумма в месяц (только Электричество/Газ).</div>
+            </div>
           </div>
 
           <hr class="my-3">
@@ -305,8 +316,11 @@
     const meterSelect = document.getElementById('t_meter');
     const headerFrom = document.getElementById('stepsHeaderFrom');
     const headerTo = document.getElementById('stepsHeaderTo');
+    const stableWrap = document.getElementById('stableTariffWrap');
+    const stableInput = document.getElementById('t_stable_tariff');
 
     const isConstruction = () => meterSelect.value === 'CONSTRUCTION';
+    const supportsStableTariff = () => (meterSelect.value === 'ELECTRIC' || meterSelect.value === 'GAS');
 
     // Текущая единица измерения по типу счётчика
     function currentUnit() {
@@ -323,6 +337,8 @@
       form.reset();
       stepsTableBody.innerHTML = '';
       updateUnitsInTable();
+      if (stableInput) stableInput.value = 0;
+      updateStableVisibility();
     }
 
     // Установка action и текста кнопки сабмита
@@ -452,6 +468,16 @@
       refreshHeaderLabels();
     }
 
+    function updateStableVisibility() {
+      if (!stableWrap || !stableInput) return;
+      if (supportsStableTariff()) {
+        stableWrap.classList.remove('d-none');
+      } else {
+        stableWrap.classList.add('d-none');
+        stableInput.value = 0;
+      }
+    }
+
     // Сборка и валидация массива ступеней перед отправкой формы
     function collectSteps() {
       const rows = stepsTableBody.querySelectorAll('tr');
@@ -532,6 +558,7 @@
 
     meterSelect.addEventListener('change', () => {
       addInitialRow();
+      updateStableVisibility();
     });
 
     // Публичный API модалки
@@ -546,6 +573,7 @@
         // Первая ступень по умолчанию: от 0
         addInitialRow();
         refreshHeaderLabels();
+        updateStableVisibility();
       },
       async openEdit(id) {
         reset();
@@ -570,6 +598,7 @@
         document.getElementById('t_meter').value = data.meter_type;
         document.getElementById('t_customer').value = data.customer_type;
         document.getElementById('t_vat').value = data.vat_percent;
+        if (stableInput) stableInput.value = (data.stable_tariff ?? 0);
 
         // Ступени
         if (data.meter_type === 'CONSTRUCTION') {
@@ -581,6 +610,7 @@
         }
 
         updateUnitsInTable();
+        updateStableVisibility();
       },
       addStep() {
         const rows = stepsTableBody.querySelectorAll('tr');

@@ -33,6 +33,10 @@
                     <div class="value" id="invoiceResident">Х / 2</div>
                 </div>
                 <div class="info-item">
+                    <label>Житель</label>
+                    <div class="value" id="invoiceResidentUser">—</div>
+                </div>
+                <div class="info-item">
                     <label>Период</label>
                     <div class="value" id="invoicePeriod">2025-11</div>
                 </div>
@@ -137,6 +141,7 @@
                         id: data.id,
                         invoiceNumber: data.number || `${data.period_year}-${String(data.period_month).padStart(2, '0')}/000000`,
                         resident: data.resident_code,
+                        residentUser: data.resident_user_full_name || null,
                         period: `${data.period_year}-${String(data.period_month).padStart(2, '0')}`,
                         status: data.status,
                         dueDate: data.due_date || null,
@@ -156,6 +161,8 @@
             function renderInvoice(invoice) {
                 document.getElementById('invoiceNumber').textContent = invoice.invoiceNumber;
                 document.getElementById('invoiceResident').textContent = invoice.resident;
+                const userEl = document.getElementById('invoiceResidentUser');
+                if (userEl) userEl.textContent = invoice.residentUser || '—';
                 document.getElementById('invoicePeriod').textContent = invoice.period;
                 document.getElementById('invoiceStatus').textContent = invoice.status;
 
