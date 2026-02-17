@@ -230,6 +230,16 @@ def create_app() -> FastAPI:
     def favicon():
         return RedirectResponse(url="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/favicon.ico")
 
+    @app.on_event("startup")
+    def _start_auto_advance_scheduler():
+        from .services.auto_advance_scheduler import start_auto_advance_scheduler
+        start_auto_advance_scheduler()
+
+    @app.on_event("shutdown")
+    def _stop_auto_advance_scheduler():
+        from .services.auto_advance_scheduler import stop_auto_advance_scheduler
+        stop_auto_advance_scheduler()
+
     return app
 
 

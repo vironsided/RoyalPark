@@ -76,12 +76,18 @@ def _recompute_invoice_status(db: Session, inv: Invoice):
 # =========================
 #  Автораспределение аванса
 # =========================
-def auto_apply_advance(db: Session, resident_id: int) -> tuple[int, Decimal]:
+def auto_apply_advance(
+    db: Session,
+    resident_id: int,
+    reference_tag: Optional[str] = None
+) -> tuple[int, Decimal]:
     """
     Пробует автоматически применить свободные остатки платежей (авансы) пользователя
     ТОЛЬКО к открытым счетам (ISSUED/PARTIAL) КОНКРЕТНОГО резидента (resident_id).
 
     Деньги (аванс) берутся из ОБЩЕГО пула всех объектов этого пользователя.
+    Если reference_tag указан — он будет проставлен в PaymentApplication для фиксации
+    конкретного запуска авто-распределения.
     """
     affected_invoice_ids: set[int] = set()
 
@@ -158,22 +164,32 @@ def auto_apply_advance(db: Session, resident_id: int) -> tuple[int, Decimal]:
             if apply_amt <= 0:
                 continue
 
-            # найдём/создадим строку применения
-            app = db.query(PaymentApplication).filter(
-                PaymentApplication.payment_id == p.id,
-                PaymentApplication.invoice_id == inv.id
-            ).first()
-            if app:
-                app.amount_applied = Decimal(app.amount_applied or 0) + apply_amt
-                app.reference = "ADVANCE"
-            else:
+            if reference_tag:
+                # Если reference_tag задан, создаём отдельную запись (не сливаем)
                 db.add(PaymentApplication(
-                    payment_id=p.id, 
-                    invoice_id=inv.id, 
+                    payment_id=p.id,
+                    invoice_id=inv.id,
                     amount_applied=apply_amt,
-                    reference="ADVANCE",
+                    reference=reference_tag,
                     created_at=now_baku(),
                 ))
+            else:
+                # найдём/создадим строку применения
+                app = db.query(PaymentApplication).filter(
+                    PaymentApplication.payment_id == p.id,
+                    PaymentApplication.invoice_id == inv.id
+                ).first()
+                if app:
+                    app.amount_applied = Decimal(app.amount_applied or 0) + apply_amt
+                    app.reference = "ADVANCE"
+                else:
+                    db.add(PaymentApplication(
+                        payment_id=p.id,
+                        invoice_id=inv.id,
+                        amount_applied=apply_amt,
+                        reference="ADVANCE",
+                        created_at=now_baku(),
+                    ))
 
             db.flush() # фиксируем для корректного SUM в следующей итерации
 
@@ -331,12 +347,160 @@ def apply_payment_to_invoices(
     return len(affected_invoice_ids)
 
 
+def apply_payment_to_invoice(
+    db: Session,
+    payment_id: int,
+    invoice_id: int
+) -> Decimal:
+    """
+    Применяет платеж к одному счету (invoice_id).
+
+    Returns:
+        Сумма, которая была применена к счету.
+    """
+    payment = db.get(Payment, payment_id)
+    inv = db.get(Invoice, invoice_id)
+    if not payment or not inv:
+        return Decimal("0")
+
+    paid_total = (
+        db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+        .filter(PaymentApplication.invoice_id == inv.id)
+        .scalar() or Decimal("0")
+    )
+    inv_leftover = Decimal(inv.amount_total or 0) - Decimal(paid_total)
+    if inv_leftover <= 0:
+        return Decimal("0")
+
+    applied_total = (
+        db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+        .filter(PaymentApplication.payment_id == payment_id)
+        .scalar() or Decimal("0")
+    )
+    payment_leftover = Decimal(payment.amount_total or 0) - Decimal(applied_total)
+    if payment_leftover <= 0:
+        return Decimal("0")
+
+    apply_amt = min(inv_leftover, payment_leftover)
+    if apply_amt <= 0:
+        return Decimal("0")
+
+    app = db.query(PaymentApplication).filter(
+        PaymentApplication.payment_id == payment_id,
+        PaymentApplication.invoice_id == inv.id
+    ).first()
+    if app:
+        app.amount_applied = Decimal(app.amount_applied or 0) + apply_amt
+    else:
+        db.add(PaymentApplication(
+            payment_id=payment_id,
+            invoice_id=inv.id,
+            amount_applied=apply_amt,
+            created_at=now_baku(),
+        ))
+
+    db.flush()
+    _recompute_invoice_status(db, inv)
+    return apply_amt
+
+
+def apply_advance_to_invoice(
+    db: Session,
+    user_id: int,
+    resident_id: int,
+    invoice_id: int,
+    max_amount: Decimal,
+    reference_tag: Optional[str] = None,
+) -> int:
+    """
+    Применяет аванс (пул платежей пользователя) к одному счету.
+
+    Returns:
+        1 если применили к счету, иначе 0.
+    """
+    if max_amount <= 0:
+        return 0
+
+    inv = db.get(Invoice, invoice_id)
+    if not inv or inv.resident_id != resident_id:
+        return 0
+
+    paid_total = (
+        db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+        .filter(PaymentApplication.invoice_id == inv.id)
+        .scalar() or Decimal("0")
+    )
+    inv_leftover = Decimal(inv.amount_total or 0) - Decimal(paid_total)
+    if inv_leftover <= 0:
+        return 0
+
+    associated_residents = db.query(user_residents.c.resident_id).filter(user_residents.c.user_id == user_id).all()
+    all_resident_ids = [r[0] for r in associated_residents] or [resident_id]
+
+    from sqlalchemy import cast, String
+    payments: list[Payment] = (
+        db.query(Payment)
+        .filter(Payment.resident_id.in_(all_resident_ids),
+                cast(Payment.method, String) != 'ADVANCE')
+        .order_by(Payment.created_at.asc(), Payment.id.asc())
+        .all()
+    )
+
+    total_available_pool = Decimal("0")
+    pay_leftover: dict[int, Decimal] = {}
+    for p in payments:
+        actual_applied = (
+            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+            .filter(PaymentApplication.payment_id == p.id)
+            .scalar() or Decimal("0")
+        )
+        left = Decimal(p.amount_total or 0) - Decimal(actual_applied)
+        total_available_pool += left
+        if left > 0:
+            pay_leftover[p.id] = left
+
+    if total_available_pool <= 0 or not pay_leftover:
+        return 0
+
+    remaining_to_apply = min(max_amount, total_available_pool, inv_leftover)
+    if remaining_to_apply <= 0:
+        return 0
+
+    for p in payments:
+        if remaining_to_apply <= 0:
+            break
+
+        left = pay_leftover.get(p.id, Decimal("0"))
+        if left <= 0:
+            continue
+
+        apply_amt = min(left, remaining_to_apply)
+        if apply_amt <= 0:
+            continue
+
+        db.add(PaymentApplication(
+            payment_id=p.id,
+            invoice_id=inv.id,
+            amount_applied=apply_amt,
+            reference=reference_tag or "ADVANCE",
+            created_at=now_baku(),
+        ))
+
+        db.flush()
+        pay_leftover[p.id] = left - apply_amt
+        remaining_to_apply -= apply_amt
+
+    _recompute_invoice_status(db, inv)
+    return 1
+
+
 def apply_advance_with_limit(
     db: Session,
     user_id: int,
     resident_id: int,
     max_amount: Decimal,
-    scope: Optional[str] = None
+    scope: Optional[str] = None,
+    reference_tag: Optional[str] = None,
 ) -> int:
     """
     Применяет существующие платежи (аванс) к счетам с учетом scope и ограничением по сумме.
@@ -467,7 +631,7 @@ def apply_advance_with_limit(
                 payment_id=p.id,
                 invoice_id=inv.id,
                 amount_applied=apply_amt,
-                reference="ADVANCE",  # Метка, что это списание из аванса
+                reference=reference_tag or "ADVANCE",  # Метка, что это списание из аванса
                 created_at=now_baku(),
             ))
             

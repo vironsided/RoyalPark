@@ -230,6 +230,7 @@
     const API_BASE = 'http://localhost:8000';
     let tariffsData = [];
     let seweragePercentDirty = false;
+    let editingTariffId = null;
 
     // Маппинг типов для отображения
     const meterTypeMap = {
@@ -676,6 +677,7 @@
 
         const input = document.getElementById('tariffSeweragePercent');
         if (!input) return;
+        if (editingTariffId) return;
         if (seweragePercentDirty) return;
 
         const waterPrice = getFirstStepPriceFromForm();
@@ -1159,8 +1161,6 @@
             }
         }
     }
-
-    let editingTariffId = null;
 
     window.editTariff = async function (tariffId) {
         editingTariffId = tariffId;

@@ -15,7 +15,7 @@ from ..database import get_db
 from ..models import (
     User, RoleEnum, Block, Resident, ResidentMeter,
     MeterType, Tariff, MeterReading, ReadingLog, MeterReadingPhoto,
-    Invoice, InvoiceLine, InvoiceStatus
+    Invoice, InvoiceLine, InvoiceStatus, CustomerType
 )
 from ..deps import get_current_user
 from .payments import auto_apply_advance
@@ -1067,6 +1067,8 @@ def get_reading_history(
 
     meters = r.meters
     result = []
+    meter_entries = []
+    has_real_sewerage = False
     
     # Парсим даты фильтрации по месяцам
     start_date = None
@@ -1106,6 +1108,8 @@ def get_reading_history(
             query.order_by(MeterReading.reading_date.desc(), MeterReading.id.desc())
             .all()
         )
+        if m.meter_type == MeterType.SEWERAGE and readings:
+            has_real_sewerage = True
 
         photo_map = {}
         reading_ids = [rd.id for rd in readings]
@@ -1113,6 +1117,9 @@ def get_reading_history(
             photos = db.query(MeterReadingPhoto).filter(MeterReadingPhoto.meter_reading_id.in_(reading_ids)).all()
             photo_map = {p.meter_reading_id: f"/uploads/{p.file_path}" for p in photos}
         
+        meter_entries.append((m, readings, photo_map))
+
+    for m, readings, photo_map in meter_entries:
         # Определяем тип для отображения
         if m.meter_type == MeterType.ELECTRIC:
             display_type = "Электричество"
@@ -1138,19 +1145,55 @@ def get_reading_history(
         else:
             display_type = "Неизвестно"
             unit = "—"
-        
+
         readings_data = []
+        sewerage_readings = []
+
         for rd in readings:
+            base_amount = Decimal(str(rd.amount_total or 0))
+            base_cons = Decimal(str(rd.consumption or 0))
+            base_value = Decimal(str(rd.value or 0))
+
+            # По умолчанию — как есть
+            amount_out = money(base_amount)
+            cons_out = base_cons
+
+            if m.meter_type == MeterType.WATER and not has_real_sewerage:
+                t = db.get(Tariff, rd.tariff_id) if rd.tariff_id else m.tariff
+                percent = Decimal(str(getattr(t, "sewerage_percent", 0) or 0)) if t else Decimal("0")
+                if t and t.meter_type == MeterType.WATER and percent > 0:
+                    k = percent / Decimal("100")
+                    if getattr(t, "customer_type", None) == CustomerType.INDIVIDUAL:
+                        cons_out = base_cons * (Decimal("1") - k)
+                        amount_out = money(base_amount * (Decimal("1") - k))
+                        sewer_cons = base_cons * k
+                        sewer_amount = money(base_amount - amount_out)
+                    else:
+                        cons_out = base_cons
+                        amount_out = money(base_amount)
+                        sewer_cons = base_cons * k
+                        sewer_amount = money(base_amount * k)
+
+                    sewerage_readings.append({
+                        "date": rd.reading_date.strftime("%Y-%m-%d"),
+                        "value": float(sewer_cons),
+                        "consumption": float(sewer_cons),
+                        "amount": float(sewer_amount),
+                        "vat_percent": rd.vat_percent,
+                        "comment": "Авто (от воды)",
+                        "photo_url": None,
+                    })
+
             readings_data.append({
                 "date": rd.reading_date.strftime("%Y-%m-%d"),
-                "value": float(rd.value),
-                "consumption": float(rd.consumption),
-                "amount": float(rd.amount_total),
+                "value": float(base_value),
+                "consumption": float(cons_out),
+                "amount": float(amount_out),
                 "vat_percent": rd.vat_percent,
                 "comment": rd.note or "—",
                 "photo_url": photo_map.get(rd.id),
             })
-        
+
         result.append({
             "meter_id": m.id,
             "type": display_type,
@@ -1159,6 +1202,16 @@ def get_reading_history(
             "unit": unit,
             "readings": readings_data,
         })
+
+        if m.meter_type == MeterType.WATER and sewerage_readings:
+            result.append({
+                "meter_id": None,
+                "type": "Канализация",
+                "tariff_name": (m.tariff.name if m.tariff else None),
+                "serial_number": None,
+                "unit": "м³",
+                "readings": sewerage_readings,
+            })
     
     return {"meters": result}
 

@@ -244,6 +244,8 @@
                 const totalFormatted = formatCurrency(inv.amount_total);
                 const paidFormatted = formatCurrency(inv.paid_amount);
                 const remainingFormatted = formatCurrency(inv.remaining_amount);
+                const remainingAmount = (inv.remaining_amount ?? inv.amount_total ?? 0);
+                const isPayable = remainingAmount > 0;
 
                 // Format due date
                 const dueDateText = inv.due_date 
@@ -274,6 +276,9 @@
                         <td>
                             <button class="user-bill-open-btn" data-user-route-target="invoice" data-invoice-id="${inv.id}" data-i18n="user_bills_open_btn">${window.i18n?.translate?.('user_bills_open_btn', lang) || 'Открыть'}</button>
                             <button class="user-bill-pdf-btn" type="button" data-invoice-id="${inv.id}">PDF</button>
+                            <button class="btn btn-primary invoice-pay-btn" type="button" data-invoice-id="${inv.id}" data-resident-id="${inv.resident_id}" data-resident-code="${inv.resident_code || ''}" data-remaining-amount="${remainingAmount}" data-i18n="user_invoice_pay_btn" ${isPayable ? '' : 'disabled'} aria-disabled="${isPayable ? 'false' : 'true'}">
+                                ${window.i18n?.translate?.('user_invoice_pay_btn', lang) || 'Оплатить'}
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -367,6 +372,45 @@
                         sessionStorage.setItem('currentInvoiceId', invoiceId);
                         // Open print page with invoice ID in URL
                         window.open(`/user/invoice-print.html?id=${invoiceId}`, '_blank', 'noopener');
+                    }
+                }
+            });
+
+            // Handle Pay button clicks (using event delegation)
+            document.addEventListener('click', (e) => {
+                const payBtn = e.target.closest('.invoice-pay-btn');
+                if (payBtn) {
+                    e.preventDefault();
+                    const invoiceId = payBtn.getAttribute('data-invoice-id');
+                    const residentId = payBtn.getAttribute('data-resident-id');
+                    const residentCode = payBtn.getAttribute('data-resident-code');
+                    const remainingRaw = payBtn.getAttribute('data-remaining-amount');
+                    const remaining = remainingRaw ? parseFloat(remainingRaw) : 0;
+
+                    if (!invoiceId || remaining <= 0) {
+                        return;
+                    }
+
+                    try {
+                        sessionStorage.setItem('paymentScope', 'invoice');
+                        sessionStorage.setItem('paymentAmount', String(remaining));
+                        sessionStorage.setItem('paymentScopeLabel', window.i18n?.translate?.('payment_invoice_payment', localStorage.getItem('language') || 'ru') || 'Оплата счёта');
+                        sessionStorage.setItem('paymentTimestamp', String(Date.now()));
+                        if (residentCode) {
+                            sessionStorage.setItem('paymentResidentCode', residentCode);
+                        }
+                        if (residentId) {
+                            sessionStorage.setItem('paymentResidentId', String(residentId));
+                        }
+                        sessionStorage.setItem('paymentInvoiceId', String(invoiceId));
+                    } catch (err) {
+                        console.warn('Failed to store payment session data', err);
+                    }
+
+                    if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
+                        window.userSpaRouter.navigate('report', true);
+                    } else {
+                        window.location.href = '/user/dashboard.html#report';
                     }
                 }
             });

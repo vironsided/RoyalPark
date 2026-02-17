@@ -531,6 +531,7 @@ def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
                 ln.amount_net = _money2(Decimal(str(rd.amount_net or 0)))
                 ln.amount_vat = _money2(Decimal(str(rd.amount_vat or 0)))
                 ln.amount_total = _money2(Decimal(str(rd.amount_total or 0)))
+                ln.description = f"Вода {float(Decimal(str(rd.consumption or 0)))} м³"
         if auto_line:
             db.delete(auto_line)
         return
@@ -545,6 +546,7 @@ def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
     sew_vat = Decimal("0")
     sew_total = Decimal("0")
     water_cons = Decimal("0")
+    sewer_cons = Decimal("0")
 
     for ln, rd in water_rows:
         water_cons += Decimal(str(rd.consumption or 0))
@@ -559,10 +561,12 @@ def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
             ln.amount_net = base_net
             ln.amount_vat = base_vat
             ln.amount_total = base_total
+            ln.description = f"Вода {float(Decimal(str(rd.consumption or 0)))} м³"
             continue
 
         k = percent / Decimal("100")
 
+        consumption = Decimal(str(rd.consumption or 0))
         if getattr(t, "customer_type", None) == CustomerType.INDIVIDUAL:
             new_net = _money2(base_net * (Decimal("1") - k))
             new_vat = _money2(base_vat * (Decimal("1") - k))
@@ -575,6 +579,10 @@ def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
             sew_net += (base_net - new_net)
             sew_vat += (base_vat - new_vat)
             sew_total += (base_total - new_total)
+            water_display_cons = consumption * (Decimal("1") - k)
+            sewer_display_cons = consumption * k
+            ln.description = f"Вода {float(water_display_cons)} м³"
+            sewer_cons += sewer_display_cons
         else:
             ln.amount_net = base_net
             ln.amount_vat = base_vat
@@ -583,13 +591,15 @@ def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
             sew_net += _money2(base_net * k)
             sew_vat += _money2(base_vat * k)
             sew_total += _money2(base_total * k)
+            ln.description = f"Вода {float(consumption)} м³"
+            sewer_cons += consumption * k
 
     if sew_total <= 0:
         if auto_line:
             db.delete(auto_line)
         return
 
-    desc = f"Канализация  {float(water_cons)} м³"
+    desc = f"Канализация  {float(sewer_cons)} м³"
 
     if auto_line:
         auto_line.description = desc
@@ -685,8 +695,8 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
             display_method = "ADVANCE"
             # Используем comment из платежа, если он есть, иначе стандартный
             display_comment = p.comment or "Royal Park Pass"
-        elif app.reference == "ADVANCE":
-            # Применение от реального платежа с reference="ADVANCE" (должно быть скрыто фильтрацией выше)
+        elif (app.reference == "ADVANCE") or (app.reference and app.reference.startswith(("ADVANCE:", "AUTOADV:"))):
+            # Применение от реального платежа с reference="ADVANCE"/"ADVANCE:<id>"/"AUTOADV:<...>"
             display_method = "ADVANCE"
             display_comment = "Royal Park Pass"
         else:

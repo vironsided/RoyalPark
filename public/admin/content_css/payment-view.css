@@ -112,6 +112,58 @@
         margin-bottom: 16px;
     }
 
+    .auto-distribute-info {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .auto-distribute-timer {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-right: 10px;
+        padding: 6px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(124, 106, 255, 0.45);
+        background: rgba(65, 54, 120, 0.25);
+        color: rgba(225, 231, 255, 0.95);
+        font-weight: 600;
+        font-size: 0.95rem;
+        letter-spacing: 0.01em;
+        box-shadow: 0 4px 12px rgba(64, 56, 120, 0.35);
+    }
+
+    .auto-distribute-timer .bi {
+        font-size: 1rem;
+        color: rgba(160, 180, 255, 0.95);
+    }
+
+    .auto-distribute-timer-text {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .auto-distribute-balance {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 10px;
+        padding: 6px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        background: rgba(16, 185, 129, 0.12);
+        color: rgba(209, 250, 229, 0.95);
+        font-weight: 600;
+        font-size: 0.95rem;
+        letter-spacing: 0.01em;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+
+    .auto-distribute-help {
+        margin: 10px 0 16px;
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 0.9rem;
+    }
+
     .distribution-section h3,
     .applications-section h3 {
         color: rgba(255, 255, 255, 0.9);
@@ -178,6 +230,12 @@
         color: #fefefe;
         font-variant-numeric: tabular-nums;
         text-align: right;
+    }
+
+    .apply-input[readonly] {
+        cursor: default;
+        background: rgba(255, 255, 255, 0.02);
+        color: rgba(255, 255, 255, 0.7);
     }
 
     .apply-input:focus {

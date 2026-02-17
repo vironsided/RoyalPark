@@ -250,6 +250,20 @@
                         console.warn('Resident ID not found, will try to load from backend');
                     }
                 }
+
+                if (route === 'bills') {
+                    const statuses = target.getAttribute('data-bills-statuses');
+                    if (statuses) {
+                        try {
+                            const list = statuses.split(',').map(s => s.trim()).filter(Boolean);
+                            if (list.length) {
+                                sessionStorage.setItem('billsFilterStatuses', JSON.stringify(list));
+                            }
+                        } catch (e) {
+                            console.warn('Failed to store billsFilterStatuses', e);
+                        }
+                    }
+                }
                 
                 // For report payment, also store resident ID if provided
                 if (route === 'report') {

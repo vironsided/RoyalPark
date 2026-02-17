@@ -377,11 +377,17 @@ window.selectedSavedCard = null;
 
 // TTL for payment session data (10 minutes)
 var PAYMENT_DATA_TTL_MS = 1 * 60 * 1000;
-var paymentCountdownInterval = null;
+if (window.paymentCountdownInterval) {
+    clearInterval(window.paymentCountdownInterval);
+}
+var paymentCountdownInterval = window.paymentCountdownInterval || null;
 
 function redirectToDashboard() {
     // мягкий редирект на главный экран пользователя
-    setTimeout(() => {
+    if (window.paymentRedirectTimeout) {
+        clearTimeout(window.paymentRedirectTimeout);
+    }
+    window.paymentRedirectTimeout = setTimeout(() => {
         if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
             window.userSpaRouter.navigate('dashboard', true);
         } else {
@@ -397,6 +403,7 @@ function clearPaymentSessionData() {
     sessionStorage.removeItem('paymentResidentCode');
     sessionStorage.removeItem('paymentResidentId');
     sessionStorage.removeItem('paymentSummary');
+    sessionStorage.removeItem('paymentInvoiceId');
     sessionStorage.removeItem('paymentTimestamp');
 }
 
@@ -404,6 +411,10 @@ function stopPaymentCountdown() {
     if (paymentCountdownInterval) {
         clearInterval(paymentCountdownInterval);
         paymentCountdownInterval = null;
+    }
+    if (window.paymentCountdownInterval) {
+        clearInterval(window.paymentCountdownInterval);
+        window.paymentCountdownInterval = null;
     }
     const timerEl = document.getElementById('paymentCountdown');
     if (timerEl) {
@@ -448,6 +459,7 @@ function startPaymentCountdown(paymentTimestamp) {
 
     tick();
     paymentCountdownInterval = setInterval(tick, 1000);
+    window.paymentCountdownInterval = paymentCountdownInterval;
 }
 
 function resetPaymentSummaryUIAfterExpiry() {
@@ -873,7 +885,8 @@ async function loadDashboardSummaryForPayment(scope) {
 // Загрузка связанных счетов резидента для показа в деталях оплаты
 // preferredAmount - сумма из sessionStorage, которая имеет приоритет над суммой из счетов
 // residentId - ID резидента для фильтрации счетов
-async function loadPaymentInvoices(scope, residentCode, preferredAmount = null, residentId = null) {
+// selectedInvoiceId - конкретный счет для оплаты (если выбран)
+async function loadPaymentInvoices(scope, residentCode, preferredAmount = null, residentId = null, selectedInvoiceId = null) {
     try {
         const response = await fetch(`${API_BASE}/api/resident/invoices`, {
             method: 'GET',
@@ -900,9 +913,23 @@ async function loadPaymentInvoices(scope, residentCode, preferredAmount = null, 
 
         // Фильтруем счета по резидент-коду и/или residentId, если они указаны
         let filteredInvoices = invoices;
+        let selectedInvoice = null;
+        let lockToSelectedInvoice = false;
+        if (selectedInvoiceId) {
+            selectedInvoice = invoices.find(inv => inv.id === selectedInvoiceId) || null;
+            if (selectedInvoice) {
+                filteredInvoices = [selectedInvoice];
+                lockToSelectedInvoice = true;
+                if (!residentId) residentId = selectedInvoice.resident_id;
+                if (!residentCode) residentCode = selectedInvoice.resident_code;
+                if (!preferredAmount || Number(preferredAmount) === 0) {
+                    preferredAmount = (selectedInvoice.remaining_amount ?? selectedInvoice.amount_total ?? 0);
+                }
+            }
+        }
         
         // Для scope 'all' мы хотим видеть ВСЕ счета пользователя, поэтому пропускаем фильтрацию по резиденту
-        if (scope !== 'all') {
+        if (scope !== 'all' && !lockToSelectedInvoice) {
             if (residentId) {
                 // Приоритет: фильтрация по residentId (более точная)
                 filteredInvoices = invoices.filter(inv => inv.resident_id === residentId);
@@ -918,7 +945,7 @@ async function loadPaymentInvoices(scope, residentCode, preferredAmount = null, 
 
         // Затем фильтруем по периоду, если scope === 'month'
         let targetInvoices = filteredInvoices;
-        if (scope === 'month') {
+        if (scope === 'month' && !selectedInvoiceId) {
             const monthInvoices = filteredInvoices.filter(inv => inv.period_year === curYear && inv.period_month === curMonth);
             if (monthInvoices.length) {
                 targetInvoices = monthInvoices;
@@ -1024,6 +1051,15 @@ async function loadPaymentInvoices(scope, residentCode, preferredAmount = null, 
                 const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
                 const mName = monthNames[curMonth - 1] || curMonth;
                 paymentDateEl.textContent = `${mName} ${curYear}`;
+            } else if (scope === 'invoice' && (selectedInvoice || targetInvoices.length > 0)) {
+                const inv = selectedInvoice || targetInvoices[0];
+                if (inv?.period_dates?.from && inv?.period_dates?.to) {
+                    paymentDateEl.textContent = `${inv.period_dates.from} - ${inv.period_dates.to}`;
+                } else if (inv?.period_year && inv?.period_month) {
+                    const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+                    const mName = monthNames[inv.period_month - 1] || inv.period_month;
+                    paymentDateEl.textContent = `${mName} ${inv.period_year}`;
+                }
             } else if (targetInvoices.length > 0) {
                 if (scope === 'all' && targetInvoices.length > 1) {
                 // Для полного погашения долга показываем диапазон от первой до последней даты
@@ -1307,7 +1343,9 @@ async function initPaymentPage() {
             stopPaymentCountdown();
         }
         
-        const scope = sessionStorage.getItem('paymentScope') || 'month';
+        const selectedInvoiceIdRaw = sessionStorage.getItem('paymentInvoiceId');
+        const selectedInvoiceId = selectedInvoiceIdRaw ? parseInt(selectedInvoiceIdRaw, 10) : null;
+        const scope = sessionStorage.getItem('paymentScope') || (selectedInvoiceId ? 'invoice' : 'month');
         let amountRaw = sessionStorage.getItem('paymentAmount');
         let amount = amountRaw ? parseFloat(amountRaw) : 0;
         const scopeLabelStored = sessionStorage.getItem('paymentScopeLabel');
@@ -1333,7 +1371,7 @@ async function initPaymentPage() {
         // Проверяем, есть ли актуальные данные в sessionStorage (пользователь перешел через кнопку)
         // Данные считаются актуальными только если есть временная метка и она не устарела
         const hasPaymentData = paymentTimestamp && (now - parseInt(paymentTimestamp, 10)) <= PAYMENT_DATA_TTL_MS && 
-                               (amountRaw || residentCodeStored || paymentSummaryRaw || sessionStorage.getItem('paymentResidentId'));
+                               (amountRaw || residentCodeStored || paymentSummaryRaw || sessionStorage.getItem('paymentResidentId') || selectedInvoiceId);
         
         if (hasPaymentData) {
             startPaymentCountdown(paymentTimestamp);
@@ -1383,6 +1421,8 @@ async function initPaymentPage() {
             if (subtitleEl) {
                 if (scope === 'all') {
                     subtitleEl.textContent = window.i18n?.translate?.('payment_all_debt', lang) || 'Оплата всего долга';
+                } else if (scope === 'invoice') {
+                    subtitleEl.textContent = window.i18n?.translate?.('payment_invoice_payment', lang) || 'Оплата счёта';
                 } else {
                     subtitleEl.textContent = window.i18n?.translate?.('payment_current_month', lang) || 'Оплата за текущий месяц';
                 }
@@ -1391,7 +1431,9 @@ async function initPaymentPage() {
             if (paymentTypeEl) {
                 const defaultScopeText = scope === 'all'
                     ? (window.i18n?.translate?.('payment_full_debt', lang) || 'Полное погашение долга по счетам')
-                    : (window.i18n?.translate?.('payment_month_bills', lang) || 'Оплата счетов за текущий месяц');
+                    : (scope === 'invoice'
+                        ? (window.i18n?.translate?.('payment_invoice_payment', lang) || 'Оплата счёта')
+                        : (window.i18n?.translate?.('payment_month_bills', lang) || 'Оплата счетов за текущий месяц'));
                 paymentTypeEl.textContent = scopeLabelStored || defaultScopeText;
             }
 
@@ -1404,7 +1446,7 @@ async function initPaymentPage() {
             // Передаём сумму из sessionStorage, чтобы loadPaymentInvoices не перезаписывала её
             const residentIdStored = sessionStorage.getItem('paymentResidentId');
             const residentIdParsed = residentIdStored ? parseInt(residentIdStored, 10) : null;
-            loadPaymentInvoices(scope, residentCodeStored || null, amount, residentIdParsed);
+            loadPaymentInvoices(scope, residentCodeStored || null, amount, residentIdParsed, selectedInvoiceId);
         } else {
             // Если нет данных в sessionStorage, оставляем все поля пустыми
             if (subtitleEl) {
@@ -1511,7 +1553,15 @@ function initCustomAmountField(defaultAmount) {
             return;
         }
 
+        const activeCard = window.selectedSavedCard || selectedSavedCard;
+        const isAdvancePayment = activeCard && activeCard.type === 'ADVANCE';
+
         if (customAmount > invoiceTotal) {
+            if (isAdvancePayment && invoiceTotal > 0) {
+                hintEl.textContent = 'При оплате из аванса сумма не может превышать сумму счёта';
+                hintEl.className = 'custom-amount-hint hint-error';
+                return;
+            }
             const advance = customAmount - invoiceTotal;
             hintEl.textContent = `Излишек ${advance.toFixed(2)} ₼ будет зачислен в аванс`;
             hintEl.className = 'custom-amount-hint hint-advance';
@@ -1576,6 +1626,8 @@ async function submitPayment(event) {
     // Get payment data from session storage
     let scope = sessionStorage.getItem('paymentScope') || 'month';
     let amount = parseFloat(sessionStorage.getItem('paymentAmount') || '0');
+    const invoiceIdStored = sessionStorage.getItem('paymentInvoiceId');
+    const invoiceId = invoiceIdStored ? parseInt(invoiceIdStored, 10) : null;
     
     // Check if custom amount is enabled
     const customAmountCheckbox = document.getElementById('customAmountCheckbox');
@@ -1682,6 +1734,15 @@ async function submitPayment(event) {
         const activeCard = window.selectedSavedCard || selectedSavedCard;
         if (activeCard) {
             if (activeCard.type === 'ADVANCE') {
+                if (hasInvoice && invoiceTotal > 0 && amount > invoiceTotal) {
+                    showPaymentError(`Сумма оплаты из аванса не может превышать сумму счёта (${invoiceTotal.toFixed(2)} ₼)`);
+                    if (useCustomAmount && customAmountInput) {
+                        customAmountInput.value = invoiceTotal.toFixed(2);
+                        customAmountInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    return false;
+                }
+
                 // Проверяем достаточность средств на авансовом счету
                 // ПРИОРИТЕТ: берем актуальное значение из DOM, так как оно могло обновиться асинхронно
                 const advanceCardEl = document.querySelector('.resident-pass-card[data-card-type="ADVANCE"]');
@@ -1767,7 +1828,8 @@ async function submitPayment(event) {
                 method: paymentMethod,
                 reference: paymentReference,
                 comment: paymentComment,
-                scope: paymentScope  // 'month' или 'all' - для применения к счетам, null - только пополнение аванса
+                scope: paymentScope,  // 'month' или 'all' - для применения к счетам, null - только пополнение аванса
+                invoice_id: invoiceId
             })
         });
         
@@ -2106,6 +2168,10 @@ function setupPaymentDataCleanup() {
         // Если были на странице оплаты и ушли на другую страницу - просто остановим таймер
         if (wasOnReportPage && !isOnReportPage) {
             stopPaymentCountdown();
+            if (window.paymentRedirectTimeout) {
+                clearTimeout(window.paymentRedirectTimeout);
+                window.paymentRedirectTimeout = null;
+            }
         }
         
         wasOnReportPage = isOnReportPage;

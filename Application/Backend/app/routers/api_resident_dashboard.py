@@ -60,6 +60,7 @@ def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
                 ln.amount_net = _money2(Decimal(str(rd.amount_net or 0)))
                 ln.amount_vat = _money2(Decimal(str(rd.amount_vat or 0)))
                 ln.amount_total = _money2(Decimal(str(rd.amount_total or 0)))
+                ln.description = f"Вода {float(Decimal(str(rd.consumption or 0)))} м³"
         if auto_line:
             db.delete(auto_line)
         return
@@ -74,6 +75,7 @@ def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
     sew_vat = Decimal("0")
     sew_total = Decimal("0")
     water_cons = Decimal("0")
+    sewer_cons = Decimal("0")
 
     for ln, rd in water_rows:
         water_cons += Decimal(str(rd.consumption or 0))
@@ -88,10 +90,12 @@ def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
             ln.amount_net = base_net
             ln.amount_vat = base_vat
             ln.amount_total = base_total
+            ln.description = f"Вода {float(Decimal(str(rd.consumption or 0)))} м³"
             continue
 
         k = percent / Decimal("100")
 
+        consumption = Decimal(str(rd.consumption or 0))
         if getattr(t, "customer_type", None) == CustomerType.INDIVIDUAL:
             new_net = _money2(base_net * (Decimal("1") - k))
             new_vat = _money2(base_vat * (Decimal("1") - k))
@@ -104,6 +108,10 @@ def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
             sew_net += (base_net - new_net)
             sew_vat += (base_vat - new_vat)
             sew_total += (base_total - new_total)
+            water_display_cons = consumption * (Decimal("1") - k)
+            sewer_display_cons = consumption * k
+            ln.description = f"Вода {float(water_display_cons)} м³"
+            sewer_cons += sewer_display_cons
         else:
             ln.amount_net = base_net
             ln.amount_vat = base_vat
@@ -112,13 +120,15 @@ def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
             sew_net += _money2(base_net * k)
             sew_vat += _money2(base_vat * k)
             sew_total += _money2(base_total * k)
+            ln.description = f"Вода {float(consumption)} м³"
+            sewer_cons += consumption * k
 
     if sew_total <= 0:
         if auto_line:
             db.delete(auto_line)
         return
 
-    desc = f"Канализация  {float(water_cons)} м³"
+    desc = f"Канализация  {float(sewer_cons)} м³"
 
     if auto_line:
         auto_line.description = desc
@@ -444,9 +454,9 @@ def get_resident_invoice_detail(
     payments = []
     for app in apps:
         p = app.payment
-        # ВАЖНО: Если app.reference == "ADVANCE", это списание из аванса
+        # ВАЖНО: Если app.reference указывает на списание аванса, показываем "ADVANCE"
         # Показываем "ADVANCE" вместо реального метода платежа (CARD/TRANSFER)
-        if app.reference == "ADVANCE":
+        if app.reference == "ADVANCE" or (app.reference and app.reference.startswith(("ADVANCE:", "AUTOADV:"))):
             display_method = "ADVANCE"
             display_comment = "Royal Park Pass"
         else:
@@ -972,6 +982,7 @@ class ResidentPaymentCreate(BaseModel):
     reference: Optional[str] = None
     comment: Optional[str] = None
     scope: Optional[str] = None  # 'month' - только текущий месяц, 'all' - все счета, None - только пополнение аванса
+    invoice_id: Optional[int] = None  # оплата конкретного счета
 
 
 class ResidentPaymentResponse(BaseModel):
@@ -1032,8 +1043,19 @@ def create_resident_payment(
             # Если пришло что-то странное - принудительно ставим CARD.
             method_value = "CARD"
 
-    from .payments import apply_payment_to_invoices, apply_advance_with_limit
+    from .payments import apply_payment_to_invoices, apply_advance_with_limit, apply_payment_to_invoice, apply_advance_to_invoice
     
+    # Если указан invoice_id, проверяем доступность счета
+    target_invoice = None
+    if data.invoice_id is not None:
+        target_invoice = db.get(Invoice, data.invoice_id)
+        if not target_invoice:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+        if target_invoice.resident_id not in resident_ids:
+            raise HTTPException(status_code=403, detail="Invalid invoice")
+        if target_invoice.status in {InvoiceStatus.CANCELED}:
+            raise HTTPException(status_code=400, detail="Invoice is canceled")
+
     # Если оплата через аванс, создаем историю списания и корректируем общий баланс
     if is_advance:
         # БЛОКИРОВКА: предотвращаем одновременные списания аванса
@@ -1059,34 +1081,69 @@ def create_resident_payment(
             raise HTTPException(status_code=400, detail=f"Недостаточно средств на авансе (доступно {total_advance} ₼)")
 
         try:
-            # 2) Списываем реальные деньги из существующих платежей
-            # Это создаст PaymentApplication с reference="ADVANCE" к реальным платежам
-            # Если scope не указан, по умолчанию бьем только текущий месяц,
-            # чтобы не разбрасывать оплату по старым долгам.
-            effective_scope = data.scope if data.scope in ("all", "month") else "month"
+            # 2) Создаем технический Payment (метод ADVANCE) ТОЛЬКО для истории
+            # ВАЖНО: Мы НЕ создаем PaymentApplication для этого платежа напрямую,
+            # так как приложения создаются на реальных платежах и помечаются reference_tag.
+            reference_value = "ADVANCE_USE"
+            comment_suffix = ""
+            if target_invoice:
+                reference_value = f"ADVANCE_USE:{target_invoice.id}"
+                comment_suffix = f" (счёт {target_invoice.number or target_invoice.id})"
 
-            affected_count = apply_advance_with_limit(
-                db,
-                user.id,
-                data.resident_id,
-                max_amount=target_amount,
-                scope=effective_scope
-            )
-            
-            # 3) Создаем технический Payment (метод ADVANCE) ТОЛЬКО для истории
-            # ВАЖНО: Мы НЕ создаем PaymentApplication для этого платежа, 
-            # так как приложения уже созданы от реальных платежей в apply_advance_with_limit.
             history_payment = Payment(
                 resident_id=data.resident_id,
                 received_at=now_baku(),
                 amount_total=target_amount,
                 method=PaymentMethod.ADVANCE,
-                reference="ADVANCE_USE",
-                comment=f"Списание из аванса: {target_amount} ₼" + (f" (к {affected_count} счетам)" if affected_count > 0 else ""),
+                reference=reference_value,
+                comment=f"Списание из аванса: {target_amount} ₼" + comment_suffix,
                 created_by_id=user.id,
             )
             db.add(history_payment)
             db.flush()
+
+            reference_tag = f"ADVANCE:{history_payment.id}"
+
+            # 3) Списываем реальные деньги из существующих платежей
+            # Это создаст PaymentApplication с reference_tag к реальным платежам
+            if target_invoice:
+                # Для оплаты из аванса по конкретному счёту запрещаем сумму больше остатка
+                paid_total = (
+                    db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+                    .filter(PaymentApplication.invoice_id == target_invoice.id)
+                    .scalar() or Decimal("0")
+                )
+                inv_leftover = Decimal(target_invoice.amount_total or 0) - Decimal(paid_total)
+                if inv_leftover <= 0:
+                    raise HTTPException(status_code=400, detail="Счёт уже оплачен")
+                if target_amount > inv_leftover:
+                    raise HTTPException(status_code=400, detail="Сумма оплаты из аванса не может превышать сумму счёта")
+
+                affected_count = apply_advance_to_invoice(
+                    db,
+                    user.id,
+                    data.resident_id,
+                    target_invoice.id,
+                    max_amount=target_amount,
+                    reference_tag=reference_tag,
+                )
+            else:
+                # Если scope не указан, по умолчанию бьем только текущий месяц,
+                # чтобы не разбрасывать оплату по старым долгам.
+                effective_scope = data.scope if data.scope in ("all", "month") else "month"
+
+                affected_count = apply_advance_with_limit(
+                    db,
+                    user.id,
+                    data.resident_id,
+                    max_amount=target_amount,
+                    scope=effective_scope,
+                    reference_tag=reference_tag,
+                )
+
+            if affected_count <= 0:
+                db.rollback()
+                raise HTTPException(status_code=400, detail="Нет выставленных счетов для оплаты из аванса")
             
             # ЛОГИРОВАНИЕ действия
             db.add(PaymentLog(
@@ -1100,14 +1157,22 @@ def create_resident_payment(
             
             db.commit()
             
-            if data.scope is None:
-                message = "Аванс зарезервирован (scope=None)"
-            elif affected_count > 0:
-                message = f"Аванс успешно применён к {affected_count} счёт(ам)"
+            if target_invoice:
+                if affected_count > 0:
+                    message = "Аванс успешно применён к выбранному счёту"
+                else:
+                    message = "Аванс не применён (нет подходящих открытых счетов)"
             else:
-                message = f"Аванс не применён (нет подходящих открытых счетов)"
+                if data.scope is None:
+                    message = "Аванс зарезервирован (scope=None)"
+                elif affected_count > 0:
+                    message = f"Аванс успешно применён к {affected_count} счёт(ам)"
+                else:
+                    message = f"Аванс не применён (нет подходящих открытых счетов)"
                 
         except Exception as e:
+            if isinstance(e, HTTPException):
+                raise
             db.rollback()
             raise HTTPException(status_code=500, detail=f"Ошибка при обработке аванса: {str(e)}")
         
@@ -1144,20 +1209,30 @@ def create_resident_payment(
     # Apply payment to invoices based on scope
     # scope='month' - только текущий месяц, 'all' - все счета, None - только пополнение аванса
     try:
-        affected_count = apply_payment_to_invoices(
-            db, 
-            payment.id, 
-            data.resident_id, 
-            scope=data.scope
-        )
+        if target_invoice:
+            applied_amount = apply_payment_to_invoice(db, payment.id, target_invoice.id)
+            affected_count = 1 if applied_amount > 0 else 0
+        else:
+            affected_count = apply_payment_to_invoices(
+                db, 
+                payment.id, 
+                data.resident_id, 
+                scope=data.scope
+            )
         db.commit()
         
-        if data.scope is None:
-            message = "Платёж успешно создан (пополнение аванса)"
-        elif affected_count > 0:
-            message = f"Платёж успешно создан и применён к {affected_count} счёт(ам)"
+        if target_invoice:
+            if affected_count > 0:
+                message = "Платёж успешно создан и применён к выбранному счёту"
+            else:
+                message = "Платёж успешно создан (не применён к выбранному счёту)"
         else:
-            message = "Платёж успешно создан (не применён к счетам - нет подходящих счетов)"
+            if data.scope is None:
+                message = "Платёж успешно создан (пополнение аванса)"
+            elif affected_count > 0:
+                message = f"Платёж успешно создан и применён к {affected_count} счёт(ам)"
+            else:
+                message = "Платёж успешно создан (не применён к счетам - нет подходящих счетов)"
     except Exception as e:
         print(f"Warning: apply_payment_to_invoices failed: {e}")
         # Payment still created, just not applied

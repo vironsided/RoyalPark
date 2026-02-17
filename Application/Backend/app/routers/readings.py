@@ -97,6 +97,7 @@ def _upsert_auto_sewerage_line_for_invoice(
                     line.amount_net = money(Decimal(str(rd.amount_net or 0)))
                     line.amount_vat = money(Decimal(str(rd.amount_vat or 0)))
                     line.amount_total = money(Decimal(str(rd.amount_total or 0)))
+                    line.description = f"Вода {float(Decimal(str(rd.consumption or 0)))} м³"
         if auto_line:
             db.delete(auto_line)
         return
@@ -114,6 +115,7 @@ def _upsert_auto_sewerage_line_for_invoice(
     sew_vat = Decimal("0")
     sew_total = Decimal("0")
     water_cons = Decimal("0")
+    sewer_cons = Decimal("0")
 
     for rd in water_readings:
         water_cons += Decimal(str(rd.consumption or 0))
@@ -134,6 +136,7 @@ def _upsert_auto_sewerage_line_for_invoice(
             line.amount_net = base_net
             line.amount_vat = base_vat
             line.amount_total = base_total
+            line.description = f"Вода {float(Decimal(str(rd.consumption or 0)))} м³"
             continue
 
         k = percent / Decimal("100")
@@ -141,6 +144,7 @@ def _upsert_auto_sewerage_line_for_invoice(
         # Режим выбираем по типу WATER тарифа (а не по resident.customer_type):
         # - INDIVIDUAL: делим сумму воды (вода уменьшается)
         # - LEGAL: добавляем канализацию сверху
+        consumption = Decimal(str(rd.consumption or 0))
         if getattr(t, "customer_type", None) == CustomerType.INDIVIDUAL:
             # делим сумму воды: вода = (1-k), канализация = k (итог не меняется)
             new_net = money(base_net * (Decimal("1") - k))
@@ -154,6 +158,10 @@ def _upsert_auto_sewerage_line_for_invoice(
             sew_net += (base_net - new_net)
             sew_vat += (base_vat - new_vat)
             sew_total += (base_total - new_total)
+            water_display_cons = consumption * (Decimal("1") - k)
+            sewer_display_cons = consumption * k
+            line.description = f"Вода {float(water_display_cons)} м³"
+            sewer_cons += sewer_display_cons
         else:
             # LEGAL: вода как есть, канализация сверху
             line.amount_net = base_net
@@ -163,13 +171,15 @@ def _upsert_auto_sewerage_line_for_invoice(
             sew_net += money(base_net * k)
             sew_vat += money(base_vat * k)
             sew_total += money(base_total * k)
+            line.description = f"Вода {float(consumption)} м³"
+            sewer_cons += consumption * k
 
     if sew_total <= 0:
         if auto_line:
             db.delete(auto_line)
         return
 
-    desc = f"Канализация  {float(water_cons)} м³"
+    desc = f"Канализация  {float(sewer_cons)} м³"
 
     if auto_line:
         auto_line.description = desc

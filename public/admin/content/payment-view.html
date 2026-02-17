@@ -47,8 +47,16 @@
     <div class="distribution-section">
         <div class="distribution-header">
             <h3>Распределение по счетам</h3>
-            <button class="btn-secondary" type="button" onclick="autoDistribute()">Автораспределить</button>
+            <div class="auto-distribute-info">
+                <span id="autoDistributeBalance" class="auto-distribute-balance"></span>
+                <span id="autoDistributeTimer" class="auto-distribute-timer">
+                    <i class="bi bi-clock"></i>
+                    <span class="auto-distribute-timer-text"></span>
+                </span>
+            </div>
+            <!-- Автораспределение выполняется по таймеру; кнопка не нужна -->
         </div>
+        <div id="autoDistributeHelp" class="auto-distribute-help"></div>
 
         <div class="distribution-table-wrapper">
             <table class="distribution-table">
@@ -66,9 +74,7 @@
             </table>
         </div>
 
-        <div class="distribution-footer">
-            <button class="btn-primary" type="button" onclick="saveDistribution()">Сохранить распределение</button>
-        </div>
+        <!-- Save distribution button removed by new auto-apply flow -->
     </div>
 
     <!-- Applications Section -->
@@ -118,6 +124,8 @@
         let currentPayment = null;
         let currentDistributionRows = [];
         let openInvoices = [];
+        let currentAdvanceBalance = 0;
+        let currentDueDate = null;
 
         // Load payment data
         async function loadPayment(id) {
@@ -178,7 +186,8 @@
                         period: inv.period,
                         total: inv.amount_total,
                         remaining: inv.left_to_pay,
-                        apply: existingApp ? parseFloat(existingApp.amount_applied) : 0
+                        apply: existingApp ? parseFloat(existingApp.amount_applied) : 0,
+                        due_date: inv.due_date || null
                     };
                     console.log('📋 Distribution row:', row);
                     return row;
@@ -186,11 +195,17 @@
 
                 console.log('📋 Total distribution rows:', currentDistributionRows.length);
                 renderDistributionTable();
+                currentAdvanceBalance = await fetchAdvanceBalance(paymentId);
+                currentDueDate = getEarliestDueDate(openInvoices);
+                updateAutoDistributeTimer();
             } catch (error) {
                 console.error('Error loading open invoices:', error);
                 openInvoices = [];
                 currentDistributionRows = [];
                 renderDistributionTable();
+                currentAdvanceBalance = 0;
+                currentDueDate = null;
+                updateAutoDistributeTimer();
             }
         }
 
@@ -280,6 +295,9 @@
                 }
             }
 
+            // Update timer visibility after payment render
+            updateAutoDistributeTimer();
+
             // Update applications table
             const tbody = document.getElementById('applicationsTable');
             if (tbody) {
@@ -301,6 +319,140 @@
             }
 
             updateDistributionTotals();
+        }
+
+        async function fetchAdvanceBalance(paymentId) {
+            try {
+                const response = await fetch(`${API_BASE}/api/payments/${paymentId}/advance-balance`, {
+                    credentials: 'include'
+                });
+                if (!response.ok) {
+                    return 0;
+                }
+                const data = await response.json();
+                return parseFloat(data.advance_balance || 0);
+            } catch (err) {
+                console.error('Failed to fetch advance balance:', err);
+                return 0;
+            }
+        }
+
+        function getEarliestDueDate(invoices) {
+            const dates = (invoices || [])
+                .map(inv => inv.due_date)
+                .filter(Boolean)
+                .map(val => {
+                    const parsed = new Date(`${val}T00:00:00`);
+                    return isNaN(parsed.getTime()) ? null : parsed;
+                })
+                .filter(Boolean);
+            if (!dates.length) return null;
+            return new Date(Math.min(...dates.map(d => d.getTime())));
+        }
+
+        function updateAutoDistributeTimer() {
+            const timerEl = document.getElementById('autoDistributeTimer');
+            if (!timerEl) return;
+            const timerTextEl = timerEl.querySelector('.auto-distribute-timer-text');
+            if (!timerTextEl) return;
+            const balanceEl = document.getElementById('autoDistributeBalance');
+            if (!balanceEl) return;
+            const helpEl = document.getElementById('autoDistributeHelp');
+            if (!helpEl) return;
+
+            if (window.autoDistributeTimerInterval) {
+                clearInterval(window.autoDistributeTimerInterval);
+                window.autoDistributeTimerInterval = null;
+            }
+            timerTextEl.textContent = '';
+
+            const hasAdvance = currentAdvanceBalance > 0;
+            const dueDate = currentDueDate;
+            if (!hasAdvance || !dueDate) {
+                timerEl.style.display = 'none';
+                balanceEl.style.display = 'none';
+                helpEl.style.display = 'none';
+                return;
+            }
+
+            const dueStart = new Date(dueDate.getTime());
+            const now = new Date();
+            if (now.getTime() < dueStart.getTime()) {
+                timerEl.style.display = 'none';
+                balanceEl.style.display = 'none';
+                helpEl.style.display = 'none';
+                return;
+            }
+
+            // TEMP: shorten to 30 seconds for testing
+            const deadline = dueStart.getTime() + (30 * 1000);
+            timerEl.style.display = 'inline-flex';
+            balanceEl.style.display = 'inline-flex';
+            balanceEl.textContent = `Аванс для авто‑списания: ${currentAdvanceBalance.toFixed(2)}`;
+            helpEl.style.display = 'block';
+            helpEl.textContent = 'Если оплата не будет внесена в течение 3 дней после срока, аванс автоматически распределится по неоплаченным счетам.';
+
+            const storageKey = currentPayment && currentPayment.id && dueDate
+                ? `autoAdvanceApplied:${currentPayment.id}:${dueDate.toISOString().slice(0, 10)}`
+                : null;
+
+            const tick = async () => {
+                const remaining = deadline - Date.now();
+                if (remaining <= 0) {
+                    timerTextEl.textContent = '00:00:00';
+                    const alreadyDone = storageKey ? localStorage.getItem(storageKey) : null;
+                    if (!alreadyDone) {
+                        await triggerAutoAdvanceApply(storageKey);
+                    }
+                    return;
+                }
+
+                const totalSeconds = Math.floor(remaining / 1000);
+                const days = Math.floor(totalSeconds / 86400);
+                const hours = Math.floor((totalSeconds % 86400) / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                timerTextEl.textContent = `${days}д ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            };
+
+            tick();
+            window.autoDistributeTimerInterval = setInterval(tick, 1000);
+        }
+
+        async function triggerAutoAdvanceApply(storageKey) {
+            if (!currentPayment || !currentPayment.id) return;
+            if (window.autoAdvanceInFlight) return;
+            const lastAttempt = window.autoAdvanceLastAttempt || 0;
+            if (Date.now() - lastAttempt < 10000) {
+                return;
+            }
+            window.autoAdvanceLastAttempt = Date.now();
+            window.autoAdvanceInFlight = true;
+            try {
+                const response = await fetch(`${API_BASE}/api/payments/${currentPayment.id}/auto-apply-advance`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+                    throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+                }
+                const result = await response.json();
+                if (storageKey) {
+                    localStorage.setItem(storageKey, '1');
+                }
+                await loadPayment(currentPayment.id);
+                if (typeof showSuccess === 'function') {
+                    showSuccess('Аванс автоматически распределён по счетам');
+                }
+            } catch (error) {
+                console.error('Auto advance apply failed:', error);
+                if (typeof showError === 'function') {
+                    showError('Ошибка авто-распределения аванса: ' + error.message);
+                }
+            } finally {
+                window.autoAdvanceInFlight = false;
+            }
         }
 
         window.goBackToPayments = function () {
@@ -394,6 +546,7 @@
                         value="${parseFloat(row.apply || 0).toFixed(2)}"
                         data-id="${row.id}"
                         oninput="updateDistributionFromInputs()"
+                        readonly
                     />
                 </td>
             </tr>

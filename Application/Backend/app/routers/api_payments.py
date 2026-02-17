@@ -71,6 +71,7 @@ class InvoiceForDistribution(BaseModel):
     amount_total: float
     paid_amount: float
     left_to_pay: float
+    due_date: Optional[date] = None
 
 
 def _resident_user_names_map(db: Session, resident_ids: list[int]) -> dict[int, str]:
@@ -104,6 +105,52 @@ def _resident_user_names_map(db: Session, resident_ids: list[int]) -> dict[int, 
             acc[int(rid)].append(name)
 
     return {rid: ", ".join(names) for rid, names in acc.items()}
+
+
+def _build_payment_applications(db: Session, p: Payment) -> list[dict]:
+    # Если у платежа есть реальные применения — отдаём их
+    if p.applications:
+        return [
+            {
+                "id": app.id,
+                "invoice_id": app.invoice_id,
+                "invoice_number": app.invoice.number if app.invoice else None,
+                "invoice_period": f"{app.invoice.period_year}-{app.invoice.period_month:02d}" if app.invoice else None,
+                "amount_applied": float(app.amount_applied),
+            }
+            for app in p.applications
+        ]
+
+    # Для ADVANCE списаний по конкретному счёту — показываем синтетическое применение
+    if p.method == PaymentMethod.ADVANCE:
+        # Группируем применения с reference="ADVANCE:<payment_id>"
+        ref_tag = f"ADVANCE:{p.id}"
+        rows = (
+            db.query(
+                Invoice.id,
+                Invoice.number,
+                Invoice.period_year,
+                Invoice.period_month,
+                func.coalesce(func.sum(PaymentApplication.amount_applied), 0)
+            )
+            .join(PaymentApplication, PaymentApplication.invoice_id == Invoice.id)
+            .filter(PaymentApplication.reference == ref_tag)
+            .group_by(Invoice.id, Invoice.number, Invoice.period_year, Invoice.period_month)
+            .all()
+        )
+        if rows:
+            return [
+                {
+                    "id": 0,
+                    "invoice_id": inv_id,
+                    "invoice_number": inv_number,
+                    "invoice_period": f"{inv_year}-{inv_month:02d}",
+                    "amount_applied": float(amount_applied),
+                }
+                for (inv_id, inv_number, inv_year, inv_month, amount_applied) in rows
+            ]
+
+    return []
 
 
 def _list_payments_internal(
@@ -163,6 +210,10 @@ def _list_payments_internal(
         
         applied_total = float(p.applied_total)
         leftover = float(p.leftover)
+        if p.method == PaymentMethod.ADVANCE:
+            # ADVANCE записи — это списания из аванса, у них остатка быть не должно
+            applied_total = float(p.amount_total or 0)
+            leftover = 0.0
         
         result.append({
             "id": p.id,
@@ -180,16 +231,7 @@ def _list_payments_internal(
             "created_at": p.created_at,
             "applied_total": applied_total,
             "leftover": leftover,
-            "applications": [
-                {
-                    "id": app.id,
-                    "invoice_id": app.invoice_id,
-                    "invoice_number": app.invoice.number if app.invoice else None,
-                    "invoice_period": f"{app.invoice.period_year}-{app.invoice.period_month:02d}" if app.invoice else None,
-                    "amount_applied": float(app.amount_applied),
-                }
-                for app in p.applications
-            ]
+            "applications": _build_payment_applications(db, p)
         })
     
     return {
@@ -258,6 +300,9 @@ def get_payment_api(
     
     applied_total = float(p.applied_total)
     leftover = float(p.leftover)
+    if p.method == PaymentMethod.ADVANCE:
+        applied_total = float(p.amount_total or 0)
+        leftover = 0.0
 
     resident_user_names = _resident_user_names_map(db, [int(p.resident_id)]) if p.resident_id else {}
     
@@ -277,16 +322,7 @@ def get_payment_api(
         "created_at": p.created_at,
         "applied_total": applied_total,
         "leftover": leftover,
-        "applications": [
-            {
-                "id": app.id,
-                "invoice_id": app.invoice_id,
-                "invoice_number": app.invoice.number if app.invoice else None,
-                "invoice_period": f"{app.invoice.period_year}-{app.invoice.period_month:02d}" if app.invoice else None,
-                "amount_applied": float(app.amount_applied),
-            }
-            for app in p.applications
-        ]
+        "applications": _build_payment_applications(db, p)
     }
 
 
@@ -440,6 +476,7 @@ def get_open_invoices_for_payment(
                 "amount_total": float(inv.amount_total),
                 "paid_amount": float(Decimal(inv.amount_total or 0) - left),
                 "left_to_pay": float(left),
+                "due_date": inv.due_date,
             })
     
     return {"invoices": result}
@@ -503,9 +540,77 @@ def get_open_invoices_for_payment_public(
                 "amount_total": float(inv.amount_total),
                 "paid_amount": float(Decimal(inv.amount_total or 0) - left),
                 "left_to_pay": float(left),
+                "due_date": inv.due_date,
             })
     
     return {"invoices": result}
+
+
+@router.get("/{payment_id}/advance-balance")
+def get_advance_balance_for_payment(
+    payment_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Получить общий доступный аванс для резидента платежа."""
+    p = db.get(Payment, payment_id)
+    if not p:
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    # Находим всех резидентов того же пользователя(ей)
+    from .payments import user_residents
+    resident_ids = db.query(user_residents.c.resident_id).filter(
+        user_residents.c.user_id.in_(
+            db.query(user_residents.c.user_id).filter(user_residents.c.resident_id == p.resident_id)
+        )
+    ).all()
+    all_resident_ids = [r[0] for r in resident_ids]
+    if not all_resident_ids:
+        all_resident_ids = [p.resident_id]
+
+    payments = (
+        db.query(Payment)
+        .filter(
+            Payment.resident_id.in_(all_resident_ids),
+            Payment.method != PaymentMethod.ADVANCE
+        )
+        .all()
+    )
+
+    total_advance = Decimal("0")
+    for pay in payments:
+        applied = (
+            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+            .filter(PaymentApplication.payment_id == pay.id)
+            .scalar() or Decimal("0")
+        )
+        total_advance += Decimal(pay.amount_total or 0) - Decimal(applied)
+
+    if total_advance < 0:
+        total_advance = Decimal("0")
+
+    return {"advance_balance": float(total_advance)}
+
+
+@router.post("/{payment_id}/auto-apply-advance")
+def auto_apply_advance_for_payment(
+    payment_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Автоматически распределить аванс по счетам резидента платежа."""
+    p = db.get(Payment, payment_id)
+    if not p:
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    affected_count, total_applied = auto_apply_advance(db, p.resident_id)
+    db.commit()
+
+    return {
+        "ok": True,
+        "affected_count": affected_count,
+        "applied_amount": float(total_applied),
+    }
 
 
 @router.post("/{payment_id}/auto-apply")

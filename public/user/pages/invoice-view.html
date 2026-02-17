@@ -9,9 +9,14 @@
             <span data-i18n="user_invoice_title_prefix">Счёт:</span>
             <span id="invoiceNumber">—</span>
         </h1>
-        <button class="btn-outline-secondary invoice-pdf-btn" type="button" id="pdfBtn">
-            PDF
-        </button>
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn-outline-secondary invoice-pdf-btn" type="button" id="pdfBtn">
+                PDF
+            </button>
+            <button class="btn btn-primary invoice-pay-btn" type="button" id="payBtn" data-i18n="user_invoice_pay_btn">
+                Оплатить
+            </button>
+        </div>
     </div>
 
     <!-- Краткая информация по счёту -->
@@ -161,6 +166,46 @@
                     // Also pass as URL parameter for reliability
                     window.open(`/user/invoice-print.html?id=${invoice.id}`, '_blank', 'noopener');
                 };
+            }
+
+            // Update Pay button
+            const payBtn = document.getElementById('payBtn');
+            if (payBtn) {
+                const remaining = (typeof invoice.remaining_amount === 'number')
+                    ? invoice.remaining_amount
+                    : (invoice.amount_total || 0);
+                if (remaining <= 0) {
+                    payBtn.disabled = true;
+                    payBtn.style.opacity = '0.6';
+                    payBtn.style.cursor = 'not-allowed';
+                } else {
+                    payBtn.disabled = false;
+                    payBtn.style.opacity = '';
+                    payBtn.style.cursor = '';
+                    payBtn.onclick = () => {
+                        try {
+                            sessionStorage.setItem('paymentScope', 'invoice');
+                            sessionStorage.setItem('paymentAmount', String(remaining));
+                            sessionStorage.setItem('paymentScopeLabel', window.i18n?.translate?.('payment_invoice_payment', localStorage.getItem('language') || 'ru') || 'Оплата счёта');
+                            sessionStorage.setItem('paymentTimestamp', String(Date.now()));
+                            if (invoice.resident_code) {
+                                sessionStorage.setItem('paymentResidentCode', invoice.resident_code);
+                            }
+                            if (invoice.resident_id) {
+                                sessionStorage.setItem('paymentResidentId', String(invoice.resident_id));
+                            }
+                            sessionStorage.setItem('paymentInvoiceId', String(invoice.id));
+                        } catch (e) {
+                            console.warn('Failed to store payment session data', e);
+                        }
+
+                        if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
+                            window.userSpaRouter.navigate('report', true);
+                        } else {
+                            window.location.href = '/user/dashboard.html#report';
+                        }
+                    };
+                }
             }
             
             // Update summary
