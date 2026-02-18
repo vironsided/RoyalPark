@@ -227,11 +227,14 @@ const translations = {
         // Meters
         meters_title: "Проверка счетчиков",
         meter_electricity: "Электричество",
-        meter_cold_water: "Холодная вода",
+        meter_cold_water: "Вода",
         meter_hot_water: "Горячая вода",
+        meter_gas: "Газ",
+        meter_sewerage: "Канализация",
         meter_previous: "Предыдущее",
         meter_current: "Текущее",
         meter_consumption: "Потребление",
+        stable_tariff: "Стабильный тариф",
         meter_approve: "Утвердить",
         meter_reject: "Отклонить",
         meter_investigate: "Расследовать",
@@ -292,6 +295,7 @@ const translations = {
         user_invoice_pay_btn: "Оплатить",
         user_invoice_items_title: "Описание",
         user_invoice_items_th_description: "Описание",
+        user_invoice_items_th_consumed: "Израсходовано",
         user_invoice_items_th_charged: "Начислено",
         user_invoice_items_th_vat: "НДС",
         user_invoice_items_th_total: "Итого",
@@ -742,11 +746,14 @@ const translations = {
         // Meters
         meters_title: "Sayğacların yoxlanması",
         meter_electricity: "Elektrik",
-        meter_cold_water: "Soyuq su",
+        meter_cold_water: "Su",
         meter_hot_water: "İsti su",
+        meter_gas: "Qaz",
+        meter_sewerage: "Kanalizasiya",
         meter_previous: "Əvvəlki",
         meter_current: "Cari",
         meter_consumption: "İstehlak",
+        stable_tariff: "Sabit tarif",
         meter_approve: "Təsdiq et",
         meter_reject: "Rədd et",
         meter_investigate: "Araşdır",
@@ -808,6 +815,7 @@ const translations = {
         user_invoice_pay_btn: "Ödəmək",
         user_invoice_items_title: "Açıqlama",
         user_invoice_items_th_description: "Açıqlama",
+        user_invoice_items_th_consumed: "İstehlak",
         user_invoice_items_th_charged: "Hesablanıb",
         user_invoice_items_th_vat: "ƏDV",
         user_invoice_items_th_total: "Cəmi",
@@ -1258,11 +1266,14 @@ const translations = {
         // Meters
         meters_title: "Meters Verification",
         meter_electricity: "Electricity",
-        meter_cold_water: "Cold Water",
+        meter_cold_water: "Water",
         meter_hot_water: "Hot Water",
+        meter_gas: "Gas",
+        meter_sewerage: "Sewerage",
         meter_previous: "Previous",
         meter_current: "Current",
         meter_consumption: "Consumption",
+        stable_tariff: "Stable tariff",
         meter_approve: "Approve",
         meter_reject: "Reject",
         meter_investigate: "Investigate",
@@ -1324,6 +1335,7 @@ const translations = {
         user_invoice_pay_btn: "Pay",
         user_invoice_items_title: "Description",
         user_invoice_items_th_description: "Description",
+        user_invoice_items_th_consumed: "Consumed",
         user_invoice_items_th_charged: "Charged",
         user_invoice_items_th_vat: "VAT",
         user_invoice_items_th_total: "Total",
@@ -1840,6 +1852,14 @@ class LanguageManager {
         });
         
         // Update period text in bills table
+        container.querySelectorAll('td[data-period-from][data-period-to]').forEach(element => {
+            const from = element.dataset.periodFrom;
+            const to = element.dataset.periodTo;
+            if (from && to) {
+                element.textContent = `${from} - ${to}`;
+            }
+        });
+
         container.querySelectorAll('td[data-period-month][data-period-year]').forEach(element => {
             const month = parseInt(element.dataset.periodMonth);
             const year = element.dataset.periodYear;
@@ -2061,11 +2081,46 @@ class LanguageManager {
             }
         }
         
+        // Update invoice "Consumed" column (if present)
+        container.querySelectorAll('td[data-consumed-qty]').forEach(element => {
+            const qty = element.dataset.consumedQty;
+            const unitKey = element.dataset.consumedUnitKey;
+            if (qty) {
+                const unit = unitKey ? this.translate(unitKey, lang) : '';
+                element.textContent = `${qty}${unit ? ' ' + unit : ''}`.trim();
+            } else {
+                element.textContent = '—';
+            }
+        });
+
         // Update invoice line descriptions
         container.querySelectorAll('td[data-original-description]').forEach(element => {
+            const serviceKey = element.dataset.serviceKey;
+            if (serviceKey) {
+                // New invoice table format: translate only service name (no qty/unit here)
+                element.textContent = this.translate(serviceKey, lang);
+                return;
+            }
+
+            // Legacy fallback (older templates): keep old behavior
             const originalDescription = element.dataset.originalDescription;
             if (originalDescription) {
-                // Паттерны для распознавания типов услуг
+                // Stable tariff lines: "Стабильный тариф (Электричество)" / "(Газ)" etc.
+                const stableMatch = originalDescription.match(/^Стабильный\s+тариф\s*\(([^)]+)\)\s*$/i);
+                if (stableMatch) {
+                    const serviceRu = (stableMatch[1] || '').trim().toLowerCase();
+                    let svcKey = '';
+                    if (serviceRu.includes('электр')) svcKey = 'meter_electricity';
+                    else if (serviceRu.includes('газ')) svcKey = 'meter_gas';
+                    else if (serviceRu.includes('вода')) svcKey = 'meter_cold_water';
+                    else if (serviceRu.includes('канализац')) svcKey = 'meter_sewerage';
+
+                    const stableLabel = this.translate('stable_tariff', lang);
+                    const svcLabel = svcKey ? this.translate(svcKey, lang) : stableMatch[1].trim();
+                    element.textContent = `${stableLabel} (${svcLabel})`;
+                    return;
+                }
+
                 const patterns = [
                     {
                         regex: /^Электричество\s+([\d.]+)\s*кВт·ч$/i,
@@ -2078,7 +2133,6 @@ class LanguageManager {
                         serviceKey: 'meter_cold_water',
                         unitKey: 'user_unit_m3',
                         format: (amount, service, unit, lang) => {
-                            // Для "Вода" используем простой перевод
                             let waterText = 'Вода';
                             if (lang === 'az') waterText = 'Su';
                             else if (lang === 'en') waterText = 'Water';
@@ -2098,7 +2152,7 @@ class LanguageManager {
                         format: (amount, service, unit) => `${service} ${amount} ${unit}`
                     }
                 ];
-                
+
                 let translated = originalDescription;
                 for (const pattern of patterns) {
                     const match = originalDescription.match(pattern.regex);

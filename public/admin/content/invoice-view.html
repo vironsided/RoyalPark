@@ -112,6 +112,7 @@
             <thead>
                 <tr>
                     <th>Описание</th>
+                    <th data-i18n="user_invoice_items_th_consumed">Израсходовано</th>
                     <th>Начислено</th>
                     <th>НДС</th>
                     <th>Итого</th>
@@ -366,29 +367,68 @@
                 document.getElementById('editNote').value = '';
             }
 
+            function _extractConsumption(desc) {
+                if (!desc) return { label: '—', consumed: '—', serviceKey: '', qty: '', unitKey: '' };
+
+                const keyMatch = String(desc).match(/^(meter_[a-z_]+)\s+([\d.]+)\s*(.*)$/i);
+                if (keyMatch) {
+                    const key = keyMatch[1];
+                    const qty = keyMatch[2];
+                    const unitRaw = (keyMatch[3] || '').trim();
+                    let unitKey = '';
+                    if (/квт/i.test(unitRaw)) unitKey = 'user_unit_kwh';
+                    else if (/м³|m3|m³/i.test(unitRaw)) unitKey = 'user_unit_m3';
+                    return { label: (window.i18n?.translate?.(key, localStorage.getItem('language') || 'ru') || key), consumed: `${qty} ${unitRaw}`.trim(), serviceKey: key, qty, unitKey };
+                }
+
+                const patterns = [
+                    { regex: /^Электричество\s+([\d.]+)\s*кВт·ч$/i, serviceKey: 'meter_electricity', unitKey: 'user_unit_kwh' },
+                    { regex: /^Вода\s+([\d.]+)\s*м³$/i, serviceKey: 'meter_cold_water', unitKey: 'user_unit_m3' },
+                    { regex: /^Канализация(?:\s*\(авто\))?\s+([\d.]+)\s*м³$/i, serviceKey: 'meter_sewerage', unitKey: 'user_unit_m3' },
+                    { regex: /^Газ\s+([\d.]+)\s*м³$/i, serviceKey: 'meter_gas', unitKey: 'user_unit_m3' },
+                    { regex: /^Горячая\s+вода\s+([\d.]+)\s*м³$/i, serviceKey: 'meter_hot_water', unitKey: 'user_unit_m3' },
+                ];
+                for (const p of patterns) {
+                    const m = String(desc).match(p.regex);
+                    if (m) {
+                        const qty = m[1];
+                        const lang = localStorage.getItem('language') || 'ru';
+                        const label = window.i18n?.translate?.(p.serviceKey, lang) || String(desc).split(' ')[0];
+                        const unit = window.i18n?.translate?.(p.unitKey, lang) || String(desc).split(qty)[1].trim();
+                        return { label, consumed: `${qty} ${unit}`.trim(), serviceKey: p.serviceKey, qty, unitKey: p.unitKey };
+                    }
+                }
+
+                return { label: String(desc), consumed: '—', serviceKey: '', qty: '', unitKey: '' };
+            }
+
             // Render line items
             const tbody = document.getElementById('lineItemsTable');
             if (invoice.lineItems && invoice.lineItems.length > 0) {
-                let html = invoice.lineItems.map(item => `
+                let html = invoice.lineItems.map(item => {
+                    const parsed = _extractConsumption(item.description || '');
+                    return `
                 <tr>
-                    <td>${item.description || '—'}</td>
+                    <td data-original-description="${item.description || ''}" data-service-key="${parsed.serviceKey || ''}">${parsed.label}</td>
+                    <td data-consumed-qty="${parsed.qty || ''}" data-consumed-unit-key="${parsed.unitKey || ''}">${parsed.consumed}</td>
                     <td>${(item.amount_net || 0).toFixed(2)}</td>
                     <td>${(item.amount_vat || 0).toFixed(2)}</td>
                     <td class="total-value">${(item.amount_total || 0).toFixed(2)}</td>
                 </tr>
-            `).join('');
+            `;
+                }).join('');
 
                 const total = invoice.lineItems.reduce((sum, item) => sum + (item.amount_total || 0), 0);
                 html += `
                 <tr class="total-row">
-                    <td colspan="3">Итого к оплате</td>
+                    <td colspan="4">Итого к оплате</td>
                     <td class="total-value">${total.toFixed(2)}</td>
                 </tr>
             `;
 
                 tbody.innerHTML = html;
             } else {
-                tbody.innerHTML = '<tr><td colspan="4">Нет данных</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5">Нет данных</td></tr>';
             }
 
             // Render payments table
@@ -875,7 +915,7 @@
         // Listen for SPA content loaded event
         // Удаляем старый обработчик, если он существует
         if (window._invoiceViewContentLoadedHandler) {
-            document.removeEventListener('spa:contentLoaded', window._invoiceViewContentLoadedHandler);
+            window.removeEventListener('spa:contentLoaded', window._invoiceViewContentLoadedHandler);
         }
 
         window._invoiceViewContentLoadedHandler = function (event) {
@@ -897,7 +937,7 @@
             updatePageHeaderForInvoiceView();
         };
 
-        document.addEventListener('spa:contentLoaded', window._invoiceViewContentLoadedHandler);
+        window.addEventListener('spa:contentLoaded', window._invoiceViewContentLoadedHandler);
 
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initInvoiceView);

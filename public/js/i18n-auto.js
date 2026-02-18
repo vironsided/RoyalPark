@@ -161,7 +161,7 @@
         // Meters
         'Проверка счетчиков': 'meters_title',
         'Электричество': 'meter_electricity',
-        'Холодная вода': 'meter_cold_water',
+        'Вода': 'meter_cold_water',
         'Горячая вода': 'meter_hot_water',
         'Предыдущее': 'meter_previous',
         'Текущее': 'meter_current',

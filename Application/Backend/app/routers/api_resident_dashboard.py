@@ -330,7 +330,7 @@ def get_resident_invoices(
         rows = (
             db.query(
                 Invoice.id.label("inv_id"),
-                func.min(mr_with_prev.c.prev_dt).label("min_prev"),
+                func.min(func.coalesce(mr_with_prev.c.prev_dt, mr_with_prev.c.curr_dt)).label("min_prev"),
                 func.max(mr_with_prev.c.curr_dt).label("max_curr"),
             )
             .join(InvoiceLine, InvoiceLine.invoice_id == Invoice.id)
@@ -494,7 +494,7 @@ def get_resident_invoice_detail(
 
         row = (
             db.query(
-                func.min(mr_with_prev.c.prev_dt).label("min_prev"),
+                func.min(func.coalesce(mr_with_prev.c.prev_dt, mr_with_prev.c.curr_dt)).label("min_prev"),
                 func.max(mr_with_prev.c.curr_dt).label("max_curr"),
             )
             .join(InvoiceLine, InvoiceLine.meter_reading_id == mr_with_prev.c.mr_id)
@@ -512,10 +512,105 @@ def get_resident_invoice_detail(
     
     resident_code = f"{block.name if block else ''} / {resident.unit_number}" if block else resident.unit_number
     
+    # Build response lines with stable tariff split (for transparency)
+    reading_ids = [line.meter_reading_id for line in lines if line.meter_reading_id]
+    reading_map = {}
+    if reading_ids:
+        readings = (
+            db.query(MeterReading)
+            .options(joinedload(MeterReading.tariff))
+            .filter(MeterReading.id.in_(reading_ids))
+            .all()
+        )
+        reading_map = {rd.id: rd for rd in readings}
+
+    def _stable_service_label(desc: str | None) -> str | None:
+        if not desc:
+            return None
+        low = desc.lower()
+        if "электр" in low:
+            return "Электричество"
+        if "газ" in low:
+            return "Газ"
+        if "вода" in low:
+            return "Вода"
+        if "канализац" in low:
+            return "Канализация"
+        if "сервис" in low:
+            return "Сервис"
+        if "аренда" in low:
+            return "Аренда"
+        if "строител" in low:
+            return "Строительство"
+        return None
+
+    lines_out = []
+    for line in lines:
+        base_line = {
+            "id": line.id,
+            "description": line.description,
+            "amount_net": float(line.amount_net),
+            "amount_vat": float(line.amount_vat),
+            "amount_total": float(line.amount_total),
+        }
+
+        rd = reading_map.get(line.meter_reading_id)
+        tariff = rd.tariff if rd else None
+        try:
+            stable_fee_net = Decimal(str(getattr(tariff, "stable_tariff", 0) or 0))
+        except Exception:
+            stable_fee_net = Decimal("0")
+
+        if stable_fee_net > 0 and line.amount_total:
+            # Стабильный тариф — отдельной строкой, НДС на него НЕ начисляется.
+            # НДС должен применяться только к переменной части (расход).
+            line_net = Decimal(str(line.amount_net or 0))
+            try:
+                vat_percent = Decimal(str(getattr(tariff, "vat_percent", 0) or 0))
+            except Exception:
+                vat_percent = Decimal("0")
+
+            stable_fee_total = _money2(stable_fee_net)
+            # переменная часть = net без стабильного тарифа
+            variable_net = _money2(line_net - stable_fee_net)
+            if variable_net < 0:
+                variable_net = Decimal("0")
+
+            variable_vat = _money2(variable_net * vat_percent / Decimal("100")) if vat_percent > 0 else Decimal("0")
+            variable_total = _money2(variable_net + variable_vat)
+
+            # Если линия действительно включает стабильный тариф — разделяем
+            if line_net >= stable_fee_net:
+                base_line = {
+                    "id": line.id,
+                    "description": line.description,
+                    "amount_net": float(variable_net),
+                    "amount_vat": float(variable_vat),
+                    "amount_total": float(variable_total),
+                }
+
+                lines_out.append(base_line)
+                service_label = _stable_service_label(line.description)
+                stable_label = "Стабильный тариф"
+                if service_label:
+                    stable_label = f"{stable_label} ({service_label})"
+
+                lines_out.append({
+                    "id": None,
+                    "description": stable_label,
+                    "amount_net": float(stable_fee_total),
+                    "amount_vat": 0.0,
+                    "amount_total": float(stable_fee_total),
+                })
+                continue
+
+        lines_out.append(base_line)
+
     return {
         "id": inv.id,
         "resident_id": inv.resident_id,
         "resident_code": resident_code,
+        "resident_owner_full_name": (resident.owner_full_name if resident else None),
         "number": inv.number,
         "status": inv.status.value,
         "due_date": inv.due_date,
@@ -528,16 +623,7 @@ def get_resident_invoice_detail(
         "amount_total": float(inv.amount_total),
         "paid_amount": float(paid_total),
         "remaining_amount": remaining,
-        "lines": [
-            {
-                "id": line.id,
-                "description": line.description,
-                "amount_net": float(line.amount_net),
-                "amount_vat": float(line.amount_vat),
-                "amount_total": float(line.amount_total),
-            }
-            for line in lines
-        ],
+        "lines": lines_out,
         "payments": payments,
     }
 

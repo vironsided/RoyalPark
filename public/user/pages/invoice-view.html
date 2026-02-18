@@ -74,6 +74,7 @@
                 <thead>
                     <tr>
                         <th data-i18n="user_invoice_items_th_description">Описание</th>
+                        <th data-i18n="user_invoice_items_th_consumed">Израсходовано</th>
                         <th data-i18n="user_invoice_items_th_charged">Начислено</th>
                         <th data-i18n="user_invoice_items_th_vat">НДС</th>
                         <th data-i18n="user_invoice_items_th_total">Итого</th>
@@ -493,6 +494,74 @@
             return description;
         }
 
+        function extractConsumption(description, lang) {
+            if (!description) {
+                return { label: '—', consumed: '—', serviceKey: '', qty: '', unitKey: '' };
+            }
+
+            const keyPattern = /^(meter_[a-z_]+)\s+([\d.]+)\s*(.*)$/i;
+            const keyMatch = description.match(keyPattern);
+            if (keyMatch) {
+                const key = keyMatch[1];
+                const qty = keyMatch[2];
+                const unitRaw = keyMatch[3] ? keyMatch[3].trim() : '';
+                const label = window.i18n?.translate?.(key, lang) || key;
+                const unit = unitRaw || '';
+                let unitKey = '';
+                if (/квт/i.test(unitRaw)) unitKey = 'user_unit_kwh';
+                else if (/м³|m3|m³/i.test(unitRaw)) unitKey = 'user_unit_m3';
+                return { label, consumed: `${qty} ${unit}`.trim(), serviceKey: key, qty, unitKey };
+            }
+
+            const patterns = [
+                {
+                    regex: /^Электричество\s+([\d.]+)\s*кВт·ч$/i,
+                    serviceKey: 'meter_electricity',
+                    unitKey: 'user_unit_kwh'
+                },
+                {
+                    regex: /^Вода\s+([\d.]+)\s*м³$/i,
+                    serviceKey: 'meter_cold_water',
+                    unitKey: 'user_unit_m3'
+                },
+                {
+                    regex: /^Канализация(?:\s*\(авто\))?\s+([\d.]+)\s*м³$/i,
+                    serviceKey: 'meter_sewerage',
+                    unitKey: 'user_unit_m3'
+                },
+                {
+                    regex: /^Газ\s+([\d.]+)\s*м³$/i,
+                    serviceKey: 'meter_gas',
+                    unitKey: 'user_unit_m3'
+                },
+                {
+                    regex: /^Горячая\s+вода\s+([\d.]+)\s*м³$/i,
+                    serviceKey: 'meter_hot_water',
+                    unitKey: 'user_unit_m3'
+                }
+            ];
+
+            for (const pattern of patterns) {
+                const match = description.match(pattern.regex);
+                if (match) {
+                    const amount = match[1];
+                    const label = window.i18n?.translate?.(pattern.serviceKey, lang) || description.split(' ')[0];
+                    const unit = window.i18n?.translate?.(pattern.unitKey, lang) || match[0].split(amount)[1].trim();
+                    return { label, consumed: `${amount} ${unit}`.trim(), serviceKey: pattern.serviceKey, qty: amount, unitKey: pattern.unitKey };
+                }
+            }
+
+            const fallbackSplit = description.match(/^(.+?)\s+([\d.]+)\s*(.*)$/);
+            if (fallbackSplit) {
+                const label = fallbackSplit[1].trim();
+                const qty = fallbackSplit[2].trim();
+                const unit = fallbackSplit[3].trim();
+                return { label, consumed: `${qty} ${unit}`.trim(), serviceKey: '', qty, unitKey: '' };
+            }
+
+            return { label: description, consumed: '—', serviceKey: '', qty: '', unitKey: '' };
+        }
+
         // Render invoice lines
         function renderInvoiceLines(lines, total) {
             const tbody = document.getElementById('invoiceItemsBody');
@@ -507,10 +576,12 @@
             
             const lang = localStorage.getItem('language') || 'ru';
             tbody.innerHTML = lines.map(line => {
-                const translatedDescription = translateServiceDescription(line.description, lang);
+                const parsed = extractConsumption(line.description, lang);
+                const translatedDescription = parsed.label;
                 return `
                 <tr>
-                        <td data-original-description="${line.description || ''}">${translatedDescription}</td>
+                    <td data-original-description="${line.description || ''}" data-service-key="${parsed.serviceKey || ''}">${translatedDescription}</td>
+                    <td data-consumed-qty="${parsed.qty || ''}" data-consumed-unit-key="${parsed.unitKey || ''}">${parsed.consumed}</td>
                     <td>${formatCurrency(line.amount_net)}</td>
                     <td>${formatCurrency(line.amount_vat)}</td>
                     <td class="total-value">${formatCurrency(line.amount_total)}</td>
@@ -518,7 +589,7 @@
                 `;
             }).join('') + `
                 <tr class="total-row">
-                    <td colspan="3" data-i18n="user_invoice_items_total_row">Итого к оплате</td>
+                    <td colspan="4" data-i18n="user_invoice_items_total_row">Итого к оплате</td>
                     <td class="total-value">${formatCurrency(total)}</td>
                 </tr>
             `;

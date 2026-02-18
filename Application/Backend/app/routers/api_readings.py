@@ -126,17 +126,19 @@ def compute_amount(
                 })
                 left -= chunk
 
-    # Фиксированная часть (stable_tariff) — добавляется независимо от расхода.
+    # Фиксированная часть (stable_tariff):
+    # ВАЖНО: НДС на стабильный тариф НЕ начисляется. stable_tariff уже финальная сумма.
     try:
         stable_fee = Decimal(str(getattr(tariff, "stable_tariff", 0) or 0))
     except Exception:
         stable_fee = Decimal("0")
-    if stable_fee > 0:
-        total_net += stable_fee
+    if stable_fee < 0:
+        stable_fee = Decimal("0")
 
+    # НДС считаем только от переменной части (total_net), stable_fee добавляем без НДС
     vat = money(total_net * Decimal(tariff.vat_percent) / Decimal(100))
-    total = money(total_net + vat)
-    return (money(total_net), vat, total, breakdown)
+    total = money(total_net + vat + stable_fee)
+    return (money(total_net + stable_fee), vat, total, breakdown)
 
 
 # Pydantic models
@@ -1150,29 +1152,42 @@ def get_reading_history(
         sewerage_readings = []
 
         for rd in readings:
-            base_amount = Decimal(str(rd.amount_total or 0))
+            tariff = db.get(Tariff, rd.tariff_id) if rd.tariff_id else m.tariff
+            base_amount_total = Decimal(str(rd.amount_total or 0))
             base_cons = Decimal(str(rd.consumption or 0))
             base_value = Decimal(str(rd.value or 0))
 
-            # По умолчанию — как есть
-            amount_out = money(base_amount)
+            # Стабильный тариф (фиксированная часть) — показываем отдельной строкой
+            try:
+                stable_fee_net = Decimal(str(getattr(tariff, "stable_tariff", 0) or 0))
+            except Exception:
+                stable_fee_net = Decimal("0")
+            # НДС на стабильный тариф не начисляется
+            stable_fee_total = money(stable_fee_net)
+
+            base_amount_for_calc = base_amount_total
+            if stable_fee_total > 0 and base_amount_for_calc >= stable_fee_total:
+                base_amount_for_calc = money(base_amount_for_calc - stable_fee_total)
+
+            # По умолчанию — как есть (без стабильного тарифа)
+            amount_out = money(base_amount_for_calc)
             cons_out = base_cons
 
             if m.meter_type == MeterType.WATER and not has_real_sewerage:
-                t = db.get(Tariff, rd.tariff_id) if rd.tariff_id else m.tariff
+                t = tariff
                 percent = Decimal(str(getattr(t, "sewerage_percent", 0) or 0)) if t else Decimal("0")
                 if t and t.meter_type == MeterType.WATER and percent > 0:
                     k = percent / Decimal("100")
                     if getattr(t, "customer_type", None) == CustomerType.INDIVIDUAL:
                         cons_out = base_cons * (Decimal("1") - k)
-                        amount_out = money(base_amount * (Decimal("1") - k))
+                        amount_out = money(base_amount_for_calc * (Decimal("1") - k))
                         sewer_cons = base_cons * k
-                        sewer_amount = money(base_amount - amount_out)
+                        sewer_amount = money(base_amount_for_calc - amount_out)
                     else:
                         cons_out = base_cons
-                        amount_out = money(base_amount)
+                        amount_out = money(base_amount_for_calc)
                         sewer_cons = base_cons * k
-                        sewer_amount = money(base_amount * k)
+                        sewer_amount = money(base_amount_for_calc * k)
 
                     sewerage_readings.append({
                         "date": rd.reading_date.strftime("%Y-%m-%d"),
@@ -1193,6 +1208,17 @@ def get_reading_history(
                 "comment": rd.note or "—",
                 "photo_url": photo_map.get(rd.id),
             })
+
+            if stable_fee_total > 0:
+                readings_data.append({
+                    "date": rd.reading_date.strftime("%Y-%m-%d"),
+                    "value": 0.0,
+                    "consumption": 0.0,
+                    "amount": float(stable_fee_total),
+                    "vat_percent": 0,
+                    "comment": "Стабильный тариф",
+                    "photo_url": None,
+                })
 
         result.append({
             "meter_id": m.id,

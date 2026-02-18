@@ -1,4 +1,4 @@
-﻿# app/api/routers/payments.py
+# app/api/routers/payments.py
 """
 Module: Payments (admin)
 Author: Mamedli Ayaz
@@ -184,8 +184,8 @@ def auto_apply_advance(
                     app.reference = "ADVANCE"
                 else:
                     db.add(PaymentApplication(
-                        payment_id=p.id,
-                        invoice_id=inv.id,
+                        payment_id=p.id, 
+                        invoice_id=inv.id, 
                         amount_applied=apply_amt,
                         reference="ADVANCE",
                         created_at=now_baku(),

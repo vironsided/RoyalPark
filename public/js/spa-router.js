@@ -203,7 +203,8 @@ class SPARouter {
             if (e.state && e.state.route) {
                 this.loadContent(e.state.route, false);
             } else {
-                this.loadContent(normalizedRoute, false);
+                // Передаём полный route (с query), чтобы не терять параметры
+                this.loadContent(route, false);
             }
         });
         
@@ -223,7 +224,8 @@ class SPARouter {
             this.updateActiveMenuItem(normalizedRoute);
             // Проверяем, что это не тот же роут, чтобы избежать двойной загрузки
             if (normalizedRoute !== this.currentRoute) {
-                this.loadContent(normalizedRoute, false);
+                // Передаём полный route (с query), чтобы не терять параметры
+                this.loadContent(route, false);
             }
         });
         
@@ -301,7 +303,8 @@ class SPARouter {
         window.location.hash = route;
         
         // Загружаем контент
-        this.loadContent(normalizedRoute, true);
+        // ВАЖНО: передаём полный route (с query ?id=...), иначе потеряем параметры
+        this.loadContent(route, true);
     }
     
     // Универсальная функция для навигации назад
@@ -460,7 +463,9 @@ class SPARouter {
             
             // Обновляем историю браузера
             if (updateHistory) {
-                history.pushState({ route }, '', `#${route}`);
+                // Сохраняем полный hash (включая ?id=...) — это критично для invoice-view/payment-view
+                const fullHash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : route;
+                history.pushState({ route: fullHash }, '', `#${fullHash}`);
             }
             
             this.currentRoute = baseRoute;

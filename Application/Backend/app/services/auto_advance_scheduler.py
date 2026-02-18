@@ -24,7 +24,7 @@ from ..utils import now_baku, to_baku_datetime
 
 # TEMP: shorter values for testing
 AUTO_ADVANCE_CHECK_INTERVAL_SEC = 10
-AUTO_ADVANCE_GRACE_SECONDS = 30
+AUTO_ADVANCE_GRACE_SECONDS = 3 * 24 * 60 * 60
 
 _scheduler_thread: threading.Thread | None = None
 _stop_event = threading.Event()

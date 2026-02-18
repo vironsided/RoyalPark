@@ -384,8 +384,8 @@
                 return;
             }
 
-            // TEMP: shorten to 30 seconds for testing
-            const deadline = dueStart.getTime() + (30 * 1000);
+            // 3 days from due date start (visual timer)
+            const deadline = dueStart.getTime() + (3 * 24 * 60 * 60 * 1000);
             timerEl.style.display = 'inline-flex';
             balanceEl.style.display = 'inline-flex';
             balanceEl.textContent = `Аванс для авто‑списания: ${currentAdvanceBalance.toFixed(2)}`;

@@ -208,31 +208,9 @@
                      'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'][inv.period_month - 1];
                 let periodText = `${monthName} ${inv.period_year}`;
                 if (inv.period_dates && inv.period_dates.from && inv.period_dates.to) {
-                    try {
-                        const fromDate = new Date(inv.period_dates.from);
-                        const toDate = new Date(inv.period_dates.to);
-                        // Проверяем, что даты валидны
-                        if (!isNaN(fromDate.getTime()) && !isNaN(toDate.getTime())) {
-                            periodText = `${fromDate.toLocaleDateString(locale)} - ${toDate.toLocaleDateString(locale)}`;
-                        } else {
-                            // Если даты невалидны, используем исходные строки или fallback
-                            periodText = `${inv.period_dates.from} - ${inv.period_dates.to}`;
-                        }
-                    } catch (e) {
-                        // В случае ошибки используем исходные строки или fallback
                     periodText = `${inv.period_dates.from} - ${inv.period_dates.to}`;
-                    }
                 } else if (inv.period_dates && inv.period_dates.to) {
-                    try {
-                        const toDate = new Date(inv.period_dates.to);
-                        if (!isNaN(toDate.getTime())) {
-                            periodText = toDate.toLocaleDateString(locale);
-                        } else {
-                            periodText = inv.period_dates.to;
-                        }
-                    } catch (e) {
                     periodText = inv.period_dates.to;
-                    }
                 }
 
                 // Format status
@@ -261,9 +239,13 @@
                 const paidText = paidLabel.replace('{amount}', paidFormatted);
                 const remainingText = remainingLabel.replace('{amount}', remainingFormatted);
 
+                const periodAttrs = (inv.period_dates && inv.period_dates.from && inv.period_dates.to)
+                    ? `data-period-from="${inv.period_dates.from}" data-period-to="${inv.period_dates.to}"`
+                    : `data-period-month="${inv.period_month}" data-period-year="${inv.period_year}"`;
+
                 return `
                     <tr>
-                        <td data-period-month="${inv.period_month}" data-period-year="${inv.period_year}">${periodText}</td>
+                        <td ${periodAttrs}>${periodText}</td>
                         <td>${inv.resident_code}</td>
                         <td>${invoiceNumber}</td>
                         <td><span class="user-bill-status ${statusClass}" data-status="${inv.status}">${statusText}</span></td>

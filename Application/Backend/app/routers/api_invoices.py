@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, or_
 
 from ..database import get_db
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/api/invoices", tags=["invoices-api"])
 
 # Pydantic models
 class InvoiceLineOut(BaseModel):
-    id: int
+    id: Optional[int] = None
     description: str
     amount_net: float
     amount_vat: float
@@ -443,6 +443,7 @@ class InvoiceDetailOut(BaseModel):
     notes: Optional[str] = None
     period_year: int
     period_month: int
+    period_dates: Optional[dict] = None
     amount_net: float
     amount_vat: float
     amount_total: float
@@ -717,7 +718,121 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
         }
         payments.append(payment_data)
 
+    # Period date range (from previous reading date to current reading date), like user panel
+    period_dates = None
+    if lines:
+        mr_with_prev = (
+            db.query(
+                MeterReading.id.label("mr_id"),
+                MeterReading.reading_date.label("curr_dt"),
+                func.lag(MeterReading.reading_date)
+                    .over(
+                        partition_by=MeterReading.resident_meter_id,
+                        order_by=MeterReading.reading_date
+                    )
+                    .label("prev_dt"),
+            )
+            .subquery("mr_with_prev")
+        )
+
+        row = (
+            db.query(
+                func.min(func.coalesce(mr_with_prev.c.prev_dt, mr_with_prev.c.curr_dt)).label("min_prev"),
+                func.max(mr_with_prev.c.curr_dt).label("max_curr"),
+            )
+            .join(InvoiceLine, InvoiceLine.meter_reading_id == mr_with_prev.c.mr_id)
+            .filter(InvoiceLine.invoice_id == inv.id)
+            .first()
+        )
+
+        if row and row.max_curr:
+            end_str = row.max_curr.date().strftime('%d.%m.%Y')
+            start_str = row.min_prev.date().strftime('%d.%m.%Y') if row.min_prev else None
+            period_dates = {"from": start_str, "to": end_str}
+
     resident_user_names = _resident_user_names_map(db, [int(inv.resident_id)]) if inv.resident_id else {}
+
+    def _stable_service_label(desc: str | None) -> str | None:
+        if not desc:
+            return None
+        low = desc.lower()
+        if "электр" in low:
+            return "Электричество"
+        if "газ" in low:
+            return "Газ"
+        if "вода" in low:
+            return "Вода"
+        if "канализац" in low:
+            return "Канализация"
+        if "сервис" in low:
+            return "Сервис"
+        if "аренда" in low:
+            return "Аренда"
+        if "строител" in low:
+            return "Строительство"
+        return None
+
+    # Разделяем стабильный тариф в отдельную строку, как в user panel
+    reading_ids = [line.meter_reading_id for line in lines if line.meter_reading_id]
+    reading_map = {}
+    if reading_ids:
+        readings = db.query(MeterReading).filter(MeterReading.id.in_(reading_ids)).all()
+        reading_map = {rd.id: rd for rd in readings}
+
+    lines_out = []
+    for line in lines:
+        base_line = {
+            "id": line.id,
+            "description": line.description,
+            "amount_net": float(line.amount_net),
+            "amount_vat": float(line.amount_vat),
+            "amount_total": float(line.amount_total),
+        }
+
+        rd = reading_map.get(line.meter_reading_id)
+        tariff = db.get(Tariff, rd.tariff_id) if rd and rd.tariff_id else None
+        try:
+            stable_fee_net = Decimal(str(getattr(tariff, "stable_tariff", 0) or 0))
+        except Exception:
+            stable_fee_net = Decimal("0")
+
+        if stable_fee_net > 0:
+            line_net = Decimal(str(line.amount_net or 0))
+            try:
+                vat_percent = Decimal(str(getattr(tariff, "vat_percent", 0) or 0))
+            except Exception:
+                vat_percent = Decimal("0")
+
+            # НДС на стабильный тариф не начисляется
+            stable_fee_total = _money2(stable_fee_net)
+            variable_net = _money2(line_net - stable_fee_net)
+            if variable_net < 0:
+                variable_net = Decimal("0")
+            variable_vat = _money2(variable_net * vat_percent / Decimal("100")) if vat_percent > 0 else Decimal("0")
+            variable_total = _money2(variable_net + variable_vat)
+
+            if line_net >= stable_fee_net:
+                lines_out.append({
+                    "id": line.id,
+                    "description": line.description,
+                    "amount_net": float(variable_net),
+                    "amount_vat": float(variable_vat),
+                    "amount_total": float(variable_total),
+                })
+                service_label = _stable_service_label(line.description)
+                stable_label = "Стабильный тариф"
+                if service_label:
+                    stable_label = f"{stable_label} ({service_label})"
+                lines_out.append({
+                    "id": None,
+                    "description": stable_label,
+                    "amount_net": float(stable_fee_total),
+                    "amount_vat": 0.0,
+                    "amount_total": float(stable_fee_total),
+                })
+                continue
+
+        lines_out.append(base_line)
     
     return {
         "id": inv.id,
@@ -730,21 +845,13 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
         "notes": inv.notes,
         "period_year": inv.period_year,
         "period_month": inv.period_month,
+        "period_dates": period_dates,
         "amount_net": float(inv.amount_net),
         "amount_vat": float(inv.amount_vat),
         "amount_total": float(inv.amount_total),
         "paid_amount": float(paid_total),
         "remaining_amount": remaining,
-        "lines": [
-            {
-                "id": line.id,
-                "description": line.description,
-                "amount_net": float(line.amount_net),
-                "amount_vat": float(line.amount_vat),
-                "amount_total": float(line.amount_total),
-            }
-            for line in lines
-        ],
+        "lines": lines_out,
         "payments": payments,
     }
 

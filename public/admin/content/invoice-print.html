@@ -17,68 +17,53 @@
         </button>
     </div>
 
-    <div class="print-container">
-        <div class="print-header">
-            <h1>Счёт на оплату</h1>
+    <div class="print-container invoice-template">
+        <div class="invoice-title-row">
+            <div class="invoice-title">INVOICE № <span id="invoiceNumber">—</span></div>
+            <div class="invoice-date" id="invoiceDate">—</div>
         </div>
 
-        <div class="invoice-info">
-            <div class="invoice-info-left">
-                <div class="info-item">
-                    <label>№</label>
-                    <div class="value" id="invoiceNumber">2025-11/000001</div>
-                </div>
-                <div class="info-item">
-                    <label>Резидент</label>
-                    <div class="value" id="invoiceResident">Х / 2</div>
-                </div>
-                <div class="info-item">
-                    <label>Житель</label>
-                    <div class="value" id="invoiceResidentUser">—</div>
-                </div>
-                <div class="info-item">
-                    <label>Период</label>
-                    <div class="value" id="invoicePeriod">2025-11</div>
-                </div>
-                <div class="info-item">
-                    <label>Статус</label>
-                    <div class="value" id="invoiceStatus">DRAFT</div>
-                </div>
+        <div class="invoice-parties">
+            <div class="party-block">
+                <div class="party-name" id="invoiceResident">—</div>
+                <div class="party-line" id="invoiceResidentUser">—</div>
             </div>
-            <div class="invoice-info-right">
-                <div class="info-item">
-                    <label>Срок оплаты</label>
-                    <div class="value" id="invoiceDueDate">—</div>
-                </div>
-                <div class="info-item">
-                    <label>Сумма к оплате</label>
-                    <div class="value" id="invoiceTotal" style="font-size: 18px; color: #000;">10.00</div>
-                </div>
+            <div class="party-block">
+                <div class="party-line">Период: <span id="invoicePeriod">—</span></div>
+                <div class="party-line">Срок оплаты: <span id="invoiceDueDate">—</span></div>
+                <div class="party-line">Статус: <span id="invoiceStatus">—</span></div>
             </div>
         </div>
 
-        <table class="invoice-table">
+        <table class="invoice-table invoice-lines">
             <thead>
                 <tr>
                     <th>Описание</th>
+                    <th>Израсходовано</th>
                     <th>Начислено</th>
                     <th>НДС</th>
                     <th>Итого</th>
                 </tr>
             </thead>
             <tbody id="lineItemsTable">
-                <tr>
-                    <td>Газ 20.0 м³</td>
-                    <td>10.00</td>
-                    <td>0.00</td>
-                    <td>10.00</td>
-                </tr>
-                <tr class="total-row">
-                    <td colspan="3">Итого к оплате</td>
-                    <td class="total-value">10.00</td>
-                </tr>
+                <tr><td colspan="5">Загрузка...</td></tr>
             </tbody>
         </table>
+
+        <div class="invoice-totals">
+            <div class="totals-row">
+                <span>Total:</span>
+                <span id="invoiceTotalNet">0.00</span>
+            </div>
+            <div class="totals-row">
+                <span>VAT:</span>
+                <span id="invoiceTotalVat">0.00</span>
+            </div>
+            <div class="totals-row totals-strong">
+                <span>Total payment:</span>
+                <span id="invoiceTotal">0.00</span>
+            </div>
+        </div>
 
         <div class="invoice-footer">
             <p>Квитанция сгенерирована: <span id="generatedDate"></span></p>
@@ -110,8 +95,28 @@
 
             console.log('📄 Print page - invoice ID:', invoiceId);
 
+            function resetPrintPlaceholders() {
+                const set = (id, value) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = value;
+                };
+                set('invoiceNumber', '—');
+                set('invoiceDate', '—');
+                set('invoiceResident', '—');
+                set('invoiceResidentUser', '—');
+                set('invoicePeriod', '—');
+                set('invoiceDueDate', '—');
+                set('invoiceStatus', '—');
+                set('invoiceTotal', '0.00');
+                set('invoiceTotalNet', '0.00');
+                set('invoiceTotalVat', '0.00');
+                const tbody = document.getElementById('lineItemsTable');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="5">Загрузка...</td></tr>';
+            }
+
             // Load invoice data
             async function loadInvoice(id) {
+                resetPrintPlaceholders();
                 if (!id) {
                     console.error('No invoice ID provided for print');
                     document.body.innerHTML = '<div style="padding: 40px; text-align: center;"><h2>Ошибка</h2><p>Не указан ID счета</p></div>';
@@ -142,12 +147,12 @@
                         invoiceNumber: data.number || `${data.period_year}-${String(data.period_month).padStart(2, '0')}/000000`,
                         resident: data.resident_code,
                         residentUser: data.resident_user_full_name || null,
-                        period: `${data.period_year}-${String(data.period_month).padStart(2, '0')}`,
+                        period: formatPeriod(data),
                         status: data.status,
                         dueDate: data.due_date || null,
-                        total: data.amount_total, // Полная сумма счета (как в backend шаблоне)
-                        paidAmount: data.paid_amount || 0, // Оплаченная сумма
-                        remainingAmount: data.remaining_amount || data.amount_total, // Остаток к оплате
+                        total: Number(data.amount_total || 0),
+                        netTotal: Number(data.amount_net || 0),
+                        vatTotal: Number(data.amount_vat || 0),
                         lineItems: data.lines || []
                     };
 
@@ -158,13 +163,52 @@
                 }
             }
 
+            function formatPeriod(data) {
+                if (data?.period_dates?.from && data?.period_dates?.to) {
+                    return `${data.period_dates.from} - ${data.period_dates.to}`;
+                }
+                return `${data.period_year}-${String(data.period_month).padStart(2, '0')}`;
+            }
+
+            function extractConsumption(description) {
+                if (!description) return { label: '—', consumed: '—' };
+                const keyMatch = String(description).match(/^(meter_[a-z_]+)\s+([\d.]+)\s*(.*)$/i);
+                if (keyMatch) {
+                    const key = keyMatch[1];
+                    const qty = keyMatch[2];
+                    const unit = (keyMatch[3] || '').trim();
+                    const map = {
+                        meter_electricity: 'Электричество',
+                        meter_cold_water: 'Вода',
+                        meter_hot_water: 'Горячая вода',
+                        meter_gas: 'Газ',
+                        meter_sewerage: 'Канализация',
+                    };
+                    return { label: map[key] || key, consumed: `${qty}${unit ? ' ' + unit : ''}`.trim() };
+                }
+                const patterns = [
+                    { regex: /^Электричество\s+([\d.]+)\s*кВт·ч$/i, label: 'Электричество', unit: 'кВт·ч' },
+                    { regex: /^Вода\s+([\d.]+)\s*м³$/i, label: 'Вода', unit: 'м³' },
+                    { regex: /^Канализация(?:\s*\(авто\))?\s+([\d.]+)\s*м³$/i, label: 'Канализация', unit: 'м³' },
+                    { regex: /^Газ\s+([\d.]+)\s*м³$/i, label: 'Газ', unit: 'м³' },
+                    { regex: /^Горячая\s+вода\s+([\d.]+)\s*м³$/i, label: 'Горячая вода', unit: 'м³' },
+                ];
+                for (const p of patterns) {
+                    const m = String(description).match(p.regex);
+                    if (m) return { label: p.label, consumed: `${m[1]} ${p.unit}` };
+                }
+                if (/стабильный тариф/i.test(String(description))) return { label: String(description), consumed: '—' };
+                return { label: String(description), consumed: '—' };
+            }
+
             function renderInvoice(invoice) {
                 document.getElementById('invoiceNumber').textContent = invoice.invoiceNumber;
                 document.getElementById('invoiceResident').textContent = invoice.resident;
                 const userEl = document.getElementById('invoiceResidentUser');
                 if (userEl) userEl.textContent = invoice.residentUser || '—';
                 document.getElementById('invoicePeriod').textContent = invoice.period;
-                document.getElementById('invoiceStatus').textContent = invoice.status;
+                const statusMap = { DRAFT: 'Черновик', ISSUED: 'Выставлен', PARTIAL: 'Частично оплачен', PAID: 'Оплачен', CANCELED: 'Отменен' };
+                document.getElementById('invoiceStatus').textContent = statusMap[invoice.status] || invoice.status;
 
                 // Format due date for display
                 let dueDateDisplay = '—';
@@ -173,8 +217,11 @@
                     dueDateDisplay = date.toLocaleDateString('ru-RU');
                 }
                 document.getElementById('invoiceDueDate').textContent = dueDateDisplay;
-                // Показываем полную сумму счета (amount_total), как в backend шаблоне
                 document.getElementById('invoiceTotal').textContent = invoice.total.toFixed(2);
+                document.getElementById('invoiceTotalNet').textContent = invoice.netTotal.toFixed(2);
+                document.getElementById('invoiceTotalVat').textContent = invoice.vatTotal.toFixed(2);
+                const dateEl = document.getElementById('invoiceDate');
+                if (dateEl) dateEl.textContent = dueDateDisplay;
 
                 console.log('📄 Print invoice data:', {
                     total: invoice.total,
@@ -186,28 +233,22 @@
                 // Render line items
                 const tbody = document.getElementById('lineItemsTable');
                 if (invoice.lineItems && invoice.lineItems.length > 0) {
-                    let html = invoice.lineItems.map(item => `
+                    let html = invoice.lineItems.map(item => {
+                        const parsed = extractConsumption(item.description || '');
+                        return `
                         <tr>
-                            <td>${item.description || '—'}</td>
+                            <td>${parsed.label}</td>
+                            <td>${parsed.consumed}</td>
                             <td>${(item.amount_net || 0).toFixed(2)}</td>
                             <td>${(item.amount_vat || 0).toFixed(2)}</td>
                             <td>${(item.amount_total || 0).toFixed(2)}</td>
                         </tr>
-                    `).join('');
-
-                    // Используем полную сумму счета (invoice.total), а не сумму строк
-                    // Это соответствует логике backend шаблона invoice_pdf.html
-                    const total = invoice.total; // amount_total из API
-                    html += `
-                        <tr class="total-row">
-                            <td colspan="3">Итого к оплате</td>
-                            <td class="total-value">${total.toFixed(2)}</td>
-                        </tr>
                     `;
+                    }).join('');
 
                     tbody.innerHTML = html;
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="4">Нет данных</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5">Нет данных</td></tr>';
                 }
 
                 // Set generated date
