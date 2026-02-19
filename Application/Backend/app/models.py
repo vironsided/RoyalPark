@@ -220,7 +220,7 @@ class TariffStep(Base):
     from_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     to_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
-    price: Mapped[float] = mapped_column(Numeric(18, 4), nullable=False)
+    price: Mapped[float] = mapped_column(Numeric(18, 6), nullable=False)
 
     tariff: Mapped["Tariff"] = relationship("Tariff", back_populates="steps")
 

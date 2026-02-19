@@ -121,6 +121,7 @@ def run_bootstrap_schema():
         "ALTER TABLE tariff_steps ADD COLUMN IF NOT EXISTS to_date DATE;",
         "ALTER TABLE tariff_steps ALTER COLUMN from_value DROP NOT NULL;",
         "ALTER TABLE tariff_steps ALTER COLUMN to_value DROP NOT NULL;",
+        "ALTER TABLE tariff_steps ALTER COLUMN price TYPE NUMERIC(18,6);",
         # WATER: канализация как % от суммы воды (хранится в tariffs)
         "ALTER TABLE tariffs ADD COLUMN IF NOT EXISTS sewerage_percent NUMERIC(5,2) NOT NULL DEFAULT 0;",
         "ALTER TABLE payment_applications ADD COLUMN IF NOT EXISTS reference VARCHAR(100);",

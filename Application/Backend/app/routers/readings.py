@@ -179,7 +179,8 @@ def _upsert_auto_sewerage_line_for_invoice(
             db.delete(auto_line)
         return
 
-    desc = f"Канализация  {float(sewer_cons)} м³"
+    # По требованию печатного инвойса строка канализации должна быть без м3/объёма.
+    desc = "Канализация"
 
     if auto_line:
         auto_line.description = desc

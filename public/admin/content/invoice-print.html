@@ -172,6 +172,7 @@
 
             function extractConsumption(description) {
                 if (!description) return { label: '—', consumed: '—' };
+                const isSewerageLine = /^(?:meter_sewerage\b|Канализация(?:\s*\(авто\))?\b)/i.test(String(description).trim());
                 const keyMatch = String(description).match(/^(meter_[a-z_]+)\s+([\d.]+)\s*(.*)$/i);
                 if (keyMatch) {
                     const key = keyMatch[1];
@@ -184,6 +185,9 @@
                         meter_gas: 'Газ',
                         meter_sewerage: 'Канализация',
                     };
+                    if (key === 'meter_sewerage') {
+                        return { label: map[key] || key, consumed: '—' };
+                    }
                     return { label: map[key] || key, consumed: `${qty}${unit ? ' ' + unit : ''}`.trim() };
                 }
                 const patterns = [
@@ -195,8 +199,14 @@
                 ];
                 for (const p of patterns) {
                     const m = String(description).match(p.regex);
-                    if (m) return { label: p.label, consumed: `${m[1]} ${p.unit}` };
+                    if (m) {
+                        if (/канализац/i.test(p.label) || isSewerageLine) {
+                            return { label: 'Канализация', consumed: '—' };
+                        }
+                        return { label: p.label, consumed: `${m[1]} ${p.unit}` };
+                    }
                 }
+                if (isSewerageLine) return { label: 'Канализация', consumed: '—' };
                 if (/стабильный тариф/i.test(String(description))) return { label: String(description), consumed: '—' };
                 return { label: String(description), consumed: '—' };
             }

@@ -2233,6 +2233,49 @@ async function setupAdvanceTopupButton() {
     const btn = document.getElementById('topupAdvanceBtn');
     if (!btn) return;
 
+    function getI18nText(key, fallback) {
+        const lang = localStorage.getItem('language') || 'ru';
+        return window.i18n?.translate?.(key, lang) || fallback;
+    }
+
+    function isActiveAdvanceTopupSession() {
+        const scope = sessionStorage.getItem('paymentScope');
+        const paymentTimestampRaw = sessionStorage.getItem('paymentTimestamp');
+        if (!isAdvanceTopupScope(scope) || !paymentTimestampRaw) {
+            return false;
+        }
+        const paymentTimestamp = parseInt(paymentTimestampRaw, 10);
+        if (Number.isNaN(paymentTimestamp)) {
+            return false;
+        }
+        return (Date.now() - paymentTimestamp) <= PAYMENT_DATA_TTL_MS;
+    }
+
+    function setAdvanceTopupButtonState(isCancelMode) {
+        if (!btn.dataset.defaultBackground) {
+            btn.dataset.defaultBackground = btn.style.background || '';
+            btn.dataset.defaultBorder = btn.style.border || '';
+            btn.dataset.defaultI18n = btn.getAttribute('data-i18n') || 'payment_topup_advance_btn';
+        }
+
+        if (isCancelMode) {
+            btn.setAttribute('data-i18n', 'payment_cancel_topup_btn');
+            btn.textContent = getI18nText('payment_cancel_topup_btn', 'Отменить пополнение');
+            btn.style.background = 'rgba(220,38,38,0.16)';
+            btn.style.border = '1px solid rgba(220,38,38,0.5)';
+            return;
+        }
+
+        btn.setAttribute('data-i18n', btn.dataset.defaultI18n || 'payment_topup_advance_btn');
+        btn.textContent = getI18nText('payment_topup_advance_btn', 'Пополнить аванс');
+        btn.style.background = btn.dataset.defaultBackground || '';
+        btn.style.border = btn.dataset.defaultBorder || '';
+    }
+
+    function syncAdvanceTopupButtonState() {
+        setAdvanceTopupButtonState(isActiveAdvanceTopupSession());
+    }
+
     function clearInvoiceUIForTopup() {
         const paymentDateEl = document.getElementById('paymentDate');
         const invoiceNumberEl = document.getElementById('invoiceNumber');
@@ -2249,7 +2292,49 @@ async function setupAdvanceTopupButton() {
         if (amountLabelEl) amountLabelEl.textContent = '0,00 ₼';
     }
 
+    function resetCustomAmountControls() {
+        const checkbox = document.getElementById('customAmountCheckbox');
+        const fieldWrapper = document.getElementById('customAmountFieldWrapper');
+        const amountInput = document.getElementById('customAmountInput');
+        const hintEl = document.getElementById('customAmountHint');
+
+        if (checkbox) {
+            checkbox.checked = false;
+            checkbox.disabled = false;
+        }
+        if (fieldWrapper) {
+            fieldWrapper.style.display = 'none';
+        }
+        if (amountInput) {
+            amountInput.value = '';
+        }
+        if (hintEl) {
+            hintEl.textContent = '';
+            hintEl.className = 'custom-amount-hint';
+        }
+    }
+
+    if (btn.dataset.topupButtonBound === '1') {
+        syncAdvanceTopupButtonState();
+        return;
+    }
+    btn.dataset.topupButtonBound = '1';
+
     btn.addEventListener('click', async () => {
+        if (isActiveAdvanceTopupSession()) {
+            clearPaymentSessionData();
+            stopPaymentCountdown();
+            resetCustomAmountControls();
+            if (window.paymentRedirectTimeout) {
+                clearTimeout(window.paymentRedirectTimeout);
+                window.paymentRedirectTimeout = null;
+            }
+            await initPaymentPage();
+            setupSavedCardSelection();
+            syncAdvanceTopupButtonState();
+            return;
+        }
+
         let residentId = sessionStorage.getItem('paymentResidentId');
         let residentCode = sessionStorage.getItem('paymentResidentCode');
 
@@ -2289,7 +2374,10 @@ async function setupAdvanceTopupButton() {
         clearInvoiceUIForTopup();
         await initPaymentPage();
         setupSavedCardSelection();
+        syncAdvanceTopupButtonState();
     });
+
+    syncAdvanceTopupButtonState();
 }
 
 // Функция для очистки данных оплаты из sessionStorage

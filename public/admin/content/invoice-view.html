@@ -369,6 +369,7 @@
 
             function _extractConsumption(desc) {
                 if (!desc) return { label: '—', consumed: '—', serviceKey: '', qty: '', unitKey: '' };
+                const isSewerageLine = /^(?:meter_sewerage\b|Канализация(?:\s*\(авто\))?\b)/i.test(String(desc).trim());
 
                 const keyMatch = String(desc).match(/^(meter_[a-z_]+)\s+([\d.]+)\s*(.*)$/i);
                 if (keyMatch) {
@@ -378,7 +379,11 @@
                     let unitKey = '';
                     if (/квт/i.test(unitRaw)) unitKey = 'user_unit_kwh';
                     else if (/м³|m3|m³/i.test(unitRaw)) unitKey = 'user_unit_m3';
-                    return { label: (window.i18n?.translate?.(key, localStorage.getItem('language') || 'ru') || key), consumed: `${qty} ${unitRaw}`.trim(), serviceKey: key, qty, unitKey };
+                    const label = (window.i18n?.translate?.(key, localStorage.getItem('language') || 'ru') || key);
+                    if (key === 'meter_sewerage') {
+                        return { label, consumed: '—', serviceKey: key, qty: '', unitKey: '' };
+                    }
+                    return { label, consumed: `${qty} ${unitRaw}`.trim(), serviceKey: key, qty, unitKey };
                 }
 
                 const patterns = [
@@ -394,9 +399,18 @@
                         const qty = m[1];
                         const lang = localStorage.getItem('language') || 'ru';
                         const label = window.i18n?.translate?.(p.serviceKey, lang) || String(desc).split(' ')[0];
+                        if (p.serviceKey === 'meter_sewerage' || isSewerageLine) {
+                            return { label, consumed: '—', serviceKey: p.serviceKey, qty: '', unitKey: '' };
+                        }
                         const unit = window.i18n?.translate?.(p.unitKey, lang) || String(desc).split(qty)[1].trim();
                         return { label, consumed: `${qty} ${unit}`.trim(), serviceKey: p.serviceKey, qty, unitKey: p.unitKey };
                     }
+                }
+
+                if (isSewerageLine) {
+                    const lang = localStorage.getItem('language') || 'ru';
+                    const label = window.i18n?.translate?.('meter_sewerage', lang) || 'Канализация';
+                    return { label, consumed: '—', serviceKey: 'meter_sewerage', qty: '', unitKey: '' };
                 }
 
                 return { label: String(desc), consumed: '—', serviceKey: '', qty: '', unitKey: '' };

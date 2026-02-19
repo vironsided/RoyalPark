@@ -610,7 +610,8 @@ def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
             db.delete(auto_line)
         return
 
-    desc = f"Канализация  {float(sewer_cons)} м³"
+    # Для инвойса канализация выводится только как начисление (без объёма).
+    desc = "Канализация"
 
     if auto_line:
         auto_line.description = desc

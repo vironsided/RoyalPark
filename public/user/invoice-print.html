@@ -445,6 +445,8 @@
                     return { label: '—', serviceKey: '', qty: '', unit: '', unitKey: '' };
                 }
 
+                const isSewerageLine = /^(?:meter_sewerage\b|Канализация(?:\s*\(авто\))?\b)/i.test(String(description).trim());
+
                 // meter_* format (sometimes comes from DB)
                 const keyPattern = /^(meter_[a-z_]+)\s+([\d.]+)\s*(.*)$/i;
                 const keyMatch = description.match(keyPattern);
@@ -453,6 +455,9 @@
                     const qty = keyMatch[2];
                     const unitRaw = keyMatch[3] ? keyMatch[3].trim() : '';
                     const label = window.i18n?.translate?.(key, lang) || key;
+                    if (key === 'meter_sewerage') {
+                        return { label, serviceKey: key, qty: '', unit: '', unitKey: '' };
+                    }
                     let unitKey = '';
                     if (/квт/i.test(unitRaw)) unitKey = 'user_unit_kwh';
                     else if (/м³|m3|m³/i.test(unitRaw)) unitKey = 'user_unit_m3';
@@ -492,9 +497,17 @@
                     if (match) {
                         const qty = match[1];
                         const label = window.i18n?.translate?.(pattern.serviceKey, lang) || description.split(' ')[0];
+                        if (pattern.serviceKey === 'meter_sewerage' || isSewerageLine) {
+                            return { label, serviceKey: pattern.serviceKey, qty: '', unit: '', unitKey: '' };
+                        }
                         const unit = window.i18n?.translate?.(pattern.unitKey, lang) || match[0].split(qty)[1].trim();
                         return { label, serviceKey: pattern.serviceKey, qty, unit, unitKey: pattern.unitKey };
                     }
+                }
+
+                if (isSewerageLine) {
+                    const label = window.i18n?.translate?.('meter_sewerage', lang) || 'Канализация';
+                    return { label, serviceKey: 'meter_sewerage', qty: '', unit: '', unitKey: '' };
                 }
 
                 // Stable tariff lines (already disambiguated by backend)

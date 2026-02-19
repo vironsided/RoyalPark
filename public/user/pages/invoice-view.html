@@ -499,6 +499,8 @@
                 return { label: '—', consumed: '—', serviceKey: '', qty: '', unitKey: '' };
             }
 
+            const isSewerageLine = /^(?:meter_sewerage\b|Канализация(?:\s*\(авто\))?\b)/i.test(String(description).trim());
+
             const keyPattern = /^(meter_[a-z_]+)\s+([\d.]+)\s*(.*)$/i;
             const keyMatch = description.match(keyPattern);
             if (keyMatch) {
@@ -506,6 +508,9 @@
                 const qty = keyMatch[2];
                 const unitRaw = keyMatch[3] ? keyMatch[3].trim() : '';
                 const label = window.i18n?.translate?.(key, lang) || key;
+                if (key === 'meter_sewerage') {
+                    return { label, consumed: '—', serviceKey: key, qty: '', unitKey: '' };
+                }
                 const unit = unitRaw || '';
                 let unitKey = '';
                 if (/квт/i.test(unitRaw)) unitKey = 'user_unit_kwh';
@@ -546,9 +551,17 @@
                 if (match) {
                     const amount = match[1];
                     const label = window.i18n?.translate?.(pattern.serviceKey, lang) || description.split(' ')[0];
+                    if (pattern.serviceKey === 'meter_sewerage' || isSewerageLine) {
+                        return { label, consumed: '—', serviceKey: pattern.serviceKey, qty: '', unitKey: '' };
+                    }
                     const unit = window.i18n?.translate?.(pattern.unitKey, lang) || match[0].split(amount)[1].trim();
                     return { label, consumed: `${amount} ${unit}`.trim(), serviceKey: pattern.serviceKey, qty: amount, unitKey: pattern.unitKey };
                 }
+            }
+
+            if (isSewerageLine) {
+                const label = window.i18n?.translate?.('meter_sewerage', lang) || 'Канализация';
+                return { label, consumed: '—', serviceKey: 'meter_sewerage', qty: '', unitKey: '' };
             }
 
             const fallbackSplit = description.match(/^(.+?)\s+([\d.]+)\s*(.*)$/);
