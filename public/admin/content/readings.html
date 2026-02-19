@@ -2166,6 +2166,83 @@
         return totalNet + vat;
     }
 
+    function getWaterBaseValues(row) {
+        const prev = parseFloat(row.dataset.prevValue || '0');
+        const input = row.querySelector('.meter-input');
+        const value = input?.value ? parseFloat(input.value) : null;
+        if (value === null || Number.isNaN(value)) {
+            return { consumption: 0, amount: 0 };
+        }
+
+        const consumption = Math.max(0, value - prev);
+        const tariffSteps = JSON.parse(row.dataset.tariffSteps || '[]');
+        const vatPercent = parseFloat(row.dataset.vatPercent || '0');
+        const amount = calculateAmount(consumption, tariffSteps, vatPercent);
+        return { consumption, amount };
+    }
+
+    function upsertAutoSewerRowForWater(waterRow) {
+        if (!waterRow) return;
+        const percent = parseFloat(waterRow.dataset.seweragePercent || '0');
+        if (!(percent > 0)) return;
+
+        const meterId = waterRow.dataset.meterId;
+        const customerType = (waterRow.dataset.sewerageCustomerType || '').toUpperCase();
+        const k = percent / 100;
+
+        const { consumption: baseConsumption, amount: baseAmount } = getWaterBaseValues(waterRow);
+        let waterConsumption = baseConsumption;
+        let waterAmount = baseAmount;
+        let sewerConsumption = baseConsumption * k;
+        let sewerAmount = baseAmount * k;
+
+        if (customerType === 'INDIVIDUAL') {
+            waterConsumption = baseConsumption * (1 - k);
+            waterAmount = baseAmount * (1 - k);
+            sewerConsumption = baseConsumption * k;
+            sewerAmount = Math.max(0, baseAmount - waterAmount);
+        }
+
+        const waterConsumptionEl = waterRow.querySelector('.meter-consumption');
+        const waterAmountEl = waterRow.querySelector('.meter-amount');
+        if (waterConsumptionEl) waterConsumptionEl.textContent = waterConsumption.toFixed(3);
+        if (waterAmountEl) waterAmountEl.textContent = waterAmount.toFixed(2);
+
+        let sewerRow = document.querySelector(`#meterTableBody tr.auto-sewer-row[data-linked-water-meter-id="${meterId}"]`);
+        if (!sewerRow) {
+            sewerRow = document.createElement('tr');
+            sewerRow.className = 'auto-sewer-row';
+            sewerRow.setAttribute('data-linked-water-meter-id', meterId);
+            sewerRow.innerHTML = `
+                <td><span class="meter-type-pill">Канализация (авто)</span></td>
+                <td class="auto-sewer-tariff">—</td>
+                <td>—</td>
+                <td>от воды</td>
+                <td><span class="meter-consumption">0.000</span></td>
+                <td><span class="meter-amount">0.00</span></td>
+                <td><div class="meter-photo-cell"><span class="meter-photo-placeholder">—</span></div></td>
+                <td></td>
+            `;
+            waterRow.insertAdjacentElement('afterend', sewerRow);
+        }
+
+        const tariffCell = sewerRow.querySelector('.auto-sewer-tariff');
+        if (tariffCell) {
+            const waterTariffName = waterRow.dataset.tariffName || 'Вода';
+            tariffCell.textContent = `${waterTariffName} (${percent.toFixed(2)}%)`;
+        }
+
+        const sewerConsumptionEl = sewerRow.querySelector('.meter-consumption');
+        const sewerAmountEl = sewerRow.querySelector('.meter-amount');
+        if (sewerConsumptionEl) sewerConsumptionEl.textContent = sewerConsumption.toFixed(3);
+        if (sewerAmountEl) sewerAmountEl.textContent = sewerAmount.toFixed(2);
+    }
+
+    function refreshAllAutoSewerRows() {
+        const waterRows = Array.from(document.querySelectorAll('#meterTableBody tr[data-meter-id][data-meter-type="WATER"]'));
+        waterRows.forEach(upsertAutoSewerRowForWater);
+    }
+
     function renderMeterTable(meters) {
         const tbody = document.getElementById('meterTableBody');
         if (!tbody) return;
@@ -2180,6 +2257,7 @@
             return;
         }
 
+        const hasRealSewerMeter = meters.some(m => m.type === 'SEWERAGE');
         tbody.innerHTML = meters.map(meter => {
             // prev_value - это последнее показание ДО начала месяца (или initial_reading)
             // existing_value - это существующее показание ЗА этот месяц (если есть)
@@ -2284,6 +2362,10 @@
 
             const tariffStepsJson = JSON.stringify(meter.tariff_steps || []);
             const vatPercent = meter.vat_percent || 0;
+            const seweragePercent = (!hasRealSewerMeter && meter.type === 'WATER')
+                ? (parseFloat(meter.sewerage_percent || 0) || 0)
+                : 0;
+            const sewerageCustomerType = meter.tariff_customer_type || '';
 
             // Если есть существующее значение, используем его для поля ввода
             const inputValue = (existing !== null && existing !== undefined) ? existing.toFixed(3) : '';
@@ -2307,7 +2389,10 @@
                         data-tariff-steps='${tariffStepsJson}'
                         data-vat-percent="${vatPercent}"
                         data-meter-type="${meter.type}"
-                        data-existing-photo-url="${existingPhotoUrl}">
+                        data-existing-photo-url="${existingPhotoUrl}"
+                        data-sewerage-percent="${seweragePercent}"
+                        data-sewerage-customer-type="${sewerageCustomerType}"
+                        data-tariff-name="${meter.tariff_name || ''}">
                         <td><span class="meter-type-pill">${meter.display_type}</span></td>
                         <td>${meter.tariff_name}</td>
                         <td>${(prev !== null && prev !== undefined) ? prev.toFixed(3) : '0.000'} ${meter.unit}</td>
@@ -2356,6 +2441,7 @@
                     </tr>
                 `;
         }).join('');
+        refreshAllAutoSewerRows();
         resetMeterPhotoState();
     }
 
@@ -2370,15 +2456,19 @@
         // Проверка будет при сохранении
 
         const consumption = Math.max(0, value - prev);
-
-        // Calculate amount using tariff steps
         const tariffSteps = JSON.parse(row.dataset.tariffSteps || '[]');
         const vatPercent = parseFloat(row.dataset.vatPercent || '0');
         const amount = calculateAmount(consumption, tariffSteps, vatPercent);
 
-        row.dataset.consumption = consumption.toFixed(3);
-        row.querySelector('.meter-consumption').textContent = consumption.toFixed(3);
-        row.querySelector('.meter-amount').textContent = amount.toFixed(2);
+        const meterType = (row.dataset.meterType || '').toUpperCase();
+        const seweragePercent = parseFloat(row.dataset.seweragePercent || '0');
+        if (meterType === 'WATER' && seweragePercent > 0) {
+            upsertAutoSewerRowForWater(row);
+        } else {
+            row.dataset.consumption = consumption.toFixed(3);
+            row.querySelector('.meter-consumption').textContent = consumption.toFixed(3);
+            row.querySelector('.meter-amount').textContent = amount.toFixed(2);
+        }
     }
 
     window.handleFixedMeterChange = function handleFixedMeterChange(checkbox, meterId) {

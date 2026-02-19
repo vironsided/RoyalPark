@@ -31,6 +31,16 @@ def _money2(x: Decimal) -> Decimal:
     return (x or Decimal("0")).quantize(Decimal("0.01"))
 
 
+def _effective_sewerage_percent(tariff: Tariff | None) -> Decimal:
+    if not tariff or tariff.meter_type != MeterType.WATER:
+        return Decimal("0")
+    try:
+        percent = Decimal(str(getattr(tariff, "sewerage_percent", 0) or 0))
+    except Exception:
+        percent = Decimal("0")
+    return percent if percent > 0 else Decimal("0")
+
+
 def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
     if not inv or not inv.id:
         return
@@ -85,7 +95,7 @@ def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
         base_total = _money2(Decimal(str(rd.amount_total or 0)))
 
         t = db.get(Tariff, rd.tariff_id) if rd.tariff_id else None
-        percent = Decimal(str(getattr(t, "sewerage_percent", 0) or 0))
+        percent = _effective_sewerage_percent(t)
         if percent <= 0:
             ln.amount_net = base_net
             ln.amount_vat = base_vat
@@ -737,6 +747,22 @@ def get_resident_detail(
         from ..models import MeterReading, MeterType
         
         meters_data = []
+
+        # Если есть реальные показания канализации в периоде, авто-канализацию не добавляем.
+        real_sewerage_query = (
+            db.query(MeterReading.id)
+            .join(ResidentMeter, ResidentMeter.id == MeterReading.resident_meter_id)
+            .filter(
+                ResidentMeter.resident_id == resident.id,
+                ResidentMeter.meter_type == MeterType.SEWERAGE,
+            )
+        )
+        if start_dt is not None:
+            real_sewerage_query = real_sewerage_query.filter(MeterReading.reading_date >= start_dt)
+        if end_dt is not None:
+            real_sewerage_query = real_sewerage_query.filter(MeterReading.reading_date < end_dt)
+        has_real_sewerage = real_sewerage_query.first() is not None
+
         # Ensure meters are loaded - they should already be loaded from the query above
         for meter in resident.meters if resident.meters else []:
             # Get readings for this meter with date filter
@@ -744,12 +770,12 @@ def get_resident_detail(
                 db.query(MeterReading)
                 .filter(MeterReading.resident_meter_id == meter.id)
             )
-            
+
             if start_dt is not None:
                 readings_query = readings_query.filter(MeterReading.reading_date >= start_dt)
             if end_dt is not None:
                 readings_query = readings_query.filter(MeterReading.reading_date < end_dt)
-            
+
             readings = readings_query.order_by(
                 MeterReading.reading_date.desc(),
                 MeterReading.id.desc()
@@ -783,13 +809,45 @@ def get_resident_detail(
 
             # Format readings
             readings_data = []
+            sewerage_readings = []
             for rd in readings:
+                base_consumption = Decimal(str(rd.consumption or 0))
+                base_charge = _money2(Decimal(str(rd.amount_total or 0)))
+                out_consumption = base_consumption
+                out_charge = base_charge
+
+                if meter.meter_type == MeterType.WATER and not has_real_sewerage:
+                    tariff_for_reading = db.get(Tariff, rd.tariff_id) if rd.tariff_id else meter.tariff
+                    percent = _effective_sewerage_percent(tariff_for_reading)
+                    if tariff_for_reading and tariff_for_reading.meter_type == MeterType.WATER and percent > 0:
+                        k = percent / Decimal("100")
+                        if getattr(tariff_for_reading, "customer_type", None) == CustomerType.INDIVIDUAL:
+                            out_consumption = base_consumption * (Decimal("1") - k)
+                            out_charge = _money2(base_charge * (Decimal("1") - k))
+                            sewer_consumption = base_consumption * k
+                            sewer_charge = _money2(base_charge - out_charge)
+                        else:
+                            out_consumption = base_consumption
+                            out_charge = base_charge
+                            sewer_consumption = base_consumption * k
+                            sewer_charge = _money2(base_charge * k)
+
+                        sewerage_readings.append({
+                            "id": f"auto-sewerage-{rd.id}",
+                            "date": rd.reading_date.strftime("%d.%m.%Y"),
+                            "reading": str(sewer_consumption),
+                            "consumption": str(sewer_consumption),
+                            "charge": float(sewer_charge),
+                            "vat": float(rd.vat_percent) if hasattr(rd, 'vat_percent') and rd.vat_percent else 0,
+                            "comment": "Авто (от воды)",
+                        })
+
                 readings_data.append({
                     "id": rd.id,
                     "date": rd.reading_date.strftime("%d.%m.%Y"),
                     "reading": str(rd.value),
-                    "consumption": str(rd.consumption),
-                    "charge": float(rd.amount_total),
+                    "consumption": str(out_consumption),
+                    "charge": float(out_charge),
                     "vat": float(rd.vat_percent) if hasattr(rd, 'vat_percent') and rd.vat_percent else 0,
                     "comment": rd.note or "",
                 })
@@ -805,6 +863,17 @@ def get_resident_detail(
                 "unit": unit,
                 "readings": readings_data,
             })
+
+            if meter.meter_type == MeterType.WATER and sewerage_readings:
+                meters_data.append({
+                    "id": f"auto-sewerage-{meter.id}",
+                    "type": MeterType.SEWERAGE.value,
+                    "display_type": "Канализация",
+                    "serial_number": meter.serial_number,
+                    "tariff_name": tariff_name,
+                    "unit": "м³",
+                    "readings": sewerage_readings,
+                })
 
         from_val = start_dt.strftime("%Y-%m-%d") if start_dt else ""
         to_val = (end_dt - timedelta(days=1)).strftime("%Y-%m-%d") if end_dt else ""

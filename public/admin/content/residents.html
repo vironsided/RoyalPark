@@ -1014,12 +1014,15 @@
                     'ELECTRIC': 'electricity',
                     'GAS': 'gas',
                     'WATER': 'water',
-                    'SEWERAGE': 'sewerage',
                     'SERVICE': 'service',
                     'RENT': 'rent',
                     'CONSTRUCTION': 'construction'
                 };
                 meterType = typeMap[backendType] || meterData.meter_type.toLowerCase();
+            }
+                // Legacy SEWERAGE-meter rows переводим в WATER UI, т.к. канализация теперь только авто.
+            if (meterType === 'sewerage') {
+                meterType = 'water';
             }
             
             const serial = meterData?.serial_number || '';
@@ -1032,12 +1035,11 @@
                 'electricity': 'ELECTRIC',
                 'gas': 'GAS',
                 'water': 'WATER',
-                'sewerage': 'SEWERAGE',
                 'service': 'SERVICE',
                 'rent': 'RENT',
                 'construction': 'CONSTRUCTION'
             };
-            const apiMeterType = meterTypeMap[meterType] || 'ELECTRIC';
+            const apiMeterType = meterTypeMap[meterType] || 'WATER';
             const availableTariffs = tariffs.filter(t => t.meter_type === apiMeterType && t.is_active);
             const selectedTariffObj = tariffs.find(t => t.id === tariffId);
             
@@ -1058,7 +1060,6 @@
                 'electricity': 'кВт-ч',
                 'gas': 'м³',
                 'water': 'м³',
-                'sewerage': 'м³',
                 'service': '', // Фикс цена
                 'rent': '', // Фикс цена
                 'construction': '' // Фикс цена
@@ -1075,7 +1076,6 @@
                         <option value="electricity" ${meterType === 'electricity' ? 'selected' : ''}>Электричество</option>
                         <option value="gas" ${meterType === 'gas' ? 'selected' : ''}>Газ</option>
                         <option value="water" ${meterType === 'water' ? 'selected' : ''}>Вода</option>
-                        <option value="sewerage" ${meterType === 'sewerage' ? 'selected' : ''}>Канализация</option>
                         <option value="service" ${meterType === 'service' ? 'selected' : ''}>Сервис</option>
                         <option value="rent" ${meterType === 'rent' ? 'selected' : ''}>Аренда</option>
                         <option value="construction" ${meterType === 'construction' ? 'selected' : ''}>Строительство</option>
@@ -1136,7 +1136,6 @@
                 'electricity': 'ELECTRIC',
                 'gas': 'GAS',
                 'water': 'WATER',
-                'sewerage': 'SEWERAGE',
                 'service': 'SERVICE',
                 'rent': 'RENT',
                 'construction': 'CONSTRUCTION'
@@ -1205,8 +1204,7 @@
                     const unitMap = {
                         'electricity': 'кВт-ч',
                         'gas': 'м³',
-                        'water': 'м³',
-                        'sewerage': 'м³'
+                        'water': 'м³'
                     };
                     unitLabel.value = unitMap[meterType] || '';
                 }
@@ -1286,7 +1284,6 @@
                         'electricity': 'ELECTRIC',
                         'gas': 'GAS',
                         'water': 'WATER',
-                        'sewerage': 'SEWERAGE',
                         'service': 'SERVICE',
                         'rent': 'RENT',
                         'construction': 'CONSTRUCTION'
@@ -1315,8 +1312,7 @@
                                 const meterTypeNames = {
                                     'electricity': 'Электричество',
                                     'gas': 'Газ',
-                                    'water': 'Вода',
-                                    'sewerage': 'Канализация'
+                                    'water': 'Вода'
                                 };
                                 const meterTypeName = meterTypeNames[meterType] || meterType;
                                 showError(`Заполните серийный номер для счётчика "${meterTypeName}"`);

@@ -13,10 +13,6 @@
                 <p class="label" data-i18n="user_resident_status_label">Статус</p>
                 <span class="badge badge-success" data-i18n="user_resident_status_active">Активен</span>
             </div>
-            <div>
-                <p class="label" data-i18n="user_resident_balance_label">Баланс</p>
-                <p class="value">₼0.00</p>
-            </div>
         </div>
         <button class="back-button" data-user-route-target="dashboard">
             <span data-i18n="user_resident_back_btn">← Назад</span>
@@ -148,12 +144,9 @@
                 const filterResetBtn = document.getElementById('filterResetBtn');
                 const quickFilterBtns = document.querySelectorAll('.quick-filter-btn');
                 
-                // По умолчанию: От - пусто, До - пусто
-                const currentDate = new Date();
-                const todayStr = currentDate.toISOString().split('T')[0];
-                
-                if (dateFromInput) dateFromInput.value = '';  // От пустой
-                if (dateToInput) dateToInput.value = '';  // До тоже пустой
+                // По умолчанию применяем быстрый фильтр "За месяц".
+                if (dateFromInput) dateFromInput.value = '';
+                if (dateToInput) dateToInput.value = '';
 
                 const formatForInput = (date) => {
                     return date.toISOString().split('T')[0];
@@ -367,10 +360,16 @@
                 });
 
                 // Load initial data with a small delay to ensure DOM is ready
-                // По умолчанию: От - пусто, До - пусто, никакой быстрый фильтр не активен
+                // По умолчанию: активный быстрый фильтр "За месяц"
                 setTimeout(() => {
+                    const monthBtn = Array.from(quickFilterBtns).find(btn => btn.dataset.range === 'month');
                     quickFilterBtns.forEach(btn => btn.classList.remove('active'));
-                    loadResidentDetail('', '', null);
+                    if (monthBtn) {
+                        monthBtn.classList.add('active');
+                        applyQuickRange('month');
+                    } else {
+                        loadResidentDetail('', '', 'month');
+                    }
                 }, 50);
             }
         }

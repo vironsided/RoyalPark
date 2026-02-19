@@ -494,6 +494,16 @@ def _money2(x: Decimal) -> Decimal:
     return (x or Decimal("0")).quantize(Decimal("0.01"))
 
 
+def _effective_sewerage_percent(tariff: Tariff | None) -> Decimal:
+    if not tariff or tariff.meter_type != MeterType.WATER:
+        return Decimal("0")
+    try:
+        percent = Decimal(str(getattr(tariff, "sewerage_percent", 0) or 0))
+    except Exception:
+        percent = Decimal("0")
+    return percent if percent > 0 else Decimal("0")
+
+
 def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
     """
     Гарантирует наличие синтетической строки "Канализация (авто)" как % от суммы воды.
@@ -557,7 +567,7 @@ def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
         base_total = _money2(Decimal(str(rd.amount_total or 0)))
 
         t = db.get(Tariff, rd.tariff_id) if rd.tariff_id else None
-        percent = Decimal(str(getattr(t, "sewerage_percent", 0) or 0))
+        percent = _effective_sewerage_percent(t)
         if percent <= 0:
             ln.amount_net = base_net
             ln.amount_vat = base_vat

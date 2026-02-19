@@ -17,6 +17,7 @@ from ..deps import get_current_user
 
 
 router = APIRouter(prefix="/api/residents", tags=["residents-api"])
+DISABLED_MANUAL_METER_TYPES = {MeterType.SEWERAGE.value}
 
 
 # Pydantic models
@@ -113,6 +114,8 @@ def _parse_meters(meters_data: List[MeterIn]) -> List[dict]:
     for m in meters_data:
         if m.meter_type not in {t.value for t in MeterType}:
             raise ValueError(f"Invalid meter_type: {m.meter_type}")
+        if m.meter_type in DISABLED_MANUAL_METER_TYPES:
+            raise ValueError("Канализация рассчитывается автоматически от воды и не назначается вручную")
         
         meter_type_enum = MeterType(m.meter_type)
         is_fixed_price = meter_type_enum in fixed_price_types

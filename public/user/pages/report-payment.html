@@ -334,7 +334,9 @@
                         <label class="custom-amount-field-label" data-i18n="payment_custom_amount_label">Сумма к оплате</label>
                         <div class="custom-amount-input-wrapper">
                             <input 
-                                type="number" 
+                                type="text"
+                                inputmode="decimal"
+                                autocomplete="off"
                                 id="customAmountInput" 
                                 class="custom-amount-input" 
                                 step="0.01" 
@@ -346,6 +348,10 @@
                         <div class="custom-amount-hint" id="customAmountHint"></div>
                     </div>
                 </div>
+
+                <button type="button" class="pay-button" id="topupAdvanceBtn" data-i18n="payment_topup_advance_btn" style="margin-top: 12px; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.45);">
+                    Пополнить аванс
+                </button>
             </div>
 
             <!-- Default pay action when user doesn't add a new card -->
@@ -374,6 +380,11 @@ var currentCardData = {
 // Currently selected saved card (from the list on the left)
 var selectedSavedCard = null;
 window.selectedSavedCard = null;
+var ADVANCE_TOPUP_SCOPE = 'advance_topup';
+
+function isAdvanceTopupScope(scope) {
+    return scope === ADVANCE_TOPUP_SCOPE;
+}
 
 // TTL for payment session data (10 minutes)
 var PAYMENT_DATA_TTL_MS = 1 * 60 * 1000;
@@ -1297,20 +1308,25 @@ async function initPaymentPage() {
             }).format(adv) + ' ₼';
         }
         
-        // Отключаем карту Royal Park, если аванс = 0
+        // Отключаем карту Royal Park:
+        // - всегда в режиме "Пополнение аванса" (пополнять нужно только с банковской карты),
+        // - либо когда баланс аванса = 0.
         const advanceCard = document.querySelector('.resident-pass-card[data-card-type="ADVANCE"]');
         if (advanceCard) {
             const adv = typeof advanceValue === 'number' ? advanceValue : 0;
+            const inTopupMode = isAdvanceTopupScope(sessionStorage.getItem('paymentScope'));
             // Сохраняем баланс аванса в атрибуте для проверки при оплате
             advanceCard.dataset.advanceBalance = adv;
             
-            if (adv <= 0) {
+            if (inTopupMode || adv <= 0) {
                 // Отключаем карту: добавляем класс disabled и делаем недоступной для выбора
                 advanceCard.classList.add('disabled');
                 advanceCard.style.opacity = '0.5';
                 advanceCard.style.cursor = 'not-allowed';
                 advanceCard.setAttribute('aria-disabled', 'true');
-                advanceCard.title = 'Аванс недоступен (баланс: 0,00 ₼)';
+                advanceCard.title = inTopupMode
+                    ? 'Карта аванса недоступна при пополнении аванса'
+                    : 'Аванс недоступен (баланс: 0,00 ₼)';
                 
                 // Если эта карта была выбрана, снимаем выбор
                 if (advanceCard.classList.contains('selected')) {
@@ -1346,6 +1362,7 @@ async function initPaymentPage() {
         const selectedInvoiceIdRaw = sessionStorage.getItem('paymentInvoiceId');
         const selectedInvoiceId = selectedInvoiceIdRaw ? parseInt(selectedInvoiceIdRaw, 10) : null;
         const scope = sessionStorage.getItem('paymentScope') || (selectedInvoiceId ? 'invoice' : 'month');
+        const isAdvanceTopupMode = isAdvanceTopupScope(scope);
         let amountRaw = sessionStorage.getItem('paymentAmount');
         let amount = amountRaw ? parseFloat(amountRaw) : 0;
         const scopeLabelStored = sessionStorage.getItem('paymentScopeLabel');
@@ -1379,9 +1396,12 @@ async function initPaymentPage() {
             stopPaymentCountdown();
         }
         
+        // В режиме пополнения аванса сумма всегда вводится вручную, поэтому "Итого" = 0.
+        if (isAdvanceTopupMode) {
+            amount = 0;
         // Если сумма из sessionStorage отсутствует или равна 0, пробуем взять её из summary/бэкенда
         // Но только если есть данные в sessionStorage (пользователь перешел через кнопку)
-        if (hasPaymentData) {
+        } else if (hasPaymentData) {
             if (!amount || Number.isNaN(amount)) {
                 if (paymentSummary) {
                     amount = scope === 'all'
@@ -1419,7 +1439,9 @@ async function initPaymentPage() {
             // Устанавливаем поля только если есть данные
             const lang = localStorage.getItem('language') || 'ru';
             if (subtitleEl) {
-                if (scope === 'all') {
+                if (isAdvanceTopupMode) {
+                    subtitleEl.textContent = window.i18n?.translate?.('payment_topup_advance_label', lang) || 'Пополнение аванса';
+                } else if (scope === 'all') {
                     subtitleEl.textContent = window.i18n?.translate?.('payment_all_debt', lang) || 'Оплата всего долга';
                 } else if (scope === 'invoice') {
                     subtitleEl.textContent = window.i18n?.translate?.('payment_invoice_payment', lang) || 'Оплата счёта';
@@ -1429,16 +1451,32 @@ async function initPaymentPage() {
             }
 
             if (paymentTypeEl) {
-                const defaultScopeText = scope === 'all'
-                    ? (window.i18n?.translate?.('payment_full_debt', lang) || 'Полное погашение долга по счетам')
-                    : (scope === 'invoice'
-                        ? (window.i18n?.translate?.('payment_invoice_payment', lang) || 'Оплата счёта')
-                        : (window.i18n?.translate?.('payment_month_bills', lang) || 'Оплата счетов за текущий месяц'));
+                const defaultScopeText = isAdvanceTopupMode
+                    ? (window.i18n?.translate?.('payment_topup_advance_label', lang) || 'Пополнение аванса')
+                    : (scope === 'all'
+                        ? (window.i18n?.translate?.('payment_full_debt', lang) || 'Полное погашение долга по счетам')
+                        : (scope === 'invoice'
+                            ? (window.i18n?.translate?.('payment_invoice_payment', lang) || 'Оплата счёта')
+                            : (window.i18n?.translate?.('payment_month_bills', lang) || 'Оплата счетов за текущий месяц')));
                 paymentTypeEl.textContent = scopeLabelStored || defaultScopeText;
             }
 
             if (paymentResidentEl) {
                 paymentResidentEl.textContent = residentCodeStored || '—';
+            }
+
+            // В режиме пополнения аванса счёт/период должны быть пустыми.
+            if (isAdvanceTopupMode) {
+                if (paymentDateEl) {
+                    paymentDateEl.textContent = '—';
+                }
+                const invoiceNumberEl = document.getElementById('invoiceNumber');
+                if (invoiceNumberEl) {
+                    invoiceNumberEl.textContent = '—';
+                    invoiceNumberEl.classList.remove('invoice-link');
+                    invoiceNumberEl.style.cursor = 'default';
+                    invoiceNumberEl.onclick = null;
+                }
             }
             
             // update resident name and advance on the default pass
@@ -1446,7 +1484,9 @@ async function initPaymentPage() {
             // Передаём сумму из sessionStorage, чтобы loadPaymentInvoices не перезаписывала её
             const residentIdStored = sessionStorage.getItem('paymentResidentId');
             const residentIdParsed = residentIdStored ? parseInt(residentIdStored, 10) : null;
-            loadPaymentInvoices(scope, residentCodeStored || null, amount, residentIdParsed, selectedInvoiceId);
+            if (!isAdvanceTopupMode) {
+                loadPaymentInvoices(scope, residentCodeStored || null, amount, residentIdParsed, selectedInvoiceId);
+            }
         } else {
             // Если нет данных в sessionStorage, оставляем все поля пустыми
             if (subtitleEl) {
@@ -1496,14 +1536,14 @@ async function initPaymentPage() {
         }
 
         // Initialize custom amount functionality
-        initCustomAmountField(amount);
+        initCustomAmountField(amount, isAdvanceTopupMode);
     } catch (err) {
         console.error('Error initializing payment summary:', err);
     }
 }
 
 // Initialize custom amount field functionality
-function initCustomAmountField(defaultAmount) {
+function initCustomAmountField(defaultAmount, forceCustomModeForTopup = false) {
     const checkbox = document.getElementById('customAmountCheckbox');
     const fieldWrapper = document.getElementById('customAmountFieldWrapper');
     const amountInput = document.getElementById('customAmountInput');
@@ -1511,6 +1551,21 @@ function initCustomAmountField(defaultAmount) {
     const totalEl = document.getElementById('total');
 
     if (!checkbox || !fieldWrapper || !amountInput) return;
+
+    function sanitizeAmountInputValue(raw) {
+        const value = String(raw || '').replace(',', '.');
+        let cleaned = value.replace(/[^0-9.]/g, '');
+        const firstDot = cleaned.indexOf('.');
+        if (firstDot !== -1) {
+            cleaned = cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, '');
+            const parts = cleaned.split('.');
+            if (parts.length > 1) {
+                parts[1] = parts[1].slice(0, 2);
+            }
+            cleaned = parts.join('.');
+        }
+        return cleaned;
+    }
 
     // Get total amount from invoice
     let invoiceTotal = defaultAmount || 0;
@@ -1537,8 +1592,25 @@ function initCustomAmountField(defaultAmount) {
         }
     });
 
+    if (forceCustomModeForTopup) {
+        checkbox.checked = true;
+        checkbox.disabled = true;
+        fieldWrapper.style.display = 'block';
+        amountInput.value = '';
+        amountInput.focus();
+    } else {
+        checkbox.disabled = false;
+    }
+
     // Input change handler
+    amountInput.addEventListener('keydown', function(e) {
+        if (['e', 'E', '+', '-'].includes(e.key)) {
+            e.preventDefault();
+        }
+    });
+
     amountInput.addEventListener('input', function() {
+        this.value = sanitizeAmountInputValue(this.value);
         const customAmount = parseFloat(this.value) || 0;
         updateAmountHint(invoiceTotal, customAmount);
     });
@@ -1547,6 +1619,17 @@ function initCustomAmountField(defaultAmount) {
     function updateAmountHint(invoiceTotal, customAmount) {
         if (!hintEl) return;
         
+        if (forceCustomModeForTopup) {
+            if (customAmount <= 0) {
+                hintEl.textContent = '';
+                hintEl.className = 'custom-amount-hint';
+                return;
+            }
+            hintEl.textContent = 'Сумма будет зачислена в аванс';
+            hintEl.className = 'custom-amount-hint hint-advance';
+            return;
+        }
+
         if (customAmount <= 0) {
             hintEl.textContent = '';
             hintEl.className = 'custom-amount-hint';
@@ -1625,6 +1708,7 @@ async function submitPayment(event) {
     
     // Get payment data from session storage
     let scope = sessionStorage.getItem('paymentScope') || 'month';
+    const isAdvanceTopupMode = isAdvanceTopupScope(scope);
     let amount = parseFloat(sessionStorage.getItem('paymentAmount') || '0');
     const invoiceIdStored = sessionStorage.getItem('paymentInvoiceId');
     const invoiceId = invoiceIdStored ? parseInt(invoiceIdStored, 10) : null;
@@ -1650,7 +1734,7 @@ async function submitPayment(event) {
     
     if (useCustomAmount && customAmountInput) {
         // Use custom amount from input
-        const customAmount = parseFloat(customAmountInput.value) || 0;
+        const customAmount = parseFloat(String(customAmountInput.value || '').replace(',', '.')) || 0;
         if (customAmount <= 0) {
             showPaymentError('Введите сумму для оплаты');
             return false;
@@ -1659,7 +1743,7 @@ async function submitPayment(event) {
         
         // Если нет invoice (invoiceNumber = "—") или invoice total = 0, это пополнение аванса
         // В этом случае scope должен быть null, чтобы платеж не применялся к счетам
-        if (!hasInvoice || invoiceTotal === 0) {
+        if (isAdvanceTopupMode || !hasInvoice || invoiceTotal === 0) {
             scope = null;
         }
         // Если есть invoice, но пользователь указал кастомную сумму, применяем к invoice
@@ -1671,7 +1755,7 @@ async function submitPayment(event) {
         }
         
         // Если нет invoice или invoice total = 0, это пополнение аванса
-        if (!hasInvoice || invoiceTotal === 0) {
+        if (isAdvanceTopupMode || !hasInvoice || invoiceTotal === 0) {
             scope = null;
         }
     }
@@ -2145,6 +2229,69 @@ function setupPaymentLayout() {
     toggleCardForm(false);
 }
 
+async function setupAdvanceTopupButton() {
+    const btn = document.getElementById('topupAdvanceBtn');
+    if (!btn) return;
+
+    function clearInvoiceUIForTopup() {
+        const paymentDateEl = document.getElementById('paymentDate');
+        const invoiceNumberEl = document.getElementById('invoiceNumber');
+        const totalEl = document.getElementById('total');
+        const amountLabelEl = document.getElementById('paymentAmountLabel');
+        if (paymentDateEl) paymentDateEl.textContent = '—';
+        if (invoiceNumberEl) {
+            invoiceNumberEl.textContent = '—';
+            invoiceNumberEl.classList.remove('invoice-link');
+            invoiceNumberEl.style.cursor = 'default';
+            invoiceNumberEl.onclick = null;
+        }
+        if (totalEl) totalEl.textContent = '0,00 ₼';
+        if (amountLabelEl) amountLabelEl.textContent = '0,00 ₼';
+    }
+
+    btn.addEventListener('click', async () => {
+        let residentId = sessionStorage.getItem('paymentResidentId');
+        let residentCode = sessionStorage.getItem('paymentResidentCode');
+
+        if (!residentId || !residentCode) {
+            try {
+                const resp = await fetch(`${API_BASE}/api/resident/dashboard`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const firstResident = (data?.residents || [])[0] || null;
+                    if (firstResident) {
+                        residentId = String(firstResident.id);
+                        residentCode = firstResident.code || residentCode || '';
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to preload resident for advance top-up', e);
+            }
+        }
+
+        try {
+            sessionStorage.setItem('paymentScope', ADVANCE_TOPUP_SCOPE);
+            sessionStorage.setItem('paymentAmount', '0');
+            sessionStorage.setItem('paymentScopeLabel', 'Пополнение аванса');
+            sessionStorage.setItem('paymentTimestamp', String(Date.now()));
+            if (residentId) sessionStorage.setItem('paymentResidentId', String(residentId));
+            if (residentCode) sessionStorage.setItem('paymentResidentCode', residentCode);
+            sessionStorage.removeItem('paymentInvoiceId');
+        } catch (e) {
+            console.warn('Failed to set advance top-up payment mode', e);
+        }
+
+        // Сразу очищаем invoice-детали в UI, чтобы не ждать перезагрузки страницы.
+        clearInvoiceUIForTopup();
+        await initPaymentPage();
+        setupSavedCardSelection();
+    });
+}
+
 // Функция для очистки данных оплаты из sessionStorage
 function clearPaymentData() {
     try {
@@ -2211,6 +2358,7 @@ if (document.readyState === 'loading') {
         bindPayButton();
         setupSavedCardSelection();
         setupPaymentLayout();
+        setupAdvanceTopupButton();
         setupPaymentDataCleanup();
     });
 } else {
@@ -2219,6 +2367,7 @@ if (document.readyState === 'loading') {
         bindPayButton();
         setupSavedCardSelection();
         setupPaymentLayout();
+        setupAdvanceTopupButton();
         setupPaymentDataCleanup();
     })();
 }

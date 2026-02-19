@@ -14,6 +14,7 @@ from ..deps import get_current_user
 from ..models import User
 
 router = APIRouter(prefix="/api/tariffs", tags=["tariffs-api"])
+DISABLED_TARIFF_TYPES = {MeterType.SEWERAGE.value}
 
 
 class TariffStepOut(BaseModel):
@@ -78,6 +79,14 @@ class TariffUpdate(BaseModel):
 def _to_decimal(value: object) -> Decimal:
     """Безопасно приводит вход к Decimal."""
     return Decimal(str(value))
+
+
+def _ensure_tariff_type_allowed(meter_type: str) -> None:
+    if meter_type in DISABLED_TARIFF_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Тариф 'Канализация' создается автоматически от воды и не может быть создан вручную",
+        )
 
 
 def _parse_steps(steps_data: List[TariffStepCreate], meter_type: str) -> List[tuple]:
@@ -222,6 +231,7 @@ def create_tariff_public(
     
     if payload.meter_type not in {m.value for m in MeterType}:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Неверный тип счётчика")
+    _ensure_tariff_type_allowed(payload.meter_type)
     
     if payload.customer_type not in {c.value for c in CustomerType}:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Неверный тип клиента")
@@ -310,6 +320,7 @@ def create_tariff_api(
     
     if payload.meter_type not in {m.value for m in MeterType}:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Неверный тип счётчика")
+    _ensure_tariff_type_allowed(payload.meter_type)
     
     if payload.customer_type not in {c.value for c in CustomerType}:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Неверный тип клиента")
@@ -400,6 +411,8 @@ def update_tariff_api(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Тариф не найден")
     
     meter_type = payload.meter_type or tariff.meter_type.value
+    if payload.meter_type is not None:
+        _ensure_tariff_type_allowed(payload.meter_type)
     
     if payload.name is not None:
         name = (payload.name or "").strip()
@@ -501,6 +514,8 @@ def update_tariff_public(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Тариф не найден")
     
     meter_type = payload.meter_type or tariff.meter_type.value
+    if payload.meter_type is not None:
+        _ensure_tariff_type_allowed(payload.meter_type)
     
     if payload.name is not None:
         name = (payload.name or "").strip()

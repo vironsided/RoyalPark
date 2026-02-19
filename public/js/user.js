@@ -938,6 +938,17 @@ function setupActionButtons() {
             startPaymentFlow('all', amount, summary, residentId, 'Все объекты');
             return;
         }
+
+        // "Пополнить аванс" — переход в режим пополнения на странице оплаты
+        const topupAdvanceBtn = e.target.closest('[data-action="pay-topup-advance"]');
+        if (topupAdvanceBtn && window.dashboardData) {
+            e.preventDefault();
+            const firstResident = residents[0] || null;
+            const residentId = firstResident ? firstResident.id : null;
+            const residentCode = firstResident ? (firstResident.code || '') : '';
+            startAdvanceTopupFlow(residentId, residentCode);
+            return;
+        }
     });
 }
 
@@ -987,6 +998,31 @@ function startPaymentFlow(scope, amount, summaryFromDashboard, residentId = null
         window.userSpaRouter.navigate('report', true);
     } else {
         // fallback — обычный переход по URL
+        window.location.href = '/user/dashboard.html#report';
+    }
+}
+
+function startAdvanceTopupFlow(residentId = null, residentCode = null) {
+    const scopeLabel = 'Пополнение аванса';
+    try {
+        sessionStorage.setItem('paymentScope', 'advance_topup');
+        sessionStorage.setItem('paymentAmount', '0');
+        sessionStorage.setItem('paymentScopeLabel', scopeLabel);
+        sessionStorage.setItem('paymentTimestamp', String(Date.now()));
+        sessionStorage.removeItem('paymentInvoiceId');
+        if (residentCode) {
+            sessionStorage.setItem('paymentResidentCode', residentCode);
+        }
+        if (residentId) {
+            sessionStorage.setItem('paymentResidentId', String(residentId));
+        }
+    } catch (err) {
+        console.warn('Failed to store advance top-up data in sessionStorage', err);
+    }
+
+    if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
+        window.userSpaRouter.navigate('report', true);
+    } else {
         window.location.href = '/user/dashboard.html#report';
     }
 }

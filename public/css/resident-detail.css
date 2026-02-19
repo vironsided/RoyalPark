@@ -302,6 +302,7 @@ body.resident-detail-page .admin-container {
 .meter-gas { background: linear-gradient(135deg, #f5af19 0%, #f12711 100%); }
 .meter-electric { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
 .meter-water { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+.meter-service { background: linear-gradient(135deg, #8e9eab 0%, #596164 100%); }
 
 .meter-meta {
     display: flex;

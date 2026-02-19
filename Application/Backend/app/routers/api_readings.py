@@ -28,6 +28,158 @@ def money(x: Decimal) -> Decimal:
     return x.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
+def _effective_sewerage_percent(tariff: Tariff | None) -> Decimal:
+    """
+    Канализация берётся только из WATER-тарифа.
+    Если % не задан (0) — авто-канализация не применяется.
+    """
+    if not tariff or tariff.meter_type != MeterType.WATER:
+        return Decimal("0")
+    try:
+        percent = Decimal(str(getattr(tariff, "sewerage_percent", 0) or 0))
+    except Exception:
+        percent = Decimal("0")
+    return percent if percent > 0 else Decimal("0")
+
+
+def _upsert_auto_sewerage_line_for_invoice(
+    db: Session,
+    inv: Invoice,
+    all_period_readings: list[MeterReading],
+) -> None:
+    """
+    Авто-канализация как % от воды:
+    - если есть реальные SEWERAGE-показания, авто-строку удаляем;
+    - иначе считаем по WATER-тарифам (Tariff.sewerage_percent).
+    """
+    if not inv or not inv.id:
+        return
+
+    readings = all_period_readings or []
+    has_real_sewerage = any(
+        (rd.resident_meter and rd.resident_meter.meter_type == MeterType.SEWERAGE)
+        for rd in readings
+    )
+
+    auto_line = (
+        db.query(InvoiceLine)
+        .filter(
+            InvoiceLine.invoice_id == inv.id,
+            InvoiceLine.meter_reading_id.is_(None),
+            InvoiceLine.description.ilike("Канализация%"),
+        )
+        .first()
+    )
+
+    if has_real_sewerage:
+        # Восстанавливаем WATER-строки как исходные начисления из MeterReading.
+        for rd in readings:
+            if rd.resident_meter and rd.resident_meter.meter_type == MeterType.WATER:
+                line = (
+                    db.query(InvoiceLine)
+                    .filter(InvoiceLine.invoice_id == inv.id, InvoiceLine.meter_reading_id == rd.id)
+                    .first()
+                )
+                if line:
+                    line.amount_net = money(Decimal(str(rd.amount_net or 0)))
+                    line.amount_vat = money(Decimal(str(rd.amount_vat or 0)))
+                    line.amount_total = money(Decimal(str(rd.amount_total or 0)))
+                    line.description = f"Вода {float(Decimal(str(rd.consumption or 0)))} м³"
+        if auto_line:
+            db.delete(auto_line)
+        return
+
+    water_readings = [
+        rd for rd in readings
+        if rd.resident_meter and rd.resident_meter.meter_type == MeterType.WATER
+    ]
+    if not water_readings:
+        if auto_line:
+            db.delete(auto_line)
+        return
+
+    sew_net = Decimal("0")
+    sew_vat = Decimal("0")
+    sew_total = Decimal("0")
+    sewer_cons = Decimal("0")
+
+    for rd in water_readings:
+        line = (
+            db.query(InvoiceLine)
+            .filter(InvoiceLine.invoice_id == inv.id, InvoiceLine.meter_reading_id == rd.id)
+            .first()
+        )
+        if not line:
+            continue
+
+        base_net = money(Decimal(str(rd.amount_net or 0)))
+        base_vat = money(Decimal(str(rd.amount_vat or 0)))
+        base_total = money(Decimal(str(rd.amount_total or 0)))
+
+        t = db.get(Tariff, rd.tariff_id) if rd.tariff_id else None
+        percent = _effective_sewerage_percent(t)
+        if percent <= 0:
+            line.amount_net = base_net
+            line.amount_vat = base_vat
+            line.amount_total = base_total
+            line.description = f"Вода {float(Decimal(str(rd.consumption or 0)))} м³"
+            continue
+
+        k = percent / Decimal("100")
+        consumption = Decimal(str(rd.consumption or 0))
+
+        if getattr(t, "customer_type", None) == CustomerType.INDIVIDUAL:
+            # Для физлиц делим WATER-строку на воду и канализацию (без роста total).
+            new_net = money(base_net * (Decimal("1") - k))
+            new_vat = money(base_vat * (Decimal("1") - k))
+            new_total = money(base_total * (Decimal("1") - k))
+
+            line.amount_net = new_net
+            line.amount_vat = new_vat
+            line.amount_total = new_total
+
+            sew_net += (base_net - new_net)
+            sew_vat += (base_vat - new_vat)
+            sew_total += (base_total - new_total)
+
+            water_display_cons = consumption * (Decimal("1") - k)
+            sewer_display_cons = consumption * k
+            line.description = f"Вода {float(water_display_cons)} м³"
+            sewer_cons += sewer_display_cons
+        else:
+            # Для юрлиц WATER остаётся как есть, канализация добавляется сверху.
+            line.amount_net = base_net
+            line.amount_vat = base_vat
+            line.amount_total = base_total
+
+            sew_net += money(base_net * k)
+            sew_vat += money(base_vat * k)
+            sew_total += money(base_total * k)
+            line.description = f"Вода {float(consumption)} м³"
+            sewer_cons += consumption * k
+
+    if sew_total <= 0:
+        if auto_line:
+            db.delete(auto_line)
+        return
+
+    desc = f"Канализация  {float(sewer_cons)} м³"
+    if auto_line:
+        auto_line.description = desc
+        auto_line.amount_net = money(sew_net)
+        auto_line.amount_vat = money(sew_vat)
+        auto_line.amount_total = money(sew_total)
+    else:
+        db.add(InvoiceLine(
+            invoice_id=inv.id,
+            meter_reading_id=None,
+            description=desc,
+            amount_net=money(sew_net),
+            amount_vat=money(sew_vat),
+            amount_total=money(sew_total),
+        ))
+
+
 def get_gas_annual_prev(db: Session, meter_id: int, period_start: datetime) -> Decimal:
     """Газ: годовой объём ДО начала периода (для накопительного тарифа)."""
     year_start = datetime(period_start.year, 1, 1)
@@ -281,6 +433,13 @@ def list_readings(
     )
     period_readings = readings_q.all()
     
+    # Сначала определяем, есть ли реальная канализация за период у резидента.
+    real_sewerage_resident_ids: set[int] = set()
+    for rd in period_readings:
+        meter = rd.resident_meter
+        if meter and meter.meter_type == MeterType.SEWERAGE:
+            real_sewerage_resident_ids.add(meter.resident_id)
+
     # Агрегат по счётчикам
     rows: dict[int, dict] = {}
     for rd in period_readings:
@@ -302,8 +461,42 @@ def list_readings(
             "consumption": Decimal("0"),
             "total": Decimal("0"),
         })
-        mrow["consumption"] += Decimal(rd.consumption)
-        mrow["total"] += Decimal(rd.amount_total)
+        cons = Decimal(rd.consumption or 0)
+        total = Decimal(rd.amount_total or 0)
+
+        # Если у резидента нет реального SEWERAGE-счётчика — показываем авто-канализацию как отдельный тариф.
+        if meter.meter_type == MeterType.WATER and res_id not in real_sewerage_resident_ids:
+            t = rd.tariff
+            percent = _effective_sewerage_percent(t)
+            if percent > 0:
+                k = percent / Decimal("100")
+                if getattr(t, "customer_type", None) == CustomerType.INDIVIDUAL:
+                    water_cons = cons * (Decimal("1") - k)
+                    water_total = money(total * (Decimal("1") - k))
+                    sewer_cons = cons * k
+                    sewer_total = money(total - water_total)
+                else:
+                    water_cons = cons
+                    water_total = total
+                    sewer_cons = cons * k
+                    sewer_total = money(total * k)
+
+                mrow["consumption"] += water_cons
+                mrow["total"] += water_total
+
+                auto_sewer = entry.setdefault("auto_sewer", {
+                    "consumption": Decimal("0"),
+                    "total": Decimal("0"),
+                    "unit": "м³",
+                })
+                auto_sewer["consumption"] += sewer_cons
+                auto_sewer["total"] += sewer_total
+            else:
+                mrow["consumption"] += cons
+                mrow["total"] += total
+        else:
+            mrow["consumption"] += cons
+            mrow["total"] += total
 
         # Нужна "последняя" запись за период для сортировки (новые сверху)
         cur_max = entry.get("max_reading_date")
@@ -357,6 +550,18 @@ def list_readings(
                 "consumption": consumption,
                 "unit": mdata["unit"],
                 "total": total,
+            })
+
+        auto_sewer = data.get("auto_sewer")
+        if auto_sewer and auto_sewer["total"] > 0:
+            auto_cons = float(auto_sewer["consumption"])
+            auto_total = float(auto_sewer["total"])
+            total_amount += Decimal(auto_total)
+            meters_list.append({
+                "type": "Канализация",
+                "consumption": auto_cons,
+                "unit": auto_sewer["unit"],
+                "total": auto_total,
             })
         
         result_rows.append({
@@ -563,6 +768,8 @@ def get_resident_meters(
             "existing": bool(existing),
             "existing_value": existing_value_float,
             "existing_photo_url": existing_photo_url,
+            "sewerage_percent": float(_effective_sewerage_percent(tariff_obj)),
+            "tariff_customer_type": (tariff_obj.customer_type.value if getattr(tariff_obj, "customer_type", None) else None),
         })
 
     return {"meters": meters}
@@ -996,7 +1203,10 @@ def create_readings_internal(
                     line.amount_net = rd.amount_net
                     line.amount_vat = rd.amount_vat
                     line.amount_total = rd.amount_total
-            
+
+            # Автодобавление/обновление синтетической строки канализации (от воды).
+            _upsert_auto_sewerage_line_for_invoice(db, invoice, all_period_readings)
+
             # Пересчитываем итоги счёта после синхронизации всех строк
             db.flush()  # Важно: сохраняем все изменения перед пересчетом
             totals = db.query(
@@ -1175,7 +1385,7 @@ def get_reading_history(
 
             if m.meter_type == MeterType.WATER and not has_real_sewerage:
                 t = tariff
-                percent = Decimal(str(getattr(t, "sewerage_percent", 0) or 0)) if t else Decimal("0")
+                percent = _effective_sewerage_percent(t)
                 if t and t.meter_type == MeterType.WATER and percent > 0:
                     k = percent / Decimal("100")
                     if getattr(t, "customer_type", None) == CustomerType.INDIVIDUAL:
