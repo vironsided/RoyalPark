@@ -1577,6 +1577,58 @@ body[data-theme="dark"] .user-bills-section select option {
     padding: 0.4rem 1.4rem;
 }
 
+.user-app .invoice-view-page .invoice-pay-btn {
+    position: relative;
+    margin-left: 0.5rem;
+    border: 1px solid rgba(198, 160, 255, 0.45);
+    border-radius: 999px;
+    padding: 0.52rem 1.45rem;
+    background: linear-gradient(135deg, #7156ff 0%, #9c5dff 52%, #c178ff 100%);
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    box-shadow:
+        0 8px 24px rgba(113, 86, 255, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    transition: transform 0.2s ease, box-shadow 0.25s ease, filter 0.25s ease, border-color 0.25s ease;
+}
+
+.user-app .invoice-view-page .invoice-pay-btn:hover:not(:disabled):not([disabled]) {
+    transform: translateY(-1px);
+    border-color: rgba(214, 185, 255, 0.65);
+    filter: brightness(1.05) saturate(1.05);
+    box-shadow:
+        0 12px 32px rgba(122, 93, 255, 0.45),
+        0 0 18px rgba(171, 116, 255, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.26);
+}
+
+.user-app .invoice-view-page .invoice-pay-btn:active:not(:disabled):not([disabled]) {
+    transform: translateY(0);
+    box-shadow:
+        0 6px 18px rgba(113, 86, 255, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.user-app .invoice-view-page .invoice-pay-btn:focus-visible {
+    outline: none;
+    box-shadow:
+        0 0 0 3px rgba(37, 20, 58, 0.9),
+        0 0 0 5px rgba(177, 130, 255, 0.65),
+        0 12px 32px rgba(122, 93, 255, 0.4);
+}
+
+.user-app .invoice-view-page .invoice-pay-btn:disabled,
+.user-app .invoice-view-page .invoice-pay-btn[disabled] {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, rgba(103, 95, 150, 0.95) 0%, rgba(96, 90, 138, 0.95) 100%);
+    color: rgba(255, 255, 255, 0.72);
+    box-shadow: none;
+    transform: none;
+    filter: none;
+}
+
 .user-app .invoice-header .btn-back {
     border-radius: 999px;
     padding-inline: 1.1rem;
