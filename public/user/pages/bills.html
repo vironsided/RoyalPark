@@ -411,6 +411,8 @@
                             sessionStorage.setItem('paymentResidentId', String(residentId));
                         }
                         sessionStorage.setItem('paymentInvoiceId', String(invoiceId));
+                        sessionStorage.removeItem('paymentSelectedLineIds');
+                        sessionStorage.removeItem('paymentSelectedLinesSummary');
                     } catch (err) {
                         console.warn('Failed to store payment session data', err);
                     }

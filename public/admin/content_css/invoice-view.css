@@ -611,3 +611,32 @@
     .user-invoice-items .payment-status-meta {
         font-size: 0.77rem;
     }
+
+    .pay-select-cell {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    .invoice-line-pay-checkbox {
+        width: 16px;
+        height: 16px;
+        accent-color: #6d9bff;
+        cursor: pointer;
+    }
+
+    .invoice-line-pay-checkbox:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    .invoice-master-checkbox {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #6d9bff;
+    }
+
+    .invoice-master-checkbox:indeterminate {
+        background-color: #6d9bff;
+        border-color: #6d9bff;
+    }

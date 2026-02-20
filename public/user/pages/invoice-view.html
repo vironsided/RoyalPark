@@ -1,4 +1,32 @@
 <link rel="stylesheet" href="/admin/content_css/invoice-view.css">
+<style>
+    .invoice-selection-summary {
+        margin-top: 12px;
+        padding: 12px 14px;
+        border: 1px solid rgba(99, 102, 241, 0.35);
+        border-radius: 10px;
+        background: rgba(37, 99, 235, 0.12);
+        color: rgba(255, 255, 255, 0.95);
+        font-size: 1rem;
+        line-height: 1.45;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        white-space: normal;
+        word-break: break-word;
+    }
+    .invoice-selection-summary.is-empty {
+        border-color: rgba(148, 163, 184, 0.35);
+        background: rgba(148, 163, 184, 0.10);
+        color: rgba(226, 232, 240, 0.92);
+    }
+    @media (max-width: 900px) {
+        .invoice-selection-summary {
+            font-size: 0.94rem;
+            padding: 10px 12px;
+        }
+    }
+</style>
 
 <div class="content-wrapper invoice-view-page">
     <div class="invoice-header">
@@ -73,6 +101,9 @@
             <table class="line-items-table">
                 <thead>
                     <tr>
+                        <th style="width:42px;">
+                            <input type="checkbox" id="masterCheckbox" class="invoice-master-checkbox" title="Выбрать все">
+                        </th>
                         <th data-i18n="user_invoice_items_th_description">Описание</th>
                         <th data-i18n="user_invoice_items_th_consumed">Израсходовано</th>
                         <th data-i18n="user_invoice_items_th_charged">Начислено</th>
@@ -82,10 +113,11 @@
                     </tr>
                 </thead>
                 <tbody id="invoiceItemsBody">
-                    <tr><td colspan="6" class="text-center text-muted">Загрузка...</td></tr>
+                    <tr><td colspan="7" class="text-center text-muted">Загрузка...</td></tr>
                 </tbody>
             </table>
         </div>
+        <div id="selectedLinesPaySummary" class="invoice-selection-summary is-empty"></div>
     </div>
 </div>
 
@@ -96,6 +128,8 @@
         
         // Get invoice ID from sessionStorage or URL
         let currentInvoiceId = null;
+        let currentInvoicePayload = null;
+        let selectedPayableLineIds = new Set();
         const storedId = sessionStorage.getItem('currentInvoiceId');
         if (storedId) {
             currentInvoiceId = parseInt(storedId);
@@ -152,6 +186,7 @@
 
         // Render invoice data
         function renderInvoice(invoice) {
+            currentInvoicePayload = invoice;
             // Update header
             const invoiceNumberEl = document.getElementById('invoiceNumber');
             if (invoiceNumberEl) {
@@ -173,10 +208,91 @@
             // Update Pay button
             const payBtn = document.getElementById('payBtn');
             if (payBtn) {
-                const remaining = (typeof invoice.remaining_amount === 'number')
-                    ? invoice.remaining_amount
-                    : (invoice.amount_total || 0);
-                if (remaining <= 0) {
+                payBtn.onclick = async () => {
+                    let selectedIds = getExpandedSelectedLineIds(invoice);
+                    let amountToPay = getSelectedSelectedLinesAmount(invoice);
+                    if (!selectedIds.length || amountToPay <= 0) {
+                        return;
+                    }
+                    // Перед оплатой берём свежие данные по счёту, чтобы избежать рассинхрона
+                    // между UI и backend (например, если часть суммы уже была погашена).
+                    try {
+                        const resp = await fetch(`${API_BASE_URL}/api/resident/invoice/${invoice.id}`, {
+                            method: 'GET',
+                            credentials: 'include',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        if (resp.ok) {
+                            const fresh = await resp.json();
+                            if (fresh && Array.isArray(fresh.lines)) {
+                                const currentBundle = getWaterSewerBundle(invoice?.lines || []);
+                                const freshBundle = getWaterSewerBundle(fresh?.lines || []);
+                                const selectedSet = new Set(selectedIds);
+                                const selectedIncludesCurrentBundle = !!(
+                                    currentBundle &&
+                                    (currentBundle.allIds || []).some(id => selectedSet.has(Number(id)))
+                                );
+                                if (selectedIncludesCurrentBundle && freshBundle) {
+                                    for (const id of (freshBundle.allIds || [])) {
+                                        const n = Number(id || 0);
+                                        if (n > 0) selectedSet.add(n);
+                                    }
+                                    selectedIds = Array.from(selectedSet);
+                                }
+
+                                const freshAmount = fresh.lines.reduce((sum, line) => {
+                                    const lid = Number(line?.id || 0);
+                                    if (!lid || !selectedIds.includes(lid)) return sum;
+                                    const rem = Math.max(0, Number(line?.remaining_amount ?? line?.amount_total ?? 0));
+                                    return sum + rem;
+                                }, 0);
+                                if (freshAmount > 0) {
+                                    amountToPay = Number(freshAmount.toFixed(2));
+                                }
+
+                                // Синхронизируем summary по свежему инвойсу, чтобы сумма и список услуг всегда совпадали.
+                                invoice = {
+                                    ...invoice,
+                                    lines: fresh.lines
+                                };
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Failed to refresh invoice before payment, using cached amount', e);
+                    }
+                    try {
+                        sessionStorage.setItem('paymentScope', 'invoice');
+                        sessionStorage.setItem('paymentAmount', String(amountToPay));
+                        sessionStorage.setItem('paymentScopeLabel', window.i18n?.translate?.('payment_invoice_payment', localStorage.getItem('language') || 'ru') || 'Оплата выбранных услуг');
+                        sessionStorage.setItem('paymentTimestamp', String(Date.now()));
+                        if (invoice.resident_code) {
+                            sessionStorage.setItem('paymentResidentCode', invoice.resident_code);
+                        }
+                        if (invoice.resident_id) {
+                            sessionStorage.setItem('paymentResidentId', String(invoice.resident_id));
+                        }
+                        sessionStorage.setItem('paymentInvoiceId', String(invoice.id));
+                        sessionStorage.setItem('paymentSelectedLineIds', JSON.stringify(selectedIds));
+                        const selectedSummary = (invoice.lines || [])
+                            .filter(line => selectedIds.includes(Number(line?.id || 0)))
+                            .map(line => ({
+                                id: Number(line.id || 0),
+                                description: String(line.description || ''),
+                                remaining_amount: Number(line.remaining_amount ?? line.amount_total ?? 0),
+                            }));
+                        sessionStorage.setItem('paymentSelectedLinesSummary', JSON.stringify(selectedSummary));
+                    } catch (e) {
+                        console.warn('Failed to store payment session data', e);
+                    }
+
+                    if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
+                        window.userSpaRouter.navigate('report', true);
+                    } else {
+                        window.location.href = '/user/dashboard.html#report';
+                    }
+                };
+                const selectedAmount = getSelectedSelectedLinesAmount(invoice);
+                if (selectedAmount <= 0) {
                     payBtn.disabled = true;
                     payBtn.style.opacity = '0.6';
                     payBtn.style.cursor = 'not-allowed';
@@ -184,29 +300,6 @@
                     payBtn.disabled = false;
                     payBtn.style.opacity = '';
                     payBtn.style.cursor = '';
-                    payBtn.onclick = () => {
-                        try {
-                            sessionStorage.setItem('paymentScope', 'invoice');
-                            sessionStorage.setItem('paymentAmount', String(remaining));
-                            sessionStorage.setItem('paymentScopeLabel', window.i18n?.translate?.('payment_invoice_payment', localStorage.getItem('language') || 'ru') || 'Оплата счёта');
-                            sessionStorage.setItem('paymentTimestamp', String(Date.now()));
-                            if (invoice.resident_code) {
-                                sessionStorage.setItem('paymentResidentCode', invoice.resident_code);
-                            }
-                            if (invoice.resident_id) {
-                                sessionStorage.setItem('paymentResidentId', String(invoice.resident_id));
-                            }
-                            sessionStorage.setItem('paymentInvoiceId', String(invoice.id));
-                        } catch (e) {
-                            console.warn('Failed to store payment session data', e);
-                        }
-
-                        if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
-                            window.userSpaRouter.navigate('report', true);
-                        } else {
-                            window.location.href = '/user/dashboard.html#report';
-                        }
-                    };
                 }
             }
             
@@ -290,6 +383,7 @@
             
             // Render invoice lines
             renderInvoiceLines(invoice.lines || [], invoice.amount_total);
+            refreshSelectionControls(invoice);
         }
 
         // Translate payment comment (make it globally available)
@@ -576,6 +670,111 @@
             return { label: description, consumed: '—', serviceKey: '', qty: '', unitKey: '' };
         }
 
+        function getSelectedLineIds() {
+            return Array.from(selectedPayableLineIds).map(Number).filter(x => Number.isFinite(x) && x > 0);
+        }
+
+        function isWaterDescription(description) {
+            const low = String(description || '').toLowerCase();
+            return low.includes('вода') || low.includes('water') || low.includes('meter_cold_water');
+        }
+
+        function isSewerageDescription(description) {
+            const low = String(description || '').toLowerCase();
+            return low.includes('канализац') || low.includes('sewerage') || low.includes('meter_sewerage');
+        }
+
+        function getWaterSewerBundle(lines) {
+            const rows = Array.isArray(lines) ? lines : [];
+            const waterIds = [];
+            const sewerIds = [];
+            for (const row of rows) {
+                const id = Number(row?.id || 0);
+                if (!id) continue;
+                const desc = String(row?.description || '');
+                if (isSewerageDescription(desc)) sewerIds.push(id);
+                else if (isWaterDescription(desc)) waterIds.push(id);
+            }
+            if (!waterIds.length || !sewerIds.length) return null;
+            const primaryWaterId = waterIds[0];
+            const allIds = Array.from(new Set([...waterIds, ...sewerIds]));
+            return { primaryWaterId, allIds };
+        }
+
+        function getExpandedSelectedLineIds(invoice) {
+            const selected = getSelectedLineIds();
+            const bundle = getWaterSewerBundle(invoice?.lines || []);
+            if (!bundle || !selected.length) return selected;
+
+            const out = new Set(selected);
+            const hasBundleSelected = selected.some(id => bundle.allIds.includes(id));
+            if (hasBundleSelected) {
+                bundle.allIds.forEach(id => out.add(id));
+            }
+            return Array.from(out);
+        }
+
+        function getSelectedSelectedLinesAmount(invoice) {
+            const rows = (invoice?.lines || []);
+            const selected = new Set(getExpandedSelectedLineIds(invoice));
+            let total = 0;
+            for (const row of rows) {
+                const lineId = Number(row?.id || 0);
+                if (!lineId || !selected.has(lineId)) continue;
+                const rem = Math.max(0, Number(row?.remaining_amount ?? row?.amount_total ?? 0));
+                total += rem;
+            }
+            return Number(total.toFixed(2));
+        }
+
+        function updateMasterCheckboxState() {
+            const masterCheckbox = document.getElementById('masterCheckbox');
+            if (!masterCheckbox) return;
+            const allCheckboxes = Array.from(document.querySelectorAll('.invoice-line-pay-checkbox:not([disabled])'));
+            if (allCheckboxes.length === 0) {
+                masterCheckbox.checked = false;
+                masterCheckbox.indeterminate = false;
+                return;
+            }
+            const checkedCount = allCheckboxes.filter(cb => cb.checked).length;
+            if (checkedCount === 0) {
+                masterCheckbox.checked = false;
+                masterCheckbox.indeterminate = false;
+            } else if (checkedCount === allCheckboxes.length) {
+                masterCheckbox.checked = true;
+                masterCheckbox.indeterminate = false;
+            } else {
+                masterCheckbox.checked = false;
+                masterCheckbox.indeterminate = true;
+            }
+        }
+
+        function refreshSelectionControls(invoice) {
+            const payBtn = document.getElementById('payBtn');
+            const selectedIds = getSelectedLineIds();
+            const selectedAmount = getSelectedSelectedLinesAmount(invoice);
+            const summaryEl = document.getElementById('selectedLinesPaySummary');
+            if (summaryEl) {
+                const hasSelected = selectedIds.length > 0;
+                summaryEl.classList.toggle('is-empty', !hasSelected);
+                summaryEl.textContent = hasSelected
+                    ? `Выбрано услуг: ${selectedIds.length} · К оплате: ${formatCurrency(selectedAmount)}`
+                    : 'Не выбрано ни одной услуги для оплаты';
+            }
+            if (payBtn) {
+                if (selectedAmount <= 0 || selectedIds.length === 0) {
+                    payBtn.disabled = true;
+                    payBtn.style.opacity = '0.6';
+                    payBtn.style.cursor = 'not-allowed';
+                } else {
+                    payBtn.disabled = false;
+                    payBtn.style.opacity = '';
+                    payBtn.style.cursor = '';
+                }
+            }
+            updateMasterCheckboxState();
+        }
+
         // Render invoice lines
         function renderInvoiceLines(lines, total) {
             const tbody = document.getElementById('invoiceItemsBody');
@@ -584,16 +783,68 @@
             if (lines.length === 0) {
                 const lang = localStorage.getItem('language') || 'ru';
                 const emptyText = window.i18n?.translate?.('user_invoice_items_empty', lang) || 'Позиции отсутствуют';
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">${emptyText}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">${emptyText}</td></tr>`;
                 return;
             }
             
             const lang = localStorage.getItem('language') || 'ru';
+            const waterSewerBundle = getWaterSewerBundle(lines);
+            const waterSewerIds = new Set((waterSewerBundle?.allIds || []).map(Number));
+            const bundleRemaining = waterSewerBundle
+                ? lines.reduce((sum, line) => {
+                    const id = Number(line?.id || 0);
+                    if (!id || !waterSewerIds.has(id)) return sum;
+                    const rem = Math.max(0, Number(line?.remaining_amount ?? line?.amount_total ?? 0));
+                    return sum + rem;
+                }, 0)
+                : 0;
+            const idsFromData = new Set(
+                lines
+                    .filter(line => {
+                        const lineId = Number(line?.id || 0);
+                        if (lineId <= 0) return false;
+                        if (waterSewerBundle && waterSewerIds.has(lineId)) {
+                            // Для связки Вода+Канализация селектор всегда живёт на строке воды.
+                            return lineId === waterSewerBundle.primaryWaterId && bundleRemaining > 0;
+                        }
+                        return Number(line?.remaining_amount ?? line?.amount_total ?? 0) > 0;
+                    })
+                    .map(line => Number(line.id))
+            );
+            const firstOccurrenceById = new Set();
+            if (selectedPayableLineIds.size === 0) {
+                idsFromData.forEach(id => selectedPayableLineIds.add(id));
+            } else {
+                // держим в selection только актуальные и непогашенные
+                selectedPayableLineIds = new Set(Array.from(selectedPayableLineIds).filter(id => idsFromData.has(id)));
+            }
+
             tbody.innerHTML = lines.map(line => {
                 const parsed = extractConsumption(line.description, lang);
                 const translatedDescription = parsed.label;
                 const totalAmount = Number(line.amount_total || 0);
                 const paidAmount = Math.max(0, Number(line.paid_amount || 0));
+                const lineId = Number(line.id || 0);
+                const remainingAmount = Math.max(0, Number(line.remaining_amount ?? totalAmount));
+                const isFirstForId = lineId > 0 && !firstOccurrenceById.has(lineId);
+                if (lineId > 0 && isFirstForId) {
+                    firstOccurrenceById.add(lineId);
+                }
+                const isSewerageLine = parsed.serviceKey === 'meter_sewerage' || isSewerageDescription(line.description);
+                let checkboxLineId = lineId;
+                let showCheckbox = isFirstForId;
+                let selectable = lineId > 0 && remainingAmount > 0;
+
+                if (waterSewerBundle && waterSewerIds.has(lineId)) {
+                    checkboxLineId = waterSewerBundle.primaryWaterId;
+                    showCheckbox = isFirstForId && lineId === waterSewerBundle.primaryWaterId && !isSewerageLine;
+                    selectable = showCheckbox && bundleRemaining > 0;
+                } else if (isSewerageLine) {
+                    // Подстраховка: у канализации отдельного чекбокса быть не должно.
+                    showCheckbox = false;
+                }
+
+                const checked = selectable && selectedPayableLineIds.has(checkboxLineId);
                 const paymentStatus = line.payment_status || 'Не оплачена';
                 const ratio = totalAmount > 0 ? Math.min(100, Math.max(0, (paidAmount / totalAmount) * 100)) : 0;
                 let statusClass = 'payment-status-unpaid';
@@ -601,6 +852,15 @@
                 else if (paymentStatus === 'Частично') statusClass = 'payment-status-partial';
                 return `
                 <tr>
+                    <td class="pay-select-cell">
+                        ${showCheckbox ? `
+                            <input type="checkbox"
+                                   class="invoice-line-pay-checkbox"
+                                   data-line-id="${checkboxLineId || ''}"
+                                   ${checked ? 'checked' : ''}
+                                   ${selectable ? '' : 'disabled'}>
+                        ` : ''}
+                    </td>
                     <td data-original-description="${line.description || ''}" data-service-key="${parsed.serviceKey || ''}">${translatedDescription}</td>
                     <td data-consumed-qty="${parsed.qty || ''}" data-consumed-unit-key="${parsed.unitKey || ''}">${parsed.consumed}</td>
                     <td>${formatCurrency(line.amount_net)}</td>
@@ -617,11 +877,42 @@
                 `;
             }).join('') + `
                 <tr class="total-row">
-                    <td colspan="4" data-i18n="user_invoice_items_total_row">Итого к оплате</td>
+                    <td colspan="5" data-i18n="user_invoice_items_total_row">Итого к оплате</td>
                     <td class="total-value">${formatCurrency(total)}</td>
                     <td></td>
                 </tr>
             `;
+
+            tbody.querySelectorAll('.invoice-line-pay-checkbox').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const lineId = Number(cb.dataset.lineId || 0);
+                    if (!lineId) return;
+                    if (cb.checked) selectedPayableLineIds.add(lineId);
+                    else selectedPayableLineIds.delete(lineId);
+                    refreshSelectionControls(currentInvoicePayload);
+                });
+            });
+
+            // Master checkbox handler
+            const masterCheckbox = document.getElementById('masterCheckbox');
+            if (masterCheckbox) {
+                masterCheckbox.addEventListener('change', () => {
+                    const allCheckboxes = Array.from(document.querySelectorAll('.invoice-line-pay-checkbox:not([disabled])'));
+                    const isChecked = masterCheckbox.checked;
+                    allCheckboxes.forEach(cb => {
+                        if (cb.checked !== isChecked) {
+                            cb.checked = isChecked;
+                            const lineId = Number(cb.dataset.lineId || 0);
+                            if (lineId) {
+                                if (isChecked) selectedPayableLineIds.add(lineId);
+                                else selectedPayableLineIds.delete(lineId);
+                            }
+                        }
+                    });
+                    refreshSelectionControls(currentInvoicePayload);
+                });
+            }
+            updateMasterCheckboxState();
         }
 
         // Get CSS class for status

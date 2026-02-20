@@ -313,6 +313,10 @@
                         <span class="detail-label" data-i18n="payment_invoice_label">Счёт</span>
                         <span class="detail-value" id="invoiceNumber">—</span>
                     </div>
+                    <div class="order-detail-item" id="selectedLinesInfoWrap" style="display:none;">
+                        <span class="detail-label">Выбранные услуги</span>
+                        <span class="detail-value" id="selectedLinesInfo">—</span>
+                    </div>
                 </div>
 
                 <div class="order-totals">
@@ -415,6 +419,8 @@ function clearPaymentSessionData() {
     sessionStorage.removeItem('paymentResidentId');
     sessionStorage.removeItem('paymentSummary');
     sessionStorage.removeItem('paymentInvoiceId');
+    sessionStorage.removeItem('paymentSelectedLineIds');
+    sessionStorage.removeItem('paymentSelectedLinesSummary');
     sessionStorage.removeItem('paymentTimestamp');
 }
 
@@ -1365,6 +1371,12 @@ async function initPaymentPage() {
         
         const selectedInvoiceIdRaw = sessionStorage.getItem('paymentInvoiceId');
         const selectedInvoiceId = selectedInvoiceIdRaw ? parseInt(selectedInvoiceIdRaw, 10) : null;
+        const selectedLineIdsRaw = sessionStorage.getItem('paymentSelectedLineIds');
+        let selectedLineIds = [];
+        try { selectedLineIds = selectedLineIdsRaw ? (JSON.parse(selectedLineIdsRaw) || []) : []; } catch (e) { selectedLineIds = []; }
+        const selectedLinesSummaryRaw = sessionStorage.getItem('paymentSelectedLinesSummary');
+        let selectedLinesSummary = [];
+        try { selectedLinesSummary = selectedLinesSummaryRaw ? (JSON.parse(selectedLinesSummaryRaw) || []) : []; } catch (e) { selectedLinesSummary = []; }
         const scope = sessionStorage.getItem('paymentScope') || (selectedInvoiceId ? 'invoice' : 'month');
         const isAdvanceTopupMode = isAdvanceTopupScope(scope);
         let amountRaw = sessionStorage.getItem('paymentAmount');
@@ -1388,6 +1400,8 @@ async function initPaymentPage() {
         const paymentResidentEl = document.getElementById('paymentResident');
         const paymentDateEl = document.getElementById('paymentDate');
         const paymentCommissionEl = document.getElementById('paymentCommission');
+        const selectedLinesInfoWrap = document.getElementById('selectedLinesInfoWrap');
+        const selectedLinesInfo = document.getElementById('selectedLinesInfo');
 
         // Проверяем, есть ли актуальные данные в sessionStorage (пользователь перешел через кнопку)
         // Данные считаются актуальными только если есть временная метка и она не устарела
@@ -1463,6 +1477,22 @@ async function initPaymentPage() {
                             ? (window.i18n?.translate?.('payment_invoice_payment', lang) || 'Оплата счёта')
                             : (window.i18n?.translate?.('payment_month_bills', lang) || 'Оплата счетов за текущий месяц')));
                 paymentTypeEl.textContent = scopeLabelStored || defaultScopeText;
+            }
+
+            if (selectedLinesInfoWrap && selectedLinesInfo && selectedInvoiceId && selectedLineIds.length) {
+                selectedLinesInfoWrap.style.display = '';
+                if (selectedLinesSummary.length) {
+                    const preview = selectedLinesSummary
+                        .slice(0, 3)
+                        .map(x => `${x.description || 'Услуга'} (${new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(x.remaining_amount || 0))})`)
+                        .join(', ');
+                    const suffix = selectedLinesSummary.length > 3 ? ` и еще ${selectedLinesSummary.length - 3}` : '';
+                    selectedLinesInfo.textContent = `${selectedLinesSummary.length} шт. — ${preview}${suffix}`;
+                } else {
+                    selectedLinesInfo.textContent = `${selectedLineIds.length} выбранных позиций`;
+                }
+            } else if (selectedLinesInfoWrap) {
+                selectedLinesInfoWrap.style.display = 'none';
             }
 
             if (paymentResidentEl) {
@@ -1716,6 +1746,61 @@ async function submitPayment(event) {
     let amount = parseFloat(sessionStorage.getItem('paymentAmount') || '0');
     const invoiceIdStored = sessionStorage.getItem('paymentInvoiceId');
     const invoiceId = invoiceIdStored ? parseInt(invoiceIdStored, 10) : null;
+    let selectedLineIds = [];
+    try {
+        selectedLineIds = JSON.parse(sessionStorage.getItem('paymentSelectedLineIds') || '[]') || [];
+    } catch (e) {
+        selectedLineIds = [];
+    }
+    let selectedLinesSummary = [];
+    try {
+        selectedLinesSummary = JSON.parse(sessionStorage.getItem('paymentSelectedLinesSummary') || '[]') || [];
+    } catch (e) {
+        selectedLinesSummary = [];
+    }
+    const wantsWaterSewerBundle = (selectedLinesSummary || []).some(item => {
+        const low = String(item?.description || '').toLowerCase();
+        return low.includes('вода') || low.includes('water') || low.includes('канализац') || low.includes('sewerage') || low.includes('meter_cold_water') || low.includes('meter_sewerage');
+    });
+
+    async function fetchSelectedLinesRemainingTotal(invId, lineIds) {
+        if (!invId || !Array.isArray(lineIds) || !lineIds.length) return null;
+        try {
+            const resp = await fetch(`${API_BASE}/api/resident/invoice/${invId}`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!resp.ok) return null;
+            const inv = await resp.json();
+            const selectedSet = new Set((lineIds || []).map(x => Number(x)).filter(x => Number.isFinite(x) && x > 0));
+            if (wantsWaterSewerBundle) {
+                for (const line of (inv?.lines || [])) {
+                    const lid = Number(line?.id || 0);
+                    if (!lid) continue;
+                    const low = String(line?.description || '').toLowerCase();
+                    const isWaterOrSewer = low.includes('вода') || low.includes('water') || low.includes('канализац') || low.includes('sewerage') || low.includes('meter_cold_water') || low.includes('meter_sewerage');
+                    if (isWaterOrSewer) selectedSet.add(lid);
+                }
+            }
+            let sum = 0;
+            for (const line of (inv?.lines || [])) {
+                const lid = Number(line?.id || 0);
+                if (!lid || !selectedSet.has(lid)) continue;
+                const rem = Math.max(0, Number(line?.remaining_amount ?? line?.amount_total ?? 0));
+                sum += rem;
+            }
+            try {
+                sessionStorage.setItem('paymentSelectedLineIds', JSON.stringify(Array.from(selectedSet)));
+            } catch (e) {
+                console.warn('Failed to persist normalized selected line ids', e);
+            }
+            return Number(sum.toFixed(2));
+        } catch (e) {
+            console.warn('Failed to fetch selected lines remaining total', e);
+            return null;
+        }
+    }
     
     // Check if custom amount is enabled
     const customAmountCheckbox = document.getElementById('customAmountCheckbox');
@@ -1766,10 +1851,37 @@ async function submitPayment(event) {
     
     // Сохраняем scope для передачи в backend (null если пополнение аванса)
     const paymentScope = scope;
+    const isTopupOnlyPayment = paymentScope === null;
     
     if (amount <= 0) {
         showPaymentError('Сумма оплаты должна быть больше 0');
         return false;
+    }
+
+    // Финальная синхронизация суммы по выбранным строкам перед отправкой платежа:
+    // чтобы исключить рассинхрон между invoice-view и report-payment.
+    if (invoiceId && selectedLineIds.length > 0) {
+        const selectedRemainingTotal = await fetchSelectedLinesRemainingTotal(invoiceId, selectedLineIds);
+        if (selectedRemainingTotal !== null) {
+            if (useCustomAmount) {
+                if (amount > selectedRemainingTotal) {
+                    amount = selectedRemainingTotal;
+                    if (customAmountInput) {
+                        customAmountInput.value = String(selectedRemainingTotal.toFixed(2));
+                    }
+                }
+            } else {
+                amount = selectedRemainingTotal;
+            }
+        }
+    }
+
+    // В режиме пополнения аванса счёт и выбор строк всегда должны быть пустыми.
+    let invoiceIdForRequest = invoiceId;
+    let selectedLineIdsForRequest = selectedLineIds;
+    if (isTopupOnlyPayment) {
+        invoiceIdForRequest = null;
+        selectedLineIdsForRequest = [];
     }
     
     // Get resident ID - приоритет: из sessionStorage (сохранен при нажатии кнопки), иначе из dashboard
@@ -1821,6 +1933,10 @@ async function submitPayment(event) {
     } else {
         const activeCard = window.selectedSavedCard || selectedSavedCard;
         if (activeCard) {
+            if (isTopupOnlyPayment && activeCard.type === 'ADVANCE') {
+                showPaymentError('Пополнение аванса невозможно с карты аванса. Выберите банковскую карту.');
+                return false;
+            }
             if (activeCard.type === 'ADVANCE') {
                 if (hasInvoice && invoiceTotal > 0 && amount > invoiceTotal) {
                     showPaymentError(`Сумма оплаты из аванса не может превышать сумму счёта (${invoiceTotal.toFixed(2)} ₼)`);
@@ -1921,7 +2037,8 @@ async function submitPayment(event) {
                 reference: paymentReference,
                 comment: paymentComment,
                 scope: paymentScope,  // 'month' или 'all' - для применения к счетам, null - только пополнение аванса
-                invoice_id: invoiceId
+                invoice_id: invoiceIdForRequest,
+                selected_line_ids: (invoiceIdForRequest && selectedLineIdsForRequest.length) ? selectedLineIdsForRequest : null
             })
         });
         
@@ -2378,6 +2495,8 @@ async function setupAdvanceTopupButton() {
             if (residentId) sessionStorage.setItem('paymentResidentId', String(residentId));
             if (residentCode) sessionStorage.setItem('paymentResidentCode', residentCode);
             sessionStorage.removeItem('paymentInvoiceId');
+            sessionStorage.removeItem('paymentSelectedLineIds');
+            sessionStorage.removeItem('paymentSelectedLinesSummary');
         } catch (e) {
             console.warn('Failed to set advance top-up payment mode', e);
         }

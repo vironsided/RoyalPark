@@ -41,6 +41,140 @@ def _effective_sewerage_percent(tariff: Tariff | None) -> Decimal:
     return percent if percent > 0 else Decimal("0")
 
 
+def _parse_selected_line_ids(reference: str | None) -> list[int]:
+    if not reference:
+        return []
+    marker = "LINESEL:"
+    idx = reference.find(marker)
+    if idx < 0:
+        return []
+    raw = reference[idx + len(marker):].split("|")[0]
+    out: list[int] = []
+    for token in raw.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        try:
+            out.append(int(token))
+        except Exception:
+            continue
+    return out
+
+
+def _is_water_line_description(desc: str | None) -> bool:
+    low = (desc or "").lower()
+    return ("вода" in low) or ("water" in low) or ("meter_cold_water" in low)
+
+
+def _is_sewerage_line_description(desc: str | None) -> bool:
+    low = (desc or "").lower()
+    return ("канализац" in low) or ("sewerage" in low) or ("meter_sewerage" in low)
+
+
+def _normalize_selected_line_ids_for_water_sewer(
+    selected_ids: list[int],
+    line_desc_by_id: dict[int, str],
+) -> list[int]:
+    ids = [int(x) for x in (selected_ids or []) if int(x) > 0]
+    if not ids:
+        return []
+
+    unique_ids = list(dict.fromkeys(ids))
+    selected_has_bundle = any(
+        _is_water_line_description(line_desc_by_id.get(lid))
+        or _is_sewerage_line_description(line_desc_by_id.get(lid))
+        for lid in unique_ids
+    )
+    if not selected_has_bundle:
+        return unique_ids
+
+    sewer_ids = [
+        lid for lid, desc in line_desc_by_id.items()
+        if _is_sewerage_line_description(desc)
+    ]
+    water_ids = [
+        lid for lid, desc in line_desc_by_id.items()
+        if _is_water_line_description(desc)
+    ]
+
+    if not sewer_ids or not water_ids:
+        return unique_ids
+
+    for lid in sewer_ids + water_ids:
+        if lid not in unique_ids:
+            unique_ids.append(lid)
+
+    def _key(lid: int) -> tuple[int, int]:
+        if lid in sewer_ids:
+            return (0, unique_ids.index(lid))
+        if lid in water_ids:
+            return (1, unique_ids.index(lid))
+        return (2, unique_ids.index(lid))
+
+    return [lid for lid in sorted(unique_ids, key=_key)]
+
+
+def _build_invoice_line_payment_map(
+    lines: list[InvoiceLine],
+    apps: list[PaymentApplication],
+) -> dict[int, dict]:
+    sorted_lines = sorted(lines, key=lambda l: l.id or 0)
+    line_desc_by_id = {
+        int(l.id): (l.description or "")
+        for l in sorted_lines
+        if l.id is not None
+    }
+    line_totals = {int(l.id): Decimal(str(l.amount_total or 0)) for l in sorted_lines if l.id is not None}
+    paid_by_line = {lid: Decimal("0") for lid in line_totals}
+
+    def allocate(amount: Decimal, line_ids: list[int]) -> Decimal:
+        remaining_amt = Decimal(str(amount or 0))
+        for lid in line_ids:
+            if remaining_amt <= 0:
+                break
+            if lid not in line_totals:
+                continue
+            capacity = max(line_totals[lid] - paid_by_line[lid], Decimal("0"))
+            if capacity <= 0:
+                continue
+            take = min(capacity, remaining_amt)
+            paid_by_line[lid] += take
+            remaining_amt -= take
+        return remaining_amt
+
+    ordered_apps = sorted(
+        apps or [],
+        key=lambda a: (
+            a.created_at or datetime.min,
+            a.id or 0,
+        ),
+    )
+    default_order = list(line_totals.keys())
+    for app in ordered_apps:
+        app_amt = Decimal(str(getattr(app, "amount_applied", 0) or 0))
+        if app_amt <= 0:
+            continue
+        selected_ids = _parse_selected_line_ids(getattr(app, "reference", None))
+        if selected_ids:
+            normalized_selected_ids = _normalize_selected_line_ids_for_water_sewer(selected_ids, line_desc_by_id)
+            allocate(app_amt, normalized_selected_ids)
+        else:
+            allocate(app_amt, default_order)
+
+    result: dict[int, dict] = {}
+    for lid, total in line_totals.items():
+        paid = _money2(paid_by_line.get(lid, Decimal("0")))
+        remaining = _money2(max(total - paid, Decimal("0")))
+        if remaining <= Decimal("0.0001"):
+            status_text = "Оплачена"
+        elif paid > Decimal("0.0001"):
+            status_text = "Частично"
+        else:
+            status_text = "Не оплачена"
+        result[lid] = {"paid": paid, "remaining": remaining, "status": status_text}
+    return result
+
+
 def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
     if not inv or not inv.id:
         return
@@ -555,33 +689,8 @@ def get_resident_invoice_detail(
             return "Строительство"
         return None
 
-    # Распределяем оплату по строкам (FIFO по порядку строк счета)
-    sorted_lines = sorted(lines, key=lambda l: l.id or 0)
-    remaining_paid_for_distribution = Decimal(str(paid_total or 0))
-    line_payment_map: dict[int, dict] = {}
-    for line in sorted_lines:
-        line_total = Decimal(str(line.amount_total or 0))
-        if line_total <= 0:
-            line_payment_map[int(line.id)] = {
-                "paid": Decimal("0"),
-                "remaining": Decimal("0"),
-                "status": "Не оплачена",
-            }
-            continue
-        covered = min(line_total, max(remaining_paid_for_distribution, Decimal("0")))
-        line_remaining = max(line_total - covered, Decimal("0"))
-        if line_remaining <= Decimal("0.0001"):
-            status_text = "Оплачена"
-        elif covered > Decimal("0.0001"):
-            status_text = "Частично"
-        else:
-            status_text = "Не оплачена"
-        line_payment_map[int(line.id)] = {
-            "paid": _money2(covered),
-            "remaining": _money2(line_remaining),
-            "status": status_text,
-        }
-        remaining_paid_for_distribution -= covered
+    # Распределяем оплату по строкам с учётом явного выбора строк (LINESEL)
+    line_payment_map = _build_invoice_line_payment_map(lines, apps)
 
     lines_out = []
     for line in lines:
@@ -604,19 +713,18 @@ def get_resident_invoice_detail(
             # Стабильный тариф — отдельной строкой, НДС на него НЕ начисляется.
             # НДС должен применяться только к переменной части (расход).
             line_net = Decimal(str(line.amount_net or 0))
+            line_vat_total = Decimal(str(line.amount_vat or 0))
+            line_total = _money2(Decimal(str(line.amount_total or 0)))
             try:
                 vat_percent = Decimal(str(getattr(tariff, "vat_percent", 0) or 0))
             except Exception:
                 vat_percent = Decimal("0")
 
-            stable_fee_total = _money2(stable_fee_net)
-            # переменная часть = net без стабильного тарифа
-            variable_net = _money2(line_net - stable_fee_net)
-            if variable_net < 0:
-                variable_net = Decimal("0")
-
-            variable_vat = _money2(variable_net * vat_percent / Decimal("100")) if vat_percent > 0 else Decimal("0")
-            variable_total = _money2(variable_net + variable_vat)
+            # Разбиваем строку так, чтобы сумма (variable + stable) всегда была равна line.amount_total.
+            stable_fee_total = min(_money2(stable_fee_net), line_total)
+            variable_total = _money2(max(line_total - stable_fee_total, Decimal("0")))
+            variable_vat = min(_money2(line_vat_total), variable_total)
+            variable_net = _money2(max(variable_total - variable_vat, Decimal("0")))
 
             # Если линия действительно включает стабильный тариф — разделяем
             if line_net >= stable_fee_net:
@@ -665,7 +773,7 @@ def get_resident_invoice_detail(
                     stable_label = f"{stable_label} ({service_label})"
 
                 lines_out.append({
-                    "id": None,
+                    "id": line.id,
                     "description": stable_label,
                     "amount_net": float(stable_fee_total),
                     "amount_vat": 0.0,
@@ -1207,6 +1315,7 @@ class ResidentPaymentCreate(BaseModel):
     comment: Optional[str] = None
     scope: Optional[str] = None  # 'month' - только текущий месяц, 'all' - все счета, None - только пополнение аванса
     invoice_id: Optional[int] = None  # оплата конкретного счета
+    selected_line_ids: Optional[List[int]] = None  # выбор конкретных строк счета для оплаты
 
 
 class ResidentPaymentResponse(BaseModel):
@@ -1254,6 +1363,9 @@ def create_resident_payment(
     # Validate amount
     if data.amount <= 0:
         raise HTTPException(status_code=400, detail="Amount must be positive")
+    payment_amount_dec = Decimal(str(data.amount))
+    amount_adjusted_by_selected_lines = False
+    selected_remaining_total = Decimal("0")
 
     # Validate payment method
     method_value = data.method.upper()
@@ -1268,17 +1380,80 @@ def create_resident_payment(
             method_value = "CARD"
 
     from .payments import apply_payment_to_invoices, apply_advance_with_limit, apply_payment_to_invoice, apply_advance_to_invoice
+
+    # Безопасность: в режиме пополнения аванса (scope=None) платеж не должен быть привязан к счёту.
+    request_invoice_id = data.invoice_id if data.scope is not None else None
+    request_selected_line_ids = data.selected_line_ids if request_invoice_id is not None else None
+
+    if request_selected_line_ids and request_invoice_id is None:
+        raise HTTPException(status_code=400, detail="selected_line_ids requires invoice_id")
     
     # Если указан invoice_id, проверяем доступность счета
     target_invoice = None
-    if data.invoice_id is not None:
-        target_invoice = db.get(Invoice, data.invoice_id)
+    selected_line_ids: list[int] = []
+    application_reference: Optional[str] = None
+    if request_invoice_id is not None:
+        target_invoice = db.get(Invoice, request_invoice_id)
         if not target_invoice:
             raise HTTPException(status_code=404, detail="Invoice not found")
         if target_invoice.resident_id not in resident_ids:
             raise HTTPException(status_code=403, detail="Invalid invoice")
         if target_invoice.status in {InvoiceStatus.CANCELED}:
             raise HTTPException(status_code=400, detail="Invoice is canceled")
+
+        if request_selected_line_ids:
+            selected_line_ids = []
+            for x in request_selected_line_ids:
+                try:
+                    v = int(x)
+                except Exception:
+                    continue
+                if v > 0:
+                    selected_line_ids.append(v)
+            selected_line_ids = sorted(set(selected_line_ids))
+            if not selected_line_ids:
+                raise HTTPException(status_code=400, detail="Выберите хотя бы одну строку счёта")
+
+            all_invoice_lines = (
+                db.query(InvoiceLine)
+                .filter(InvoiceLine.invoice_id == target_invoice.id)
+                .all()
+            )
+            existing_ids = {int(row.id) for row in all_invoice_lines if row.id is not None}
+            # Мягкая нормализация: отбрасываем устаревшие id вместо жесткой 400-ошибки.
+            selected_line_ids = [lid for lid in selected_line_ids if lid in existing_ids]
+            if not selected_line_ids:
+                raise HTTPException(status_code=400, detail="Некорректный выбор строк счёта")
+
+            line_desc_by_id = {
+                int(row.id): (row.description or "")
+                for row in all_invoice_lines
+                if row.id is not None
+            }
+            selected_line_ids = _normalize_selected_line_ids_for_water_sewer(selected_line_ids, line_desc_by_id)
+            selected_line_ids = [lid for lid in selected_line_ids if lid in existing_ids]
+            if not selected_line_ids:
+                raise HTTPException(status_code=400, detail="Некорректный выбор строк счёта")
+
+            existing_apps = (
+                db.query(PaymentApplication)
+                .filter(PaymentApplication.invoice_id == target_invoice.id)
+                .all()
+            )
+            line_payment_map = _build_invoice_line_payment_map(all_invoice_lines, existing_apps)
+            selected_remaining = sum(
+                (line_payment_map.get(lid, {}).get("remaining", Decimal("0")) for lid in selected_line_ids),
+                Decimal("0"),
+            )
+            if selected_remaining <= Decimal("0.0001"):
+                raise HTTPException(status_code=400, detail="Выбранные строки уже оплачены")
+            selected_remaining_total = _money2(selected_remaining)
+            if payment_amount_dec > selected_remaining_total:
+                payment_amount_dec = selected_remaining_total
+                amount_adjusted_by_selected_lines = True
+            if payment_amount_dec <= Decimal("0.0001"):
+                raise HTTPException(status_code=400, detail="Выбранные строки уже оплачены")
+            application_reference = "LINESEL:" + ",".join(str(x) for x in selected_line_ids)
 
     # Если оплата через аванс, создаем историю списания и корректируем общий баланс
     if is_advance:
@@ -1300,7 +1475,7 @@ def create_resident_payment(
                               .filter(PaymentApplication.payment_id == p.id).scalar() or 0
                 total_advance += (Decimal(p.amount_total or 0) - Decimal(applied_p))
         
-        target_amount = Decimal(str(data.amount))
+        target_amount = payment_amount_dec
         if total_advance < target_amount:
             raise HTTPException(status_code=400, detail=f"Недостаточно средств на авансе (доступно {total_advance} ₼)")
 
@@ -1327,6 +1502,8 @@ def create_resident_payment(
             db.flush()
 
             reference_tag = f"ADVANCE:{history_payment.id}"
+            if application_reference:
+                reference_tag = f"{reference_tag}|{application_reference}"
 
             # 3) Списываем реальные деньги из существующих платежей
             # Это создаст PaymentApplication с reference_tag к реальным платежам
@@ -1383,7 +1560,10 @@ def create_resident_payment(
             
             if target_invoice:
                 if affected_count > 0:
-                    message = "Аванс успешно применён к выбранному счёту"
+                    if amount_adjusted_by_selected_lines:
+                        message = f"Аванс применён к выбранным строкам. Сумма скорректирована до {float(payment_amount_dec):.2f} ₼"
+                    else:
+                        message = "Аванс успешно применён к выбранному счёту"
                 else:
                     message = "Аванс не применён (нет подходящих открытых счетов)"
             else:
@@ -1410,7 +1590,7 @@ def create_resident_payment(
     payment = Payment(
         resident_id=data.resident_id,
         received_at=now_baku(),
-        amount_total=Decimal(str(data.amount)),
+        amount_total=payment_amount_dec,
         method=PaymentMethod(method_value),
         reference=data.reference or None,
         comment=data.comment or f"Онлайн-оплата через личный кабинет",
@@ -1426,7 +1606,7 @@ def create_resident_payment(
         resident_id=data.resident_id,
         user_id=user.id,
         action="CREATE",
-        amount=float(data.amount),
+        amount=float(payment_amount_dec),
         details=f"Онлайн-оплата (метод: {method_value})"
     ))
 
@@ -1434,7 +1614,12 @@ def create_resident_payment(
     # scope='month' - только текущий месяц, 'all' - все счета, None - только пополнение аванса
     try:
         if target_invoice:
-            applied_amount = apply_payment_to_invoice(db, payment.id, target_invoice.id)
+            applied_amount = apply_payment_to_invoice(
+                db,
+                payment.id,
+                target_invoice.id,
+                reference=application_reference,
+            )
             affected_count = 1 if applied_amount > 0 else 0
         else:
             affected_count = apply_payment_to_invoices(
@@ -1447,7 +1632,10 @@ def create_resident_payment(
         
         if target_invoice:
             if affected_count > 0:
-                message = "Платёж успешно создан и применён к выбранному счёту"
+                if amount_adjusted_by_selected_lines:
+                    message = f"Платёж применён к выбранным строкам. Сумма скорректирована до {float(payment_amount_dec):.2f} ₼"
+                else:
+                    message = "Платёж успешно создан и применён к выбранному счёту"
             else:
                 message = "Платёж успешно создан (не применён к выбранному счёту)"
         else:

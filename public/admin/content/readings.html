@@ -2138,6 +2138,54 @@
         waterRows.forEach(upsertAutoSewerRowForWater);
     }
 
+    function upsertAutoStableRowForMeter(baseRow) {
+        if (!baseRow) return;
+        const meterType = String(baseRow.dataset.meterType || '').toUpperCase();
+        if (!(meterType === 'ELECTRIC' || meterType === 'GAS')) return;
+
+        const stableTariff = parseFloat(baseRow.dataset.stableTariff || '0');
+        const meterId = baseRow.dataset.meterId;
+        const existingRow = document.querySelector(`#meterTableBody tr.auto-stable-row[data-linked-meter-id="${meterId}"]`);
+        if (!(stableTariff > 0)) {
+            if (existingRow) existingRow.remove();
+            return;
+        }
+
+        let stableRow = existingRow;
+        if (!stableRow) {
+            stableRow = document.createElement('tr');
+            stableRow.className = 'auto-stable-row';
+            stableRow.setAttribute('data-linked-meter-id', meterId);
+            stableRow.innerHTML = `
+                <td><span class="meter-type-pill">Стабильный тариф</span></td>
+                <td class="auto-stable-tariff">—</td>
+                <td>—</td>
+                <td>авто</td>
+                <td><span class="meter-consumption">—</span></td>
+                <td><span class="meter-amount">0.00</span></td>
+                <td><div class="meter-photo-cell"><span class="meter-photo-placeholder">—</span></div></td>
+                <td></td>
+            `;
+            baseRow.insertAdjacentElement('afterend', stableRow);
+        }
+
+        const typeTitle = meterType === 'GAS' ? 'Газ' : 'Электричество';
+        const tariffName = baseRow.dataset.tariffName || typeTitle;
+        const tariffCell = stableRow.querySelector('.auto-stable-tariff');
+        if (tariffCell) {
+            tariffCell.textContent = `${tariffName} (${typeTitle})`;
+        }
+        const amountEl = stableRow.querySelector('.meter-amount');
+        if (amountEl) {
+            amountEl.textContent = stableTariff.toFixed(2);
+        }
+    }
+
+    function refreshAllAutoStableRows() {
+        const rows = Array.from(document.querySelectorAll('#meterTableBody tr[data-meter-id][data-meter-type="ELECTRIC"], #meterTableBody tr[data-meter-id][data-meter-type="GAS"]'));
+        rows.forEach(upsertAutoStableRowForMeter);
+    }
+
     function renderMeterTable(meters) {
         const tbody = document.getElementById('meterTableBody');
         if (!tbody) return;
@@ -2312,6 +2360,7 @@
                         data-meter-type="${meter.type}"
                         data-existing-photo-url="${existingPhotoUrl}"
                         data-sewerage-percent="${seweragePercent}"
+                        data-stable-tariff="${parseFloat(meter.stable_tariff || 0) || 0}"
                         data-sewerage-customer-type="${sewerageCustomerType}"
                         data-tariff-name="${meter.tariff_name || ''}"
                         data-expected-last-reading-id="${expectedLastReadingId || ''}"
@@ -2367,6 +2416,7 @@
                 `;
         }).join('');
         refreshAllAutoSewerRows();
+        refreshAllAutoStableRows();
         resetMeterPhotoState();
     }
 

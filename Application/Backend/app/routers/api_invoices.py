@@ -507,6 +507,139 @@ def _effective_sewerage_percent(tariff: Tariff | None) -> Decimal:
     return percent if percent > 0 else Decimal("0")
 
 
+def _parse_selected_line_ids(reference: str | None) -> list[int]:
+    if not reference:
+        return []
+    marker = "LINESEL:"
+    idx = reference.find(marker)
+    if idx < 0:
+        return []
+    raw = reference[idx + len(marker):].split("|")[0]
+    out: list[int] = []
+    for token in raw.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        try:
+            out.append(int(token))
+        except Exception:
+            continue
+    return out
+
+
+def _is_water_line_description(desc: str | None) -> bool:
+    low = (desc or "").lower()
+    return ("вода" in low) or ("water" in low) or ("meter_cold_water" in low)
+
+
+def _is_sewerage_line_description(desc: str | None) -> bool:
+    low = (desc or "").lower()
+    return ("канализац" in low) or ("sewerage" in low) or ("meter_sewerage" in low)
+
+
+def _normalize_selected_line_ids_for_water_sewer(
+    selected_ids: list[int],
+    line_desc_by_id: dict[int, str],
+) -> list[int]:
+    ids = [int(x) for x in (selected_ids or []) if int(x) > 0]
+    if not ids:
+        return []
+
+    unique_ids = list(dict.fromkeys(ids))
+    selected_has_bundle = any(
+        _is_water_line_description(line_desc_by_id.get(lid))
+        or _is_sewerage_line_description(line_desc_by_id.get(lid))
+        for lid in unique_ids
+    )
+    if not selected_has_bundle:
+        return unique_ids
+
+    sewer_ids = [
+        lid for lid, desc in line_desc_by_id.items()
+        if _is_sewerage_line_description(desc)
+    ]
+    water_ids = [
+        lid for lid, desc in line_desc_by_id.items()
+        if _is_water_line_description(desc)
+    ]
+    if not sewer_ids or not water_ids:
+        return unique_ids
+
+    for lid in sewer_ids + water_ids:
+        if lid not in unique_ids:
+            unique_ids.append(lid)
+
+    def _key(lid: int) -> tuple[int, int]:
+        if lid in sewer_ids:
+            return (0, unique_ids.index(lid))
+        if lid in water_ids:
+            return (1, unique_ids.index(lid))
+        return (2, unique_ids.index(lid))
+
+    return [lid for lid in sorted(unique_ids, key=_key)]
+
+
+def _build_invoice_line_payment_map(
+    lines: list[InvoiceLine],
+    apps: list[PaymentApplication],
+) -> dict[int, dict]:
+    sorted_lines = sorted(lines, key=lambda l: l.id or 0)
+    line_desc_by_id = {
+        int(l.id): (l.description or "")
+        for l in sorted_lines
+        if l.id is not None
+    }
+    line_totals = {int(l.id): Decimal(str(l.amount_total or 0)) for l in sorted_lines if l.id is not None}
+    paid_by_line = {lid: Decimal("0") for lid in line_totals}
+
+    def allocate(amount: Decimal, line_ids: list[int]) -> Decimal:
+        remaining_amt = Decimal(str(amount or 0))
+        for lid in line_ids:
+            if remaining_amt <= 0:
+                break
+            if lid not in line_totals:
+                continue
+            capacity = max(line_totals[lid] - paid_by_line[lid], Decimal("0"))
+            if capacity <= 0:
+                continue
+            take = min(capacity, remaining_amt)
+            paid_by_line[lid] += take
+            remaining_amt -= take
+        return remaining_amt
+
+    ordered_apps = sorted(
+        apps or [],
+        key=lambda a: (
+            a.created_at or datetime.min,
+            a.id or 0,
+        ),
+    )
+    default_order = list(line_totals.keys())
+    for app in ordered_apps:
+        app_amt = Decimal(str(getattr(app, "amount_applied", 0) or 0))
+        if app_amt <= 0:
+            continue
+        selected_ids = _parse_selected_line_ids(getattr(app, "reference", None))
+        if selected_ids:
+            normalized_selected_ids = _normalize_selected_line_ids_for_water_sewer(selected_ids, line_desc_by_id)
+            allocate(app_amt, normalized_selected_ids)
+        else:
+            allocate(app_amt, default_order)
+
+    result: dict[int, dict] = {}
+    for lid, total in line_totals.items():
+        paid = _money2(paid_by_line.get(lid, Decimal("0")))
+        remaining = _money2(max(total - paid, Decimal("0")))
+        if remaining <= Decimal("0.0001"):
+            status_text = "Оплачена"
+        elif paid > Decimal("0.0001"):
+            status_text = "Частично"
+        else:
+            status_text = "Не оплачена"
+        result[lid] = {"paid": paid, "remaining": remaining, "status": status_text}
+    return result
+
+
 def _ensure_auto_sewerage_line(db: Session, inv: Invoice) -> None:
     """
     Гарантирует наличие синтетической строки "Канализация (авто)" как % от суммы воды.
@@ -786,41 +919,9 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
             return "Строительство"
         return None
 
-    # Распределяем оплату по строкам в порядке FIFO (по id строк)
-    # Сортируем строки по id для правильного порядка распределения
-    sorted_lines = sorted(lines, key=lambda l: l.id or 0)
-    
-    # Распределяем оплату последовательно по строкам
-    line_payment_map: dict[int, dict] = {}  # line.id -> {paid, remaining, status}
-    remaining_paid_for_distribution = Decimal(str(paid_total))
-    
-    for line in sorted_lines:
-        line_total = Decimal(str(line.amount_total or 0))
-        if line_total <= 0:
-            line_payment_map[line.id] = {
-                "paid": Decimal("0"),
-                "remaining": Decimal("0"),
-                "status": "Не оплачена"
-            }
-            continue
-        
-        covered = min(line_total, max(remaining_paid_for_distribution, Decimal("0")))
-        remaining = max(line_total - covered, Decimal("0"))
-        
-        if remaining <= Decimal("0.0001"):
-            status = "Оплачена"
-        elif covered > Decimal("0.0001"):
-            status = "Частично"
-        else:
-            status = "Не оплачена"
-        
-        line_payment_map[line.id] = {
-            "paid": covered,
-            "remaining": remaining,
-            "status": status
-        }
-        
-        remaining_paid_for_distribution -= covered
+    # Распределяем оплату по строкам с учётом выбранных строк (LINESEL)
+    # Используем все применения (all_apps), а не отфильтрованные apps для отображения.
+    line_payment_map = _build_invoice_line_payment_map(lines, all_apps)
     
     # Разделяем стабильный тариф в отдельную строку, как в user panel
     reading_ids = [line.meter_reading_id for line in lines if line.meter_reading_id]
@@ -848,18 +949,18 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
 
         if stable_fee_net > 0:
             line_net = Decimal(str(line.amount_net or 0))
+            line_vat_total = Decimal(str(line.amount_vat or 0))
+            line_total = _money2(Decimal(str(line.amount_total or 0)))
             try:
                 vat_percent = Decimal(str(getattr(tariff, "vat_percent", 0) or 0))
             except Exception:
                 vat_percent = Decimal("0")
 
-            # НДС на стабильный тариф не начисляется
-            stable_fee_total = _money2(stable_fee_net)
-            variable_net = _money2(line_net - stable_fee_net)
-            if variable_net < 0:
-                variable_net = Decimal("0")
-            variable_vat = _money2(variable_net * vat_percent / Decimal("100")) if vat_percent > 0 else Decimal("0")
-            variable_total = _money2(variable_net + variable_vat)
+            # Разбиваем строку так, чтобы сумма (variable + stable) всегда была равна line.amount_total.
+            stable_fee_total = min(_money2(stable_fee_net), line_total)
+            variable_total = _money2(max(line_total - stable_fee_total, Decimal("0")))
+            variable_vat = min(_money2(line_vat_total), variable_total)
+            variable_net = _money2(max(variable_total - variable_vat, Decimal("0")))
 
             if line_net >= stable_fee_net:
                 # Получаем статус оплаты для основной строки
@@ -903,7 +1004,7 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
                 if service_label:
                     stable_label = f"{stable_label} ({service_label})"
                 lines_out.append({
-                    "id": None,
+                    "id": line.id,
                     "description": stable_label,
                     "amount_net": float(stable_fee_total),
                     "amount_vat": 0.0,

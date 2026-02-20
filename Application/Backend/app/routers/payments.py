@@ -350,7 +350,8 @@ def apply_payment_to_invoices(
 def apply_payment_to_invoice(
     db: Session,
     payment_id: int,
-    invoice_id: int
+    invoice_id: int,
+    reference: Optional[str] = None,
 ) -> Decimal:
     """
     Применяет платеж к одному счету (invoice_id).
@@ -385,19 +386,14 @@ def apply_payment_to_invoice(
     if apply_amt <= 0:
         return Decimal("0")
 
-    app = db.query(PaymentApplication).filter(
-        PaymentApplication.payment_id == payment_id,
-        PaymentApplication.invoice_id == inv.id
-    ).first()
-    if app:
-        app.amount_applied = Decimal(app.amount_applied or 0) + apply_amt
-    else:
-        db.add(PaymentApplication(
-            payment_id=payment_id,
-            invoice_id=inv.id,
-            amount_applied=apply_amt,
-            created_at=now_baku(),
-        ))
+    # Создаём отдельное применение, чтобы сохранять ссылку на выбранные строки (LINESEL)
+    db.add(PaymentApplication(
+        payment_id=payment_id,
+        invoice_id=inv.id,
+        amount_applied=apply_amt,
+        reference=reference,
+        created_at=now_baku(),
+    ))
 
     db.flush()
     _recompute_invoice_status(db, inv)
