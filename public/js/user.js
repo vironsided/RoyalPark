@@ -940,9 +940,11 @@ function setupActionButtons() {
         }
 
         // "Пополнить аванс" — переход в режим пополнения на странице оплаты
+        // Работает как при клике на кнопку, так и при клике на саму карточку
         const topupAdvanceBtn = e.target.closest('[data-action="pay-topup-advance"]');
         if (topupAdvanceBtn && window.dashboardData) {
             e.preventDefault();
+            e.stopPropagation();
             const firstResident = residents[0] || null;
             const residentId = firstResident ? firstResident.id : null;
             const residentCode = firstResident ? (firstResident.code || '') : '';
