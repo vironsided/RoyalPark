@@ -28,6 +28,9 @@ class InvoiceLineOut(BaseModel):
     amount_net: float
     amount_vat: float
     amount_total: float
+    payment_status: Optional[str] = None  # "Оплачена", "Частично", "Не оплачена"
+    paid_amount: Optional[float] = None  # Сколько оплачено по этой строке
+    remaining_amount: Optional[float] = None  # Сколько осталось оплатить
 
     class Config:
         from_attributes = True
@@ -783,6 +786,42 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
             return "Строительство"
         return None
 
+    # Распределяем оплату по строкам в порядке FIFO (по id строк)
+    # Сортируем строки по id для правильного порядка распределения
+    sorted_lines = sorted(lines, key=lambda l: l.id or 0)
+    
+    # Распределяем оплату последовательно по строкам
+    line_payment_map: dict[int, dict] = {}  # line.id -> {paid, remaining, status}
+    remaining_paid_for_distribution = Decimal(str(paid_total))
+    
+    for line in sorted_lines:
+        line_total = Decimal(str(line.amount_total or 0))
+        if line_total <= 0:
+            line_payment_map[line.id] = {
+                "paid": Decimal("0"),
+                "remaining": Decimal("0"),
+                "status": "Не оплачена"
+            }
+            continue
+        
+        covered = min(line_total, max(remaining_paid_for_distribution, Decimal("0")))
+        remaining = max(line_total - covered, Decimal("0"))
+        
+        if remaining <= Decimal("0.0001"):
+            status = "Оплачена"
+        elif covered > Decimal("0.0001"):
+            status = "Частично"
+        else:
+            status = "Не оплачена"
+        
+        line_payment_map[line.id] = {
+            "paid": covered,
+            "remaining": remaining,
+            "status": status
+        }
+        
+        remaining_paid_for_distribution -= covered
+    
     # Разделяем стабильный тариф в отдельную строку, как в user panel
     reading_ids = [line.meter_reading_id for line in lines if line.meter_reading_id]
     reading_map = {}
@@ -823,12 +862,41 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
             variable_total = _money2(variable_net + variable_vat)
 
             if line_net >= stable_fee_net:
+                # Получаем статус оплаты для основной строки
+                line_payment = line_payment_map.get(line.id, {"paid": Decimal("0"), "remaining": Decimal("0"), "status": "Не оплачена"})
+                
+                # Распределяем оплату между переменной частью и стабильным тарифом пропорционально
+                variable_total_dec = variable_total
+                stable_total_dec = stable_fee_total
+                total_for_split = variable_total_dec + stable_total_dec
+                
+                if total_for_split > 0 and line_payment["paid"] > 0:
+                    # Пропорциональное распределение оплаты
+                    variable_paid = _money2(line_payment["paid"] * variable_total_dec / total_for_split)
+                    stable_paid = _money2(line_payment["paid"] * stable_total_dec / total_for_split)
+                    
+                    variable_remaining = max(variable_total_dec - variable_paid, Decimal("0"))
+                    stable_remaining = max(stable_total_dec - stable_paid, Decimal("0"))
+                    
+                    variable_status = "Оплачена" if variable_remaining <= Decimal("0.0001") else ("Частично" if variable_paid > Decimal("0.0001") else "Не оплачена")
+                    stable_status = "Оплачена" if stable_remaining <= Decimal("0.0001") else ("Частично" if stable_paid > Decimal("0.0001") else "Не оплачена")
+                else:
+                    variable_paid = Decimal("0")
+                    stable_paid = Decimal("0")
+                    variable_remaining = variable_total_dec
+                    stable_remaining = stable_total_dec
+                    variable_status = "Не оплачена"
+                    stable_status = "Не оплачена"
+                
                 lines_out.append({
                     "id": line.id,
                     "description": line.description,
                     "amount_net": float(variable_net),
                     "amount_vat": float(variable_vat),
                     "amount_total": float(variable_total),
+                    "payment_status": variable_status,
+                    "paid_amount": float(variable_paid),
+                    "remaining_amount": float(variable_remaining),
                 })
                 service_label = _stable_service_label(line.description)
                 stable_label = "Стабильный тариф"
@@ -840,9 +908,17 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
                     "amount_net": float(stable_fee_total),
                     "amount_vat": 0.0,
                     "amount_total": float(stable_fee_total),
+                    "payment_status": stable_status,
+                    "paid_amount": float(stable_paid),
+                    "remaining_amount": float(stable_remaining),
                 })
                 continue
 
+        # Получаем статус оплаты для строки
+        line_payment = line_payment_map.get(line.id, {"paid": Decimal("0"), "remaining": Decimal("0"), "status": "Не оплачена"})
+        base_line["payment_status"] = line_payment["status"]
+        base_line["paid_amount"] = float(line_payment["paid"])
+        base_line["remaining_amount"] = float(line_payment["remaining"])
         lines_out.append(base_line)
     
     return {

@@ -1023,6 +1023,10 @@ async function loadPaymentInvoices(scope, residentCode, preferredAmount = null, 
                             // При переходе со страницы оплаты через invoice-link показываем только счета в статусе ISSUED и PARTIAL
                             const statusesForBills = ['ISSUED', 'PARTIAL'];
                             sessionStorage.setItem('billsFilterStatuses', JSON.stringify(statusesForBills));
+                            sessionStorage.setItem('billsSystemFilterMeta', JSON.stringify({
+                                source: 'report_payment',
+                                ts: Date.now()
+                            }));
                         } catch (e) {
                             console.warn('Failed to store billsFilterInvoiceIds or billsFilterStatuses before navigation', e);
                         }
@@ -1881,6 +1885,10 @@ async function submitPayment(event) {
 
             // Фильтр для черновиков на странице счетов
             sessionStorage.setItem('billsFilterStatuses', JSON.stringify(['DRAFT']));
+            sessionStorage.setItem('billsSystemFilterMeta', JSON.stringify({
+                source: 'report_payment',
+                ts: Date.now()
+            }));
 
             setTimeout(() => {
                 if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
@@ -1945,6 +1953,10 @@ async function submitPayment(event) {
             
             // Set filter to show DRAFT status invoices on bills page
             sessionStorage.setItem('billsFilterStatuses', JSON.stringify(['DRAFT']));
+            sessionStorage.setItem('billsSystemFilterMeta', JSON.stringify({
+                source: 'report_payment',
+                ts: Date.now()
+            }));
             
             // Redirect to dashboard to show updated data
             setTimeout(() => {

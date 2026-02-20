@@ -78,10 +78,11 @@
                         <th data-i18n="user_invoice_items_th_charged">Начислено</th>
                         <th data-i18n="user_invoice_items_th_vat">НДС</th>
                         <th data-i18n="user_invoice_items_th_total">Итого</th>
+                        <th>Статус</th>
                     </tr>
                 </thead>
                 <tbody id="invoiceItemsBody">
-                    <tr><td colspan="4" class="text-center text-muted">Загрузка...</td></tr>
+                    <tr><td colspan="6" class="text-center text-muted">Загрузка...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -583,7 +584,7 @@
             if (lines.length === 0) {
                 const lang = localStorage.getItem('language') || 'ru';
                 const emptyText = window.i18n?.translate?.('user_invoice_items_empty', lang) || 'Позиции отсутствуют';
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">${emptyText}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">${emptyText}</td></tr>`;
                 return;
             }
             
@@ -591,6 +592,13 @@
             tbody.innerHTML = lines.map(line => {
                 const parsed = extractConsumption(line.description, lang);
                 const translatedDescription = parsed.label;
+                const totalAmount = Number(line.amount_total || 0);
+                const paidAmount = Math.max(0, Number(line.paid_amount || 0));
+                const paymentStatus = line.payment_status || 'Не оплачена';
+                const ratio = totalAmount > 0 ? Math.min(100, Math.max(0, (paidAmount / totalAmount) * 100)) : 0;
+                let statusClass = 'payment-status-unpaid';
+                if (paymentStatus === 'Оплачена') statusClass = 'payment-status-paid';
+                else if (paymentStatus === 'Частично') statusClass = 'payment-status-partial';
                 return `
                 <tr>
                     <td data-original-description="${line.description || ''}" data-service-key="${parsed.serviceKey || ''}">${translatedDescription}</td>
@@ -598,12 +606,20 @@
                     <td>${formatCurrency(line.amount_net)}</td>
                     <td>${formatCurrency(line.amount_vat)}</td>
                     <td class="total-value">${formatCurrency(line.amount_total)}</td>
+                    <td>
+                        <div class="payment-status-card ${statusClass}">
+                            <div class="payment-status-head">${paymentStatus}</div>
+                            <div class="payment-status-meta">Оплачено ${formatCurrency(paidAmount)} из ${formatCurrency(totalAmount)}</div>
+                            <div class="payment-status-track"><span style="width:${ratio.toFixed(2)}%"></span></div>
+                        </div>
+                    </td>
                 </tr>
                 `;
             }).join('') + `
                 <tr class="total-row">
                     <td colspan="4" data-i18n="user_invoice_items_total_row">Итого к оплате</td>
                     <td class="total-value">${formatCurrency(total)}</td>
+                    <td></td>
                 </tr>
             `;
         }

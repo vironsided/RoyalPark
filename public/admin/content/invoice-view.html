@@ -116,6 +116,7 @@
                     <th>Начислено</th>
                     <th>НДС</th>
                     <th>Итого</th>
+                    <th>Статус</th>
                 </tr>
             </thead>
             <tbody id="lineItemsTable">
@@ -421,13 +422,35 @@
             if (invoice.lineItems && invoice.lineItems.length > 0) {
                 let html = invoice.lineItems.map(item => {
                     const parsed = _extractConsumption(item.description || '');
+                    const totalAmount = Number(item.amount_total || 0);
+                    const paidAmount = Math.max(0, Number(item.paid_amount || 0));
+                    const paymentStatus = item.payment_status || 'Не оплачена';
+                    const ratio = totalAmount > 0 ? Math.min(100, Math.max(0, (paidAmount / totalAmount) * 100)) : 0;
+                    let statusClass = '';
+                    let statusText = paymentStatus;
+                    if (paymentStatus === 'Оплачена') {
+                        statusClass = 'payment-status-paid';
+                    } else if (paymentStatus === 'Частично') {
+                        statusClass = 'payment-status-partial';
+                    } else {
+                        statusClass = 'payment-status-unpaid';
+                    }
                     return `
                 <tr>
                     <td data-original-description="${item.description || ''}" data-service-key="${parsed.serviceKey || ''}">${parsed.label}</td>
                     <td data-consumed-qty="${parsed.qty || ''}" data-consumed-unit-key="${parsed.unitKey || ''}">${parsed.consumed}</td>
                     <td>${(item.amount_net || 0).toFixed(2)}</td>
                     <td>${(item.amount_vat || 0).toFixed(2)}</td>
-                    <td class="total-value">${(item.amount_total || 0).toFixed(2)}</td>
+                    <td class="total-value">${totalAmount.toFixed(2)}</td>
+                    <td>
+                        <div class="payment-status-card ${statusClass}">
+                            <div class="payment-status-head">${statusText}</div>
+                            <div class="payment-status-meta">Оплачено ${paidAmount.toFixed(2)} из ${totalAmount.toFixed(2)}</div>
+                            <div class="payment-status-track">
+                                <span style="width:${ratio.toFixed(2)}%"></span>
+                            </div>
+                        </div>
+                    </td>
                 </tr>
             `;
                 }).join('');
@@ -437,12 +460,13 @@
                 <tr class="total-row">
                     <td colspan="4">Итого к оплате</td>
                     <td class="total-value">${total.toFixed(2)}</td>
+                    <td></td>
                 </tr>
             `;
 
                 tbody.innerHTML = html;
             } else {
-                tbody.innerHTML = '<tr><td colspan="5">Нет данных</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6">Нет данных</td></tr>';
             }
 
             // Render payments table

@@ -1038,13 +1038,32 @@ def update_resident_api(
             validate_tariff(tariff_id, meter_type, existing_meter)
 
             if existing_meter:
-                # Обновляем существующий счётчик
+                has_readings = existing_meter.id in meters_with_readings
+                meter_type_changed = existing_meter.meter_type != meter_type
+
+                # Если у счётчика есть показания и меняется тип, сохраняем историю:
+                # старый деактивируем, новый создаём как отдельный.
+                if has_readings and meter_type_changed:
+                    existing_meter.is_active = False
+                    db.add(ResidentMeter(
+                        resident_id=resident.id,
+                        meter_type=meter_type,
+                        serial_number=serial,
+                        initial_reading=initial_reading,
+                        tariff_id=tariff_id,
+                        is_active=True,
+                    ))
+                    seen_existing_ids.add(existing_meter.id)
+                    continue
+
+                # Обновляем существующий счётчик (включая смену типа, если показаний ещё нет)
                 existing_meter.is_active = True
+                existing_meter.meter_type = meter_type
                 existing_meter.serial_number = serial
                 existing_meter.tariff_id = tariff_id
 
                 # Не меняем initial_reading, если есть показания — иначе можем сломать базовую логику "опорного"
-                if existing_meter.id not in meters_with_readings:
+                if not has_readings:
                     existing_meter.initial_reading = initial_reading
                 seen_existing_ids.add(existing_meter.id)
             else:
@@ -1331,10 +1350,29 @@ def update_resident_public(
             validate_tariff(tariff_id, meter_type, existing_meter)
 
             if existing_meter:
+                has_readings = existing_meter.id in meters_with_readings
+                meter_type_changed = existing_meter.meter_type != meter_type
+
+                # Если у счётчика есть показания и меняется тип, сохраняем историю:
+                # старый деактивируем, новый создаём как отдельный.
+                if has_readings and meter_type_changed:
+                    existing_meter.is_active = False
+                    db.add(ResidentMeter(
+                        resident_id=resident.id,
+                        meter_type=meter_type,
+                        serial_number=serial,
+                        initial_reading=initial_reading,
+                        tariff_id=tariff_id,
+                        is_active=True,
+                    ))
+                    seen_existing_ids.add(existing_meter.id)
+                    continue
+
                 existing_meter.is_active = True
+                existing_meter.meter_type = meter_type
                 existing_meter.serial_number = serial
                 existing_meter.tariff_id = tariff_id
-                if existing_meter.id not in meters_with_readings:
+                if not has_readings:
                     existing_meter.initial_reading = initial_reading
                 seen_existing_ids.add(existing_meter.id)
             else:

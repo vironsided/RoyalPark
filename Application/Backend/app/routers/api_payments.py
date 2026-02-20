@@ -153,6 +153,72 @@ def _build_payment_applications(db: Session, p: Payment) -> list[dict]:
     return []
 
 
+def _is_owner_level_advance_topup(p: Payment) -> bool:
+    """
+    Определяет платежи пополнения общего аванса из личного кабинета пользователя.
+    Такие платежи создаются как обычные CARD/ONLINE записи, но:
+    - без ручного created_by_id (self-service),
+    - с положительным свободным остатком,
+    - без применений к счетам.
+    """
+    if p.method == PaymentMethod.ADVANCE:
+        return False
+    if p.created_by_id is not None:
+        return False
+    if p.applications:
+        return False
+    return Decimal(p.leftover or 0) > 0
+
+
+def _owner_resident_codes(db: Session, resident_id: int) -> str | None:
+    """
+    Возвращает список кодов всех домов владельца для заданного resident_id:
+    например, "L / 55, L / 66".
+    """
+    from .payments import user_residents
+
+    linked_users = (
+        db.query(user_residents.c.user_id)
+        .filter(user_residents.c.resident_id == resident_id)
+        .subquery()
+    )
+    resident_ids = [
+        rid for (rid,) in (
+            db.query(user_residents.c.resident_id)
+            .filter(user_residents.c.user_id.in_(linked_users))
+            .distinct()
+            .all()
+        )
+    ]
+    if not resident_ids:
+        return None
+
+    residents_rows = (
+        db.query(Resident.id, Resident.unit_number, Block.name)
+        .outerjoin(Block, Block.id == Resident.block_id)
+        .filter(Resident.id.in_(resident_ids))
+        .all()
+    )
+    if not residents_rows:
+        return None
+
+    def _sort_key(row):
+        _, unit, block_name = row
+        return ((block_name or ""), str(unit or ""))
+
+    codes = []
+    for _, unit, block_name in sorted(residents_rows, key=_sort_key):
+        if block_name:
+            codes.append(f"{block_name} / {unit}")
+        else:
+            codes.append(str(unit))
+
+    # Если дом только один, не меняем стандартное отображение.
+    if len(codes) <= 1:
+        return None
+    return ", ".join(codes)
+
+
 def _list_payments_internal(
     db: Session,
     resident_id: Optional[int] = None,
@@ -207,6 +273,7 @@ def _list_payments_internal(
     for p in items:
         resident = p.resident
         block = blocks.get(resident.block_id)
+        resident_code = f"{block.name if block else ''} / {resident.unit_number}" if block else resident.unit_number
         
         applied_total = float(p.applied_total)
         leftover = float(p.leftover)
@@ -214,11 +281,15 @@ def _list_payments_internal(
             # ADVANCE записи — это списания из аванса, у них остатка быть не должно
             applied_total = float(p.amount_total or 0)
             leftover = 0.0
+        elif _is_owner_level_advance_topup(p):
+            owner_codes = _owner_resident_codes(db, int(p.resident_id))
+            if owner_codes:
+                resident_code = owner_codes
         
         result.append({
             "id": p.id,
             "resident_id": p.resident_id,
-            "resident_code": f"{block.name if block else ''} / {resident.unit_number}" if block else resident.unit_number,
+            "resident_code": resident_code,
             "resident_info": f"Блок {block.name if block else ''}, №{resident.unit_number}" if block else f"№{resident.unit_number}",
             "resident_user_full_name": resident_user_names.get(int(p.resident_id)) if p.resident_id else None,
             "block_name": block.name if block else "",
@@ -300,16 +371,21 @@ def get_payment_api(
     
     applied_total = float(p.applied_total)
     leftover = float(p.leftover)
+    resident_code = f"{block.name if block else ''} / {resident.unit_number}" if block else resident.unit_number
     if p.method == PaymentMethod.ADVANCE:
         applied_total = float(p.amount_total or 0)
         leftover = 0.0
+    elif _is_owner_level_advance_topup(p):
+        owner_codes = _owner_resident_codes(db, int(p.resident_id))
+        if owner_codes:
+            resident_code = owner_codes
 
     resident_user_names = _resident_user_names_map(db, [int(p.resident_id)]) if p.resident_id else {}
     
     return {
         "id": p.id,
         "resident_id": p.resident_id,
-        "resident_code": f"{block.name if block else ''} / {resident.unit_number}" if block else resident.unit_number,
+        "resident_code": resident_code,
         "resident_info": f"Блок {block.name if block else ''}, №{resident.unit_number}" if block else f"№{resident.unit_number}",
         "resident_user_full_name": resident_user_names.get(int(p.resident_id)) if p.resident_id else None,
         "block_name": block.name if block else "",

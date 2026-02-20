@@ -272,6 +272,13 @@
     let activePhotoMeterId = null;
     let meterPhotoPickerInitialized = false;
     let isReadingEditMode = false;
+    const initialLastReadingByMeter = new Map();
+    const deletedLastReadingMeters = new Set();
+
+    function resetDeleteLastReadingGuards() {
+        initialLastReadingByMeter.clear();
+        deletedLastReadingMeters.clear();
+    }
 
     // Set today's date as default
     document.addEventListener('DOMContentLoaded', function () {
@@ -505,10 +512,12 @@
                         </div>
                         <div class="reading-col reading-col-actions">
                             <div class="reading-actions">
-                                <button class="table-btn table-btn-primary" type="button" onclick="openReadingEditor(${row.resident_id})">
-                                    <i class="bi bi-pencil"></i>
-                                    Редактировать
-                                </button>
+                                ${!row.is_paid ? `
+                                    <button class="table-btn table-btn-primary" type="button" onclick="openReadingEditor(${row.resident_id})">
+                                        <i class="bi bi-pencil"></i>
+                                        Редактировать
+                                    </button>
+                                ` : ''}
                                 <button class="table-btn table-btn-secondary" type="button" onclick="openReadingDetails(${row.resident_id})">
                                     <i class="bi bi-info-circle"></i>
                                     Подробнее
@@ -779,6 +788,7 @@
         document.getElementById('recordReadingModal').classList.add('active');
         document.body.style.overflow = 'hidden';
         initMeterPhotoPicker();
+        resetDeleteLastReadingGuards();
         isReadingEditMode = false;
         const title = document.getElementById('recordReadingTitle');
         if (title) {
@@ -801,6 +811,7 @@
         document.getElementById('modalResident').innerHTML = '<option value="">— выберите блок —</option>';
         hideMeterDetails();
         resetMeterPhotoState();
+        resetDeleteLastReadingGuards();
         isReadingEditMode = false;
         const title = document.getElementById('recordReadingTitle');
         if (title) {
@@ -1173,6 +1184,15 @@
     }
 
     window.openReadingEditor = async function openReadingEditor(residentId) {
+        const resident = readingsData?.rows?.find(r => r.resident_id === residentId);
+        if (resident?.is_paid) {
+            if (typeof showWarning === 'function') {
+                showWarning('Редактирование отключено: счет за период полностью оплачен');
+            } else if (typeof showError === 'function') {
+                showError('Редактирование отключено: счет за период полностью оплачен');
+            }
+            return;
+        }
         openRecordModal();
         isReadingEditMode = true;
         const title = document.getElementById('recordReadingTitle');
@@ -1181,7 +1201,6 @@
         }
 
         // Find resident in readingsData
-        const resident = readingsData?.rows?.find(r => r.resident_id === residentId);
         if (!resident) {
             if (typeof showError === 'function') {
                 showError('Резидент не найден');
@@ -1257,14 +1276,18 @@
             const data = await response.json();
             console.log('Reading history data:', data);
 
-            if (!data.meters || data.meters.length === 0) {
+            const metersWithReadings = (data.meters || []).filter(meter =>
+                meter && Array.isArray(meter.readings) && meter.readings.length > 0
+            );
+
+            if (metersWithReadings.length === 0) {
                 body.innerHTML = '<div class="detail-empty">Нет данных о показаниях</div>';
                 return;
             }
 
             // Группируем счётчики по типу, чтобы избежать дубликатов
             const metersByType = {};
-            data.meters.forEach(meter => {
+            metersWithReadings.forEach(meter => {
                 const key = `${meter.type}_${meter.tariff_name || ''}`;
                 if (!metersByType[key]) {
                     metersByType[key] = {
@@ -1381,77 +1404,7 @@
 
         // Загружаем данные за выбранный по умолчанию месяц
         try {
-            const data = await loadReadingDetailsData(residentId, defaultMonthValue, defaultMonthValue);
-            
-            if (!data.meters || data.meters.length === 0) {
-                body.innerHTML = '<div class="detail-empty">Нет данных о показаниях</div>';
-                return;
-            }
-
-            // Группируем счётчики по типу, чтобы избежать дубликатов
-            const metersByType = {};
-            data.meters.forEach(meter => {
-                const key = `${meter.type}_${meter.tariff_name || ''}`;
-                if (!metersByType[key]) {
-                    metersByType[key] = {
-                        type: meter.type,
-                        tariff_name: meter.tariff_name,
-                        unit: meter.unit,
-                        serial_number: meter.serial_number,
-                        readings: []
-                    };
-                }
-                // Объединяем показания всех счётчиков этого типа
-                metersByType[key].readings.push(...meter.readings);
-            });
-
-            // Сортируем показания по дате (от новых к старым)
-            Object.values(metersByType).forEach(meter => {
-                meter.readings.sort((a, b) => new Date(b.date) - new Date(a.date));
-            });
-
-            const metersHtml = Object.values(metersByType).map(meter => {
-                const rowsHtml = meter.readings.map(reading => `
-                        <div class="detail-grid-row">
-                            <div>${reading.date}</div>
-                            <div>${reading.value.toFixed(3)}</div>
-                            <div>${reading.consumption.toFixed(3)}</div>
-                            <div class="detail-amount ${reading.amount > 0 ? 'detail-amount-alert' : ''}">${reading.amount.toFixed(2)}</div>
-                            <div>${reading.vat_percent}</div>
-                            <div>${reading.comment}</div>
-                        </div>
-                    `).join('');
-
-                // Показываем серийный номер, если он есть и не является фикс-услугой
-                const serialInfo = meter.serial_number && meter.serial_number !== '-'
-                    ? ` (№${meter.serial_number})`
-                    : '';
-
-                return `
-                        <div class="detail-meter-card">
-                            <div class="detail-meter-head">
-                                <span class="detail-meter-badge">${meter.type}${serialInfo}</span>
-                                <div class="detail-meter-info">
-                                    <span>тариф: ${meter.tariff_name || '—'}</span>
-                                </div>
-                                <span class="detail-unit-chip">${meter.unit}</span>
-                            </div>
-                            <div class="detail-grid detail-grid-head">
-                                <div>Дата</div>
-                                <div>Показание, ${meter.unit}</div>
-                                <div>Расход, ${meter.unit}</div>
-                                <div>Начислено</div>
-                                <div>НДС, %</div>
-                                <div>Комментарий</div>
-                            </div>
-                            <div class="detail-grid-body">
-                                ${rowsHtml || '<div class="detail-empty-row">Нет записей</div>'}
-                            </div>
-                        </div>
-                    `;
-            }).join('');
-
-            body.innerHTML = metersHtml || '<div class="detail-empty">Нет данных</div>';
+            await loadReadingDetailsData(residentId, defaultMonthValue, defaultMonthValue);
         } catch (error) {
             console.error('Error loading reading history:', error);
             body.innerHTML = '<div class="detail-empty">Ошибка загрузки данных: ' + error.message + '</div>';
@@ -1475,75 +1428,7 @@
         }
 
         try {
-            const data = await loadReadingDetailsData(currentReadingDetailsResidentId, fromMonth, toMonth);
-            
-            if (!data.meters || data.meters.length === 0) {
-                body.innerHTML = '<div class="detail-empty">Нет данных за выбранный период</div>';
-                return;
-            }
-
-            // Группируем счётчики по типу
-            const metersByType = {};
-            data.meters.forEach(meter => {
-                const key = `${meter.type}_${meter.tariff_name || ''}`;
-                if (!metersByType[key]) {
-                    metersByType[key] = {
-                        type: meter.type,
-                        tariff_name: meter.tariff_name,
-                        unit: meter.unit,
-                        serial_number: meter.serial_number,
-                        readings: []
-                    };
-                }
-                metersByType[key].readings.push(...meter.readings);
-            });
-
-            // Сортируем показания по дате (от новых к старым)
-            Object.values(metersByType).forEach(meter => {
-                meter.readings.sort((a, b) => new Date(b.date) - new Date(a.date));
-            });
-
-            const metersHtml = Object.values(metersByType).map(meter => {
-                const rowsHtml = meter.readings.map(reading => `
-                        <div class="detail-grid-row">
-                            <div>${reading.date}</div>
-                            <div>${reading.value.toFixed(3)}</div>
-                            <div>${reading.consumption.toFixed(3)}</div>
-                            <div class="detail-amount ${reading.amount > 0 ? 'detail-amount-alert' : ''}">${reading.amount.toFixed(2)}</div>
-                            <div>${reading.vat_percent}</div>
-                            <div>${reading.comment}</div>
-                        </div>
-                    `).join('');
-
-                const serialInfo = meter.serial_number && meter.serial_number !== '-'
-                    ? ` (№${meter.serial_number})`
-                    : '';
-
-                return `
-                        <div class="detail-meter-card">
-                            <div class="detail-meter-head">
-                                <span class="detail-meter-badge">${meter.type}${serialInfo}</span>
-                                <div class="detail-meter-info">
-                                    <span>тариф: ${meter.tariff_name || '—'}</span>
-                                </div>
-                                <span class="detail-unit-chip">${meter.unit}</span>
-                            </div>
-                            <div class="detail-grid detail-grid-head">
-                                <div>Дата</div>
-                                <div>Показание, ${meter.unit}</div>
-                                <div>Расход, ${meter.unit}</div>
-                                <div>Начислено</div>
-                                <div>НДС, %</div>
-                                <div>Комментарий</div>
-                            </div>
-                            <div class="detail-grid-body">
-                                ${rowsHtml || '<div class="detail-empty-row">Нет записей</div>'}
-                            </div>
-                        </div>
-                    `;
-            }).join('');
-
-            body.innerHTML = metersHtml || '<div class="detail-empty">Нет данных за выбранный период</div>';
+            await loadReadingDetailsData(currentReadingDetailsResidentId, fromMonth, toMonth);
         } catch (error) {
             console.error('Error loading filtered reading history:', error);
             body.innerHTML = '<div class="detail-empty">Ошибка загрузки данных: ' + error.message + '</div>';
@@ -1970,6 +1855,10 @@
         }
 
         for (const [meterId, file] of meterPhotoFiles.entries()) {
+            const row = document.querySelector(`#meterTableBody tr[data-meter-id="${meterId}"]`);
+            if (row?.dataset?.paymentLocked === '1') {
+                continue;
+            }
             const formData = new FormData();
             formData.append('date_str', dateStr);
             formData.append('file', file);
@@ -1994,6 +1883,9 @@
         const items = [];
 
         for (const row of rows) {
+            if (row.dataset.paymentLocked === '1') {
+                continue;
+            }
             const meterId = parseInt(row.dataset.meterId);
             const isFixed = row.dataset.isFixed === 'true';
 
@@ -2041,10 +1933,12 @@
                     </tr>`;
         }
         resetMeterPhotoState();
+        resetDeleteLastReadingGuards();
     }
 
     document.getElementById('modalResident').addEventListener('change', function () {
         const residentId = this.value;
+        resetDeleteLastReadingGuards();
         if (!residentId) {
             hideMeterDetails();
             return;
@@ -2056,6 +1950,7 @@
     const modalDateInput = document.getElementById('modalDate');
     if (modalDateInput) {
         modalDateInput.addEventListener('change', function () {
+            resetDeleteLastReadingGuards();
             const residentId = document.getElementById('modalResident')?.value;
             const blockName = document.getElementById('modalBlock')?.value;
             
@@ -2247,18 +2142,40 @@
         const tbody = document.getElementById('meterTableBody');
         if (!tbody) return;
         const showDelete = isReadingEditMode;
+        const hasExistingInSelectedPeriod = meters.some(m => m && m.existing === true);
+        // В режиме редактирования месяца, если уже есть записи за период,
+        // показываем только эти записи, чтобы не смешивать их с новыми активными
+        // счётчиками после переназначения тарифов.
+        const metersToRender = (isReadingEditMode && hasExistingInSelectedPeriod)
+            ? meters.filter(m => m && m.existing === true)
+            : meters;
         const deleteHeader = document.querySelector('.meter-table thead th:last-child');
         if (deleteHeader) {
             deleteHeader.textContent = showDelete ? 'Удалить последнее' : '';
         }
 
-        if (meters.length === 0) {
+        if (metersToRender.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" class="text-muted text-center">Для выбранного резидента нет счётчиков</td></tr>';
             return;
         }
 
-        const hasRealSewerMeter = meters.some(m => m.type === 'SEWERAGE');
-        tbody.innerHTML = meters.map(meter => {
+        const hasRealSewerMeter = metersToRender.some(m => m.type === 'SEWERAGE');
+        tbody.innerHTML = metersToRender.map(meter => {
+            const serverLastReadingId = meter.last_reading_id ?? meter.existing_reading_id ?? null;
+            if (!initialLastReadingByMeter.has(meter.meter_id)) {
+                initialLastReadingByMeter.set(meter.meter_id, serverLastReadingId);
+            }
+            const expectedLastReadingId = initialLastReadingByMeter.get(meter.meter_id);
+            const paymentLocked = meter.payment_locked === true;
+            const deleteLocked = paymentLocked || deletedLastReadingMeters.has(meter.meter_id) || !expectedLastReadingId;
+            const deleteDisabledAttr = deleteLocked ? 'disabled' : '';
+            const deleteTitle = paymentLocked
+                ? 'Строка уже оплачена и недоступна для редактирования'
+                : (deleteLocked
+                    ? 'Можно удалить только одно последнее показание'
+                    : 'Удалить последнее показание');
+            const inputDisabledAttr = paymentLocked ? 'disabled' : '';
+
             // prev_value - это последнее показание ДО начала месяца (или initial_reading)
             // existing_value - это существующее показание ЗА этот месяц (если есть)
             // НО: для отображения "Предыдущее" мы должны показывать prev_value
@@ -2327,7 +2244,9 @@
                         <tr data-meter-id="${meter.meter_id}" 
                             data-is-fixed="true"
                             data-tariff-steps='${tariffStepsJson}'
-                            data-vat-percent="${vatPercent}">
+                            data-vat-percent="${vatPercent}"
+                            data-expected-last-reading-id="${expectedLastReadingId || ''}"
+                            data-payment-locked="${paymentLocked ? '1' : '0'}">
                             <td><span class="meter-type-pill">${meter.display_type}</span></td>
                             <td>${meter.tariff_name}</td>
                             <td>${prevDisplay}</td>
@@ -2335,6 +2254,7 @@
                                 <input type="checkbox" 
                                        class="meter-checkbox" 
                                        ${meter.existing ? 'checked' : ''}
+                                       ${inputDisabledAttr}
                                        onchange="handleFixedMeterChange(this, ${meter.meter_id})">
                                 <label>Отметить${dateRangeText}</label>
                             </td>
@@ -2350,7 +2270,8 @@
                                     <div class="meter-delete-cell">
                                         <button type="button" class="btn btn-sm btn-danger" 
                                                 onclick="deleteLastReading(${meter.meter_id}, this, event)"
-                                                title="Удалить последнее показание">
+                                                title="${deleteTitle}"
+                                                ${deleteDisabledAttr}>
                                             Удалить
                                         </button>
                                     </div>
@@ -2392,7 +2313,9 @@
                         data-existing-photo-url="${existingPhotoUrl}"
                         data-sewerage-percent="${seweragePercent}"
                         data-sewerage-customer-type="${sewerageCustomerType}"
-                        data-tariff-name="${meter.tariff_name || ''}">
+                        data-tariff-name="${meter.tariff_name || ''}"
+                        data-expected-last-reading-id="${expectedLastReadingId || ''}"
+                        data-payment-locked="${paymentLocked ? '1' : '0'}">
                         <td><span class="meter-type-pill">${meter.display_type}</span></td>
                         <td>${meter.tariff_name}</td>
                         <td>${(prev !== null && prev !== undefined) ? prev.toFixed(3) : '0.000'} ${meter.unit}</td>
@@ -2402,6 +2325,7 @@
                                    class="meter-input"
                                    ${placeholder}
                                    value="${inputValue}"
+                                   ${inputDisabledAttr}
                                    autocomplete="off"
                                    oninput="handleMeterInput(this, ${meter.meter_id})">
                         </td>
@@ -2432,7 +2356,8 @@
                                 <div class="meter-delete-cell">
                                     <button type="button" class="btn btn-sm btn-danger" 
                                             onclick="deleteLastReading(${meter.meter_id}, this, event)"
-                                            title="Удалить последнее показание">
+                                            title="${deleteTitle}"
+                                            ${deleteDisabledAttr}>
                                         Удалить
                                     </button>
                                 </div>
@@ -2448,6 +2373,7 @@
     window.handleMeterInput = async function handleMeterInput(input, meterId) {
         const row = input.closest('tr');
         if (!row) return;
+        if (input.disabled || row.dataset.paymentLocked === '1') return;
 
         const prev = parseFloat(row.dataset.prevValue || '0');
         const value = parseFloat(input.value || '0');
@@ -2474,6 +2400,7 @@
     window.handleFixedMeterChange = function handleFixedMeterChange(checkbox, meterId) {
         const row = checkbox.closest('tr');
         if (!row) return;
+        if (checkbox.disabled || row.dataset.paymentLocked === '1') return;
 
         const consumption = checkbox.checked ? 1 : 0;
         row.querySelector('.meter-consumption').textContent = consumption.toFixed(3);
@@ -2493,6 +2420,14 @@
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation();
+        }
+
+        const row = button.closest('tr');
+        if (row?.dataset?.paymentLocked === '1') {
+            if (typeof showWarning === 'function') {
+                showWarning('Строка уже оплачена и недоступна для изменений');
+            }
+            return;
         }
 
         // Также предотвращаем submit формы программно
@@ -2535,18 +2470,39 @@
     }
 
     async function performDeleteLastReading(meterId, button) {
+        const row = button.closest('tr');
+        if (row?.dataset?.paymentLocked === '1') {
+            button.disabled = true;
+            if (typeof showWarning === 'function') {
+                showWarning('Строка уже оплачена и недоступна для изменений');
+            }
+            return;
+        }
+        const expectedReadingIdRaw = row?.dataset?.expectedLastReadingId || '';
+        const expectedReadingId = parseInt(expectedReadingIdRaw, 10);
+        if (!expectedReadingId) {
+            button.disabled = true;
+            if (typeof showWarning === 'function') {
+                showWarning('Удаление недоступно: последнее показание не найдено');
+            }
+            return;
+        }
+
         button.disabled = true;
         const originalText = button.textContent;
         button.textContent = 'Удаление...';
 
         try {
-            let url = `${API_BASE}/api/readings/meter/${meterId}/last`;
+            let url = `${API_BASE}/api/readings/meter/${meterId}/last?expected_reading_id=${expectedReadingId}`;
             let response = await fetch(url, {
                 method: 'DELETE',
                 credentials: 'include'
             });
 
             if (!response.ok) {
+                if (response.status === 409) {
+                    throw new Error('Разрешено удалить только одно последнее показание');
+                }
                 throw new Error(`HTTP ${response.status}`);
             }
 
@@ -2554,6 +2510,10 @@
 
             if (typeof showSuccess === 'function') {
                 showSuccess('Последнее показание успешно удалено');
+            }
+            deletedLastReadingMeters.add(meterId);
+            if (row) {
+                row.dataset.expectedLastReadingId = '';
             }
 
             // Перезагружаем данные счётчика
@@ -2570,8 +2530,9 @@
                 showError('Ошибка удаления: ' + error.message);
             }
         } finally {
-            button.disabled = false;
-            button.textContent = originalText;
+            const isConsumed = deletedLastReadingMeters.has(meterId);
+            button.disabled = isConsumed;
+            button.textContent = isConsumed ? 'Удалено' : originalText;
         }
     }
 

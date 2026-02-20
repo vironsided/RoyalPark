@@ -15,7 +15,7 @@ from ..database import get_db
 from ..models import (
     User, RoleEnum, Block, Resident, ResidentMeter,
     MeterType, Tariff, MeterReading, ReadingLog, MeterReadingPhoto,
-    Invoice, InvoiceLine, InvoiceStatus, CustomerType
+    Invoice, InvoiceLine, InvoiceStatus, CustomerType, PaymentApplication
 )
 from ..deps import get_current_user
 from .payments import auto_apply_advance
@@ -40,6 +40,107 @@ def _effective_sewerage_percent(tariff: Tariff | None) -> Decimal:
     except Exception:
         percent = Decimal("0")
     return percent if percent > 0 else Decimal("0")
+
+
+def _is_period_paid(db: Session, resident_id: int, year: int, month: int) -> bool:
+    inv = (
+        db.query(Invoice.id)
+        .filter(
+            Invoice.resident_id == resident_id,
+            Invoice.period_year == year,
+            Invoice.period_month == month,
+            Invoice.status == InvoiceStatus.PAID,
+        )
+        .first()
+    )
+    return bool(inv)
+
+
+def _meter_reading_payment_lock_map(
+    db: Session,
+    resident_id: int,
+    year: int,
+    month: int,
+) -> dict[int, dict]:
+    """
+    Возвращает карту блокировок по meter_reading_id для периода инвойса.
+    Логика распределения оплаты:
+    - берём фактически оплаченный total по инвойсу;
+    - последовательно покрываем строки InvoiceLine (FIFO по id);
+    - строка считается заблокированной, если покрыта полностью.
+    - Авто-канализация (meter_reading_id = None) учитывается первой и блокирует WATER показания.
+    """
+    inv = (
+        db.query(Invoice)
+        .filter(
+            Invoice.resident_id == resident_id,
+            Invoice.period_year == year,
+            Invoice.period_month == month,
+            Invoice.status != InvoiceStatus.CANCELED,
+        )
+        .first()
+    )
+    if not inv:
+        return {}
+
+    paid_total = (
+        db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+        .filter(PaymentApplication.invoice_id == inv.id)
+        .scalar()
+        or 0
+    )
+    remaining_paid = Decimal(str(paid_total))
+    if remaining_paid <= 0:
+        return {}
+
+    # Получаем ВСЕ строки счёта в порядке создания (FIFO)
+    # Включая авто-канализацию (meter_reading_id = None)
+    all_lines = (
+        db.query(InvoiceLine)
+        .filter(InvoiceLine.invoice_id == inv.id)
+        .order_by(InvoiceLine.id.asc())
+        .all()
+    )
+
+    lock_map: dict[int, dict] = {}
+    
+    # Создаём карту meter_reading_id -> InvoiceLine для быстрого поиска
+    reading_to_line: dict[int, InvoiceLine] = {}
+    for line in all_lines:
+        if line.meter_reading_id is not None:
+            reading_to_line[int(line.meter_reading_id)] = line
+    
+    for line in all_lines:
+        line_total = money(Decimal(str(line.amount_total or 0)))
+        if line_total <= 0:
+            # Для строк с нулевой суммой пропускаем блокировку
+            if line.meter_reading_id is not None:
+                lock_map[int(line.meter_reading_id)] = {
+                    "locked": False,
+                    "line_total": float(line_total),
+                    "paid_amount": 0.0,
+                    "remaining_amount": 0.0,
+                }
+            continue
+
+        covered = min(line_total, max(remaining_paid, Decimal("0")))
+        remaining = max(line_total - covered, Decimal("0"))
+        is_locked = remaining <= Decimal("0.0001")
+        
+        # Обрабатываем только строки с meter_reading_id (показания)
+        # Авто-канализация (meter_reading_id = None) учитывается в распределении оплаты,
+        # но не блокирует показания напрямую
+        if line.meter_reading_id is not None:
+            lock_map[int(line.meter_reading_id)] = {
+                "locked": is_locked,
+                "line_total": float(line_total),
+                "paid_amount": float(money(covered)),
+                "remaining_amount": float(money(remaining)),
+            }
+        
+        remaining_paid -= covered
+
+    return lock_map
 
 
 def _upsert_auto_sewerage_line_for_invoice(
@@ -625,13 +726,16 @@ def get_resident_meters(
         raise HTTPException(status_code=404, detail="Resident not found")
 
     period_start = period_end = None
+    period_year = period_month = None
     if date:
         try:
             d = datetime.strptime(date, "%Y-%m-%d")
+            period_year, period_month = d.year, d.month
             period_start = datetime(d.year, d.month, 1)
             period_end = datetime(d.year + (1 if d.month == 12 else 0), (1 if d.month == 12 else d.month + 1), 1)
         except Exception as e:
             period_start = period_end = None
+            period_year = period_month = None
 
     # ВАЖНО: В режиме редактирования месяца нужно показывать:
     # - активные счётчики
@@ -652,6 +756,10 @@ def get_resident_meters(
     meters_list = meters_q.options(
         joinedload(ResidentMeter.tariff).joinedload(Tariff.steps)
     ).all()
+
+    payment_lock_map = {}
+    if period_year and period_month:
+        payment_lock_map = _meter_reading_payment_lock_map(db, resident_id, period_year, period_month)
     
     meters = []
     for m in meters_list:
@@ -693,6 +801,12 @@ def get_resident_meters(
                 .order_by(MeterReading.reading_date.desc(), MeterReading.id.desc())
                 .first()
             )
+        last_any = (
+            db.query(MeterReading)
+            .filter(MeterReading.resident_meter_id == m.id)
+            .order_by(MeterReading.reading_date.desc(), MeterReading.id.desc())
+            .first()
+        )
 
         # ВАЖНО:
         # Для режима редактирования месяца (когда existing=True) нужно показывать тариф,
@@ -752,6 +866,10 @@ def get_resident_meters(
             photo = db.query(MeterReadingPhoto).filter(MeterReadingPhoto.meter_reading_id == existing.id).first()
             if photo:
                 existing_photo_url = f"/uploads/{photo.file_path}"
+
+        payment_meta = None
+        if existing:
+            payment_meta = payment_lock_map.get(int(existing.id))
         
         meters.append({
             "meter_id": m.id,
@@ -768,7 +886,13 @@ def get_resident_meters(
             "date_range": date_range,
             "existing": bool(existing),
             "existing_value": existing_value_float,
+            "existing_reading_id": (existing.id if existing else None),
+            "last_reading_id": (last_any.id if last_any else None),
             "existing_photo_url": existing_photo_url,
+            "payment_locked": bool(payment_meta and payment_meta.get("locked")),
+            "paid_amount": float(payment_meta.get("paid_amount", 0)) if payment_meta else 0.0,
+            "remaining_amount": float(payment_meta.get("remaining_amount", 0)) if payment_meta else 0.0,
+            "line_total_amount": float(payment_meta.get("line_total", 0)) if payment_meta else 0.0,
             "sewerage_percent": float(_effective_sewerage_percent(tariff_obj)),
             "tariff_customer_type": (tariff_obj.customer_type.value if getattr(tariff_obj, "customer_type", None) else None),
         })
@@ -834,6 +958,9 @@ def upload_meter_photo(
     db: Session = Depends(get_db),
 ):
     cleanup_expired_meter_photos(db)
+    meter = db.get(ResidentMeter, meter_id)
+    if not meter:
+        raise HTTPException(status_code=404, detail="Meter not found")
 
     if not file or not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Invalid image file")
@@ -849,6 +976,8 @@ def upload_meter_photo(
         (1 if reading_date.month == 12 else reading_date.month + 1),
         1,
     )
+    if _is_period_paid(db, meter.resident_id, reading_date.year, reading_date.month):
+        raise HTTPException(status_code=409, detail="Editing is disabled for paid periods")
 
     reading = (
         db.query(MeterReading)
@@ -862,6 +991,9 @@ def upload_meter_photo(
     )
     if not reading:
         raise HTTPException(status_code=404, detail="Reading not found for this month")
+    lock_map = _meter_reading_payment_lock_map(db, meter.resident_id, reading_date.year, reading_date.month)
+    if lock_map.get(int(reading.id), {}).get("locked"):
+        raise HTTPException(status_code=409, detail="This line is paid and cannot be edited")
 
     ext = os.path.splitext(file.filename or "")[1].lower()
     if ext not in {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"}:
@@ -908,6 +1040,9 @@ def delete_meter_photo(
     db: Session = Depends(get_db),
 ):
     cleanup_expired_meter_photos(db)
+    meter = db.get(ResidentMeter, meter_id)
+    if not meter:
+        raise HTTPException(status_code=404, detail="Meter not found")
 
     try:
         reading_date = datetime.strptime(date_str, "%Y-%m-%d")
@@ -920,6 +1055,8 @@ def delete_meter_photo(
         (1 if reading_date.month == 12 else reading_date.month + 1),
         1,
     )
+    if _is_period_paid(db, meter.resident_id, reading_date.year, reading_date.month):
+        raise HTTPException(status_code=409, detail="Editing is disabled for paid periods")
 
     reading = (
         db.query(MeterReading)
@@ -933,6 +1070,9 @@ def delete_meter_photo(
     )
     if not reading:
         raise HTTPException(status_code=404, detail="Reading not found for this month")
+    lock_map = _meter_reading_payment_lock_map(db, meter.resident_id, reading_date.year, reading_date.month)
+    if lock_map.get(int(reading.id), {}).get("locked"):
+        raise HTTPException(status_code=409, detail="This line is paid and cannot be edited")
 
     delete_meter_photo_for_reading(db, reading.id)
     db.commit()
@@ -961,6 +1101,9 @@ def create_readings_internal(
     period_month = reading_date.month
     period_start = datetime(period_year, period_month, 1)
     period_end = datetime(period_year + (1 if period_month == 12 else 0), (1 if period_month == 12 else period_month + 1), 1)
+    if _is_period_paid(db, r.id, period_year, period_month):
+        raise HTTPException(status_code=409, detail="Editing is disabled for paid periods")
+    lock_map = _meter_reading_payment_lock_map(db, r.id, period_year, period_month)
     
     upserted: list[MeterReading] = []
 
@@ -987,6 +1130,9 @@ def create_readings_internal(
                 .first()
             )
             if existing:
+                if lock_map.get(int(existing.id), {}).get("locked"):
+                    db.rollback()
+                    raise HTTPException(status_code=409, detail="This line is paid and cannot be edited")
                 # Удаляем строку инвойса
                 db.query(InvoiceLine).filter(InvoiceLine.meter_reading_id == existing.id).delete()
                 # Удаляем запись показания
@@ -1050,6 +1196,9 @@ def create_readings_internal(
         amount_net, amount_vat, amount_total, steps_detail = compute_amount(consumption, tariff, annual_prev=annual_prev)
 
         if existing:
+            if lock_map.get(int(existing.id), {}).get("locked"):
+                db.rollback()
+                raise HTTPException(status_code=409, detail="This line is paid and cannot be edited")
             # Обновляем существующую запись
             existing.value = new_value
             existing.consumption = consumption
@@ -1467,6 +1616,7 @@ def get_reading_history_public(
 def delete_last_reading_public(
     meter_id: int,
     request: Request,
+    expected_reading_id: int | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """Public endpoint for testing."""
@@ -1502,6 +1652,16 @@ def delete_last_reading_public(
     )
     if not last:
         return {"ok": True, "message": "Nothing to delete"}
+    if _is_period_paid(db, m.resident_id, last.reading_date.year, last.reading_date.month):
+        raise HTTPException(status_code=409, detail="Editing is disabled for paid periods")
+    lock_map = _meter_reading_payment_lock_map(db, m.resident_id, last.reading_date.year, last.reading_date.month)
+    if lock_map.get(int(last.id), {}).get("locked"):
+        raise HTTPException(status_code=409, detail="This line is paid and cannot be edited")
+    if expected_reading_id is not None and last.id != expected_reading_id:
+        raise HTTPException(
+            status_code=409,
+            detail="Only the originally selected latest reading can be deleted once",
+        )
 
     db.query(InvoiceLine).filter(InvoiceLine.meter_reading_id == last.id).delete()
 
@@ -1545,6 +1705,7 @@ def delete_last_reading_public(
 @router.delete("/meter/{meter_id}/last")
 def delete_last_reading(
     meter_id: int,
+    expected_reading_id: int | None = Query(None),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -1566,6 +1727,16 @@ def delete_last_reading(
     )
     if not last:
         return {"ok": True, "message": "Nothing to delete"}
+    if _is_period_paid(db, m.resident_id, last.reading_date.year, last.reading_date.month):
+        raise HTTPException(status_code=409, detail="Editing is disabled for paid periods")
+    lock_map = _meter_reading_payment_lock_map(db, m.resident_id, last.reading_date.year, last.reading_date.month)
+    if lock_map.get(int(last.id), {}).get("locked"):
+        raise HTTPException(status_code=409, detail="This line is paid and cannot be edited")
+    if expected_reading_id is not None and last.id != expected_reading_id:
+        raise HTTPException(
+            status_code=409,
+            detail="Only the originally selected latest reading can be deleted once",
+        )
 
     # Удаляем строку инвойса
     db.query(InvoiceLine).filter(InvoiceLine.meter_reading_id == last.id).delete()

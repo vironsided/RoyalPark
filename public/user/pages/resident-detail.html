@@ -213,13 +213,17 @@
                     
                     metersList.innerHTML = '';
 
-                    if (!meters || meters.length === 0) {
+                    const metersWithReadings = (meters || []).filter(meter =>
+                        meter && Array.isArray(meter.readings) && meter.readings.length > 0
+                    );
+
+                    if (metersWithReadings.length === 0) {
                         metersList.innerHTML = '<div class="text-center p-4 text-muted">Нет счетчиков</div>';
                         return;
                     }
 
                     // Group meters by type for display
-                    meters.forEach((meter, index) => {
+                    metersWithReadings.forEach((meter, index) => {
                         const meterCard = createMeterCard(meter, index);
                         metersList.appendChild(meterCard);
                     });

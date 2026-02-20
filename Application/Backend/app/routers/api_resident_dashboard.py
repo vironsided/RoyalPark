@@ -555,6 +555,34 @@ def get_resident_invoice_detail(
             return "Строительство"
         return None
 
+    # Распределяем оплату по строкам (FIFO по порядку строк счета)
+    sorted_lines = sorted(lines, key=lambda l: l.id or 0)
+    remaining_paid_for_distribution = Decimal(str(paid_total or 0))
+    line_payment_map: dict[int, dict] = {}
+    for line in sorted_lines:
+        line_total = Decimal(str(line.amount_total or 0))
+        if line_total <= 0:
+            line_payment_map[int(line.id)] = {
+                "paid": Decimal("0"),
+                "remaining": Decimal("0"),
+                "status": "Не оплачена",
+            }
+            continue
+        covered = min(line_total, max(remaining_paid_for_distribution, Decimal("0")))
+        line_remaining = max(line_total - covered, Decimal("0"))
+        if line_remaining <= Decimal("0.0001"):
+            status_text = "Оплачена"
+        elif covered > Decimal("0.0001"):
+            status_text = "Частично"
+        else:
+            status_text = "Не оплачена"
+        line_payment_map[int(line.id)] = {
+            "paid": _money2(covered),
+            "remaining": _money2(line_remaining),
+            "status": status_text,
+        }
+        remaining_paid_for_distribution -= covered
+
     lines_out = []
     for line in lines:
         base_line = {
@@ -592,12 +620,42 @@ def get_resident_invoice_detail(
 
             # Если линия действительно включает стабильный тариф — разделяем
             if line_net >= stable_fee_net:
+                line_payment = line_payment_map.get(
+                    int(line.id),
+                    {"paid": Decimal("0"), "remaining": Decimal("0"), "status": "Не оплачена"},
+                )
+
+                split_total = variable_total + stable_fee_total
+                if split_total > 0 and line_payment["paid"] > 0:
+                    variable_paid = _money2(line_payment["paid"] * variable_total / split_total)
+                    stable_paid = _money2(line_payment["paid"] * stable_fee_total / split_total)
+                else:
+                    variable_paid = Decimal("0")
+                    stable_paid = Decimal("0")
+
+                variable_remaining = max(variable_total - variable_paid, Decimal("0"))
+                stable_remaining = max(stable_fee_total - stable_paid, Decimal("0"))
+
+                variable_status = (
+                    "Оплачена"
+                    if variable_remaining <= Decimal("0.0001")
+                    else ("Частично" if variable_paid > Decimal("0.0001") else "Не оплачена")
+                )
+                stable_status = (
+                    "Оплачена"
+                    if stable_remaining <= Decimal("0.0001")
+                    else ("Частично" if stable_paid > Decimal("0.0001") else "Не оплачена")
+                )
+
                 base_line = {
                     "id": line.id,
                     "description": line.description,
                     "amount_net": float(variable_net),
                     "amount_vat": float(variable_vat),
                     "amount_total": float(variable_total),
+                    "payment_status": variable_status,
+                    "paid_amount": float(variable_paid),
+                    "remaining_amount": float(_money2(variable_remaining)),
                 }
 
                 lines_out.append(base_line)
@@ -612,9 +670,19 @@ def get_resident_invoice_detail(
                     "amount_net": float(stable_fee_total),
                     "amount_vat": 0.0,
                     "amount_total": float(stable_fee_total),
+                    "payment_status": stable_status,
+                    "paid_amount": float(stable_paid),
+                    "remaining_amount": float(_money2(stable_remaining)),
                 })
                 continue
 
+        line_payment = line_payment_map.get(
+            int(line.id),
+            {"paid": Decimal("0"), "remaining": Decimal(str(line.amount_total or 0)), "status": "Не оплачена"},
+        )
+        base_line["payment_status"] = line_payment["status"]
+        base_line["paid_amount"] = float(_money2(line_payment["paid"]))
+        base_line["remaining_amount"] = float(_money2(line_payment["remaining"]))
         lines_out.append(base_line)
 
     return {
