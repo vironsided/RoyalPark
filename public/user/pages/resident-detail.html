@@ -241,6 +241,7 @@
                     else if (meter.type === 'SERVICE' || meter.type === 'RENT' || meter.type === 'CONSTRUCTION') tagClass = 'meter-service';
 
                     const readings = meter.readings || [];
+                    const isSewerage = meter.type === 'SEWERAGE';
                     
                     card.innerHTML = `
                         <div class="meter-card-header">
@@ -267,8 +268,8 @@
                                 ` : readings.map(reading => `
                                     <div class="meter-row">
                                         <span>${reading.date}</span>
-                                        <span>${reading.reading}</span>
-                                        <span>${reading.consumption}</span>
+                                        <span>${isSewerage ? '-' : (reading.reading ?? '—')}</span>
+                                        <span>${isSewerage ? '-' : (reading.consumption ?? '—')}</span>
                                         <span>₼${formatCurrency(reading.charge)}</span>
                                         <span>${formatCurrency(reading.vat)}%</span>
                                         <span>${reading.comment || '—'}</span>

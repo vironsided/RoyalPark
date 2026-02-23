@@ -627,3 +627,13 @@ def delete_resident(
         db.rollback()
         logger.exception("Failed to delete resident id=%s: %s", resident_id, exc)
         return _see_other("/residents?error=server")
+
+
+# ---------------------------------------------------------------------------
+# Canonical helpers live in api_*.py
+# ---------------------------------------------------------------------------
+# Re-bind helper functions to api implementations to keep source-of-truth in `api_`.
+from .api_residents import _to_decimal as _to_decimal_api, _parse_meters_json as _parse_meters_json_api  # noqa: E402
+
+_to_decimal = _to_decimal_api
+_parse_meters_json = _parse_meters_json_api

@@ -12,7 +12,7 @@ from ..models import (
     User, RoleEnum, Block, Resident,
     Invoice, InvoiceStatus, InvoiceLine,
     PaymentApplication, Payment, PaymentMethod,
-    Tariff, ResidentMeter, MeterReading, MeterType, CustomerType
+    Tariff, ResidentMeter, MeterReading, MeterType, CustomerType, user_residents
 )
 from ..deps import get_current_user
 from ..utils import to_baku_datetime, create_invoice_notification, now_baku
@@ -467,8 +467,6 @@ def _resident_user_names_map(db: Session, resident_ids: list[int]) -> dict[int, 
     """
     if not resident_ids:
         return {}
-
-    from .payments import user_residents
 
     rows = (
         db.query(user_residents.c.resident_id, User.full_name, User.username)

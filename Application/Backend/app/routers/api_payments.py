@@ -11,11 +11,11 @@ from ..database import get_db
 from ..models import (
     User, RoleEnum, Block, Resident,
     Payment, PaymentApplication, PaymentMethod,
-    Invoice, InvoiceStatus, PaymentLog
+    Invoice, InvoiceStatus, PaymentLog, user_residents
 )
 from ..deps import get_current_user
 from ..utils import now_baku, to_baku_datetime
-from .payments import auto_apply_advance, _recompute_invoice_status, _to_int
+from .api_payment_logic import auto_apply_advance, _recompute_invoice_status, _to_int
 
 
 router = APIRouter(prefix="/api/payments", tags=["payments-api"])
@@ -82,9 +82,6 @@ def _resident_user_names_map(db: Session, resident_ids: list[int]) -> dict[int, 
     """
     if not resident_ids:
         return {}
-
-    # Import from .payments because that module already exposes the association Table
-    from .payments import user_residents
 
     rows = (
         db.query(user_residents.c.resident_id, User.full_name, User.username)
@@ -175,8 +172,6 @@ def _owner_resident_codes(db: Session, resident_id: int) -> str | None:
     Возвращает список кодов всех домов владельца для заданного resident_id:
     например, "L / 55, L / 66".
     """
-    from .payments import user_residents
-
     linked_users = (
         db.query(user_residents.c.user_id)
         .filter(user_residents.c.resident_id == resident_id)
@@ -505,7 +500,6 @@ def get_open_invoices_for_payment(
         raise HTTPException(status_code=404, detail="Payment not found")
     
     # Находим всех резидентов того же пользователя(ей)
-    from .payments import user_residents
     resident_ids = db.query(user_residents.c.resident_id).filter(
         user_residents.c.user_id.in_(
             db.query(user_residents.c.user_id).filter(user_residents.c.resident_id == p.resident_id)
@@ -569,7 +563,6 @@ def get_open_invoices_for_payment_public(
         raise HTTPException(status_code=404, detail="Payment not found")
     
     # Находим всех резидентов того же пользователя(ей)
-    from .payments import user_residents
     resident_ids = db.query(user_residents.c.resident_id).filter(
         user_residents.c.user_id.in_(
             db.query(user_residents.c.user_id).filter(user_residents.c.resident_id == p.resident_id)
@@ -634,7 +627,6 @@ def get_advance_balance_for_payment(
         raise HTTPException(status_code=404, detail="Payment not found")
 
     # Находим всех резидентов того же пользователя(ей)
-    from .payments import user_residents
     resident_ids = db.query(user_residents.c.resident_id).filter(
         user_residents.c.user_id.in_(
             db.query(user_residents.c.user_id).filter(user_residents.c.resident_id == p.resident_id)
@@ -710,7 +702,6 @@ def auto_apply_payment(
         return {"ok": True, "plan": plan, "left_after": float(leftover)}
     
     # Находим всех резидентов того же пользователя(ей)
-    from .payments import user_residents
     resident_ids = db.query(user_residents.c.resident_id).filter(
         user_residents.c.user_id.in_(
             db.query(user_residents.c.user_id).filter(user_residents.c.resident_id == p.resident_id)
@@ -770,7 +761,6 @@ def auto_apply_payment_public(
         return {"ok": True, "plan": plan, "left_after": float(leftover)}
     
     # Находим всех резидентов того же пользователя(ей)
-    from .payments import user_residents
     resident_ids = db.query(user_residents.c.resident_id).filter(
         user_residents.c.user_id.in_(
             db.query(user_residents.c.user_id).filter(user_residents.c.resident_id == p.resident_id)
@@ -818,7 +808,6 @@ def save_payment_applications(
     db: Session = Depends(get_db),
 ):
     """Сохранить распределение платежа по счетам."""
-    from .payments import payment_save_applications as backend_save_applications
     from fastapi.responses import RedirectResponse
     
     # Вызываем backend функцию, но возвращаем JSON вместо редиректа

@@ -81,6 +81,100 @@ def _to_decimal(value: object) -> Decimal:
     return Decimal(str(value))
 
 
+# ---------------------------------------------------------------------------
+# Helpers used by admin HTML routes too.
+# Source-of-truth should live in api_*.py (even if duplicated elsewhere).
+# ---------------------------------------------------------------------------
+def _parse_steps_json(raw: str):
+    """
+    Parse tier steps JSON for non-CONSTRUCTION tariffs.
+    Format: [{"from": 0, "to": 100, "price": 0.1}, ...]
+    Returns: List[(from: Decimal, to: Optional[Decimal], price: Decimal)]
+    """
+    try:
+        data = json.loads(raw or "[]")
+        assert isinstance(data, list)
+    except Exception:
+        raise ValueError("invalid_json")
+
+    steps = []
+    for i, item in enumerate(data):
+        if not isinstance(item, dict):
+            raise ValueError(f"invalid_step_{i}")
+
+        try:
+            f = _to_decimal(item.get("from"))
+            t_raw = item.get("to")
+            t = None if (t_raw is None or str(t_raw).strip() == "") else _to_decimal(t_raw)
+            p = _to_decimal(item.get("price"))
+        except (InvalidOperation, Exception):
+            raise ValueError(f"invalid_step_{i}")
+
+        if f < 0 or p < 0:
+            raise ValueError(f"negative_values_{i}")
+        if t is not None and t <= f:
+            raise ValueError(f"range_order_{i}")
+
+        steps.append((f, t, p))
+
+    if not steps:
+        raise ValueError("empty_steps")
+
+    for i in range(len(steps) - 1):
+        _f1, t1, _p1 = steps[i]
+        f2, _t2, _p2 = steps[i + 1]
+        if t1 is None:
+            raise ValueError("infinite_not_last")
+        if f2 != t1:
+            raise ValueError("not_continuous")
+
+    return steps
+
+
+def _parse_construction_steps_json(raw: str):
+    """
+    Parse steps for CONSTRUCTION tariffs (date ranges).
+    Format: [{"from_date":"YYYY-MM-DD","to_date":"YYYY-MM-DD","price":1000.00}, ...]
+    Returns: List[(from_date: date, to_date: date, price: Decimal)]
+    """
+    try:
+        data = json.loads(raw or "[]")
+        assert isinstance(data, list)
+    except Exception:
+        raise ValueError("invalid_json")
+
+    if not data:
+        raise ValueError("empty_steps")
+
+    steps = []
+    for i, item in enumerate(data):
+        if not isinstance(item, dict):
+            raise ValueError(f"invalid_step_{i}")
+
+        from_raw = item.get("from_date")
+        to_raw = item.get("to_date")
+        if not from_raw or not to_raw:
+            raise ValueError(f"invalid_dates_{i}")
+        try:
+            start = datetime.strptime(from_raw, "%Y-%m-%d").date()
+            end = datetime.strptime(to_raw, "%Y-%m-%d").date()
+        except Exception:
+            raise ValueError(f"invalid_dates_{i}")
+        if end < start:
+            raise ValueError(f"date_order_{i}")
+
+        try:
+            price = _to_decimal(item.get("price"))
+        except (InvalidOperation, Exception):
+            raise ValueError(f"invalid_step_{i}")
+        if price < 0:
+            raise ValueError(f"negative_values_{i}")
+
+        steps.append((start, end, price))
+
+    return steps
+
+
 def _ensure_tariff_type_allowed(meter_type: str) -> None:
     if meter_type in DISABLED_TARIFF_TYPES:
         raise HTTPException(

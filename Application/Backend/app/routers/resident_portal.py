@@ -38,7 +38,8 @@ from ..security import (
     verify_password, set_session, clear_session, hash_password, get_user_id_from_session
 )
 # НОВОЕ: сервис автораскладки аванса
-from .payments import auto_apply_advance
+from .api_payment_logic import auto_apply_advance
+from .api_resident_dashboard import _build_portal_dashboard_context
 
 router = APIRouter(prefix="/resident", tags=["resident"])
 templates = Jinja2Templates(directory="app/templates")
@@ -105,100 +106,11 @@ def resident_home(request: Request, db: Session = Depends(get_db)):
     if not user or user.role != RoleEnum.RESIDENT or not user.is_active:
         return RedirectResponse(url="/resident/login", status_code=302)
 
-    residents = user.resident_links or []
-    today = datetime.utcnow().date()
-    cur_y, cur_m = today.year, today.month
-
-    # Для каждого дома: за месяц, долг, аванс, к оплате, due по текущему счёту,
-    # а также month_total/month_paid для прогресса за месяц.
-    month_due: dict[int, Decimal]      = {}
-    month_total: dict[int, Decimal]    = {}
-    month_paid: dict[int, Decimal]     = {}
-    debt_total: dict[int, Decimal]     = {}
-    advance_total: dict[int, Decimal]  = {}
-    pay_now: dict[int, Decimal]        = {}
-    due_info: dict[int, dict]          = {}  # {rid: {"due_date": date|None, "state": "ok|soon|over|none"}}
-
-    for r in residents:
-        # ---- Счёт текущего месяца (живой) и остаток по нему ----
-        inv_month = (
-            db.query(Invoice)
-              .filter(Invoice.resident_id == r.id,
-                      Invoice.period_year == cur_y,
-                      Invoice.period_month == cur_m,
-                      Invoice.status != InvoiceStatus.CANCELED)
-              .first()
-        )
-        if inv_month:
-            paid_m = db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))\
-                       .filter(PaymentApplication.invoice_id == inv_month.id).scalar() or 0
-            md = Decimal(inv_month.amount_total or 0) - Decimal(paid_m)
-            month_due[r.id]   = md if md > 0 else Decimal("0")
-            month_total[r.id] = Decimal(inv_month.amount_total or 0)
-            month_paid[r.id]  = Decimal(paid_m)
-
-            due = inv_month.due_date
-            state = "none"
-            if due:
-                days = (due - today).days
-                if days < 0:
-                    state = "over"
-                elif days <= 3:
-                    state = "soon"
-                else:
-                    state = "ok"
-            due_info[r.id] = {"due_date": due, "state": state}
-        else:
-            month_due[r.id]   = Decimal("0")
-            month_total[r.id] = Decimal("0")
-            month_paid[r.id]  = Decimal("0")
-            due_info[r.id]    = {"due_date": None, "state": "none"}
-
-        # ---- Общий долг по всем живым счетам ----
-        inv_total = db.query(func.coalesce(func.sum(Invoice.amount_total), 0))\
-                      .filter(Invoice.resident_id == r.id,
-                              Invoice.status != InvoiceStatus.CANCELED).scalar() or 0
-        paid_total = db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))\
-                       .join(Invoice, Invoice.id == PaymentApplication.invoice_id)\
-                       .filter(Invoice.resident_id == r.id,
-                               Invoice.status != InvoiceStatus.CANCELED).scalar() or 0
-        debt = Decimal(inv_total) - Decimal(paid_total)
-        debt_total[r.id] = debt if debt > 0 else Decimal("0")
-
-        # ---- Аванс (свободный остаток всех платежей) ----
-        pay_sum = db.query(func.coalesce(func.sum(Payment.amount_total), 0))\
-                    .filter(Payment.resident_id == r.id).scalar() or 0
-        appl_sum = db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))\
-                     .join(Payment, Payment.id == PaymentApplication.payment_id)\
-                     .filter(Payment.resident_id == r.id).scalar() or 0
-        adv = Decimal(pay_sum) - Decimal(appl_sum)
-        advance_total[r.id] = adv if adv > 0 else Decimal("0")
-
-        # ---- К оплате сейчас = долг - аванс (минимум 0) ----
-        pay_now[r.id] = max(debt_total[r.id] - advance_total[r.id], Decimal("0"))
-
-    # Сводка по всем домам
-    total_month = sum(month_due.values(), Decimal("0"))
-    total_debt  = sum(debt_total.values(), Decimal("0"))
-    total_adv   = sum(advance_total.values(), Decimal("0"))
-    total_pay   = sum(pay_now.values(), Decimal("0"))
-
-    return templates.TemplateResponse("resident_dashboard.html", {
-        "request": request,
-        "user": user,
-        "residents": residents,
-        "month_due": month_due,
-        "month_total": month_total,
-        "month_paid": month_paid,
-        "debt_total": debt_total,
-        "advance_total": advance_total,
-        "pay_now": pay_now,
-        "due_info": due_info,
-        "total_month": total_month,
-        "total_debt": total_debt,
-        "total_adv": total_adv,
-        "total_pay": total_pay,
-    })
+    ctx = _build_portal_dashboard_context(db, user)
+    return templates.TemplateResponse(
+        "resident_dashboard.html",
+        {"request": request, **ctx},
+    )
 
 
 # ---------------------- Профиль ----------------------

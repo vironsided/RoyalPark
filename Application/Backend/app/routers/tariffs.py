@@ -544,3 +544,18 @@ def delete_tariff(
         db.rollback()
         logger.exception("Failed to delete tariff id=%s: %s", tariff_id, exc)
         return _see_other("/tariffs?error=server")
+
+
+# ---------------------------------------------------------------------------
+# Canonical helpers live in api_*.py
+# ---------------------------------------------------------------------------
+# Re-bind helper functions to api implementations to keep source-of-truth in `api_`.
+from .api_tariffs import (  # noqa: E402
+    _to_decimal as _to_decimal_api,
+    _parse_steps_json as _parse_steps_json_api,
+    _parse_construction_steps_json as _parse_construction_steps_json_api,
+)
+
+_to_decimal = _to_decimal_api
+_parse_steps_json = _parse_steps_json_api
+_parse_construction_steps_json = _parse_construction_steps_json_api

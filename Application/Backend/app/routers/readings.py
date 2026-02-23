@@ -40,7 +40,7 @@ from ..models import (
     MeterReading, ReadingLog,
     Invoice, InvoiceLine, InvoiceStatus,
 )
-from .payments import auto_apply_advance  # авторспределение аванса
+from .api_payment_logic import auto_apply_advance  # авторспределение аванса
 
 
 router = APIRouter(prefix="/readings", tags=["readings"])
@@ -936,3 +936,12 @@ def quote(tariff_id: int, qty: float, db: Session = Depends(get_db)):
         "vat_percent": t.vat_percent,
         "breakdown": breakdown,
     }
+
+
+# ---------------------------------------------------------------------------
+# Canonical helpers live in api_*.py
+# ---------------------------------------------------------------------------
+# Re-bind sewerage helper to api implementation to keep source-of-truth in `api_`.
+from .api_readings import _upsert_auto_sewerage_line_for_invoice as _upsert_auto_sewerage_line_for_invoice_api  # noqa: E402
+
+_upsert_auto_sewerage_line_for_invoice = _upsert_auto_sewerage_line_for_invoice_api

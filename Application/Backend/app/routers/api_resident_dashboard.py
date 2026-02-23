@@ -301,7 +301,7 @@ def api_resident_apply_advance(
     API версия применения аванса. 
     Берет аванс из общего пула и применяет к конкретному дому.
     """
-    from .payments import auto_apply_advance
+    from .api_payment_logic import auto_apply_advance
     user = _get_resident_user(request, db)
     if not user:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -1145,6 +1145,131 @@ def _get_resident_user(request: Request, db: Session) -> Optional[User]:
     return user
 
 
+def _build_portal_dashboard_context(db: Session, user: User) -> dict:
+    """
+    Build dashboard context in the same structure that `resident_portal.py`
+    expects for server-rendered HTML (`resident_dashboard.html`).
+
+    IMPORTANT: This is source-of-truth business logic and should live in api_*.py.
+    """
+    # Load user with residents relationship (blocks needed for template)
+    user_with_residents = (
+        db.query(User)
+        .options(joinedload(User.resident_links).joinedload(Resident.block))
+        .filter(User.id == user.id)
+        .first()
+    )
+    if not user_with_residents:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    residents = user_with_residents.resident_links or []
+    today = datetime.utcnow().date()
+    cur_y, cur_m = today.year, today.month
+
+    month_due: dict[int, Decimal] = {}
+    month_total: dict[int, Decimal] = {}
+    month_paid: dict[int, Decimal] = {}
+    debt_total: dict[int, Decimal] = {}
+    advance_total: dict[int, Decimal] = {}
+    pay_now: dict[int, Decimal] = {}
+    due_info: dict[int, dict] = {}
+
+    for r in residents:
+        inv_month = (
+            db.query(Invoice)
+            .filter(
+                Invoice.resident_id == r.id,
+                Invoice.period_year == cur_y,
+                Invoice.period_month == cur_m,
+                Invoice.status != InvoiceStatus.CANCELED,
+            )
+            .first()
+        )
+        if inv_month:
+            paid_m = (
+                db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+                .filter(PaymentApplication.invoice_id == inv_month.id)
+                .scalar()
+                or 0
+            )
+            md = Decimal(inv_month.amount_total or 0) - Decimal(paid_m)
+            month_due[r.id] = md if md > 0 else Decimal("0")
+            month_total[r.id] = Decimal(inv_month.amount_total or 0)
+            month_paid[r.id] = Decimal(paid_m)
+
+            due = inv_month.due_date
+            state = "none"
+            if due:
+                days = (due - today).days
+                if days < 0:
+                    state = "over"
+                elif days <= 3:
+                    state = "soon"
+                else:
+                    state = "ok"
+            due_info[r.id] = {"due_date": due, "state": state}
+        else:
+            month_due[r.id] = Decimal("0")
+            month_total[r.id] = Decimal("0")
+            month_paid[r.id] = Decimal("0")
+            due_info[r.id] = {"due_date": None, "state": "none"}
+
+        inv_total = (
+            db.query(func.coalesce(func.sum(Invoice.amount_total), 0))
+            .filter(Invoice.resident_id == r.id, Invoice.status != InvoiceStatus.CANCELED)
+            .scalar()
+            or 0
+        )
+        paid_total = (
+            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+            .join(Invoice, Invoice.id == PaymentApplication.invoice_id)
+            .filter(Invoice.resident_id == r.id, Invoice.status != InvoiceStatus.CANCELED)
+            .scalar()
+            or 0
+        )
+        debt = Decimal(inv_total) - Decimal(paid_total)
+        debt_total[r.id] = debt if debt > 0 else Decimal("0")
+
+        pay_sum = (
+            db.query(func.coalesce(func.sum(Payment.amount_total), 0))
+            .filter(Payment.resident_id == r.id)
+            .scalar()
+            or 0
+        )
+        appl_sum = (
+            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+            .join(Payment, Payment.id == PaymentApplication.payment_id)
+            .filter(Payment.resident_id == r.id)
+            .scalar()
+            or 0
+        )
+        adv = Decimal(pay_sum) - Decimal(appl_sum)
+        advance_total[r.id] = adv if adv > 0 else Decimal("0")
+
+        pay_now[r.id] = max(debt_total[r.id] - advance_total[r.id], Decimal("0"))
+
+    total_month = sum(month_due.values(), Decimal("0"))
+    total_debt = sum(debt_total.values(), Decimal("0"))
+    total_adv = sum(advance_total.values(), Decimal("0"))
+    total_pay = sum(pay_now.values(), Decimal("0"))
+
+    return {
+        "user": user,
+        "residents": residents,
+        "month_due": month_due,
+        "month_total": month_total,
+        "month_paid": month_paid,
+        "debt_total": debt_total,
+        "advance_total": advance_total,
+        "pay_now": pay_now,
+        "due_info": due_info,
+        "total_month": total_month,
+        "total_debt": total_debt,
+        "total_adv": total_adv,
+        "total_pay": total_pay,
+    }
+
+
 @router.get("/appeals", response_model=List[ResidentAppeal])
 def get_resident_appeals(
     request: Request,
@@ -1379,7 +1504,12 @@ def create_resident_payment(
             # Если пришло что-то странное - принудительно ставим CARD.
             method_value = "CARD"
 
-    from .payments import apply_payment_to_invoices, apply_advance_with_limit, apply_payment_to_invoice, apply_advance_to_invoice
+    from .api_payment_logic import (
+        apply_payment_to_invoices,
+        apply_advance_with_limit,
+        apply_payment_to_invoice,
+        apply_advance_to_invoice,
+    )
 
     # Безопасность: в режиме пополнения аванса (scope=None) платеж не должен быть привязан к счёту.
     request_invoice_id = data.invoice_id if data.scope is not None else None

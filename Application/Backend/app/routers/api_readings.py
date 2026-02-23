@@ -18,7 +18,7 @@ from ..models import (
     Invoice, InvoiceLine, InvoiceStatus, CustomerType, PaymentApplication
 )
 from ..deps import get_current_user
-from .payments import auto_apply_advance
+from .api_payment_logic import auto_apply_advance
 
 
 router = APIRouter(prefix="/api/readings", tags=["readings-api"])

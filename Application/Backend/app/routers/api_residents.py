@@ -1,6 +1,7 @@
 from typing import List, Optional
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
+import json
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel, EmailStr
@@ -104,6 +105,64 @@ def _get_opening_debt(db: Session, resident_id: int) -> Decimal:
     if not inv or inv.status == InvoiceStatus.CANCELED:
         return Decimal("0")
     return Decimal(str(inv.amount_total or 0))
+
+
+# ---------------------------------------------------------------------------
+# Helpers used by admin HTML routes too.
+# Source-of-truth should live in api_*.py (even if duplicated elsewhere).
+# ---------------------------------------------------------------------------
+def _to_decimal(value: object) -> Decimal:
+    """Safe conversion to Decimal via str (avoids float artifacts)."""
+    return Decimal(str(value))
+
+
+def _parse_meters_json(raw: str):
+    """
+    Parse meters JSON payload from legacy admin forms.
+    Returns list of tuples: (meter_type: MeterType, serial: str, used: bool, initial: Optional[Decimal], tariff_id: int)
+    """
+    try:
+        data = json.loads(raw or "[]")
+        assert isinstance(data, list)
+    except Exception:
+        raise ValueError("meters_invalid_json")
+
+    result = []
+    if not data:
+        raise ValueError("meters_empty")
+
+    for i, item in enumerate(data):
+        if not isinstance(item, dict):
+            raise ValueError(f"meters_item_{i}_not_object")
+
+        mt = item.get("meter_type")
+        serial = (item.get("serial") or "").strip()
+        used = bool(item.get("used", False))
+        initial_raw = item.get("initial", None)
+        tariff_id = item.get("tariff_id")
+
+        if mt not in {m.value for m in MeterType}:
+            raise ValueError(f"meters_item_{i}_bad_type")
+
+        mtype = MeterType(mt)
+
+        initial = None
+        if used:
+            try:
+                initial = _to_decimal(initial_raw)
+            except (InvalidOperation, Exception):
+                raise ValueError(f"meters_item_{i}_bad_initial")
+            if initial < 0:
+                raise ValueError(f"meters_item_{i}_negative_initial")
+
+        try:
+            tariff_id = int(tariff_id)
+        except Exception:
+            raise ValueError(f"meters_item_{i}_bad_tariff")
+
+        result.append((mtype, serial, used, initial, tariff_id))
+
+    return result
 
 
 def _parse_meters(meters_data: List[MeterIn]) -> List[dict]:

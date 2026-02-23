@@ -26,7 +26,7 @@
         <div class="invoice-parties">
             <div class="party-block">
                 <div class="party-name" id="invoiceResidentName">—</div>
-                <div class="party-line" id="invoiceResidentAddress">—</div>
+                <div class="party-line" id="invoiceResidentUser">—</div>
             </div>
             <div class="party-block">
                 <div class="party-line">
@@ -162,7 +162,11 @@
                     const invoice = {
                         number: invoiceData.number || `#${invoiceData.id}`,
                         resident: invoiceData.resident_code || '—',
-                        ownerFullName: invoiceData.resident_owner_full_name || '',
+                        ownerFullName: (
+                            invoiceData.resident_owner_full_name ||
+                            invoiceData.resident_user_full_name ||
+                            ''
+                        ),
                         period: formatPeriod(invoiceData),
                         status: invoiceData.status,
                         dueDate: invoiceData.due_date,
@@ -346,8 +350,8 @@
                 document.getElementById('invoiceNumber').textContent  = invoice.number;
                 const residentNameEl = document.getElementById('invoiceResidentName');
                 if (residentNameEl) residentNameEl.textContent = invoice.resident;
-                const residentAddressEl = document.getElementById('invoiceResidentAddress');
-                if (residentAddressEl) residentAddressEl.textContent = (invoice.ownerFullName || '—');
+                const residentUserEl = document.getElementById('invoiceResidentUser');
+                if (residentUserEl) residentUserEl.textContent = (invoice.ownerFullName || '—');
                 document.getElementById('invoicePeriod').textContent = invoice.period;
                 const dateEl = document.getElementById('invoiceDate');
                 if (dateEl) {

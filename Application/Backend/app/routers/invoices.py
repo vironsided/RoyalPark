@@ -502,3 +502,11 @@ def invoice_print(
         "inv": inv,
         "resident": resident,
     })
+
+
+# ---------------------------------------------------------------------------
+# Canonical helpers live in api_*.py
+# ---------------------------------------------------------------------------
+from .api_invoices import _to_int as _to_int_api  # noqa: E402
+
+_to_int = _to_int_api

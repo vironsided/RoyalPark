@@ -39,6 +39,11 @@ from ..utils import now_baku, to_baku_datetime
 router = APIRouter(prefix="/payments", tags=["payments"])
 templates = Jinja2Templates(directory="app/templates")
 
+# NOTE:
+# Основная бизнес-логика платежей должна жить в `api_`-модулях.
+# Поэтому ниже (в конце файла) мы перепривяжем ключевые функции к реализациям из
+# `api_payment_logic.py`, чтобы избежать расхождений между API и HTML-роутами.
+
 
 def _see_other(url: str) -> RedirectResponse:
     return RedirectResponse(url=url, status_code=status.HTTP_303_SEE_OTHER)
@@ -970,3 +975,27 @@ def payment_save_applications(
 
     db.commit()
     return _see_other(f"/payments/{payment_id}?ok=saved")
+
+
+# ---------------------------------------------------------------------------
+# Canonical payment logic (api_ as source of truth)
+# ---------------------------------------------------------------------------
+# We intentionally re-bind core functions to implementations from `api_payment_logic.py`,
+# so HTML/Jinja routes and API routes share the same business behavior.
+from .api_payment_logic import (  # noqa: E402
+    _to_int as _to_int_api,
+    _recompute_invoice_status as _recompute_invoice_status_api,
+    auto_apply_advance as auto_apply_advance_api,
+    apply_payment_to_invoices as apply_payment_to_invoices_api,
+    apply_payment_to_invoice as apply_payment_to_invoice_api,
+    apply_advance_to_invoice as apply_advance_to_invoice_api,
+    apply_advance_with_limit as apply_advance_with_limit_api,
+)
+
+_to_int = _to_int_api
+_recompute_invoice_status = _recompute_invoice_status_api
+auto_apply_advance = auto_apply_advance_api
+apply_payment_to_invoices = apply_payment_to_invoices_api
+apply_payment_to_invoice = apply_payment_to_invoice_api
+apply_advance_to_invoice = apply_advance_to_invoice_api
+apply_advance_with_limit = apply_advance_with_limit_api
