@@ -156,7 +156,7 @@
                     // Transform API data to frontend format
                     const invoice = {
                         id: data.id,
-                        invoiceNumber: data.number || `${data.period_year}-${String(data.period_month).padStart(2, '0')}/000000`,
+                        invoiceNumber: data.number || `INV-${data.resident_id}/0/${data.period_year}-${String(data.period_month).padStart(2, '0')}`,
                         resident: data.resident_code,
                         residentUser: residentOwnerFullName || data.resident_user_full_name || null,
                         period: formatPeriod(data),

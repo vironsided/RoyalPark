@@ -28,7 +28,7 @@ from sqlalchemy import func
 from starlette import status
 
 from ..database import get_db
-from ..utils import create_invoice_notification
+from ..utils import create_invoice_notification, build_invoice_number
 from ..deps import get_current_user, require_any_role
 from ..models import (
     User, RoleEnum, Block, Resident,
@@ -245,22 +245,7 @@ def invoices_bulk_issue(
     invoice_ids = []
     
     for inv in invoices_to_process:
-        if not inv.number:
-            prefix = f"{inv.period_year}-{inv.period_month:02d}"
-            last_num = (db.query(Invoice.number)
-                          .filter(Invoice.period_year == inv.period_year,
-                                  Invoice.period_month == inv.period_month,
-                                  Invoice.number.ilike(f"{prefix}/%"))
-                          .order_by(Invoice.number.desc())
-                          .first())
-            if last_num and last_num[0]:
-                try:
-                    seq = int(last_num[0].split("/")[-1]) + 1
-                except Exception:
-                    seq = inv.id
-            else:
-                seq = 1
-            inv.number = f"{prefix}/{seq:06d}"
+        inv.number = build_invoice_number(db, inv.resident_id, inv.period_year, inv.period_month)
 
         inv.status = InvoiceStatus.ISSUED
         if due:
@@ -359,24 +344,8 @@ def invoice_issue(
     except Exception:
         inv.due_date = None
 
-    if not (number and number.strip()):
-        if not inv.number:
-            prefix = f"{inv.period_year}-{inv.period_month:02d}"
-            last_num = (db.query(Invoice.number)
-                          .filter(Invoice.period_year == inv.period_year,
-                                  Invoice.period_month == inv.period_month,
-                                  Invoice.number.ilike(f"{prefix}/%"))
-                          .order_by(Invoice.number.desc()).first())
-            if last_num and last_num[0]:
-                try:
-                    seq = int(last_num[0].split("/")[-1]) + 1
-                except Exception:
-                    seq = inv.id
-            else:
-                seq = 1
-            inv.number = f"{prefix}/{seq:06d}"
-    else:
-        inv.number = number.strip()
+    # Для консистентности финансового учета номер всегда формируется backend-ом
+    inv.number = build_invoice_number(db, inv.resident_id, inv.period_year, inv.period_month)
 
     if inv.status == InvoiceStatus.DRAFT:
         inv.status = InvoiceStatus.ISSUED
@@ -423,21 +392,7 @@ def invoice_reissue(
     except Exception:
         pass
 
-    if not inv.number:
-        prefix = f"{inv.period_year}-{inv.period_month:02d}"
-        last_num = (db.query(Invoice.number)
-                      .filter(Invoice.period_year == inv.period_year,
-                              Invoice.period_month == inv.period_month,
-                              Invoice.number.ilike(f"{prefix}/%"))
-                      .order_by(Invoice.number.desc()).first())
-        if last_num and last_num[0]:
-            try:
-                seq = int(last_num[0].split("/")[-1]) + 1
-            except Exception:
-                seq = inv.id
-        else:
-            seq = 1
-        inv.number = f"{prefix}/{seq:06d}"
+    inv.number = build_invoice_number(db, inv.resident_id, inv.period_year, inv.period_month)
 
     stamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
     line = f"[REISSUED {stamp} by {user.username}] {comment}".strip()

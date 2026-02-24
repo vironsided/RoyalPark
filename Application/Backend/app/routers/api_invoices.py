@@ -15,7 +15,7 @@ from ..models import (
     Tariff, ResidentMeter, MeterReading, MeterType, CustomerType, user_residents
 )
 from ..deps import get_current_user
-from ..utils import to_baku_datetime, create_invoice_notification, now_baku
+from ..utils import to_baku_datetime, create_invoice_notification, now_baku, build_invoice_number
 
 
 router = APIRouter(prefix="/api/invoices", tags=["invoices-api"])
@@ -145,6 +145,11 @@ def _list_invoices_internal(
     # Проверяем и исправляем amount_total для каждого счета, если он не совпадает с суммой строк
     needs_commit = False
     for inv in items:
+        canonical_number = build_invoice_number(db, inv.resident_id, inv.period_year, inv.period_month)
+        if inv.number != canonical_number:
+            inv.number = canonical_number
+            needs_commit = True
+
         lines_sum = db.query(
             func.coalesce(func.sum(InvoiceLine.amount_total), 0)
         ).filter(InvoiceLine.invoice_id == inv.id).scalar() or 0
@@ -302,23 +307,8 @@ def _bulk_issue_internal(
     invoices_to_process = query.all()
     
     for inv in invoices_to_process:
-        # Generate invoice number if not exists
-        if not inv.number:
-            prefix = f"{inv.period_year}-{inv.period_month:02d}"
-            last_num = (db.query(Invoice.number)
-                          .filter(Invoice.period_year == inv.period_year,
-                                  Invoice.period_month == inv.period_month,
-                                  Invoice.number.ilike(f"{prefix}/%"))
-                          .order_by(Invoice.number.desc())
-                          .first())
-            if last_num and last_num[0]:
-                try:
-                    seq = int(last_num[0].split("/")[-1]) + 1
-                except Exception:
-                    seq = inv.id
-            else:
-                seq = 1
-            inv.number = f"{prefix}/{seq:06d}"
+        # Канонический номер счета для финансовой уникальности
+        inv.number = build_invoice_number(db, inv.resident_id, inv.period_year, inv.period_month)
         
         inv.status = InvoiceStatus.ISSUED
         if due:
@@ -429,6 +419,7 @@ class PaymentOut(BaseModel):
     amount: float
     payment_id: int
     reference: Optional[str] = None
+    app_reference: Optional[str] = None
     comment: Optional[str] = None
 
     class Config:
@@ -768,6 +759,12 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
     inv = db.get(Invoice, invoice_id)
     if not inv:
         raise HTTPException(status_code=404, detail="Invoice not found")
+
+    canonical_number = build_invoice_number(db, inv.resident_id, inv.period_year, inv.period_month)
+    if inv.number != canonical_number:
+        inv.number = canonical_number
+        db.commit()
+        db.refresh(inv)
     
     resident = inv.resident
     block = resident.block if resident else None
@@ -859,6 +856,7 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
             "amount": float(app.amount_applied),
             "payment_id": p.id,
             "reference": p.reference,
+            "app_reference": app.reference,
             "comment": display_comment,
         }
         payments.append(payment_data)
@@ -1081,40 +1079,21 @@ def _update_invoice_internal(db: Session, invoice_id: int, due_date: Optional[st
     if notes is not None:
         inv.notes = notes.strip() if notes else None
     
-    if due_date is not None:
-        if due_date and due_date.strip():
-            try:
-                inv.due_date = datetime.strptime(due_date.strip(), "%Y-%m-%d").date()
-            except Exception as e:
-                print(f"Warning: Failed to parse due_date '{due_date}': {e}")
-                inv.due_date = None
-        else:
-            # Empty string or None means clear the due_date
+    # due_date: при пустой строке или null — очищаем срок оплаты; иначе парсим дату
+    if due_date is not None and due_date.strip():
+        try:
+            inv.due_date = datetime.strptime(due_date.strip(), "%Y-%m-%d").date()
+        except Exception as e:
+            print(f"Warning: Failed to parse due_date '{due_date}': {e}")
             inv.due_date = None
+    else:
+        # Явная очистка: клиент отправил null или пустое поле — удаляем срок оплаты
+        inv.due_date = None
     
     # Если статус DRAFT и есть due_date, можно автоматически выставить счет
     if inv.status == InvoiceStatus.DRAFT and inv.due_date:
-        # Генерируем номер счета, если его нет
-        if not inv.number:
-            prefix = f"{inv.period_year}-{inv.period_month:02d}"
-            last_num = (
-                db.query(Invoice.number)
-                .filter(
-                    Invoice.period_year == inv.period_year,
-                    Invoice.period_month == inv.period_month,
-                    Invoice.number.ilike(f"{prefix}/%")
-                )
-                .order_by(Invoice.number.desc())
-                .first()
-            )
-            if last_num and last_num[0]:
-                try:
-                    seq = int(last_num[0].split("/")[-1]) + 1
-                except Exception:
-                    seq = inv.id
-            else:
-                seq = 1
-            inv.number = f"{prefix}/{seq:06d}"
+        # Канонический номер счета для финансовой уникальности
+        inv.number = build_invoice_number(db, inv.resident_id, inv.period_year, inv.period_month)
         inv.status = InvoiceStatus.ISSUED
         db.commit()
         db.refresh(inv)
@@ -1211,27 +1190,8 @@ def _reissue_invoice_internal(db: Session, invoice_id: int, due_date: Optional[s
         except Exception as e:
             print(f"Warning: Failed to parse due_date '{due_date}': {e}")
     
-    # Генерируем номер счета, если его нет
-    if not inv.number:
-        prefix = f"{inv.period_year}-{inv.period_month:02d}"
-        last_num = (
-            db.query(Invoice.number)
-            .filter(
-                Invoice.period_year == inv.period_year,
-                Invoice.period_month == inv.period_month,
-                Invoice.number.ilike(f"{prefix}/%")
-            )
-            .order_by(Invoice.number.desc())
-            .first()
-        )
-        if last_num and last_num[0]:
-            try:
-                seq = int(last_num[0].split("/")[-1]) + 1
-            except Exception:
-                seq = inv.id
-        else:
-            seq = 1
-        inv.number = f"{prefix}/{seq:06d}"
+    # Канонический номер счета для финансовой уникальности
+    inv.number = build_invoice_number(db, inv.resident_id, inv.period_year, inv.period_month)
     
     # Добавляем запись в примечания
     stamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M")

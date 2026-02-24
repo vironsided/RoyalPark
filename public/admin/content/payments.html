@@ -47,6 +47,30 @@
                 <label>Поиск</label>
                 <input type="text" id="filterSearch" placeholder="№ чека / комментарий">
             </div>
+
+            <div class="payments-filters-group payments-filters-group-wide">
+                <label>Услуги для экспорта</label>
+                <details class="service-filter-details" id="serviceExportDetails">
+                    <summary id="serviceExportSummary">Все категории</summary>
+                    <div class="service-filter-dropdown">
+                        <div class="service-filter-options" id="serviceExportOptions">
+                            <label><input type="checkbox" value="utility" checked> Utility</label>
+                            <label><input type="checkbox" value="electric" checked> Электричество</label>
+                            <label><input type="checkbox" value="gas" checked> Газ</label>
+                            <label><input type="checkbox" value="water" checked> Вода</label>
+                            <label><input type="checkbox" value="sewerage" checked> Канализация</label>
+                            <label><input type="checkbox" value="service" checked> Сервис</label>
+                            <label><input type="checkbox" value="rent" checked> Аренда</label>
+                            <label><input type="checkbox" value="construction" checked> Строительство</label>
+                            <label><input type="checkbox" value="unallocated" checked> Без распределения</label>
+                        </div>
+                        <div class="service-filter-actions">
+                            <button type="button" class="btn-filter-mini" id="serviceSelectAllBtn">Выбрать все</button>
+                            <button type="button" class="btn-filter-mini" id="serviceClearBtn">Очистить</button>
+                        </div>
+                    </div>
+                </details>
+            </div>
         </div>
         
         <div class="payments-filters-actions">
@@ -59,6 +83,12 @@
                         <option value="csv">Excel (CSV)</option>
                         <option value="pdf">PDF (печать)</option>
                     </select>
+                    <input type="number" id="filterAmountMin" placeholder="Сумма от" step="0.01" min="0" aria-label="Минимальная сумма для экспорта">
+                    <input type="number" id="filterAmountMax" placeholder="Сумма до" step="0.01" min="0" aria-label="Максимальная сумма для экспорта">
+                    <label class="export-only-checkbox">
+                        <input type="checkbox" id="filterAllocatedOnly">
+                        Только распределенные
+                    </label>
                     <button class="btn-export" type="button" onclick="exportPayments()">
                         <i class="bi bi-box-arrow-down"></i> Экспорт
                     </button>
@@ -212,6 +242,18 @@
         'TRANSFER': 'Банк',
         'ONLINE': 'Онлайн'
     };
+    const serviceLabels = {
+        utility: 'Utility',
+        electric: 'Электричество',
+        gas: 'Газ',
+        water: 'Вода',
+        sewerage: 'Канализация',
+        service: 'Сервис',
+        rent: 'Аренда',
+        construction: 'Строительство',
+        unallocated: 'Без распределения'
+    };
+    const utilityServiceKeys = ['electric', 'gas', 'water', 'sewerage'];
 
     function escapeHtml(str) {
         if (str === null || str === undefined) return '';
@@ -252,6 +294,8 @@
         totalItems: 0,
         totalPages: 1
     };
+    const invoiceBreakdownCache = new Map();
+    const invoiceAllocationCache = new Map();
     
     // Load payments from API
     async function loadPayments() {
@@ -355,16 +399,582 @@
         return `"${escaped}"`;
     }
 
-    function buildExportRows(items) {
-        return items.map(p => ({
-            date: formatExportDate(p.received_at),
-            resident: p.resident_code || '—',
-            resident_user_full_name: p.resident_user_full_name || '—',
-            amount: typeof p.amount_total === 'number' ? p.amount_total.toFixed(2) : (p.amount_total || '0.00'),
-            method: methodLabels[p.method] || p.method || '—',
-            leftover: typeof p.leftover === 'number' ? p.leftover.toFixed(2) : '0.00',
-            reference: p.reference || '—'
-        }));
+    function toMoney(value) {
+        const num = Number(value || 0);
+        return Number.isFinite(num) ? num.toFixed(2) : '0.00';
+    }
+
+    function getServiceDisplayLabel(key) {
+        if (key === 'utility') {
+            const includes = utilityServiceKeys.map((k) => serviceLabels[k]).join(', ');
+            return `Utility (${includes})`;
+        }
+        return serviceLabels[key] || key;
+    }
+
+    function getServiceRowLabel(key) {
+        return key === 'utility' ? 'Utility' : (serviceLabels[key] || key);
+    }
+
+    function getUtilityAmount(serviceBreakdown) {
+        return utilityServiceKeys.reduce((acc, key) => acc + Number(serviceBreakdown[key] || 0), 0);
+    }
+
+    function classifyServiceByDescription(description) {
+        const low = String(description || '').toLowerCase();
+        if (!low) return 'unallocated';
+        if (low.includes('электр') || low.includes('electric') || low.includes('meter_electric')) return 'electric';
+        if (low.includes('газ') || low.includes('meter_gas')) return 'gas';
+        if (low.includes('вода') || low.includes('water') || low.includes('meter_cold_water') || low.includes('meter_water')) return 'water';
+        if (low.includes('канализац') || low.includes('sewerage') || low.includes('meter_sewerage')) return 'sewerage';
+        if (low.includes('сервис') || low.includes('service') || low.includes('коммун') || low.includes('utility')) return 'service';
+        if (low.includes('аренда') || low.includes('rent')) return 'rent';
+        if (low.includes('строител') || low.includes('construction')) return 'construction';
+        return 'service';
+    }
+
+    function getSelectedExportServices() {
+        const checked = Array.from(
+            document.querySelectorAll('#serviceExportOptions input[type="checkbox"]:checked')
+        ).map((el) => el.value);
+
+        // Если все сняты, считаем как "все", чтобы не получить пустой отчёт случайно.
+        if (checked.length === 0) {
+            return Object.keys(serviceLabels);
+        }
+        return checked;
+    }
+
+    function applyUtilitySelectionRules(optionsRoot) {
+        const utilityCb = optionsRoot.querySelector('input[type="checkbox"][value="utility"]');
+        if (!utilityCb) return;
+
+        const utilityChildren = utilityServiceKeys
+            .map((key) => optionsRoot.querySelector(`input[type="checkbox"][value="${key}"]`))
+            .filter(Boolean);
+
+        if (utilityCb.checked) {
+            utilityChildren.forEach((cb) => {
+                cb.checked = true;
+                cb.disabled = true;
+            });
+            utilityCb.disabled = false;
+            return;
+        }
+
+        utilityChildren.forEach((cb) => {
+            cb.disabled = false;
+        });
+
+        const anyChildChecked = utilityChildren.some((cb) => cb.checked);
+        utilityCb.disabled = anyChildChecked;
+        if (anyChildChecked) {
+            utilityCb.checked = false;
+        }
+    }
+
+    function updateServiceSummaryLabel() {
+        const summaryEl = document.getElementById('serviceExportSummary');
+        if (!summaryEl) return;
+        const selected = getSelectedExportServices();
+        if (selected.length === Object.keys(serviceLabels).length) {
+            summaryEl.textContent = 'Все категории';
+            return;
+        }
+        const preview = selected.slice(0, 2).map((k) => serviceLabels[k]).join(', ');
+        summaryEl.textContent = selected.length > 2 ? `${preview} +${selected.length - 2}` : preview;
+    }
+
+    function initServiceExportFilters() {
+        const optionsRoot = document.getElementById('serviceExportOptions');
+        const selectAllBtn = document.getElementById('serviceSelectAllBtn');
+        const clearBtn = document.getElementById('serviceClearBtn');
+        if (!optionsRoot) return;
+        if (optionsRoot.dataset.initialized === 'true') {
+            applyUtilitySelectionRules(optionsRoot);
+            updateServiceSummaryLabel();
+            return;
+        }
+        optionsRoot.dataset.initialized = 'true';
+
+        optionsRoot.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+            cb.addEventListener('change', function () {
+                applyUtilitySelectionRules(optionsRoot);
+                updateServiceSummaryLabel();
+            });
+        });
+
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', function () {
+                optionsRoot.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+                    cb.checked = true;
+                    cb.disabled = false;
+                });
+                applyUtilitySelectionRules(optionsRoot);
+                updateServiceSummaryLabel();
+            });
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function () {
+                optionsRoot.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+                    cb.checked = false;
+                    cb.disabled = false;
+                });
+                applyUtilitySelectionRules(optionsRoot);
+                updateServiceSummaryLabel();
+            });
+        }
+
+        applyUtilitySelectionRules(optionsRoot);
+        updateServiceSummaryLabel();
+    }
+
+    function getExportExtraFilters() {
+        const minAmountRaw = document.getElementById('filterAmountMin')?.value;
+        const maxAmountRaw = document.getElementById('filterAmountMax')?.value;
+        const minAmount = minAmountRaw === '' || minAmountRaw === undefined ? null : Number(minAmountRaw);
+        const maxAmount = maxAmountRaw === '' || maxAmountRaw === undefined ? null : Number(maxAmountRaw);
+        return {
+            minAmount: Number.isFinite(minAmount) ? minAmount : null,
+            maxAmount: Number.isFinite(maxAmount) ? maxAmount : null,
+            allocatedOnly: !!document.getElementById('filterAllocatedOnly')?.checked,
+        };
+    }
+
+    async function getInvoiceServiceBreakdown(invoiceId) {
+        const id = Number(invoiceId);
+        if (!Number.isFinite(id) || id <= 0) {
+            return { total: 0, serviceTotals: {} };
+        }
+        if (invoiceBreakdownCache.has(id)) {
+            return invoiceBreakdownCache.get(id);
+        }
+
+        const response = await fetch(`${API_BASE}/api/invoices/${id}`, { credentials: 'include' });
+        if (!response.ok) {
+            const fallback = { total: 0, serviceTotals: {} };
+            invoiceBreakdownCache.set(id, fallback);
+            return fallback;
+        }
+
+        const invoice = await response.json();
+        const lines = Array.isArray(invoice.lines) ? invoice.lines : [];
+        const serviceTotals = {};
+        let total = 0;
+
+        lines.forEach((line) => {
+            const amount = Number(line.amount_total || 0);
+            if (!(amount > 0)) return;
+            const key = classifyServiceByDescription(line.description);
+            serviceTotals[key] = (serviceTotals[key] || 0) + amount;
+            total += amount;
+        });
+
+        if (!(total > 0)) {
+            total = Number(invoice.amount_total || 0);
+        }
+
+        const breakdown = { total, serviceTotals };
+        invoiceBreakdownCache.set(id, breakdown);
+        return breakdown;
+    }
+
+    function parseSelectedLineIds(reference) {
+        if (!reference) return [];
+        const marker = 'LINESEL:';
+        const idx = String(reference).indexOf(marker);
+        if (idx < 0) return [];
+        const raw = String(reference).slice(idx + marker.length).split('|')[0];
+        return raw
+            .split(',')
+            .map((v) => Number(String(v).trim()))
+            .filter((v) => Number.isFinite(v) && v > 0);
+    }
+
+    function normalizeSelectedLineIdsForWaterSewer(selectedIds, linesById) {
+        const normalized = new Set(selectedIds);
+        const list = Array.from(normalized);
+        const isWater = (line) => {
+            const d = String(line?.description || '').toLowerCase();
+            return d.includes('вода');
+        };
+        const isSewer = (line) => {
+            const d = String(line?.description || '').toLowerCase();
+            return d.includes('канализац');
+        };
+        for (const lineId of list) {
+            const line = linesById.get(lineId);
+            if (!line) continue;
+            if (isWater(line)) {
+                const pair = Array.from(linesById.values()).find((candidate) => (
+                    !normalized.has(Number(candidate.id || 0))
+                    && isSewer(candidate)
+                    && Number(candidate.amount_total || 0) === Number(line.amount_total || 0)
+                ));
+                if (pair?.id) normalized.add(Number(pair.id));
+            } else if (isSewer(line)) {
+                const pair = Array.from(linesById.values()).find((candidate) => (
+                    !normalized.has(Number(candidate.id || 0))
+                    && isWater(candidate)
+                    && Number(candidate.amount_total || 0) === Number(line.amount_total || 0)
+                ));
+                if (pair?.id) normalized.add(Number(pair.id));
+            }
+        }
+        return Array.from(normalized);
+    }
+
+    async function getInvoiceAllocationSnapshot(invoiceId) {
+        const id = Number(invoiceId);
+        if (!Number.isFinite(id) || id <= 0) {
+            return { linesById: new Map(), appLineAllocations: new Map() };
+        }
+        if (invoiceAllocationCache.has(id)) {
+            return invoiceAllocationCache.get(id);
+        }
+
+        const response = await fetch(`${API_BASE}/api/invoices/${id}`, { credentials: 'include' });
+        if (!response.ok) {
+            const fallback = { linesById: new Map(), appLineAllocations: new Map() };
+            invoiceAllocationCache.set(id, fallback);
+            return fallback;
+        }
+
+        const invoice = await response.json();
+        const lines = Array.isArray(invoice?.lines) ? invoice.lines : [];
+        const invoiceApps = Array.isArray(invoice?.payments) ? invoice.payments : [];
+
+        const linesById = new Map();
+        const defaultLineOrder = [];
+        lines.forEach((line) => {
+            const lineId = Number(line?.id || 0);
+            if (!(lineId > 0)) return;
+            linesById.set(lineId, line);
+            defaultLineOrder.push(lineId);
+        });
+
+        const linePaid = new Map();
+        defaultLineOrder.forEach((lineId) => linePaid.set(lineId, 0));
+
+        const orderedApps = invoiceApps
+            .map((app) => ({
+                id: Number(app?.id || 0),
+                amount: Number(app?.amount || 0),
+                appReference: String(app?.app_reference || ''),
+                dateMs: new Date(app?.date || 0).getTime(),
+            }))
+            .filter((app) => app.id > 0 && app.amount > 0)
+            .sort((a, b) => {
+                const ta = Number.isFinite(a.dateMs) ? a.dateMs : 0;
+                const tb = Number.isFinite(b.dateMs) ? b.dateMs : 0;
+                if (ta !== tb) return ta - tb;
+                return a.id - b.id;
+            });
+
+        const appLineAllocations = new Map();
+        orderedApps.forEach((app) => {
+            let selectedIds = parseSelectedLineIds(app.appReference);
+            if (selectedIds.length > 0) {
+                selectedIds = normalizeSelectedLineIdsForWaterSewer(selectedIds, linesById);
+            } else {
+                selectedIds = defaultLineOrder.slice();
+            }
+
+            let remaining = app.amount;
+            const lineAmounts = {};
+            for (const lineId of selectedIds) {
+                if (!(remaining > 0)) break;
+                const line = linesById.get(lineId);
+                if (!line) continue;
+                const total = Number(line.amount_total || 0);
+                const alreadyPaid = Number(linePaid.get(lineId) || 0);
+                const capacity = Math.max(0, total - alreadyPaid);
+                if (!(capacity > 0)) continue;
+                const take = Math.min(capacity, remaining);
+                if (take > 0) {
+                    lineAmounts[lineId] = (lineAmounts[lineId] || 0) + take;
+                    linePaid.set(lineId, alreadyPaid + take);
+                    remaining -= take;
+                }
+            }
+            appLineAllocations.set(app.id, lineAmounts);
+        });
+
+        const snapshot = { linesById, appLineAllocations };
+        invoiceAllocationCache.set(id, snapshot);
+        return snapshot;
+    }
+
+    async function buildPaymentServiceBreakdown(payment) {
+        const result = {};
+        const apps = Array.isArray(payment.applications) ? payment.applications : [];
+
+        if (apps.length === 0) {
+            result.unallocated = Number(payment.amount_total || 0);
+            return result;
+        }
+
+        for (const app of apps) {
+            const appId = Number(app?.id || 0);
+            const appAmount = Number(app?.amount_applied || 0);
+            const invoiceId = Number(app?.invoice_id || 0);
+            if (!(appAmount > 0) || !(invoiceId > 0)) continue;
+
+            const snapshot = await getInvoiceAllocationSnapshot(invoiceId);
+            const lineAmounts = snapshot.appLineAllocations.get(appId) || {};
+            let allocated = 0;
+
+            Object.entries(lineAmounts).forEach(([lineIdRaw, lineAmountRaw]) => {
+                const lineAmount = Number(lineAmountRaw || 0);
+                if (!(lineAmount > 0)) return;
+                const lineId = Number(lineIdRaw);
+                const line = snapshot.linesById.get(lineId);
+                const serviceKey = classifyServiceByDescription(line?.description);
+                result[serviceKey] = (result[serviceKey] || 0) + lineAmount;
+                allocated += lineAmount;
+            });
+
+            if (allocated < appAmount) {
+                result.unallocated = (result.unallocated || 0) + (appAmount - allocated);
+            }
+        }
+
+        const hasAny = Object.values(result).some((v) => Number(v) > 0);
+        if (!hasAny) {
+            result.unallocated = Number(payment.amount_total || 0);
+        }
+        return result;
+    }
+
+    function paymentMatchesExportFilters(payment, selectedServices, extraFilters, serviceBreakdown) {
+        const amount = Number(payment.amount_total || 0);
+        if (extraFilters.minAmount !== null && amount < extraFilters.minAmount) return false;
+        if (extraFilters.maxAmount !== null && amount > extraFilters.maxAmount) return false;
+
+        if (extraFilters.allocatedOnly) {
+            const apps = Array.isArray(payment.applications) ? payment.applications : [];
+            if (apps.length === 0) return false;
+        }
+
+        const serviceKeys = Object.keys(serviceBreakdown).filter((k) => Number(serviceBreakdown[k]) > 0);
+        if (serviceKeys.length === 0) return false;
+
+        const utilitySelected = selectedServices.includes('utility');
+        if (utilitySelected && getUtilityAmount(serviceBreakdown) > 0) {
+            return true;
+        }
+        return serviceKeys.some((k) => selectedServices.includes(k));
+    }
+
+    function formatServiceBreakdown(serviceBreakdown, selectedServices) {
+        const parts = [];
+        const utilitySelected = selectedServices.includes('utility');
+        const utilityAmount = getUtilityAmount(serviceBreakdown);
+        if (utilitySelected && utilityAmount > 0) {
+            parts.push(`${getServiceRowLabel('utility')}: ${toMoney(utilityAmount)} ₼`);
+        }
+
+        Object.entries(serviceBreakdown)
+            .filter(([key, value]) => selectedServices.includes(key) && Number(value) > 0)
+            .sort((a, b) => Number(b[1]) - Number(a[1]))
+            .forEach(([key, value]) => {
+                if (utilitySelected && utilityServiceKeys.includes(key)) return;
+                parts.push(`${getServiceRowLabel(key)}: ${toMoney(value)} ₼`);
+            });
+
+        return parts.length ? parts.join('; ') : '—';
+    }
+
+    function buildExportFiltersText(selectedServices, extraFilters) {
+        const chunks = [];
+        const resident = document.getElementById('filterResident');
+        if (resident && resident.value && resident.value !== 'all') {
+            chunks.push(`Резидент: ${resident.options[resident.selectedIndex]?.text || resident.value}`);
+        }
+        const method = document.getElementById('filterMethod');
+        if (method && method.value && method.value !== 'all') {
+            chunks.push(`Метод: ${method.options[method.selectedIndex]?.text || method.value}`);
+        }
+        const dateFrom = document.getElementById('filterDateFrom')?.value;
+        const dateTo = document.getElementById('filterDateTo')?.value;
+        if (dateFrom || dateTo) {
+            chunks.push(`Период: ${dateFrom || '...'} — ${dateTo || '...'}`);
+        }
+        const search = document.getElementById('filterSearch')?.value?.trim();
+        if (search) chunks.push(`Поиск: "${search}"`);
+        if (extraFilters.minAmount !== null || extraFilters.maxAmount !== null) {
+            chunks.push(`Сумма: ${extraFilters.minAmount ?? '...'} — ${extraFilters.maxAmount ?? '...'}`);
+        }
+        if (extraFilters.allocatedOnly) {
+            chunks.push('Только распределенные платежи');
+        }
+        chunks.push(`Услуги: ${selectedServices.map((k) => getServiceDisplayLabel(k)).join(', ')}`);
+        return chunks.join(' | ');
+    }
+
+    function extractPaymentInvoiceText(payment) {
+        if ((payment?.method || '').toUpperCase() === 'ADVANCE') {
+            return '—';
+        }
+        const apps = Array.isArray(payment?.applications) ? payment.applications : [];
+        if (!apps.length) return '—';
+        const invoiceAmounts = new Map();
+
+        apps.forEach((app) => {
+            const number = String(app?.invoice_number || '').trim();
+            if (!number) return;
+            const amount = Number(app?.amount_applied || 0);
+            invoiceAmounts.set(number, (invoiceAmounts.get(number) || 0) + (Number.isFinite(amount) ? amount : 0));
+        });
+
+        if (!invoiceAmounts.size) return '—';
+        return Array.from(invoiceAmounts.entries())
+            .map(([number, amount]) => `${number} -> ${toMoney(amount)} ₼`)
+            .join(' | ');
+    }
+
+    async function buildPaymentInvoiceAllocations(payment, selectedServices) {
+        if ((payment?.method || '').toUpperCase() === 'ADVANCE') {
+            return [{ invoice: '—', services: '—' }];
+        }
+
+        const apps = Array.isArray(payment?.applications) ? payment.applications : [];
+        if (!apps.length) {
+            return [{ invoice: '—', services: '—' }];
+        }
+
+        const byInvoice = new Map();
+        apps.forEach((app) => {
+            const invoiceId = Number(app?.invoice_id || 0);
+            const invoiceNumber = String(app?.invoice_number || '').trim() || `INV-${invoiceId}`;
+            const amount = Number(app?.amount_applied || 0);
+            if (!(invoiceId > 0) || !(amount > 0)) return;
+
+            const key = `${invoiceId}:${invoiceNumber}`;
+            const prev = byInvoice.get(key) || { invoiceId, invoiceNumber, appliedAmount: 0, appIds: [] };
+            prev.appliedAmount += amount;
+            prev.appIds.push(Number(app?.id || 0));
+            byInvoice.set(key, prev);
+        });
+
+        if (!byInvoice.size) {
+            return [{ invoice: '—', services: '—' }];
+        }
+
+        const allocations = [];
+        for (const item of byInvoice.values()) {
+            const invoiceServiceBreakdown = {};
+            let allocated = 0;
+
+            const snapshot = await getInvoiceAllocationSnapshot(item.invoiceId);
+            item.appIds.forEach((appId) => {
+                const lineAmounts = snapshot.appLineAllocations.get(appId) || {};
+                Object.entries(lineAmounts).forEach(([lineIdRaw, lineAmountRaw]) => {
+                    const lineAmount = Number(lineAmountRaw || 0);
+                    if (!(lineAmount > 0)) return;
+                    const lineId = Number(lineIdRaw);
+                    const line = snapshot.linesById.get(lineId);
+                    const serviceKey = classifyServiceByDescription(line?.description);
+                    invoiceServiceBreakdown[serviceKey] = (invoiceServiceBreakdown[serviceKey] || 0) + lineAmount;
+                    allocated += lineAmount;
+                });
+            });
+
+            if (allocated < item.appliedAmount) {
+                invoiceServiceBreakdown.unallocated = (invoiceServiceBreakdown.unallocated || 0) + (item.appliedAmount - allocated);
+            }
+
+            const services = formatServiceBreakdown(invoiceServiceBreakdown, selectedServices);
+            allocations.push({
+                invoice: `${item.invoiceNumber} ->`,
+                services
+            });
+        }
+
+        return allocations.length ? allocations : [{ invoice: '—', services: '—' }];
+    }
+
+    function joinAllocationPartsForCell(parts) {
+        const values = (parts || []).map((v) => String(v || '—')).filter(Boolean);
+        if (!values.length) return '—';
+        if (values.length === 1) return values[0];
+        return values.join(' | ');
+    }
+
+    async function buildExportDataset(items, selectedServices, extraFilters) {
+        const rows = [];
+        const serviceStats = {};
+        Object.keys(serviceLabels).forEach((key) => {
+            serviceStats[key] = { count: 0, amount: 0 };
+        });
+
+        let totalAmount = 0;
+        for (const payment of items) {
+            const serviceBreakdown = await buildPaymentServiceBreakdown(payment);
+            if (!paymentMatchesExportFilters(payment, selectedServices, extraFilters, serviceBreakdown)) {
+                continue;
+            }
+
+            const amount = Number(payment.amount_total || 0);
+            totalAmount += amount;
+
+            const utilitySelected = selectedServices.includes('utility');
+            const utilityAmount = getUtilityAmount(serviceBreakdown);
+            const countedForThisPayment = new Set();
+            Object.entries(serviceBreakdown).forEach(([key, value]) => {
+                const numeric = Number(value || 0);
+                if (!(numeric > 0) || !selectedServices.includes(key)) return;
+                if (utilitySelected && utilityServiceKeys.includes(key)) return;
+                serviceStats[key].amount += numeric;
+                if (!countedForThisPayment.has(key)) {
+                    serviceStats[key].count += 1;
+                    countedForThisPayment.add(key);
+                }
+            });
+
+            if (utilitySelected && utilityAmount > 0) {
+                serviceStats.utility.amount += utilityAmount;
+                serviceStats.utility.count += 1;
+            }
+
+            const selectedAmount = Object.entries(serviceBreakdown).reduce((acc, [key, value]) => {
+                const numeric = Number(value || 0);
+                if (!(numeric > 0)) return acc;
+                if (!selectedServices.includes(key)) return acc;
+                if (utilitySelected && utilityServiceKeys.includes(key)) return acc;
+                return acc + numeric;
+            }, 0) + ((utilitySelected && utilityAmount > 0) ? utilityAmount : 0);
+
+            const invoiceAllocations = await buildPaymentInvoiceAllocations(payment, selectedServices);
+            const invoiceCell = joinAllocationPartsForCell(invoiceAllocations.map((a) => a.invoice));
+            const servicesCell = joinAllocationPartsForCell(invoiceAllocations.map((a) => a.services));
+
+            rows.push({
+                date: formatExportDate(payment.received_at),
+                resident: payment.resident_code || '—',
+                resident_user_full_name: payment.resident_user_full_name || '—',
+                amount: toMoney(payment.amount_total),
+                method: methodLabels[payment.method] || payment.method || '—',
+                leftover: toMoney(payment.leftover),
+                reference: payment.reference || '—',
+                invoice: invoiceCell,
+                services: servicesCell,
+                invoice_allocations: invoiceAllocations,
+                selected_services_amount: toMoney(selectedAmount),
+            });
+        }
+
+        return {
+            rows,
+            summary: {
+                selectedServices,
+                serviceStats,
+                totalPayments: rows.length,
+                totalAmount: toMoney(totalAmount),
+                filtersText: buildExportFiltersText(selectedServices, extraFilters),
+            }
+        };
     }
 
     function formatExportDate(dateStr) {
@@ -381,34 +991,172 @@
         return `\t${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
     }
 
-    function downloadCsv(rows) {
-        const header = ['Дата', 'Резидент', 'Житель', 'Сумма', 'Метод', 'Остаток', 'Ссылка'];
-        const lines = [header.map(toCsvValue).join(';')];
-        rows.forEach(row => {
-            lines.push([
-                row.date,
-                row.resident,
-                row.resident_user_full_name,
-                row.amount,
-                row.method,
-                row.leftover,
-                row.reference
-            ].map(toCsvValue).join(';'));
+    function downloadCsv(rows, summary) {
+        const toText = (value) => String(value === null || value === undefined ? '' : value).replace(/\t/g, '').trim();
+        const toHtmlCell = (value) => escapeHtml(toText(value));
+        const toExcelMoney = (value) => {
+            const raw = String(value === null || value === undefined ? '' : value).trim();
+            if (!raw) return '';
+            const normalized = raw.replace(/\s+/g, '').replace(',', '.');
+            const num = Number(normalized);
+            if (!Number.isFinite(num)) return raw.replace('.', ',');
+            return num.toFixed(2).replace('.', ',');
+        };
+
+        const flatRows = [];
+        rows.forEach((row) => {
+            const allocations = Array.isArray(row.invoice_allocations) && row.invoice_allocations.length
+                ? row.invoice_allocations
+                : [{ invoice: row.invoice || '—', services: row.services || '—' }];
+
+            allocations.forEach((alloc, idx) => {
+                flatRows.push({
+                    date: idx === 0 ? row.date : '',
+                    resident: idx === 0 ? row.resident : '',
+                    resident_user_full_name: idx === 0 ? row.resident_user_full_name : '',
+                    amount: idx === 0 ? toExcelMoney(row.amount) : '',
+                    method: idx === 0 ? row.method : '',
+                    leftover: idx === 0 ? toExcelMoney(row.leftover) : '',
+                    reference: idx === 0 ? row.reference : '',
+                    invoice: toText(alloc?.invoice || '—'),
+                    services: toText(alloc?.services || '—'),
+                    selected_services_amount: idx === 0 ? toExcelMoney(row.selected_services_amount) : '',
+                    isContinuation: idx > 0,
+                });
+            });
         });
 
-        const csvContent = '\ufeff' + lines.join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const serviceSummaryRows = summary.selectedServices.map((key) => {
+            const s = summary.serviceStats[key] || { count: 0, amount: 0 };
+            return `
+                <tr>
+                    <td class="cell label-cell">${toHtmlCell(getServiceDisplayLabel(key))}</td>
+                    <td class="cell center-cell">${toHtmlCell(s.count)}</td>
+                    <td class="cell money-cell">${toHtmlCell(toExcelMoney(toMoney(s.amount)))}</td>
+                </tr>
+            `;
+        }).join('');
+
+        const dataRowsHtml = flatRows.map((row) => `
+            <tr class="${row.isContinuation ? 'continuation-row' : 'main-row'}">
+                <td class="cell">${toHtmlCell(row.date)}</td>
+                <td class="cell">${toHtmlCell(row.resident)}</td>
+                <td class="cell">${toHtmlCell(row.resident_user_full_name)}</td>
+                <td class="cell money-cell">${toHtmlCell(row.amount)}</td>
+                <td class="cell center-cell">${toHtmlCell(row.method)}</td>
+                <td class="cell money-cell">${toHtmlCell(row.leftover)}</td>
+                <td class="cell">${toHtmlCell(row.reference)}</td>
+                <td class="cell">${toHtmlCell(row.invoice)}</td>
+                <td class="cell">${toHtmlCell(row.services)}</td>
+                <td class="cell money-cell">${toHtmlCell(row.selected_services_amount)}</td>
+            </tr>
+        `).join('');
+
+        const html = `
+            <html>
+            <head>
+                <meta charset="utf-8" />
+                <style>
+                    body { font-family: Calibri, Arial, sans-serif; color: #111827; }
+                    .title-wrap { border: 2px solid #1f2937; padding: 12px; margin-bottom: 10px; background: #f8fafc; }
+                    .title-main { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+                    .title-sub { font-size: 12px; color: #4b5563; }
+                    .meta-table, .service-table, .data-table { border-collapse: collapse; width: 100%; margin-bottom: 12px; }
+                    .meta-table td { border: 1px solid #9ca3af; padding: 6px 8px; font-size: 12px; }
+                    .meta-label { background: #eef2ff; font-weight: 700; width: 180px; }
+                    .block-title { font-size: 13px; font-weight: 700; margin: 8px 0 4px; color: #1f2937; }
+                    .service-table th, .service-table td,
+                    .data-table th, .data-table td { border: 1px solid #9ca3af; padding: 6px 8px; font-size: 12px; vertical-align: top; }
+                    .service-table th, .data-table th { background: #dbeafe; font-weight: 700; text-align: center; }
+                    .cell { background: #ffffff; }
+                    .label-cell { background: #f9fafb; }
+                    .center-cell { text-align: center; }
+                    .money-cell { text-align: right; font-weight: 600; color: #0f172a; mso-number-format: "\\@"; }
+                    .main-row td { border-top: 2px solid #6b7280; }
+                    .continuation-row td { background: #fcfcfd; color: #374151; }
+                </style>
+            </head>
+            <body>
+                <div class="title-wrap">
+                    <div class="title-main">Отчет по платежам</div>
+                    <div class="title-sub">Royal Park • Экспорт для бухгалтерии</div>
+                </div>
+
+                <table class="meta-table">
+                    <tr><td class="meta-label">Сформировано</td><td>${toHtmlCell(new Date().toLocaleString())}</td></tr>
+                    <tr><td class="meta-label">Фильтры</td><td>${toHtmlCell(summary.filtersText || '—')}</td></tr>
+                    <tr><td class="meta-label">Количество платежей</td><td>${toHtmlCell(summary.totalPayments)}</td></tr>
+                    <tr><td class="meta-label">Общая сумма</td><td>${toHtmlCell(toExcelMoney(summary.totalAmount))}</td></tr>
+                </table>
+
+                <div class="block-title">Сводка по услугам</div>
+                <table class="service-table">
+                    <thead>
+                        <tr>
+                            <th>Услуга</th>
+                            <th>Кол-во платежей</th>
+                            <th>Сумма</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${serviceSummaryRows || '<tr><td colspan="3" class="cell center-cell">Нет данных</td></tr>'}
+                    </tbody>
+                </table>
+
+                <div class="block-title">Детализация платежей</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Резидент</th>
+                            <th>Житель</th>
+                            <th>Сумма</th>
+                            <th>Метод</th>
+                            <th>Остаток</th>
+                            <th>Ссылка</th>
+                            <th>Invoice</th>
+                            <th>Услуги</th>
+                            <th>Сумма по услугам</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${dataRowsHtml || '<tr><td colspan="10" class="cell center-cell">Нет данных для экспорта</td></tr>'}
+                    </tbody>
+                </table>
+            </body>
+            </html>
+        `;
+
+        const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `payments_export_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.download = `payments_export_${new Date().toISOString().slice(0, 10)}.xls`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
     }
 
-    function openPrintView(rows) {
+    function openPrintView(rows, summary) {
+        const renderAllocationCell = (allocations, key) => {
+            if (!Array.isArray(allocations) || allocations.length === 0) return '—';
+            return allocations.map((alloc) => {
+                const raw = String((alloc && alloc[key]) || '—');
+                const html = escapeHtml(raw).replace(/;\s+/g, '<br>');
+                return `<div class="alloc-segment">${html}</div>`;
+            }).join('');
+        };
+
+        const serviceSummaryRows = summary.selectedServices.map((key) => {
+            const s = summary.serviceStats[key] || { count: 0, amount: 0 };
+            return `<tr>
+                <td>${getServiceDisplayLabel(key)}</td>
+                <td>${s.count}</td>
+                <td>${toMoney(s.amount)}</td>
+            </tr>`;
+        }).join('');
+
         const tableRows = rows.map(row => `
             <tr>
                 <td>${row.date}</td>
@@ -418,6 +1166,9 @@
                 <td>${row.method}</td>
                 <td>${row.leftover}</td>
                 <td>${row.reference}</td>
+                <td>${renderAllocationCell(row.invoice_allocations, 'invoice')}</td>
+                <td>${renderAllocationCell(row.invoice_allocations, 'services')}</td>
+                <td>${row.selected_services_amount}</td>
             </tr>
         `).join('');
 
@@ -432,11 +1183,27 @@
                     table { width: 100%; border-collapse: collapse; font-size: 12px; }
                     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
                     th { background: #f3f4f6; }
+                    .alloc-segment { padding: 4px 0; }
+                    .alloc-segment + .alloc-segment { border-top: 1px dashed #b9bcc4; margin-top: 4px; }
                 </style>
             </head>
             <body>
                 <h2>Отчет по платежам</h2>
                 <p>Сформировано: ${new Date().toLocaleString()}</p>
+                <p><strong>Фильтры:</strong> ${escapeHtml(summary.filtersText || '—')}</p>
+                <p><strong>Количество платежей:</strong> ${summary.totalPayments} | <strong>Сумма:</strong> ${summary.totalAmount}</p>
+                <table style="margin-bottom: 16px;">
+                    <thead>
+                        <tr>
+                            <th>Услуга</th>
+                            <th>Кол-во платежей</th>
+                            <th>Сумма</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${serviceSummaryRows || '<tr><td colspan="3">Нет данных</td></tr>'}
+                    </tbody>
+                </table>
                 <table>
                     <thead>
                         <tr>
@@ -447,10 +1214,13 @@
                             <th>Метод</th>
                             <th>Остаток</th>
                             <th>Ссылка</th>
+                            <th>Invoice</th>
+                            <th>Услуги</th>
+                            <th>Сумма по услугам</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${tableRows || '<tr><td colspan="7">Нет данных для экспорта</td></tr>'}
+                        ${tableRows || '<tr><td colspan="10">Нет данных для экспорта</td></tr>'}
                     </tbody>
                 </table>
             </body>
@@ -494,19 +1264,23 @@
 
         try {
             const items = await fetchAllFilteredPayments();
-            const rows = buildExportRows(items);
+            const selectedServices = getSelectedExportServices();
+            const extraFilters = getExportExtraFilters();
+            const dataset = await buildExportDataset(items, selectedServices, extraFilters);
+            const rows = dataset.rows;
+            const summary = dataset.summary;
 
             if (rows.length === 0) {
                 if (typeof showNotification === 'function') {
-                    showNotification('info', 'Нет данных для экспорта по текущим фильтрам.');
+                    showNotification('info', 'Нет данных для экспорта по текущим фильтрам и услугам.');
                 }
                 return;
             }
 
             if (format === 'pdf') {
-                openPrintView(rows);
+                openPrintView(rows, summary);
             } else {
-                downloadCsv(rows);
+                downloadCsv(rows, summary);
             }
 
             if (typeof showNotification === 'function') {
@@ -958,6 +1732,7 @@
     function initFilters() {
         // Убираем все автоматические обработчики событий (onchange, oninput)
         // Фильтрация будет происходить только при нажатии на кнопку "Фильтр"
+        initServiceExportFilters();
         
         // Добавляем обработчик Enter для поля поиска (удобство для пользователя)
         const searchInput = document.getElementById('filterSearch');

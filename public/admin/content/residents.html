@@ -47,6 +47,25 @@
                         <button class="btn btn-outline-warning" onclick="clearFilters()">
                             <i class="bi bi-x-circle"></i> Очистить
                         </button>
+                        <select id="residentExportFormat" class="form-select form-select-sm" style="max-width: 170px;">
+                            <option value="xls">Excel (Styled)</option>
+                            <option value="pdf">PDF (печать)</option>
+                        </select>
+                        <select id="exportCustomerType" class="form-select form-select-sm" style="max-width: 190px;">
+                            <option value="all">Клиент: все</option>
+                            <option value="INDIVIDUAL">Клиент: физ. лицо</option>
+                            <option value="LEGAL">Клиент: юр. лицо</option>
+                        </select>
+                        <select id="exportContactsFilter" class="form-select form-select-sm" style="max-width: 210px;">
+                            <option value="all">Контакты: все</option>
+                            <option value="has_phone">Только с телефоном</option>
+                            <option value="has_email">Только с email</option>
+                            <option value="has_any">Только с контактами</option>
+                            <option value="no_contacts">Без контактов</option>
+                        </select>
+                        <button class="btn btn-success" type="button" onclick="exportResidents()">
+                            <i class="bi bi-box-arrow-down"></i> Экспорт
+                        </button>
                         <button class="btn btn-primary" onclick="openCreateModal()">
                             <i class="bi bi-plus-lg"></i> Создать
                         </button>
@@ -400,6 +419,361 @@
                 }
             }
         }
+
+        async function fetchAllResidentsForExport() {
+            const params = new URLSearchParams();
+            params.append('page', '1');
+            params.append('per_page', '100');
+
+            let page = 1;
+            let lastPage = 1;
+            const out = [];
+            do {
+                params.set('page', String(page));
+                const resp = await fetch(`${API_BASE}/api/residents?${params.toString()}`, { credentials: 'include' });
+                if (!resp.ok) throw new Error(`Ошибка загрузки резидентов: ${resp.status}`);
+                const data = await resp.json();
+                const items = Array.isArray(data?.items) ? data.items : [];
+                out.push(...items);
+                lastPage = Number(data?.last_page || 1);
+                page += 1;
+            } while (page <= lastPage);
+            return out;
+        }
+
+        function getMainResidentFilters() {
+            return {
+                blockId: document.getElementById('filterBlock')?.value || 'all',
+                status: document.getElementById('filterStatus')?.value || 'all',
+                rtype: document.getElementById('filterType')?.value || 'all',
+                house: document.getElementById('filterHouse')?.value?.trim() || '',
+            };
+        }
+
+        function residentMatchesMainFilters(resident, filters) {
+            if (filters.blockId !== 'all') {
+                const selected = parseInt(filters.blockId, 10);
+                const residentBlockId = Number(resident?.block_id || 0);
+                if (!isNaN(selected) && selected > 0 && residentBlockId !== selected) {
+                    return false;
+                }
+            }
+
+            if (filters.status !== 'all') {
+                if (String(resident?.status || '').toUpperCase() !== String(filters.status).toUpperCase()) {
+                    return false;
+                }
+            }
+
+            if (filters.rtype !== 'all') {
+                if (String(resident?.resident_type || '').toUpperCase() !== String(filters.rtype).toUpperCase()) {
+                    return false;
+                }
+            }
+
+            const unit = String(resident?.unit_number || '').trim();
+            const house = String(filters.house || '').trim();
+            if (house) {
+                if (house.includes('-')) {
+                    const parts = house.split('-');
+                    if (parts.length === 2) {
+                        const start = parseInt(parts[0].trim(), 10);
+                        const end = parseInt(parts[1].trim(), 10);
+                        const unitNum = parseInt(unit, 10);
+                        if (Number.isFinite(start) && Number.isFinite(end) && Number.isFinite(unitNum)) {
+                            if (unitNum < start || unitNum > end) return false;
+                        } else if (!unit.toLowerCase().includes(house.toLowerCase())) {
+                            return false;
+                        }
+                    } else if (!unit.toLowerCase().includes(house.toLowerCase())) {
+                        return false;
+                    }
+                } else if (!unit.toLowerCase().includes(house.toLowerCase())) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function getResidentExportFilters() {
+            return {
+                customerType: document.getElementById('exportCustomerType')?.value || 'all',
+                contacts: document.getElementById('exportContactsFilter')?.value || 'all',
+            };
+        }
+
+        function hasActiveMeters(resident) {
+            const meters = Array.isArray(resident?.meters) ? resident.meters : [];
+            return meters.some((m) => m?.is_active !== false);
+        }
+
+        function residentMatchesExportFilters(resident, filters) {
+            if (filters.customerType !== 'all' && String(resident?.customer_type || '') !== filters.customerType) {
+                return false;
+            }
+            const phone = String(resident?.owner_phone || '').trim();
+            const email = String(resident?.owner_email || '').trim();
+            if (filters.contacts === 'has_phone' && !phone) return false;
+            if (filters.contacts === 'has_email' && !email) return false;
+            if (filters.contacts === 'has_any' && !phone && !email) return false;
+            if (filters.contacts === 'no_contacts' && (phone || email)) return false;
+
+            return true;
+        }
+
+        function meterTypeLabel(meterType) {
+            const map = {
+                ELECTRIC: 'Электричество',
+                GAS: 'Газ',
+                WATER: 'Вода',
+                SEWERAGE: 'Канализация',
+                SERVICE: 'Сервис',
+                RENT: 'Аренда',
+                CONSTRUCTION: 'Строительство',
+            };
+            return map[String(meterType || '').toUpperCase()] || String(meterType || '—');
+        }
+
+        function buildResidentExportRows(items) {
+            return items.map((resident) => {
+                const activeMeters = (Array.isArray(resident?.meters) ? resident.meters : [])
+                    .filter((m) => m?.is_active !== false)
+                    .map((m) => {
+                        const tariffName = m?.tariff_name ? ` (${m.tariff_name})` : '';
+                        const serial = m?.serial_number ? ` №${m.serial_number}` : '';
+                        return `${meterTypeLabel(m?.meter_type)}${serial}${tariffName}`;
+                    });
+                return {
+                    block: resident?.block_name || '—',
+                    unit: resident?.unit_number || '—',
+                    residentType: String(resident?.resident_type || '—'),
+                    customerType: String(resident?.customer_type || '—'),
+                    owner: resident?.owner_full_name || '—',
+                    status: String(resident?.status || '—'),
+                    phone: String(resident?.owner_phone || '—'),
+                    email: resident?.owner_email || '—',
+                    metersList: activeMeters.length ? activeMeters : ['—'],
+                };
+            });
+        }
+
+        function toResidentTypeText(v) {
+            const map = { OWNER: 'Собственник', TENANT: 'Арендатор', SUBTENANT: 'Субарендатор', OFFICE: 'Офис' };
+            return map[String(v || '').toUpperCase()] || (v || '—');
+        }
+
+        function toCustomerTypeText(v) {
+            const map = { INDIVIDUAL: 'Физ. лицо', LEGAL: 'Юр. лицо' };
+            return map[String(v || '').toUpperCase()] || (v || '—');
+        }
+
+        function toStatusText(v) {
+            return String(v || '').toUpperCase() === 'ACTIVE' ? 'Активен' : 'Не активен';
+        }
+
+        function buildResidentFiltersText(filters) {
+            const chunks = [];
+            const block = document.getElementById('filterBlock');
+            const status = document.getElementById('filterStatus');
+            const type = document.getElementById('filterType');
+            const house = document.getElementById('filterHouse')?.value?.trim();
+            if (block?.value && block.value !== 'all') chunks.push(`Блок: ${block.options[block.selectedIndex]?.text || block.value}`);
+            if (status?.value && status.value !== 'all') chunks.push(`Статус: ${status.options[status.selectedIndex]?.text || status.value}`);
+            if (type?.value && type.value !== 'all') chunks.push(`Тип: ${type.options[type.selectedIndex]?.text || type.value}`);
+            if (house) chunks.push(`Дом/№: ${house}`);
+
+            const customerSelect = document.getElementById('exportCustomerType');
+            const contactsSelect = document.getElementById('exportContactsFilter');
+            if (filters.customerType !== 'all') chunks.push(customerSelect?.options[customerSelect.selectedIndex]?.text || filters.customerType);
+            if (filters.contacts !== 'all') chunks.push(contactsSelect?.options[contactsSelect.selectedIndex]?.text || filters.contacts);
+            return chunks.length ? chunks.join(' | ') : 'Без фильтров';
+        }
+
+        function exportResidentsToStyledExcel(rows, filtersText) {
+            const esc = (v) => String(v === null || v === undefined ? '' : v)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const toExcelText = (value) => {
+                const raw = String(value === null || value === undefined ? '' : value).trim();
+                if (!raw || raw === '—') return '—';
+                return raw;
+            };
+
+            const bodyRows = rows.map((r) => `
+                <tr>
+                    <td>${esc(r.block)}</td>
+                    <td>${esc(r.unit)}</td>
+                    <td>${esc(toResidentTypeText(r.residentType))}</td>
+                    <td>${esc(toCustomerTypeText(r.customerType))}</td>
+                    <td>${esc(r.owner)}</td>
+                    <td>${esc(toStatusText(r.status))}</td>
+                    <td class="phone-cell">${esc(toExcelText(r.phone))}</td>
+                    <td>${esc(r.email)}</td>
+                    <td class="meters-cell">${(Array.isArray(r.metersList) ? r.metersList : ['—']).map((meter, idx) => `<div class="meter-line">${esc(`${idx + 1}) ${meter}`)}</div>`).join('')}</td>
+                </tr>
+            `).join('');
+
+            const html = `
+                <html>
+                <head>
+                    <meta charset="utf-8" />
+                    <style>
+                        body { font-family: Calibri, Arial, sans-serif; color: #111827; }
+                        .title-wrap { border: 2px solid #1f2937; padding: 12px; margin-bottom: 10px; background: #f8fafc; }
+                        .title-main { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+                        .title-sub { font-size: 12px; color: #4b5563; }
+                        table { border-collapse: collapse; width: 100%; }
+                        .meta td { border: 1px solid #9ca3af; padding: 6px 8px; font-size: 12px; }
+                        .meta td:first-child { width: 180px; background: #eef2ff; font-weight: 700; }
+                        .data { margin-top: 12px; }
+                        .data th, .data td { border: 1px solid #9ca3af; padding: 6px 8px; font-size: 12px; vertical-align: top; }
+                        .data th { background: #dbeafe; font-weight: 700; text-align: center; }
+                        .phone-cell { mso-number-format: "\\@"; }
+                        .meters-cell { white-space: normal; line-height: 1.25; }
+                        .meter-line { padding: 1px 0; border-bottom: 1px dashed #e5e7eb; }
+                        .meter-line:last-child { border-bottom: none; }
+                    </style>
+                </head>
+                <body>
+                    <div class="title-wrap">
+                        <div class="title-main">Отчет по резидентам</div>
+                        <div class="title-sub">Royal Park • Экспорт для учета</div>
+                    </div>
+                    <table class="meta">
+                        <tr><td>Сформировано</td><td>${esc(new Date().toLocaleString())}</td></tr>
+                        <tr><td>Фильтры</td><td>${esc(filtersText)}</td></tr>
+                        <tr><td>Количество резидентов</td><td>${esc(rows.length)}</td></tr>
+                    </table>
+                    <table class="data">
+                        <thead>
+                            <tr>
+                                <th>Блок</th>
+                                <th>Дом/№</th>
+                                <th>Тип</th>
+                                <th>Клиент</th>
+                                <th>ФИО</th>
+                                <th>Статус</th>
+                                <th>Телефон</th>
+                                <th>Email</th>
+                                <th>Счётчики (активные)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${bodyRows || '<tr><td colspan="9">Нет данных</td></tr>'}
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `;
+
+            const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `residents_export_${new Date().toISOString().slice(0, 10)}.xls`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function exportResidentsToPdf(rows, filtersText) {
+            const esc = (v) => String(v === null || v === undefined ? '' : v)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const tableRows = rows.map((r) => `
+                <tr>
+                    <td>${esc(r.block)}</td>
+                    <td>${esc(r.unit)}</td>
+                    <td>${esc(toResidentTypeText(r.residentType))}</td>
+                    <td>${esc(toCustomerTypeText(r.customerType))}</td>
+                    <td>${esc(r.owner)}</td>
+                    <td>${esc(toStatusText(r.status))}</td>
+                    <td>${esc(r.phone)}</td>
+                    <td>${esc(r.email)}</td>
+                    <td>${(Array.isArray(r.metersList) ? r.metersList : ['—']).map((meter, idx) => `<div>${esc(`${idx + 1}) ${meter}`)}</div>`).join('')}</td>
+                </tr>
+            `).join('');
+            const html = `
+                <html><head><title>Экспорт резидентов</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+                    h2 { margin: 0 0 8px; }
+                    p { margin: 0 0 12px; color: #555; }
+                    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                    th, td { border: 1px solid #ccc; padding: 6px; text-align: left; vertical-align: top; }
+                    th { background: #f3f4f6; }
+                </style></head>
+                <body>
+                    <h2>Отчет по резидентам</h2>
+                    <p><strong>Сформировано:</strong> ${esc(new Date().toLocaleString())}</p>
+                    <p><strong>Фильтры:</strong> ${esc(filtersText)}</p>
+                    <p><strong>Количество:</strong> ${rows.length}</p>
+                    <table>
+                        <thead>
+                            <tr><th>Блок</th><th>Дом/№</th><th>Тип</th><th>Клиент</th><th>ФИО</th><th>Статус</th><th>Телефон</th><th>Email</th><th>Счётчики</th></tr>
+                        </thead>
+                        <tbody>${tableRows || '<tr><td colspan="9">Нет данных</td></tr>'}</tbody>
+                    </table>
+                </body></html>
+            `;
+
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            iframe.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(iframe);
+            const doc = iframe.contentWindow?.document;
+            if (!doc || !iframe.contentWindow) {
+                iframe.remove();
+                throw new Error('Не удалось подготовить печать.');
+            }
+            doc.open();
+            doc.write(html);
+            doc.close();
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+            setTimeout(() => iframe.remove(), 1000);
+        }
+
+        window.exportResidents = async function exportResidents() {
+            const exportBtn = document.querySelector('.filters-actions .btn-success');
+            const format = document.getElementById('residentExportFormat')?.value || 'xls';
+            if (exportBtn) {
+                exportBtn.disabled = true;
+                exportBtn.textContent = 'Экспорт...';
+            }
+            try {
+                const allItems = await fetchAllResidentsForExport();
+                const mainFilters = getMainResidentFilters();
+                const exportFilters = getResidentExportFilters();
+                const filtered = allItems
+                    .filter((r) => residentMatchesMainFilters(r, mainFilters))
+                    .filter((r) => residentMatchesExportFilters(r, exportFilters));
+                if (!filtered.length) {
+                    if (typeof showWarning === 'function') showWarning('Нет данных для экспорта по выбранным фильтрам.');
+                    return;
+                }
+                const rows = buildResidentExportRows(filtered);
+                const filtersText = buildResidentFiltersText(exportFilters);
+                if (format === 'pdf') {
+                    exportResidentsToPdf(rows, filtersText);
+                } else {
+                    exportResidentsToStyledExcel(rows, filtersText);
+                }
+                if (typeof showSuccess === 'function') showSuccess('Экспорт выполнен.');
+            } catch (e) {
+                console.error('Residents export error:', e);
+                if (typeof showError === 'function') showError('Ошибка экспорта: ' + e.message);
+            } finally {
+                if (exportBtn) {
+                    exportBtn.disabled = false;
+                    exportBtn.innerHTML = '<i class="bi bi-box-arrow-down"></i> Экспорт';
+                }
+            }
+        };
         
         // Отображение таблицы резидентов
         function renderResidentsTable() {

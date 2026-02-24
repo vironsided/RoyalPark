@@ -26,6 +26,121 @@
        flex-direction: column;
    }
 
+   .payments-filters-group-wide {
+       grid-column: auto;
+       min-width: 260px;
+   }
+
+   .service-filter-details {
+       position: relative;
+       background: rgba(255, 255, 255, 0.05);
+       border: 1px solid rgba(255, 255, 255, 0.12);
+       border-radius: 8px;
+       padding: 0;
+       overflow: visible;
+   }
+
+   .service-filter-details summary {
+       position: relative;
+       display: block;
+       width: 100%;
+       padding: 10px 34px 10px 12px;
+       cursor: pointer;
+       color: #fefefe;
+       font-size: 0.92rem;
+       list-style: none;
+   }
+
+   .service-filter-details summary::after {
+       content: "▾";
+       position: absolute;
+       right: 12px;
+       top: 50%;
+       transform: translateY(-50%);
+       color: rgba(255, 255, 255, 0.8);
+       font-size: 0.78rem;
+   }
+
+   .service-filter-details[open] summary::after {
+       transform: translateY(-50%) rotate(180deg);
+   }
+
+   .service-filter-details summary::-webkit-details-marker {
+       display: none;
+   }
+
+   .service-filter-dropdown {
+       display: none;
+   }
+
+   .service-filter-details[open] .service-filter-dropdown {
+       display: block;
+       position: absolute;
+       top: calc(100% + 8px);
+       right: 0;
+       min-width: 320px;
+       max-width: 460px;
+       width: max-content;
+       background: #1f2432;
+       border: 1px solid rgba(255, 255, 255, 0.14);
+       border-radius: 10px;
+       padding: 10px;
+       z-index: 120;
+       box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+   }
+
+   .service-filter-options {
+       margin-top: 0;
+       display: grid;
+       grid-template-columns: repeat(2, minmax(140px, 1fr));
+       gap: 8px;
+   }
+
+   .service-filter-options label {
+       display: flex;
+       align-items: center;
+       gap: 8px;
+       color: rgba(255, 255, 255, 0.9);
+       font-size: 0.9rem;
+       margin: 0;
+   }
+
+   .service-filter-actions {
+       margin-top: 10px;
+       display: flex;
+       gap: 8px;
+       justify-content: flex-end;
+   }
+
+   .btn-filter-mini {
+       border: 1px solid rgba(255, 255, 255, 0.2);
+       background: rgba(255, 255, 255, 0.08);
+       color: #fff;
+       border-radius: 6px;
+       padding: 6px 10px;
+       font-size: 0.82rem;
+       cursor: pointer;
+   }
+
+   .btn-filter-mini:hover {
+       background: rgba(255, 255, 255, 0.14);
+   }
+
+   @media (max-width: 1100px) {
+       .payments-filters-group-wide {
+           grid-column: 1 / -1;
+       }
+       .service-filter-details[open] .service-filter-dropdown {
+           left: 0;
+           right: auto;
+           min-width: 260px;
+           width: min(92vw, 420px);
+       }
+       .service-filter-options {
+           grid-template-columns: 1fr;
+       }
+   }
+
    .payments-filters-group label {
        font-weight: 600;
        margin-bottom: 8px;
@@ -138,6 +253,26 @@
       border: 1px solid rgba(255, 255, 255, 0.12) !important;
       border-radius: 8px;
       font-size: 0.95rem;
+  }
+
+  .payments-export-controls input[type="number"] {
+      width: 125px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.05) !important;
+      color: #fefefe !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      border-radius: 8px;
+      font-size: 0.92rem;
+  }
+
+  .payments-export-controls .export-only-checkbox {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.86rem;
+      padding: 0 6px;
+      user-select: none;
   }
 
   .payments-filters-actions .btn-export {
@@ -828,7 +963,7 @@
    .payments-page .payments-filters {
        margin-bottom: 50px !important;
        position: relative;
-       z-index: 1;
+       z-index: 50;
    }
 
    /* Увеличить расстояние между элементами */
@@ -840,7 +975,7 @@
        margin-top: 0 !important;
        clear: both;
        position: relative;
-       z-index: 2;
+       z-index: 10;
    }
 
    /* Убрать задний фон у content-wrapper чтобы не было белой/темной рамки между элементами */

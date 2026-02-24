@@ -33,6 +33,7 @@ from starlette import status
 
 from ..database import get_db
 from ..deps import get_current_user, require_any_role
+from ..utils import build_invoice_number
 from ..models import (
     User, RoleEnum,
     Block, Resident, ResidentMeter, MeterType,
@@ -699,23 +700,7 @@ def create_readings(
             )
             db.add(inv); db.flush()
 
-            if not inv.number:
-                prefix = f"{inv.period_year}-{inv.period_month:02d}"
-                last_num = (
-                    db.query(Invoice.number)
-                    .filter(Invoice.period_year == inv.period_year,
-                            Invoice.period_month == inv.period_month,
-                            Invoice.number.ilike(f"{prefix}/%"))
-                    .order_by(Invoice.number.desc()).first()
-                )
-                if last_num and last_num[0]:
-                    try:
-                        seq = int(last_num[0].split("/")[-1]) + 1
-                    except Exception:
-                        seq = inv.id
-                else:
-                    seq = 1
-                inv.number = f"{prefix}/{seq:06d}"
+            inv.number = build_invoice_number(db, inv.resident_id, inv.period_year, inv.period_month)
     else:
         # Если только удаления - найдём существующий инвойс для пересчёта
         inv = db.query(Invoice).filter(

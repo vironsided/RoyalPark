@@ -356,7 +356,7 @@ class Invoice(Base):
     resident_id: Mapped[int] = mapped_column(ForeignKey("residents.id", ondelete="CASCADE"), nullable=False)
     resident = relationship("Resident", lazy="joined")
 
-    number = Column(String(64), nullable=True, index=True)  # человеко-читаемый №, например "2025-10/000123"
+    number = Column(String(64), nullable=True, index=True)  # например: INV-<resident_id>/<tenant_id>/<YYYY-MM>
     status = Column(SAEnum(InvoiceStatus, name="invoice_status"), nullable=False, default=InvoiceStatus.DRAFT)
     due_date = Column(Date, nullable=True)  # срок оплаты
     notes = Column(Text, nullable=True)  # примечание для клиента
@@ -381,6 +381,7 @@ class Invoice(Base):
 
     __table_args__ = (
         UniqueConstraint("resident_id", "period_year", "period_month", name="uq_invoice_resident_period"),
+        UniqueConstraint("number", name="uq_invoices_number"),
     )
 
 

@@ -391,7 +391,7 @@
                 residentInfo: inv.resident_info,
                 blockName: inv.block_name,
                 unitNumber: inv.unit_number,
-                invoiceNumber: inv.number || `INV-${String(inv.id).padStart(4, '0')}`,
+                invoiceNumber: inv.number || `INV-${inv.resident_id}/0/${inv.period_year}-${String(inv.period_month).padStart(2, '0')}`,
                 number: inv.number,
                 status: inv.status.toLowerCase(),
                 dueDate: inv.due_date ? new Date(inv.due_date).toLocaleDateString('ru-RU') : '—',

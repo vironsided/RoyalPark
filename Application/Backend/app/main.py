@@ -127,6 +127,53 @@ def run_bootstrap_schema():
         "ALTER TABLE payment_applications ADD COLUMN IF NOT EXISTS reference VARCHAR(100);",
         # Убираем уникальное ограничение uq_payment_invoice, чтобы разрешить несколько применений одного платежа к одному счету
         "DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_payment_invoice') THEN ALTER TABLE payment_applications DROP CONSTRAINT uq_payment_invoice; END IF; END $$;",
+        # Унифицируем номер счета по новому каноническому формату:
+        # INV-(resident_id)/(tenant_id)/(YYYY-MM)
+        """
+        UPDATE invoices i
+        SET number = CONCAT(
+          'INV-',
+          i.resident_id::text,
+          '/',
+          COALESCE(
+            (
+              SELECT MIN(ur.user_id)
+              FROM user_residents ur
+              JOIN users u ON u.id = ur.user_id
+              WHERE ur.resident_id = i.resident_id
+                AND u.role = 'RESIDENT'
+            ),
+            (
+              SELECT MIN(ur2.user_id)
+              FROM user_residents ur2
+              WHERE ur2.resident_id = i.resident_id
+            ),
+            0
+          )::text,
+          '/',
+          i.period_year::text,
+          '-',
+          LPAD(i.period_month::text, 2, '0')
+        )
+        WHERE i.resident_id IS NOT NULL
+          AND i.period_year IS NOT NULL
+          AND i.period_month IS NOT NULL;
+        """,
+        # Для существующих дублей invoice number оставляем аудиторный хвост, чтобы можно было
+        # безопасно включить БД-ограничение уникальности номера.
+        """
+        WITH dup AS (
+          SELECT id, number, ROW_NUMBER() OVER (PARTITION BY number ORDER BY id) AS rn
+          FROM invoices
+          WHERE number IS NOT NULL AND BTRIM(number) <> ''
+        )
+        UPDATE invoices i
+        SET number = CONCAT(i.number, '-DUP-', i.id::text)
+        FROM dup d
+        WHERE i.id = d.id AND d.rn > 1;
+        """,
+        # Жесткая защита в БД: номер счета должен быть уникальным.
+        "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_invoices_number') THEN ALTER TABLE invoices ADD CONSTRAINT uq_invoices_number UNIQUE (number); END IF; END $$;",
         # QR Tokens table
         """
         CREATE TABLE IF NOT EXISTS qr_tokens (

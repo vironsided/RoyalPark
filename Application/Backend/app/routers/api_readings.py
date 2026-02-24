@@ -925,7 +925,7 @@ def get_resident_meters(
         if existing:
             photo = db.query(MeterReadingPhoto).filter(MeterReadingPhoto.meter_reading_id == existing.id).first()
             if photo:
-                existing_photo_url = f"/uploads/{photo.file_path}"
+                existing_photo_url = f"/uploads/{str(photo.file_path).replace('\\', '/')}"
 
         payment_meta = None
         if existing:
@@ -946,6 +946,7 @@ def get_resident_meters(
             "date_range": date_range,
             "existing": bool(existing),
             "existing_value": existing_value_float,
+            "existing_note": (existing.note if existing else None),
             "existing_reading_id": (existing.id if existing else None),
             "last_reading_id": (last_any.id if last_any else None),
             "existing_photo_url": existing_photo_url,
@@ -1266,7 +1267,7 @@ def create_readings_internal(
             existing.amount_net = amount_net
             existing.amount_vat = amount_vat
             existing.amount_total = amount_total
-            existing.note = data.note or existing.note
+            existing.note = (data.note.strip() if data.note is not None else None)
             db.flush()
             
             # Создаём лог для обновления
@@ -1538,7 +1539,7 @@ def get_reading_history(
         reading_ids = [rd.id for rd in readings]
         if reading_ids:
             photos = db.query(MeterReadingPhoto).filter(MeterReadingPhoto.meter_reading_id.in_(reading_ids)).all()
-            photo_map = {p.meter_reading_id: f"/uploads/{p.file_path}" for p in photos}
+            photo_map = {p.meter_reading_id: f"/uploads/{str(p.file_path).replace('\\', '/')}" for p in photos}
         
         meter_entries.append((m, readings, photo_map))
 

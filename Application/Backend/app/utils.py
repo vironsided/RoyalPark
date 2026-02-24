@@ -66,6 +66,46 @@ def now_baku() -> datetime:
     return datetime.now()
 
 
+def _resolve_invoice_tenant_id(db, resident_id: int) -> int:
+    """
+    Возвращает tenant_id для номера счёта.
+    Берём минимальный user_id среди пользователей с ролью RESIDENT,
+    связанных с resident_id. Если таких нет — fallback на минимальный
+    user_id из связки user_residents.
+    """
+    from sqlalchemy import func
+    from .models import User, RoleEnum, user_residents
+
+    tenant_id = (
+        db.query(func.min(User.id))
+        .join(user_residents, User.id == user_residents.c.user_id)
+        .filter(
+            user_residents.c.resident_id == resident_id,
+            User.role == RoleEnum.RESIDENT,
+        )
+        .scalar()
+    )
+    if tenant_id is None:
+        tenant_id = (
+            db.query(func.min(user_residents.c.user_id))
+            .filter(user_residents.c.resident_id == resident_id)
+            .scalar()
+        )
+    return int(tenant_id or 0)
+
+
+def build_invoice_number(db, resident_id: int, period_year: int, period_month: int) -> str:
+    """
+    Канонический номер счёта:
+    INV-(resident_id)/(tenant_id)/(YYYY-MM)
+    """
+    rid = int(resident_id or 0)
+    tenant_id = _resolve_invoice_tenant_id(db, rid)
+    yyyy = int(period_year or 0)
+    mm = int(period_month or 0)
+    return f"INV-{rid}/{tenant_id}/{yyyy}-{mm:02d}"
+
+
 def to_baku_datetime(value: Any) -> datetime:
     """
     Приводит значение к datetime в зоне Asia/Baku.

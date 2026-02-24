@@ -1308,7 +1308,9 @@
             });
 
             const metersHtml = Object.values(metersByType).map(meter => {
-                const rowsHtml = meter.readings.map(reading => `
+                const rowsHtml = meter.readings.map(reading => {
+                    const photoUrl = resolvePhotoUrl(reading.photo_url || '');
+                    return `
                         <div class="detail-grid-row">
                             <div>${reading.date}</div>
                             <div>${reading.value.toFixed(3)}</div>
@@ -1317,14 +1319,16 @@
                             <div>${reading.vat_percent}</div>
                             <div>${reading.comment}</div>
                             <div>
-                                ${reading.photo_url ? `
-                                    <a href="${reading.photo_url}" target="_blank" class="detail-photo-link">
-                                        <img src="${reading.photo_url}" alt="Фото счётчика">
+                                ${photoUrl ? `
+                                    <a href="${photoUrl}" target="_blank" class="detail-photo-link">
+                                        <img src="${photoUrl}" alt="Фото счётчика" loading="lazy"
+                                             onerror="this.parentElement.outerHTML='<span class=\\'detail-photo-empty\\'>—</span>'">
                                     </a>
                                 ` : '<span class="detail-photo-empty">—</span>'}
                             </div>
                         </div>
-                    `).join('');
+                    `;
+                }).join('');
 
                 // Показываем серийный номер, если он есть и не является фикс-услугой
                 const serialInfo = meter.serial_number && meter.serial_number !== '-'
@@ -2011,7 +2015,20 @@
             }
 
             const data = await response.json();
-            renderMeterTable(data.meters || []);
+            const meters = data.meters || [];
+
+            // В режиме редактирования подставляем последний сохраненный комментарий за выбранный месяц.
+            if (isReadingEditMode) {
+                const commentField = document.getElementById('modalComment');
+                if (commentField) {
+                    const existingNotes = meters
+                        .filter(m => m?.existing && typeof m?.existing_note === 'string' && m.existing_note.trim() !== '')
+                        .sort((a, b) => Number(b?.existing_reading_id || 0) - Number(a?.existing_reading_id || 0));
+                    commentField.value = existingNotes.length > 0 ? existingNotes[0].existing_note : '';
+                }
+            }
+
+            renderMeterTable(meters);
         } catch (error) {
             console.error('Error loading meters:', error);
             tbody.innerHTML = `<tr><td colspan="7" class="text-danger text-center">Ошибка загрузки: ${error.message}</td></tr>`;
@@ -2190,13 +2207,10 @@
         const tbody = document.getElementById('meterTableBody');
         if (!tbody) return;
         const showDelete = isReadingEditMode;
-        const hasExistingInSelectedPeriod = meters.some(m => m && m.existing === true);
-        // В режиме редактирования месяца, если уже есть записи за период,
-        // показываем только эти записи, чтобы не смешивать их с новыми активными
-        // счётчиками после переназначения тарифов.
-        const metersToRender = (isReadingEditMode && hasExistingInSelectedPeriod)
-            ? meters.filter(m => m && m.existing === true)
-            : meters;
+        // Важно: в режиме редактирования показываем ВСЕ назначенные тарифы/счетчики.
+        // Даже если показатель за месяц удален (existing=false), строка должна оставаться,
+        // чтобы было видно, что тариф назначен и его можно снова отметить/ввести.
+        const metersToRender = meters;
         const deleteHeader = document.querySelector('.meter-table thead th:last-child');
         if (deleteHeader) {
             deleteHeader.textContent = showDelete ? 'Удалить последнее' : '';

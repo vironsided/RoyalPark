@@ -1199,7 +1199,10 @@ def _build_portal_dashboard_context(db: Session, user: User) -> dict:
 
             due = inv_month.due_date
             state = "none"
-            if due:
+            # Не показывать срок оплаты, если счёт за текущий месяц полностью оплачен
+            if Decimal(paid_m) >= Decimal(inv_month.amount_total or 0):
+                due_info[r.id] = {"due_date": None, "state": "none"}
+            elif due:
                 days = (due - today).days
                 if days < 0:
                     state = "over"
@@ -1207,7 +1210,9 @@ def _build_portal_dashboard_context(db: Session, user: User) -> dict:
                     state = "soon"
                 else:
                     state = "ok"
-            due_info[r.id] = {"due_date": due, "state": state}
+                due_info[r.id] = {"due_date": due, "state": state}
+            else:
+                due_info[r.id] = {"due_date": due, "state": state}
         else:
             month_due[r.id] = Decimal("0")
             month_total[r.id] = Decimal("0")
@@ -1870,7 +1875,10 @@ def get_resident_dashboard(
 
             due = inv_month.due_date
             state = "none"
-            if due:
+            # Не показывать срок оплаты, если счёт за текущий месяц полностью оплачен
+            if Decimal(paid_m) >= Decimal(inv_month.amount_total or 0):
+                due_info[r.id] = {"due_date": None, "state": "none"}
+            elif due:
                 days = (due - today).days
                 if days < 0:
                     state = "over"
@@ -1878,7 +1886,9 @@ def get_resident_dashboard(
                     state = "soon"
                 else:
                     state = "ok"
-            due_info[r.id] = {"due_date": due, "state": state}
+                due_info[r.id] = {"due_date": due, "state": state}
+            else:
+                due_info[r.id] = {"due_date": due, "state": state}
         else:
             month_due[r.id] = Decimal("0")
             month_total[r.id] = Decimal("0")

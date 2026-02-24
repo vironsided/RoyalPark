@@ -15,6 +15,7 @@ from ..models import (
 )
 from ..deps import get_current_user
 from ..utils import now_baku, to_baku_datetime
+from ..utils import build_invoice_number
 from .api_payment_logic import auto_apply_advance, _recompute_invoice_status, _to_int
 
 
@@ -111,7 +112,10 @@ def _build_payment_applications(db: Session, p: Payment) -> list[dict]:
             {
                 "id": app.id,
                 "invoice_id": app.invoice_id,
-                "invoice_number": app.invoice.number if app.invoice else None,
+                "invoice_number": (
+                    build_invoice_number(db, app.invoice.resident_id, app.invoice.period_year, app.invoice.period_month)
+                    if app.invoice else None
+                ),
                 "invoice_period": f"{app.invoice.period_year}-{app.invoice.period_month:02d}" if app.invoice else None,
                 "amount_applied": float(app.amount_applied),
             }
@@ -126,13 +130,14 @@ def _build_payment_applications(db: Session, p: Payment) -> list[dict]:
             db.query(
                 Invoice.id,
                 Invoice.number,
+                Invoice.resident_id,
                 Invoice.period_year,
                 Invoice.period_month,
                 func.coalesce(func.sum(PaymentApplication.amount_applied), 0)
             )
             .join(PaymentApplication, PaymentApplication.invoice_id == Invoice.id)
             .filter(PaymentApplication.reference == ref_tag)
-            .group_by(Invoice.id, Invoice.number, Invoice.period_year, Invoice.period_month)
+            .group_by(Invoice.id, Invoice.number, Invoice.resident_id, Invoice.period_year, Invoice.period_month)
             .all()
         )
         if rows:
@@ -140,11 +145,11 @@ def _build_payment_applications(db: Session, p: Payment) -> list[dict]:
                 {
                     "id": 0,
                     "invoice_id": inv_id,
-                    "invoice_number": inv_number,
+                    "invoice_number": build_invoice_number(db, resident_id, inv_year, inv_month) if inv_id else inv_number,
                     "invoice_period": f"{inv_year}-{inv_month:02d}",
                     "amount_applied": float(amount_applied),
                 }
-                for (inv_id, inv_number, inv_year, inv_month, amount_applied) in rows
+                for (inv_id, inv_number, resident_id, inv_year, inv_month, amount_applied) in rows
             ]
 
     return []
@@ -531,6 +536,9 @@ def get_open_invoices_for_payment(
     
     result = []
     for inv in open_invoices:
+        canonical_number = build_invoice_number(db, inv.resident_id, inv.period_year, inv.period_month)
+        if inv.number != canonical_number:
+            inv.number = canonical_number
         left = invoice_left(inv)
         paid = (
             db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
@@ -541,14 +549,14 @@ def get_open_invoices_for_payment(
         if left > Decimal("0"):
             result.append({
                 "id": inv.id,
-                "number": inv.number,
+                "number": canonical_number,
                 "period": f"{inv.period_year}-{inv.period_month:02d}",
                 "amount_total": float(inv.amount_total),
                 "paid_amount": float(Decimal(inv.amount_total or 0) - left),
                 "left_to_pay": float(left),
                 "due_date": inv.due_date,
             })
-    
+    db.commit()
     return {"invoices": result}
 
 
@@ -594,6 +602,9 @@ def get_open_invoices_for_payment_public(
     
     result = []
     for inv in open_invoices:
+        canonical_number = build_invoice_number(db, inv.resident_id, inv.period_year, inv.period_month)
+        if inv.number != canonical_number:
+            inv.number = canonical_number
         left = invoice_left(inv)
         paid = (
             db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
@@ -604,14 +615,14 @@ def get_open_invoices_for_payment_public(
         if left > Decimal("0"):
             result.append({
                 "id": inv.id,
-                "number": inv.number,
+                "number": canonical_number,
                 "period": f"{inv.period_year}-{inv.period_month:02d}",
                 "amount_total": float(inv.amount_total),
                 "paid_amount": float(Decimal(inv.amount_total or 0) - left),
                 "left_to_pay": float(left),
                 "due_date": inv.due_date,
             })
-    
+    db.commit()
     return {"invoices": result}
 
 
