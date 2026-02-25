@@ -45,6 +45,10 @@
                             <span>Вода</span>
                         </label>
                         <label class="multi-filter-item">
+                            <input type="checkbox" class="meter-type-checkbox" value="SEWERAGE" checked>
+                            <span>Канализация</span>
+                        </label>
+                        <label class="multi-filter-item">
                             <input type="checkbox" class="meter-type-checkbox" value="SERVICE" checked>
                             <span>Сервис</span>
                         </label>
@@ -153,6 +157,10 @@
                         <label class="multi-filter-item">
                             <input type="checkbox" class="export-meter-type-checkbox" value="WATER" checked>
                             <span>Вода</span>
+                        </label>
+                        <label class="multi-filter-item">
+                            <input type="checkbox" class="export-meter-type-checkbox" value="SEWERAGE" checked>
+                            <span>Канализация</span>
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="export-meter-type-checkbox" value="SERVICE" checked>
@@ -742,13 +750,14 @@
         }
     }
 
-    const ALL_METER_TYPES = ['ELECTRIC', 'GAS', 'WATER', 'SERVICE', 'RENT', 'CONSTRUCTION'];
-    const UTILITY_METER_TYPES = ['ELECTRIC', 'GAS', 'WATER'];
+    const ALL_METER_TYPES = ['ELECTRIC', 'GAS', 'WATER', 'SEWERAGE', 'SERVICE', 'RENT', 'CONSTRUCTION'];
+    const UTILITY_METER_TYPES = ['ELECTRIC', 'GAS', 'WATER', 'SEWERAGE'];
     const meterTypeLabels = {
         utility: 'Utility',
         ELECTRIC: 'Электричество',
         GAS: 'Газ',
         WATER: 'Вода',
+        SEWERAGE: 'Канализация',
         SERVICE: 'Сервис',
         RENT: 'Аренда',
         CONSTRUCTION: 'Строительство',

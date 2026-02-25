@@ -580,8 +580,18 @@ def list_readings(
         readings_q = readings_q.filter(Resident.id == resident_id)
     allowed_types = {"ELECTRIC", "GAS", "WATER", "SEWERAGE", "SERVICE", "RENT", "CONSTRUCTION"}
     selected_types = [t for t in (meter_type or []) if t in allowed_types]
-    if selected_types:
-        readings_q = readings_q.filter(ResidentMeter.meter_type.in_([MeterType(t) for t in selected_types]))
+    selected_types_set = set(selected_types)
+    filter_by_meter_type = bool(selected_types_set)
+    include_water = (not filter_by_meter_type) or ("WATER" in selected_types_set)
+    include_sewerage = (not filter_by_meter_type) or ("SEWERAGE" in selected_types_set)
+
+    # Если выбрана только канализация, всё равно нужно подтянуть WATER как источник
+    # для расчёта авто-канализации (у резидентов без реального SEWERAGE-счётчика).
+    query_types = set(selected_types_set)
+    if filter_by_meter_type and include_sewerage and not include_water:
+        query_types.add("WATER")
+    if query_types:
+        readings_q = readings_q.filter(ResidentMeter.meter_type.in_([MeterType(t) for t in query_types]))
     if q:
         like = f"%{q.strip()}%"
         readings_q = readings_q.filter(
@@ -619,14 +629,16 @@ def list_readings(
             unit = "мес."
 
         entry = rows.setdefault(res_id, {"resident": meter.resident, "meters": {}, "max_reading_date": None})
-        mrow = entry["meters"].setdefault(meter.id, {
-            "meter": meter,
-            "unit": unit,
-            "consumption": Decimal("0"),
-            "total": Decimal("0"),
-        })
         cons = Decimal(rd.consumption or 0)
         total = Decimal(rd.amount_total or 0)
+
+        def ensure_mrow():
+            return entry["meters"].setdefault(meter.id, {
+                "meter": meter,
+                "unit": unit,
+                "consumption": Decimal("0"),
+                "total": Decimal("0"),
+            })
 
         # Если у резидента нет реального SEWERAGE-счётчика — показываем авто-канализацию как отдельный тариф.
         if meter.meter_type == MeterType.WATER and res_id not in real_sewerage_resident_ids:
@@ -645,22 +657,30 @@ def list_readings(
                     sewer_cons = cons * k
                     sewer_total = money(total * k)
 
-                mrow["consumption"] += water_cons
-                mrow["total"] += water_total
+                if include_water:
+                    mrow = ensure_mrow()
+                    mrow["consumption"] += water_cons
+                    mrow["total"] += water_total
 
-                auto_sewer = entry.setdefault("auto_sewer", {
-                    "consumption": Decimal("0"),
-                    "total": Decimal("0"),
-                    "unit": "м³",
-                })
-                auto_sewer["consumption"] += sewer_cons
-                auto_sewer["total"] += sewer_total
+                if include_sewerage:
+                    auto_sewer = entry.setdefault("auto_sewer", {
+                        "consumption": Decimal("0"),
+                        "total": Decimal("0"),
+                        "unit": "м³",
+                    })
+                    auto_sewer["consumption"] += sewer_cons
+                    auto_sewer["total"] += sewer_total
             else:
+                if include_water:
+                    mrow = ensure_mrow()
+                    mrow["consumption"] += cons
+                    mrow["total"] += total
+        else:
+            meter_type_value = meter.meter_type.value
+            if (not filter_by_meter_type) or (meter_type_value in selected_types_set):
+                mrow = ensure_mrow()
                 mrow["consumption"] += cons
                 mrow["total"] += total
-        else:
-            mrow["consumption"] += cons
-            mrow["total"] += total
 
         # Нужна "последняя" запись за период для сортировки (новые сверху)
         cur_max = entry.get("max_reading_date")
@@ -727,6 +747,9 @@ def list_readings(
                 "unit": auto_sewer["unit"],
                 "total": auto_total,
             })
+
+        if not meters_list:
+            continue
         
         result_rows.append({
             "resident_id": res_id,

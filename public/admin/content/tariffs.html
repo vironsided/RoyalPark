@@ -648,7 +648,6 @@
 
         const bodyRows = rows.map((r) => `
             <tr>
-                <td>${esc(r.id)}</td>
                 <td>${esc(r.name)}</td>
                 <td>${esc(r.purpose)}</td>
                 <td>${esc(r.clientType)}</td>
@@ -686,8 +685,8 @@
                     <tr><td>Количество тарифов</td><td>${esc(rows.length)}</td></tr>
                 </table>
                 <table class="data">
-                    <thead><tr><th>ID</th><th>Название</th><th>Назначение</th><th>Тип клиента</th><th>НДС, %</th><th>Стабильный тариф</th><th>Ступени</th></tr></thead>
-                    <tbody>${bodyRows || '<tr><td colspan="7">Нет данных</td></tr>'}</tbody>
+                    <thead><tr><th>Название</th><th>Назначение</th><th>Тип клиента</th><th>НДС, %</th><th>Стабильный тариф</th><th>Ступени</th></tr></thead>
+                    <tbody>${bodyRows || '<tr><td colspan="6">Нет данных</td></tr>'}</tbody>
                 </table>
             </body></html>
         `;
@@ -709,7 +708,6 @@
 
         const tableRows = rows.map((r) => `
             <tr>
-                <td>${esc(r.id)}</td>
                 <td>${esc(r.name)}</td>
                 <td>${esc(r.purpose)}</td>
                 <td>${esc(r.clientType)}</td>
@@ -732,8 +730,8 @@
                 <p><strong>Фильтры:</strong> ${esc(filtersText)}</p>
                 <p><strong>Количество:</strong> ${rows.length}</p>
                 <table>
-                    <thead><tr><th>ID</th><th>Название</th><th>Назначение</th><th>Тип клиента</th><th>НДС, %</th><th>Стабильный тариф</th><th>Ступени</th></tr></thead>
-                    <tbody>${tableRows || '<tr><td colspan="7">Нет данных</td></tr>'}</tbody>
+                    <thead><tr><th>Название</th><th>Назначение</th><th>Тип клиента</th><th>НДС, %</th><th>Стабильный тариф</th><th>Ступени</th></tr></thead>
+                    <tbody>${tableRows || '<tr><td colspan="6">Нет данных</td></tr>'}</tbody>
                 </table>
             </body></html>
         `;

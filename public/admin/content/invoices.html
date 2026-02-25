@@ -76,7 +76,6 @@
                     <option value="canceled">Отменён</option>
                 </select>
             </div>
-            
             <div class="invoices-filters-group">
                 <label>Поиск</label>
                 <input type="text" id="filterSearch" placeholder="№ или примечание">
@@ -89,6 +88,124 @@
             </button>
             <button class="btn btn-outline-warning" onclick="clearInvoiceFilters()">
                 <i class="bi bi-x-circle"></i> Очистить
+            </button>
+        </div>
+    </div>
+
+    <div class="invoices-export-toolbar">
+        <button class="btn btn-outline-secondary" id="invoicesExportToggleBtn" type="button">
+            <i class="bi bi-box-arrow-down"></i> Экспорт
+        </button>
+    </div>
+
+    <div class="invoices-export-panel" id="invoicesExportPanel" style="display: none;">
+        <div class="invoices-export-grid">
+            <div class="invoices-filters-group">
+                <label>Статус</label>
+                <select id="exportInvoiceStatus">
+                    <option value="all">Все</option>
+                    <option value="issued">Выставлен</option>
+                    <option value="draft">Черновик</option>
+                    <option value="paid">Оплачен</option>
+                    <option value="unpaid">Не оплачен</option>
+                    <option value="partial">Частично оплачен</option>
+                </select>
+            </div>
+
+            <div class="invoices-filters-group">
+                <label>ФИО жителя / № дома</label>
+                <input type="text" id="exportResidentSearch" placeholder="ФИО или номер дома">
+            </div>
+
+            <div class="invoices-filters-group">
+                <label>№ инвойса</label>
+                <input type="text" id="exportInvoiceNumber" placeholder="INV-...">
+            </div>
+
+            <div class="invoices-filters-group">
+                <label>Период от</label>
+                <input type="month" id="exportPeriodFrom">
+            </div>
+
+            <div class="invoices-filters-group">
+                <label>Период до</label>
+                <input type="month" id="exportPeriodTo">
+            </div>
+
+            <div class="invoices-filters-group">
+                <label>Срок оплаты до</label>
+                <input type="date" id="exportDueDateTo">
+            </div>
+
+            <div class="invoices-filters-group">
+                <label>Блок</label>
+                <select id="exportBlock">
+                    <option value="all">Все</option>
+                </select>
+            </div>
+
+            <div class="invoices-filters-group">
+                <label>Резидент</label>
+                <select id="exportResident">
+                    <option value="all">Все</option>
+                </select>
+            </div>
+
+            <div class="invoices-filters-group">
+                <label>Сумма начислено от</label>
+                <input type="number" id="exportAmountFrom" min="0" step="0.01" placeholder="0.00">
+            </div>
+
+            <div class="invoices-filters-group">
+                <label>Сумма начислено до</label>
+                <input type="number" id="exportAmountTo" min="0" step="0.01" placeholder="0.00">
+            </div>
+
+            <div class="invoices-filters-group">
+                <label>Метод оплаты</label>
+                <select id="exportPaymentMethod">
+                    <option value="all">Все</option>
+                    <option value="CASH">Наличные</option>
+                    <option value="CARD">Карта</option>
+                    <option value="TRANSFER">Перевод</option>
+                    <option value="ONLINE">Онлайн</option>
+                    <option value="ADVANCE">Аванс</option>
+                </select>
+            </div>
+
+            <div class="invoices-filters-group">
+                <label>Тип услуги</label>
+                <details class="multi-filter service-filter-details" id="exportInvoiceMeterTypeDetails">
+                    <summary class="multi-filter-summary" id="exportInvoiceMeterTypeSummary">Все категории</summary>
+                    <div class="multi-filter-panel service-filter-dropdown">
+                        <div class="service-filter-options">
+                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="utility" checked><span>Utility</span></label>
+                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="ELECTRIC" checked><span>Электричество</span></label>
+                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="GAS" checked><span>Газ</span></label>
+                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="WATER" checked><span>Вода</span></label>
+                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="SEWERAGE" checked><span>Канализация</span></label>
+                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="SERVICE" checked><span>Сервис</span></label>
+                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="RENT" checked><span>Аренда</span></label>
+                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="CONSTRUCTION" checked><span>Строительство</span></label>
+                        </div>
+                        <div class="service-filter-actions">
+                            <button type="button" class="btn-filter-mini" id="exportInvoiceMeterSelectAllBtn">Выбрать все</button>
+                            <button type="button" class="btn-filter-mini" id="exportInvoiceMeterClearBtn">Очистить</button>
+                        </div>
+                    </div>
+                </details>
+            </div>
+        </div>
+        <div class="invoices-export-actions">
+            <select id="invoicesExportFormat" class="form-select form-select-sm" style="max-width: 170px;">
+                <option value="xls">Excel (Styled)</option>
+                <option value="pdf">PDF (печать)</option>
+            </select>
+            <button class="btn btn-outline-warning" type="button" id="invoicesExportResetBtn">
+                <i class="bi bi-x-circle"></i> Сброс
+            </button>
+            <button class="btn btn-success" type="button" id="invoicesExportRunBtn">
+                <i class="bi bi-box-arrow-down"></i> Экспорт
             </button>
         </div>
     </div>
@@ -318,6 +435,89 @@
     let filteredInvoices = [];
     let blocks = [];
     let residents = [];
+
+    const INVOICE_EXPORT_METER_TYPES = ['ELECTRIC', 'GAS', 'WATER', 'SEWERAGE', 'SERVICE', 'RENT', 'CONSTRUCTION'];
+    const INVOICE_EXPORT_UTILITY_TYPES = ['ELECTRIC', 'GAS', 'WATER', 'SEWERAGE'];
+    const INVOICE_METER_LABELS = {
+        utility: 'Utility',
+        ELECTRIC: 'Электричество',
+        GAS: 'Газ',
+        WATER: 'Вода',
+        SEWERAGE: 'Канализация',
+        SERVICE: 'Сервис',
+        RENT: 'Аренда',
+        CONSTRUCTION: 'Строительство'
+    };
+    const INVOICE_PAYMENT_METHOD_LABELS = {
+        CASH: 'Наличные',
+        CARD: 'Карта',
+        TRANSFER: 'Перевод',
+        ONLINE: 'Онлайн',
+        ADVANCE: 'Аванс'
+    };
+    const INVOICE_STATUS_LABELS = {
+        draft: 'Черновик',
+        issued: 'Выставлен',
+        partial: 'Частично оплачен',
+        paid: 'Оплачен',
+        unpaid: 'Не оплачен',
+        overdue: 'Просрочен',
+        overpaid: 'Переплата',
+        canceled: 'Отменён'
+    };
+
+    function normalizeInvoiceFromApi(inv) {
+        const normalizedLines = Array.isArray(inv.lines) ? inv.lines.map((line) => ({
+            description: line?.description || '—',
+            amount_total: Number(line?.amount_total || 0),
+            paid_amount: Number(line?.paid_amount || 0),
+            remaining_amount: Number(line?.remaining_amount || 0),
+            payment_status: line?.payment_status || null
+        })) : [];
+        return {
+            id: inv.id,
+            residentId: inv.resident_id,
+            residentCode: inv.resident_code,
+            residentInfo: inv.resident_info,
+            residentUserFullName: inv.resident_user_full_name || '—',
+            residentUserPhone: inv.resident_user_phone || '—',
+            blockName: inv.block_name,
+            unitNumber: inv.unit_number,
+            invoiceNumber: inv.number || `INV-${inv.resident_id}/0/${inv.period_year}-${String(inv.period_month).padStart(2, '0')}`,
+            number: inv.number,
+            status: String(inv.status || '').toLowerCase(),
+            dueDateRaw: inv.due_date || null,
+            dueDate: inv.due_date ? new Date(inv.due_date).toLocaleDateString('ru-RU') : '—',
+            notes: inv.notes || '',
+            period: `${inv.period_year}-${String(inv.period_month).padStart(2, '0')}`,
+            periodYear: inv.period_year,
+            periodMonth: inv.period_month,
+            amount: Number(inv.amount_total || 0),
+            amountNet: Number(inv.amount_net || 0),
+            amountVat: Number(inv.amount_vat || 0),
+            paid: Number(inv.paid_amount || 0),
+            remaining: Number(inv.amount_total || 0) - Number(inv.paid_amount || 0),
+            paymentMethods: Array.isArray(inv.payment_methods) ? inv.payment_methods.map((m) => String(m || '').toUpperCase()).filter(Boolean) : [],
+            created_at: inv.created_at,
+            lines: normalizedLines,
+        };
+    }
+
+    async function fetchInvoiceDetailForExport(invoiceId) {
+        const response = await fetch(`${API_BASE}/api/invoices/${invoiceId}`, { credentials: 'include' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const detail = await response.json();
+        return {
+            residentUserPhone: detail?.resident_user_phone || '—',
+            lines: Array.isArray(detail?.lines) ? detail.lines.map((line) => ({
+                description: line?.description || '—',
+                amount_total: Number(line?.amount_total || 0),
+                paid_amount: Number(line?.paid_amount || 0),
+                remaining_amount: Number(line?.remaining_amount || 0),
+                payment_status: line?.payment_status || null
+            })) : []
+        };
+    }
     
     // Pagination state - MUST be declared before loadInvoices
     let paginationState = {
@@ -384,29 +584,7 @@
             const data = await response.json();
             console.log('Invoices data received:', { invoices: data.invoices?.length || 0, blocks: data.blocks?.length || 0, residents: data.residents?.length || 0, pagination: data.pagination });
             
-            allInvoices = (data.invoices || []).map(inv => ({
-                id: inv.id,
-                residentId: inv.resident_id,
-                residentCode: inv.resident_code,
-                residentInfo: inv.resident_info,
-                blockName: inv.block_name,
-                unitNumber: inv.unit_number,
-                invoiceNumber: inv.number || `INV-${inv.resident_id}/0/${inv.period_year}-${String(inv.period_month).padStart(2, '0')}`,
-                number: inv.number,
-                status: inv.status.toLowerCase(),
-                dueDate: inv.due_date ? new Date(inv.due_date).toLocaleDateString('ru-RU') : '—',
-                notes: inv.notes || '',
-                period: `${inv.period_year}-${String(inv.period_month).padStart(2, '0')}`,
-                periodYear: inv.period_year,
-                periodMonth: inv.period_month,
-                amount: inv.amount_total,
-                amountNet: inv.amount_net,
-                amountVat: inv.amount_vat,
-                paid: inv.paid_amount || 0,
-                remaining: inv.amount_total - (inv.paid_amount || 0),
-                created_at: inv.created_at,
-                lines: inv.lines || [],
-            }));
+            allInvoices = (data.invoices || []).map(normalizeInvoiceFromApi);
             
             blocks = data.blocks || [];
             residents = data.residents || [];
@@ -435,6 +613,7 @@
             }
             
             updateFilterDropdowns();
+            updateExportDropdowns();
             console.log('✅ loadInvoices completed successfully');
             
         } catch (error) {
@@ -475,6 +654,621 @@
                 if (resident.id.toString() === currentValue) option.selected = true;
                 residentSelect.appendChild(option);
             });
+        }
+    }
+
+    function updateExportResidentsByBlock() {
+        const blockSelect = document.getElementById('exportBlock');
+        const residentSelect = document.getElementById('exportResident');
+        if (!residentSelect) return;
+
+        const currentValue = residentSelect.value;
+        residentSelect.innerHTML = '<option value="all">Все</option>';
+
+        let filteredResidents = Array.isArray(residents) ? [...residents] : [];
+        if (blockSelect && blockSelect.value !== 'all') {
+            const blockObj = (Array.isArray(blocks) ? blocks : []).find((b) => String(b.id) === String(blockSelect.value));
+            const blockName = blockObj?.name || null;
+            if (blockName) {
+                filteredResidents = filteredResidents.filter((r) => String(r?.block_name || '') === String(blockName));
+            }
+        }
+
+        filteredResidents.forEach((resident) => {
+            const option = document.createElement('option');
+            option.value = resident.id;
+            option.textContent = `${resident.block_name || ''} / ${resident.unit_number || ''}`.trim();
+            if (String(resident.id) === String(currentValue)) option.selected = true;
+            residentSelect.appendChild(option);
+        });
+    }
+
+    function updateExportDropdowns() {
+        const blockSelect = document.getElementById('exportBlock');
+        if (blockSelect) {
+            const currentValue = blockSelect.value || 'all';
+            blockSelect.innerHTML = '<option value="all">Все</option>';
+            (Array.isArray(blocks) ? blocks : []).forEach((block) => {
+                const option = document.createElement('option');
+                option.value = block.id;
+                option.textContent = block.name;
+                if (String(block.id) === String(currentValue)) option.selected = true;
+                blockSelect.appendChild(option);
+            });
+        }
+        updateExportResidentsByBlock();
+    }
+
+    function toggleInvoicesExportPanel() {
+        const panel = document.getElementById('invoicesExportPanel');
+        if (!panel) return;
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function bindInvoicesExportToggleButton() {
+        const btn = document.getElementById('invoicesExportToggleBtn');
+        if (!btn) return;
+        if (btn._clickHandler) btn.removeEventListener('click', btn._clickHandler);
+        btn._clickHandler = toggleInvoicesExportPanel;
+        btn.addEventListener('click', btn._clickHandler);
+    }
+
+    function getSelectedInvoiceExportMeterTypesRaw() {
+        return Array.from(document.querySelectorAll('#exportInvoiceMeterTypeDetails .export-invoice-meter-type-checkbox:checked'))
+            .map((b) => String(b.value || '').trim())
+            .filter(Boolean);
+    }
+
+    function getSelectedInvoiceExportMeterTypes() {
+        const raw = getSelectedInvoiceExportMeterTypesRaw();
+        const selected = new Set();
+        raw.forEach((value) => {
+            if (value === 'utility') {
+                INVOICE_EXPORT_UTILITY_TYPES.forEach((t) => selected.add(t));
+            } else if (INVOICE_EXPORT_METER_TYPES.includes(value)) {
+                selected.add(value);
+            }
+        });
+        return Array.from(selected);
+    }
+
+    function applyInvoiceExportUtilityRules() {
+        const root = document.getElementById('exportInvoiceMeterTypeDetails');
+        if (!root) return;
+        const utilityCb = root.querySelector('.export-invoice-meter-type-checkbox[value="utility"]');
+        if (!utilityCb) return;
+        const utilityChildren = INVOICE_EXPORT_UTILITY_TYPES
+            .map((key) => root.querySelector(`.export-invoice-meter-type-checkbox[value="${key}"]`))
+            .filter(Boolean);
+        if (utilityCb.checked) {
+            utilityChildren.forEach((cb) => {
+                cb.checked = true;
+                cb.disabled = true;
+            });
+            utilityCb.disabled = false;
+            return;
+        }
+        utilityChildren.forEach((cb) => { cb.disabled = false; });
+        const anyChildChecked = utilityChildren.some((cb) => cb.checked);
+        utilityCb.disabled = anyChildChecked;
+        if (anyChildChecked) utilityCb.checked = false;
+    }
+
+    function updateInvoiceExportMeterTypeSummary() {
+        const summary = document.getElementById('exportInvoiceMeterTypeSummary');
+        if (!summary) return;
+        const selectedRaw = getSelectedInvoiceExportMeterTypesRaw();
+        if (selectedRaw.length === 0) {
+            summary.textContent = 'Ничего не выбрано';
+            return;
+        }
+        const selectedResolved = getSelectedInvoiceExportMeterTypes();
+        if (selectedResolved.length === INVOICE_EXPORT_METER_TYPES.length) {
+            summary.textContent = 'Все категории';
+            return;
+        }
+        const utilitySelected = selectedRaw.includes('utility');
+        const customMix = selectedRaw.some((v) => v !== 'utility' && !INVOICE_EXPORT_UTILITY_TYPES.includes(v));
+        if (utilitySelected && !customMix) {
+            summary.textContent = 'Utility';
+            return;
+        }
+        const labels = selectedResolved.map((v) => INVOICE_METER_LABELS[v] || v);
+        summary.textContent = labels.length > 2 ? `${labels.slice(0, 2).join(', ')} +${labels.length - 2}` : labels.join(', ');
+    }
+
+    function bindInvoiceExportMeterTypeMultiSelect() {
+        const details = document.getElementById('exportInvoiceMeterTypeDetails');
+        if (!details) return;
+        const selectAllBtn = document.getElementById('exportInvoiceMeterSelectAllBtn');
+        const clearBtn = document.getElementById('exportInvoiceMeterClearBtn');
+        const boxes = Array.from(document.querySelectorAll('#exportInvoiceMeterTypeDetails .export-invoice-meter-type-checkbox'));
+        if (boxes.length === 0) return;
+
+        boxes.forEach((b) => {
+            if (b._changeHandler) b.removeEventListener('change', b._changeHandler);
+            b._changeHandler = function () {
+                applyInvoiceExportUtilityRules();
+                updateInvoiceExportMeterTypeSummary();
+            };
+            b.addEventListener('change', b._changeHandler);
+        });
+
+        if (selectAllBtn) {
+            if (selectAllBtn._clickHandler) selectAllBtn.removeEventListener('click', selectAllBtn._clickHandler);
+            selectAllBtn._clickHandler = function () {
+                boxes.forEach((b) => {
+                    b.checked = true;
+                    b.disabled = false;
+                });
+                applyInvoiceExportUtilityRules();
+                updateInvoiceExportMeterTypeSummary();
+            };
+            selectAllBtn.addEventListener('click', selectAllBtn._clickHandler);
+        }
+
+        if (clearBtn) {
+            if (clearBtn._clickHandler) clearBtn.removeEventListener('click', clearBtn._clickHandler);
+            clearBtn._clickHandler = function () {
+                boxes.forEach((b) => {
+                    b.checked = false;
+                    b.disabled = false;
+                });
+                applyInvoiceExportUtilityRules();
+                updateInvoiceExportMeterTypeSummary();
+            };
+            clearBtn.addEventListener('click', clearBtn._clickHandler);
+        }
+
+        applyInvoiceExportUtilityRules();
+        updateInvoiceExportMeterTypeSummary();
+    }
+
+    function detectInvoiceLineMeterType(line) {
+        const text = String(line?.description || '').toLowerCase();
+        if (text.includes('канализ')) return 'SEWERAGE';
+        if (text.includes('электр') || text.includes('electric') || text.includes('квт')) return 'ELECTRIC';
+        if (text.includes('газ')) return 'GAS';
+        if (text.includes('вод')) return 'WATER';
+        if (text.includes('сервис') || text.includes('service')) return 'SERVICE';
+        if (text.includes('аренд') || text.includes('rent')) return 'RENT';
+        if (text.includes('строит') || text.includes('construction')) return 'CONSTRUCTION';
+        return null;
+    }
+
+    function collectInvoiceMeterTypes(invoice) {
+        const set = new Set();
+        const lines = Array.isArray(invoice?.lines) ? invoice.lines : [];
+        lines.forEach((line) => {
+            const type = detectInvoiceLineMeterType(line);
+            if (type) set.add(type);
+        });
+        return Array.from(set);
+    }
+
+    function filterInvoiceLinesByService(invoice, selectedTypes) {
+        const lines = Array.isArray(invoice?.lines) ? invoice.lines : [];
+        if (!selectedTypes || selectedTypes.length === 0 || selectedTypes.length >= INVOICE_EXPORT_METER_TYPES.length) {
+            return lines;
+        }
+        return lines.filter((line) => {
+            const type = detectInvoiceLineMeterType(line);
+            return type && selectedTypes.includes(type);
+        });
+    }
+
+    function monthToIndex(monthValue) {
+        const raw = String(monthValue || '').trim();
+        if (!raw) return null;
+        const parts = raw.split('-');
+        if (parts.length !== 2) return null;
+        const y = Number(parts[0]);
+        const m = Number(parts[1]);
+        if (!Number.isFinite(y) || !Number.isFinite(m) || m < 1 || m > 12) return null;
+        return y * 12 + (m - 1);
+    }
+
+    function buildInvoicesExportFiltersText(filters) {
+        const chunks = [];
+        chunks.push(`Статус: ${INVOICE_STATUS_LABELS[filters.status] || 'Все'}`);
+        if (filters.blockText && filters.blockValue !== 'all') chunks.push(`Блок: ${filters.blockText}`);
+        if (filters.residentText && filters.residentValue !== 'all') chunks.push(`Резидент: ${filters.residentText}`);
+        if (filters.residentSearch) chunks.push(`Поиск жителя: ${filters.residentSearch}`);
+        if (filters.invoiceNumber) chunks.push(`№ инвойса: ${filters.invoiceNumber}`);
+        if (filters.periodFrom || filters.periodTo) chunks.push(`Период: ${filters.periodFrom || '...'} — ${filters.periodTo || '...'}`);
+        if (filters.dueDateTo) chunks.push(`Срок оплаты до: ${filters.dueDateTo}`);
+        if (filters.amountFrom !== null || filters.amountTo !== null) chunks.push(`Сумма: ${filters.amountFrom ?? '...'} — ${filters.amountTo ?? '...'}`);
+        if (filters.paymentMethod !== 'all') chunks.push(`Метод: ${INVOICE_PAYMENT_METHOD_LABELS[filters.paymentMethod] || filters.paymentMethod}`);
+        const meterLabels = filters.meterTypes.length >= INVOICE_EXPORT_METER_TYPES.length
+            ? 'Все'
+            : filters.meterTypes.map((t) => INVOICE_METER_LABELS[t] || t).join(', ');
+        chunks.push(`Услуги: ${meterLabels}`);
+        return chunks.join(' | ');
+    }
+
+    function buildInvoicesExportRows(invoices, selectedTypes = []) {
+        return invoices.map((inv) => {
+            const serviceLines = filterInvoiceLinesByService(inv, selectedTypes);
+            const lineTexts = serviceLines.map((line) => {
+                const amount = Number(line?.amount_total || 0).toFixed(2);
+                return `${line?.description || '—'} (${amount} ₼)`;
+            });
+            const serviceCharged = serviceLines.reduce((acc, line) => acc + Number(line?.amount_total || 0), 0);
+            const hasPaidMeta = serviceLines.some((line) => Number.isFinite(Number(line?.paid_amount)));
+            const hasRemainingMeta = serviceLines.some((line) => Number.isFinite(Number(line?.remaining_amount)));
+            const servicePaid = hasPaidMeta
+                ? serviceLines.reduce((acc, line) => acc + Number(line?.paid_amount || 0), 0)
+                : Math.min(serviceCharged, Number(inv.paid || 0));
+            const serviceRemaining = hasRemainingMeta
+                ? serviceLines.reduce((acc, line) => acc + Number(line?.remaining_amount || 0), 0)
+                : Math.max(0, serviceCharged - servicePaid);
+
+            const remainingByType = {};
+            serviceLines.forEach((line) => {
+                const type = detectInvoiceLineMeterType(line);
+                if (!type) return;
+                const rem = Number(line?.remaining_amount || 0);
+                remainingByType[type] = (remainingByType[type] || 0) + rem;
+            });
+            const serviceRemainingLines = Object.entries(remainingByType).map(([type, rem]) => {
+                const label = INVOICE_METER_LABELS[type] || type;
+                const value = Number(rem || 0);
+                if (value <= 0.0001) {
+                    return `${label}: 0.00 ₼`;
+                }
+                return `${label.toLowerCase()} ${value.toFixed(2)} ₼`;
+            });
+
+            return {
+                period: `${inv.periodYear}-${String(inv.periodMonth).padStart(2, '0')}`,
+                block: inv.blockName || '—',
+                unit: inv.unitNumber || '—',
+                residentFullName: inv.residentUserFullName || '—',
+                residentPhone: inv.residentUserPhone || '—',
+                residentCode: inv.residentCode || '—',
+                invoiceNumber: inv.invoiceNumber || '—',
+                status: INVOICE_STATUS_LABELS[inv.status] || inv.status || '—',
+                amount: Number(serviceCharged || 0),
+                paid: Number(servicePaid || 0),
+                remaining: Number(serviceRemaining || 0),
+                dueDate: inv.dueDateRaw || '—',
+                paymentMethodsText: (Array.isArray(inv.paymentMethods) && inv.paymentMethods.length)
+                    ? inv.paymentMethods.map((m) => INVOICE_PAYMENT_METHOD_LABELS[m] || m).join(', ')
+                    : '—',
+                linesList: lineTexts.length ? lineTexts : ['—'],
+                remainingByServicesList: serviceRemainingLines.length ? serviceRemainingLines : ['—']
+            };
+        });
+    }
+
+    async function fetchAllInvoicesForExport(filters) {
+        const out = [];
+        let page = 1;
+        let lastPage = 1;
+        do {
+            const params = new URLSearchParams();
+            params.append('page', String(page));
+            params.append('per_page', '200');
+            if (filters.status && filters.status !== 'all') params.append('status', filters.status.toUpperCase());
+            if (filters.blockValue && filters.blockValue !== 'all') params.append('block_id', String(filters.blockValue));
+            if (filters.residentValue && filters.residentValue !== 'all') params.append('resident_id', String(filters.residentValue));
+            if (filters.invoiceNumber) params.append('q', filters.invoiceNumber);
+
+            const response = await fetch(`${API_BASE}/api/invoices?${params.toString()}`, { credentials: 'include' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            const items = Array.isArray(data?.invoices) ? data.invoices : [];
+            out.push(...items.map(normalizeInvoiceFromApi));
+            lastPage = Math.max(1, Number(data?.pagination?.last_page || 1));
+            page += 1;
+        } while (page <= lastPage);
+        return out;
+    }
+
+    function applyInvoicesExportClientFilters(invoices, filters) {
+        const fromIdx = monthToIndex(filters.periodFrom);
+        const toIdx = monthToIndex(filters.periodTo);
+        const residentSearch = String(filters.residentSearch || '').trim().toLowerCase();
+        const invoiceNumber = String(filters.invoiceNumber || '').trim().toLowerCase();
+        const dueDateTo = filters.dueDateTo ? new Date(filters.dueDateTo) : null;
+        const amountFrom = filters.amountFrom;
+        const amountTo = filters.amountTo;
+        const methodFilter = filters.paymentMethod;
+        const selectedMeterTypes = Array.isArray(filters.meterTypes) ? filters.meterTypes : [];
+        const meterFilterAll = selectedMeterTypes.length === 0 || selectedMeterTypes.length >= INVOICE_EXPORT_METER_TYPES.length;
+
+        return invoices.filter((inv) => {
+            if (residentSearch) {
+                const blob = `${inv.residentUserFullName || ''} ${inv.residentUserPhone || ''} ${inv.residentCode || ''} ${inv.unitNumber || ''}`.toLowerCase();
+                if (!blob.includes(residentSearch)) return false;
+            }
+
+            if (invoiceNumber) {
+                const num = String(inv.invoiceNumber || inv.number || '').toLowerCase();
+                if (!num.includes(invoiceNumber)) return false;
+            }
+
+            if (fromIdx !== null || toIdx !== null) {
+                const idx = Number(inv.periodYear) * 12 + (Number(inv.periodMonth) - 1);
+                if (fromIdx !== null && idx < fromIdx) return false;
+                if (toIdx !== null && idx > toIdx) return false;
+            }
+
+            if (dueDateTo && inv.dueDateRaw) {
+                const due = new Date(inv.dueDateRaw);
+                if (!(due instanceof Date) || Number.isNaN(due.getTime()) || due > dueDateTo) return false;
+            } else if (dueDateTo && !inv.dueDateRaw) {
+                return false;
+            }
+
+            if (methodFilter && methodFilter !== 'all') {
+                const methods = Array.isArray(inv.paymentMethods) ? inv.paymentMethods : [];
+                if (!methods.includes(methodFilter)) return false;
+            }
+
+            const serviceLines = filterInvoiceLinesByService(inv, selectedMeterTypes);
+            if (!meterFilterAll) {
+                const invoiceTypes = serviceLines.map((line) => detectInvoiceLineMeterType(line)).filter(Boolean);
+                if (!invoiceTypes.some((t) => selectedMeterTypes.includes(t))) return false;
+            }
+
+            const amount = serviceLines.reduce((acc, line) => acc + Number(line?.amount_total || 0), 0);
+            if (amountFrom !== null && amount < amountFrom) return false;
+            if (amountTo !== null && amount > amountTo) return false;
+
+            return true;
+        });
+    }
+
+    function exportInvoicesToStyledExcel(rows, filtersText) {
+        const esc = (v) => String(v === null || v === undefined ? '' : v)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const bodyRows = rows.map((r) => `
+            <tr>
+                <td>${esc(r.period)}</td>
+                <td>${esc(r.block)}</td>
+                <td>${esc(r.unit)}</td>
+                <td>${esc(r.residentFullName)}</td>
+                <td>${esc(r.residentPhone)}</td>
+                <td>${esc(r.residentCode)}</td>
+                <td>${esc(r.invoiceNumber)}</td>
+                <td>${esc(r.status)}</td>
+                <td class="money-cell">${esc(r.amount.toFixed(2))}</td>
+                <td class="money-cell">${esc(r.paid.toFixed(2))}</td>
+                <td class="money-cell">${esc(r.remaining.toFixed(2))}</td>
+                <td>${esc(r.dueDate)}</td>
+                <td>${esc(r.paymentMethodsText)}</td>
+                <td class="lines-cell">${(Array.isArray(r.linesList) ? r.linesList : ['—']).map((line, idx) => `<div class="line-row">${esc(String(idx + 1) + ') ' + line)}</div>`).join('')}</td>
+                <td class="lines-cell">${(Array.isArray(r.remainingByServicesList) ? r.remainingByServicesList : ['—']).map((line) => `<div class="line-row">${esc(line)}</div>`).join('')}</td>
+            </tr>
+        `).join('');
+
+        const html = `
+            <html><head><meta charset="utf-8" />
+            <style>
+                body { font-family: Calibri, Arial, sans-serif; color: #111827; }
+                .title-table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+                .title-cell { border: 2px solid #1f2937; padding: 12px; background: #f8fafc; }
+                .title-main { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+                .title-sub { font-size: 12px; color: #4b5563; }
+                table { border-collapse: collapse; width: 100%; }
+                .meta td { border: 1px solid #9ca3af; padding: 6px 8px; font-size: 12px; }
+                .meta td:first-child { width: 180px; background: #eef2ff; font-weight: 700; }
+                .data { margin-top: 12px; }
+                .data th, .data td { border: 1px solid #9ca3af; padding: 6px 8px; font-size: 12px; vertical-align: top; }
+                .data th { background: #dbeafe; font-weight: 700; text-align: center; }
+                .money-cell { text-align: right; mso-number-format: "\\@"; }
+                .lines-cell { white-space: normal; line-height: 1.25; }
+                .line-row { padding: 1px 0; border-bottom: 1px dashed #e5e7eb; }
+                .line-row:last-child { border-bottom: none; }
+            </style></head><body>
+                <table class="title-table"><tr><td class="title-cell"><div class="title-main">Отчет по счетам</div><div class="title-sub">Royal Park - Экспорт для учета</div></td></tr></table>
+                <table class="meta">
+                    <tr><td>Сформировано</td><td>${esc(new Date().toLocaleString())}</td></tr>
+                    <tr><td>Фильтры</td><td>${esc(filtersText)}</td></tr>
+                    <tr><td>Количество счетов</td><td>${esc(rows.length)}</td></tr>
+                </table>
+                <table class="data">
+                    <thead><tr><th>Период</th><th>Блок</th><th>№ дома</th><th>ФИО жителя</th><th>Телефон жителя</th><th>Код резидента</th><th>№ инвойса</th><th>Статус</th><th>Начислено</th><th>Оплачено</th><th>Остаток</th><th>Срок оплаты</th><th>Метод оплаты</th><th>Состав начисления</th><th>Остаток по услугам</th></tr></thead>
+                    <tbody>${bodyRows || '<tr><td colspan="15">Нет данных</td></tr>'}</tbody>
+                </table>
+            </body></html>
+        `;
+
+        const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `invoices_export_${new Date().toISOString().slice(0, 10)}.xls`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    function exportInvoicesToPdf(rows, filtersText) {
+        const esc = (v) => String(v === null || v === undefined ? '' : v)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const tableRows = rows.map((r) => `
+            <tr>
+                <td>${esc(r.period)}</td><td>${esc(r.block)}</td><td>${esc(r.unit)}</td><td>${esc(r.residentFullName)}</td><td>${esc(r.residentPhone)}</td><td>${esc(r.residentCode)}</td>
+                <td>${esc(r.invoiceNumber)}</td><td>${esc(r.status)}</td><td>${esc(r.amount.toFixed(2))}</td><td>${esc(r.paid.toFixed(2))}</td>
+                <td>${esc(r.remaining.toFixed(2))}</td><td>${esc(r.dueDate)}</td><td>${esc(r.paymentMethodsText)}</td>
+                <td>${(Array.isArray(r.linesList) ? r.linesList : ['—']).map((line, idx) => `<div>${esc(String(idx + 1) + ') ' + line)}</div>`).join('')}</td>
+                <td>${(Array.isArray(r.remainingByServicesList) ? r.remainingByServicesList : ['—']).map((line) => `<div>${esc(line)}</div>`).join('')}</td>
+            </tr>
+        `).join('');
+
+        const html = `
+            <html><head><title>Экспорт счетов</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+                table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                th, td { border: 1px solid #ccc; padding: 6px; text-align: left; vertical-align: top; }
+                th { background: #f3f4f6; }
+            </style></head><body>
+                <h2>Отчет по счетам</h2>
+                <p><strong>Сформировано:</strong> ${esc(new Date().toLocaleString())}</p>
+                <p><strong>Фильтры:</strong> ${esc(filtersText)}</p>
+                <p><strong>Количество:</strong> ${rows.length}</p>
+                <table>
+                    <thead><tr><th>Период</th><th>Блок</th><th>№ дома</th><th>ФИО жителя</th><th>Телефон жителя</th><th>Код резидента</th><th>№ инвойса</th><th>Статус</th><th>Начислено</th><th>Оплачено</th><th>Остаток</th><th>Срок оплаты</th><th>Метод оплаты</th><th>Состав начисления</th><th>Остаток по услугам</th></tr></thead>
+                    <tbody>${tableRows || '<tr><td colspan="15">Нет данных</td></tr>'}</tbody>
+                </table>
+            </body></html>
+        `;
+
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        iframe.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(iframe);
+        const doc = iframe.contentWindow?.document;
+        if (!doc || !iframe.contentWindow) {
+            iframe.remove();
+            throw new Error('Не удалось подготовить печать.');
+        }
+        doc.open();
+        doc.write(html);
+        doc.close();
+        setTimeout(() => {
+            try {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            } finally {
+                setTimeout(() => iframe.remove(), 1000);
+            }
+        }, 250);
+    }
+
+    async function runInvoicesExport() {
+        const exportBtn = document.getElementById('invoicesExportRunBtn');
+        const statusEl = document.getElementById('exportInvoiceStatus');
+        const residentSearchEl = document.getElementById('exportResidentSearch');
+        const invoiceNumberEl = document.getElementById('exportInvoiceNumber');
+        const periodFromEl = document.getElementById('exportPeriodFrom');
+        const periodToEl = document.getElementById('exportPeriodTo');
+        const dueDateToEl = document.getElementById('exportDueDateTo');
+        const blockEl = document.getElementById('exportBlock');
+        const residentEl = document.getElementById('exportResident');
+        const amountFromEl = document.getElementById('exportAmountFrom');
+        const amountToEl = document.getElementById('exportAmountTo');
+        const paymentMethodEl = document.getElementById('exportPaymentMethod');
+        const formatEl = document.getElementById('invoicesExportFormat');
+
+        const filters = {
+            status: statusEl?.value || 'all',
+            residentSearch: String(residentSearchEl?.value || '').trim(),
+            invoiceNumber: String(invoiceNumberEl?.value || '').trim(),
+            periodFrom: periodFromEl?.value || '',
+            periodTo: periodToEl?.value || '',
+            dueDateTo: dueDateToEl?.value || '',
+            blockValue: blockEl?.value || 'all',
+            blockText: blockEl?.options?.[blockEl.selectedIndex]?.text || '',
+            residentValue: residentEl?.value || 'all',
+            residentText: residentEl?.options?.[residentEl.selectedIndex]?.text || '',
+            amountFrom: amountFromEl?.value ? Number(amountFromEl.value) : null,
+            amountTo: amountToEl?.value ? Number(amountToEl.value) : null,
+            paymentMethod: paymentMethodEl?.value || 'all',
+            meterTypes: getSelectedInvoiceExportMeterTypes(),
+            format: formatEl?.value || 'xls'
+        };
+
+        if (exportBtn) {
+            exportBtn.disabled = true;
+            exportBtn.textContent = 'Экспорт...';
+        }
+        try {
+            const rawInvoices = await fetchAllInvoicesForExport(filters);
+            const detailedInvoices = await Promise.all(rawInvoices.map(async (inv) => {
+                try {
+                    const detail = await fetchInvoiceDetailForExport(inv.id);
+                    return {
+                        ...inv,
+                        residentUserPhone: detail?.residentUserPhone || inv.residentUserPhone || '—',
+                        lines: Array.isArray(detail?.lines) && detail.lines.length ? detail.lines : inv.lines
+                    };
+                } catch (detailError) {
+                    console.warn('Invoice detail export fallback:', inv.id, detailError);
+                    return inv;
+                }
+            }));
+
+            const filtered = applyInvoicesExportClientFilters(detailedInvoices, filters);
+            if (!filtered.length) {
+                if (typeof showWarning === 'function') showWarning('Нет данных для экспорта по выбранным фильтрам.');
+                return;
+            }
+            const rows = buildInvoicesExportRows(filtered, filters.meterTypes);
+            const filtersText = buildInvoicesExportFiltersText(filters);
+            if (filters.format === 'pdf') {
+                exportInvoicesToPdf(rows, filtersText);
+            } else {
+                exportInvoicesToStyledExcel(rows, filtersText);
+            }
+            if (typeof showSuccess === 'function') showSuccess('Экспорт выполнен.');
+        } catch (error) {
+            console.error('Invoices export error:', error);
+            if (typeof showError === 'function') showError('Ошибка экспорта: ' + error.message);
+        } finally {
+            if (exportBtn) {
+                exportBtn.disabled = false;
+                exportBtn.innerHTML = '<i class="bi bi-box-arrow-down"></i> Экспорт';
+            }
+        }
+    }
+
+    function resetInvoicesExportFilters() {
+        const d = new Date();
+        const monthValue = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const byId = (id) => document.getElementById(id);
+        if (byId('exportInvoiceStatus')) byId('exportInvoiceStatus').value = 'all';
+        if (byId('exportResidentSearch')) byId('exportResidentSearch').value = '';
+        if (byId('exportInvoiceNumber')) byId('exportInvoiceNumber').value = '';
+        if (byId('exportPeriodFrom')) byId('exportPeriodFrom').value = monthValue;
+        if (byId('exportPeriodTo')) byId('exportPeriodTo').value = monthValue;
+        if (byId('exportDueDateTo')) byId('exportDueDateTo').value = '';
+        if (byId('exportBlock')) byId('exportBlock').value = 'all';
+        updateExportResidentsByBlock();
+        if (byId('exportResident')) byId('exportResident').value = 'all';
+        if (byId('exportAmountFrom')) byId('exportAmountFrom').value = '';
+        if (byId('exportAmountTo')) byId('exportAmountTo').value = '';
+        if (byId('exportPaymentMethod')) byId('exportPaymentMethod').value = 'all';
+        if (byId('invoicesExportFormat')) byId('invoicesExportFormat').value = 'xls';
+
+        const boxes = Array.from(document.querySelectorAll('#exportInvoiceMeterTypeDetails .export-invoice-meter-type-checkbox'));
+        boxes.forEach((cb) => {
+            cb.checked = true;
+            cb.disabled = false;
+        });
+        applyInvoiceExportUtilityRules();
+        updateInvoiceExportMeterTypeSummary();
+    }
+
+    function bindInvoicesExportActions() {
+        const runBtn = document.getElementById('invoicesExportRunBtn');
+        if (runBtn) {
+            if (runBtn._clickHandler) runBtn.removeEventListener('click', runBtn._clickHandler);
+            runBtn._clickHandler = runInvoicesExport;
+            runBtn.addEventListener('click', runBtn._clickHandler);
+        }
+
+        const resetBtn = document.getElementById('invoicesExportResetBtn');
+        if (resetBtn) {
+            if (resetBtn._clickHandler) resetBtn.removeEventListener('click', resetBtn._clickHandler);
+            resetBtn._clickHandler = resetInvoicesExportFilters;
+            resetBtn.addEventListener('click', resetBtn._clickHandler);
+        }
+
+        const exportBlock = document.getElementById('exportBlock');
+        if (exportBlock) {
+            if (exportBlock._changeHandler) exportBlock.removeEventListener('change', exportBlock._changeHandler);
+            exportBlock._changeHandler = updateExportResidentsByBlock;
+            exportBlock.addEventListener('change', exportBlock._changeHandler);
         }
     }
     
@@ -775,10 +1569,15 @@
     // Initial load
     document.addEventListener('DOMContentLoaded', function() {
         console.log('DOMContentLoaded - calling loadInvoices()');
+        bindInvoicesExportToggleButton();
+        bindInvoiceExportMeterTypeMultiSelect();
+        bindInvoicesExportActions();
+        resetInvoicesExportFilters();
         setTimeout(() => {
             loadInvoices();
             setTimeout(() => {
                 initCustomInvoicePaginationDropdown();
+                updateExportDropdowns();
             }, 500);
         }, 100);
     });
@@ -798,9 +1597,13 @@
         if (route === '/invoices') {
             console.log('spa:contentLoaded - calling loadInvoices()');
             setTimeout(() => {
+                bindInvoicesExportToggleButton();
+                bindInvoiceExportMeterTypeMultiSelect();
+                bindInvoicesExportActions();
                 loadInvoices();
                 setTimeout(() => {
                     initCustomInvoicePaginationDropdown();
+                    updateExportDropdowns();
                 }, 200);
             }, 100);
         } else {
@@ -814,9 +1617,13 @@
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         console.log('Page already loaded, calling loadInvoices()');
         setTimeout(() => {
+            bindInvoicesExportToggleButton();
+            bindInvoiceExportMeterTypeMultiSelect();
+            bindInvoicesExportActions();
             loadInvoices();
             setTimeout(() => {
                 initCustomInvoicePaginationDropdown();
+                updateExportDropdowns();
             }, 200);
         }, 200);
     }
@@ -1113,6 +1920,10 @@
 
     // Auto-apply filters on input change and initialize date picker
     document.addEventListener('DOMContentLoaded', function() {
+        bindInvoicesExportToggleButton();
+        bindInvoiceExportMeterTypeMultiSelect();
+        bindInvoicesExportActions();
+
         // Setup filter inputs
         const filterInputs = ['filterYear', 'filterMonth', 'filterResident', 'filterStatus', 'filterSearch'];
         filterInputs.forEach(inputId => {

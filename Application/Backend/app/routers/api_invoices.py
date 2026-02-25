@@ -44,6 +44,7 @@ class InvoiceOut(BaseModel):
     block_name: str
     unit_number: str
     number: Optional[str] = None
+    resident_user_phone: Optional[str] = None
     status: str
     due_date: Optional[date] = None
     notes: Optional[str] = None
@@ -133,6 +134,7 @@ def _list_invoices_internal(
     # Получаем сумму оплат по каждому счёту
     ids = [inv.id for inv in items]
     paid_map = {}
+    payment_methods_map: dict[int, list[str]] = {}
     if ids:
         rows = (
             db.query(PaymentApplication.invoice_id, func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
@@ -141,6 +143,20 @@ def _list_invoices_internal(
             .all()
         )
         paid_map = {inv_id: float(paid) for inv_id, paid in rows}
+
+        method_rows = (
+            db.query(PaymentApplication.invoice_id, Payment.method)
+            .join(Payment, Payment.id == PaymentApplication.payment_id)
+            .filter(PaymentApplication.invoice_id.in_(ids))
+            .all()
+        )
+        method_sets: dict[int, set[str]] = {}
+        for invoice_id, method in method_rows:
+            method_key = method.value if isinstance(method, PaymentMethod) else str(method or "").strip()
+            if not method_key:
+                continue
+            method_sets.setdefault(int(invoice_id), set()).add(method_key)
+        payment_methods_map = {inv_id: sorted(list(methods)) for inv_id, methods in method_sets.items()}
     
     # Проверяем и исправляем amount_total для каждого счета, если он не совпадает с суммой строк
     needs_commit = False
@@ -168,6 +184,10 @@ def _list_invoices_internal(
     # Получаем блоки и резидентов для формирования данных
     blocks = {b.id: b for b in db.query(Block).all()}
     
+    resident_ids = [int(inv.resident_id) for inv in items if inv.resident_id]
+    resident_user_names = _resident_user_names_map(db, resident_ids)
+    resident_user_phones = _resident_user_phones_map(db, resident_ids)
+
     result = []
     for inv in items:
         resident = inv.resident
@@ -180,6 +200,8 @@ def _list_invoices_internal(
             "resident_info": f"Блок {block.name if block else ''}, №{resident.unit_number}" if block else f"№{resident.unit_number}",
             "block_name": block.name if block else "",
             "unit_number": resident.unit_number,
+            "resident_user_full_name": resident_user_names.get(int(inv.resident_id)) if inv.resident_id else None,
+            "resident_user_phone": resident_user_phones.get(int(inv.resident_id)) if inv.resident_id else None,
             "number": inv.number,
             "status": inv.status.value,
             "due_date": inv.due_date,
@@ -190,6 +212,7 @@ def _list_invoices_internal(
             "amount_vat": float(inv.amount_vat),
             "amount_total": float(inv.amount_total),
             "paid_amount": paid_map.get(inv.id, 0.0),
+            "payment_methods": payment_methods_map.get(inv.id, []),
             "created_at": inv.created_at,
             "lines": [
                 {
@@ -431,6 +454,7 @@ class InvoiceDetailOut(BaseModel):
     resident_id: int
     resident_code: str  # "A / 205"
     resident_user_full_name: Optional[str] = None  # ФИО (или username) жителя (User), привязанного к резиденту
+    resident_user_phone: Optional[str] = None
     number: Optional[str] = None
     status: str
     due_date: Optional[date] = None
@@ -479,6 +503,36 @@ def _resident_user_names_map(db: Session, resident_ids: list[int]) -> dict[int, 
             acc[rid_i].append(name)
 
     return {rid: ", ".join(names) for rid, names in acc.items()}
+
+
+def _resident_user_phones_map(db: Session, resident_ids: list[int]) -> dict[int, str]:
+    """
+    Возвращает телефоны 'жителей' (User) для каждого resident_id.
+    Если привязано несколько — склеиваем через ", ".
+    """
+    if not resident_ids:
+        return {}
+
+    rows = (
+        db.query(user_residents.c.resident_id, User.phone)
+        .join(User, User.id == user_residents.c.user_id)
+        .filter(user_residents.c.resident_id.in_(resident_ids))
+        .filter(User.is_active.is_(True))
+        .filter(User.role == RoleEnum.RESIDENT)
+        .all()
+    )
+
+    acc: dict[int, list[str]] = {}
+    for rid, phone in rows:
+        value = (phone or "").strip()
+        if not value:
+            continue
+        rid_i = int(rid)
+        acc.setdefault(rid_i, [])
+        if value not in acc[rid_i]:
+            acc[rid_i].append(value)
+
+    return {rid: ", ".join(values) for rid, values in acc.items()}
 
 
 def _money2(x: Decimal) -> Decimal:
@@ -894,6 +948,7 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
             period_dates = {"from": start_str, "to": end_str}
 
     resident_user_names = _resident_user_names_map(db, [int(inv.resident_id)]) if inv.resident_id else {}
+    resident_user_phones = _resident_user_phones_map(db, [int(inv.resident_id)]) if inv.resident_id else {}
 
     def _stable_service_label(desc: str | None) -> str | None:
         if not desc:
@@ -1023,6 +1078,7 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
         "resident_id": inv.resident_id,
         "resident_code": f"{block.name if block else ''} / {resident.unit_number}" if block else resident.unit_number,
         "resident_user_full_name": resident_user_names.get(int(inv.resident_id)) if inv.resident_id else None,
+        "resident_user_phone": resident_user_phones.get(int(inv.resident_id)) if inv.resident_id else None,
         "number": inv.number,
         "status": inv.status.value,
         "due_date": inv.due_date,
