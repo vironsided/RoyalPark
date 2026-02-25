@@ -21,16 +21,43 @@
 
             <div class="filter-group">
                 <label>Тип счётчика</label>
-                <select id="filterMeterType">
-                    <option value="all">Все</option>
-                    <option value="electricity">Электричество</option>
-                    <option value="gas">Газ</option>
-                    <option value="water">Вода</option>
-                    <option value="sewerage">Канализация</option>
-                    <option value="service">Сервис</option>
-                    <option value="rent">Аренда</option>
-                    <option value="construction">Строительство</option>
-                </select>
+                <details class="multi-filter" id="filterMeterTypeDetails">
+                    <summary class="multi-filter-summary" id="filterMeterTypeSummary">Все</summary>
+                    <div class="multi-filter-panel">
+                        <label class="multi-filter-item">
+                            <input type="checkbox" id="meterTypeAll" checked>
+                            <span>Все</span>
+                        </label>
+                        <label class="multi-filter-item">
+                            <input type="checkbox" class="meter-type-checkbox" value="utility" checked>
+                            <span>Utility</span>
+                        </label>
+                        <label class="multi-filter-item">
+                            <input type="checkbox" class="meter-type-checkbox" value="ELECTRIC" checked>
+                            <span>Электричество</span>
+                        </label>
+                        <label class="multi-filter-item">
+                            <input type="checkbox" class="meter-type-checkbox" value="GAS" checked>
+                            <span>Газ</span>
+                        </label>
+                        <label class="multi-filter-item">
+                            <input type="checkbox" class="meter-type-checkbox" value="WATER" checked>
+                            <span>Вода</span>
+                        </label>
+                        <label class="multi-filter-item">
+                            <input type="checkbox" class="meter-type-checkbox" value="SERVICE" checked>
+                            <span>Сервис</span>
+                        </label>
+                        <label class="multi-filter-item">
+                            <input type="checkbox" class="meter-type-checkbox" value="RENT" checked>
+                            <span>Аренда</span>
+                        </label>
+                        <label class="multi-filter-item">
+                            <input type="checkbox" class="meter-type-checkbox" value="CONSTRUCTION" checked>
+                            <span>Строительство</span>
+                        </label>
+                    </div>
+                </details>
             </div>
 
             <div class="filter-group">
@@ -75,6 +102,100 @@
             </button>
             <button class="btn btn-primary" onclick="openRecordModal()">
                 <i class="bi bi-plus-lg"></i> Запись показателя
+            </button>
+        </div>
+    </div>
+
+    <div class="readings-export-toolbar">
+        <button class="btn btn-outline-secondary" id="readingsExportToggleBtn" type="button">
+            <i class="bi bi-box-arrow-down"></i> Экспорт
+        </button>
+    </div>
+
+    <div class="readings-export-panel" id="readingsExportPanel" style="display: none;">
+        <div class="readings-export-grid">
+            <div class="filter-group">
+                <label>Блок</label>
+                <select id="exportFilterBlock">
+                    <option value="all">Все</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Резидент</label>
+                <select id="exportFilterResident">
+                    <option value="all">Все</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Тип счётчика</label>
+                <details class="multi-filter service-filter-details" id="exportFilterMeterTypeDetails">
+                    <summary class="multi-filter-summary" id="exportFilterMeterTypeSummary">Все типы</summary>
+                    <div class="multi-filter-panel service-filter-dropdown">
+                        <div class="service-filter-options" id="exportMeterTypeOptions">
+                        <label class="multi-filter-item">
+                            <input type="checkbox" id="exportMeterTypeAll" checked>
+                            <span>Все</span>
+                        </label>
+                        <label class="multi-filter-item">
+                            <input type="checkbox" class="export-meter-type-checkbox" value="utility" checked>
+                            <span>Utility</span>
+                        </label>
+                        <label class="multi-filter-item">
+                            <input type="checkbox" class="export-meter-type-checkbox" value="ELECTRIC" checked>
+                            <span>Электричество</span>
+                        </label>
+                        <label class="multi-filter-item">
+                            <input type="checkbox" class="export-meter-type-checkbox" value="GAS" checked>
+                            <span>Газ</span>
+                        </label>
+                        <label class="multi-filter-item">
+                            <input type="checkbox" class="export-meter-type-checkbox" value="WATER" checked>
+                            <span>Вода</span>
+                        </label>
+                        <label class="multi-filter-item">
+                            <input type="checkbox" class="export-meter-type-checkbox" value="SERVICE" checked>
+                            <span>Сервис</span>
+                        </label>
+                        <label class="multi-filter-item">
+                            <input type="checkbox" class="export-meter-type-checkbox" value="RENT" checked>
+                            <span>Аренда</span>
+                        </label>
+                        <label class="multi-filter-item">
+                            <input type="checkbox" class="export-meter-type-checkbox" value="CONSTRUCTION" checked>
+                            <span>Строительство</span>
+                        </label>
+                        </div>
+                        <div class="service-filter-actions">
+                            <button type="button" class="btn-filter-mini" id="exportMeterSelectAllBtn">Выбрать все</button>
+                            <button type="button" class="btn-filter-mini" id="exportMeterClearBtn">Очистить</button>
+                        </div>
+                    </div>
+                </details>
+            </div>
+
+            <div class="filter-group">
+                <label>Месяц от</label>
+                <input type="month" id="exportFilterDateFrom">
+            </div>
+
+            <div class="filter-group">
+                <label>Месяц до</label>
+                <input type="month" id="exportFilterDateTo">
+            </div>
+        </div>
+
+        <div class="readings-export-actions">
+            <select id="readingsExportFormat" class="form-select form-select-sm" style="max-width: 170px;">
+                <option value="xls">Excel (Styled)</option>
+                <option value="pdf">PDF (печать)</option>
+            </select>
+            <button class="btn btn-outline-warning" type="button" onclick="resetReadingsExportFilters()">
+                <i class="bi bi-x-circle"></i> Сброс
+            </button>
+            <button class="btn btn-success" type="button" onclick="exportReadings()">
+                <i class="bi bi-box-arrow-down"></i> Экспорт
             </button>
         </div>
     </div>
@@ -333,7 +454,7 @@
         try {
             const blockId = document.getElementById('filterBlock')?.value;
             const residentId = document.getElementById('filterResident')?.value;
-            const meterType = document.getElementById('filterMeterType')?.value;
+            const meterTypes = getSelectedMeterTypes();
             // Всегда получаем год и месяц, если не указаны - используем текущие
             const yearSelect = document.getElementById('filterYear');
             const monthSelect = document.getElementById('filterMonth');
@@ -341,7 +462,7 @@
             const month = monthSelect?.value || (new Date().getMonth() + 1).toString();
             const searchTerm = document.getElementById('filterSearch')?.value.trim();
 
-            console.log('Filters:', { blockId, residentId, meterType, year, month, searchTerm });
+            console.log('Filters:', { blockId, residentId, meterTypes, year, month, searchTerm });
 
             const params = new URLSearchParams();
             // Pagination parameters
@@ -361,17 +482,9 @@
                 }
             }
             if (residentId && residentId !== 'all') params.append('resident_id', residentId);
-            if (meterType && meterType !== 'all') {
-                const meterTypeMap = {
-                    'electricity': 'ELECTRIC',
-                    'gas': 'GAS',
-                    'water': 'WATER',
-                    'sewerage': 'SEWERAGE',
-                    'service': 'SERVICE',
-                    'rent': 'RENT',
-                    'construction': 'CONSTRUCTION'
-                };
-                if (meterTypeMap[meterType]) params.append('meter_type', meterTypeMap[meterType]);
+            const allTypeCount = ALL_METER_TYPES.length;
+            if (Array.isArray(meterTypes) && meterTypes.length > 0 && meterTypes.length < allTypeCount) {
+                meterTypes.forEach((t) => params.append('meter_type', t));
             }
             if (searchTerm) params.append('q', searchTerm);
 
@@ -421,6 +534,22 @@
                 showError('Ошибка загрузки показаний: ' + error.message);
             }
         }
+    }
+
+    function bindResidentFilterToBlock() {
+        const blockSelect = document.getElementById('filterBlock');
+        if (!blockSelect) return;
+
+        // Prevent duplicate handlers when SPA reloads the page content
+        if (blockSelect._residentFilterHandler) {
+            blockSelect.removeEventListener('change', blockSelect._residentFilterHandler);
+        }
+
+        blockSelect._residentFilterHandler = function () {
+            // When block changes: update resident list immediately
+            updateResidentFilterOptions();
+        };
+        blockSelect.addEventListener('change', blockSelect._residentFilterHandler);
     }
 
     // Render readings table
@@ -578,20 +707,775 @@
             });
         }
 
-        // Update residents dropdown
+        updateResidentFilterOptions();
+        updateExportBlockOptions();
+    }
+
+    function updateResidentFilterOptions() {
         const residentSelect = document.getElementById('filterResident');
-        if (residentSelect && residents.length > 0) {
-            const currentValue = residentSelect.value;
-            residentSelect.innerHTML = '<option value="all">Все</option>';
-            residents.forEach(resident => {
-                const option = document.createElement('option');
-                option.value = resident.id;
-                option.textContent = `${resident.block_name}, №${resident.unit_number}`;
-                if (resident.id.toString() === currentValue) option.selected = true;
-                residentSelect.appendChild(option);
-            });
+        if (!residentSelect) return;
+
+        const currentValue = residentSelect.value;
+        const selectedBlockName = document.getElementById('filterBlock')?.value || 'all';
+        const norm = (v) => String(v === null || v === undefined ? '' : v).trim();
+        const selectedBlockNorm = norm(selectedBlockName);
+
+        const list = Array.isArray(residents) ? residents : [];
+        const filtered = selectedBlockNorm && selectedBlockNorm !== 'all'
+            ? list.filter((r) => norm(r?.block_name) === selectedBlockNorm)
+            : list;
+
+        residentSelect.innerHTML = '<option value="all">Все</option>';
+        filtered.forEach((resident) => {
+            const unit = norm(resident?.unit_number) || '—';
+            const option = document.createElement('option');
+            option.value = resident.id;
+            option.textContent = `№${unit}`;
+            if (String(resident.id) === String(currentValue)) option.selected = true;
+            residentSelect.appendChild(option);
+        });
+
+        // If current selection no longer exists in filtered list, fallback to "all"
+        const hasSelected = filtered.some((r) => String(r?.id) === String(currentValue));
+        if (currentValue && currentValue !== 'all' && !hasSelected) {
+            residentSelect.value = 'all';
         }
     }
+
+    const ALL_METER_TYPES = ['ELECTRIC', 'GAS', 'WATER', 'SERVICE', 'RENT', 'CONSTRUCTION'];
+    const UTILITY_METER_TYPES = ['ELECTRIC', 'GAS', 'WATER'];
+    const meterTypeLabels = {
+        utility: 'Utility',
+        ELECTRIC: 'Электричество',
+        GAS: 'Газ',
+        WATER: 'Вода',
+        SERVICE: 'Сервис',
+        RENT: 'Аренда',
+        CONSTRUCTION: 'Строительство',
+    };
+
+    function getSelectedMeterTypes() {
+        const boxes = Array.from(document.querySelectorAll('#filterMeterTypeDetails .meter-type-checkbox:checked'));
+        const raw = boxes.map((b) => String(b.value || '').trim()).filter(Boolean);
+        const selected = new Set();
+
+        raw.forEach((value) => {
+            if (value === 'utility') {
+                UTILITY_METER_TYPES.forEach((t) => selected.add(t));
+            } else if (ALL_METER_TYPES.includes(value)) {
+                selected.add(value);
+            }
+        });
+
+        return Array.from(selected);
+    }
+
+    function getSelectedMeterTypesRaw() {
+        return Array.from(document.querySelectorAll('#filterMeterTypeDetails .meter-type-checkbox:checked'))
+            .map((b) => String(b.value || '').trim())
+            .filter(Boolean);
+    }
+
+    function applyUtilityMeterTypeRules() {
+        const optionsRoot = document.getElementById('filterMeterTypeDetails');
+        if (!optionsRoot) return;
+
+        const utilityCb = optionsRoot.querySelector('.meter-type-checkbox[value="utility"]');
+        if (!utilityCb) return;
+
+        const utilityChildren = UTILITY_METER_TYPES
+            .map((key) => optionsRoot.querySelector(`.meter-type-checkbox[value="${key}"]`))
+            .filter(Boolean);
+
+        if (utilityCb.checked) {
+            utilityChildren.forEach((cb) => {
+                cb.checked = true;
+                cb.disabled = true;
+            });
+            utilityCb.disabled = false;
+            return;
+        }
+
+        utilityChildren.forEach((cb) => {
+            cb.disabled = false;
+        });
+
+        const anyChildChecked = utilityChildren.some((cb) => cb.checked);
+        utilityCb.disabled = anyChildChecked;
+        if (anyChildChecked) {
+            utilityCb.checked = false;
+        }
+    }
+
+    function updateMeterTypeSummary() {
+        const summary = document.getElementById('filterMeterTypeSummary');
+        if (!summary) return;
+
+        const selectedResolved = getSelectedMeterTypes();
+        if (selectedResolved.length === 0 || selectedResolved.length === ALL_METER_TYPES.length) {
+            summary.textContent = 'Все';
+            return;
+        }
+
+        const selectedRaw = getSelectedMeterTypesRaw();
+        const utilitySelected = selectedRaw.includes('utility');
+        const hasCustomUtilityMix = selectedRaw.some(
+            (v) => v !== 'utility' && !UTILITY_METER_TYPES.includes(v)
+        );
+        if (utilitySelected && !hasCustomUtilityMix) {
+            summary.textContent = 'Utility';
+            return;
+        }
+
+        if (selectedResolved.length <= 2) {
+            const labels = selectedResolved.map((v) => meterTypeLabels[v] || v);
+            summary.textContent = labels.join(', ');
+            return;
+        }
+
+        summary.textContent = `${selectedResolved.length} выбрано`;
+    }
+
+    function bindMeterTypeMultiSelect() {
+        const details = document.getElementById('filterMeterTypeDetails');
+        if (!details) return;
+
+        const allBox = document.getElementById('meterTypeAll');
+        const boxes = Array.from(document.querySelectorAll('#filterMeterTypeDetails .meter-type-checkbox'));
+        if (!allBox || boxes.length === 0) return;
+
+        // dedupe handlers for SPA reloads
+        if (allBox._changeHandler) allBox.removeEventListener('change', allBox._changeHandler);
+        allBox._changeHandler = function () {
+            const shouldCheck = allBox.checked;
+            boxes.forEach((b) => {
+                b.checked = shouldCheck;
+                b.disabled = false;
+            });
+            applyUtilityMeterTypeRules();
+            allBox.checked = boxes.every((x) => x.checked);
+            updateMeterTypeSummary();
+        };
+        allBox.addEventListener('change', allBox._changeHandler);
+
+        boxes.forEach((b) => {
+            if (b._changeHandler) b.removeEventListener('change', b._changeHandler);
+            b._changeHandler = function () {
+                applyUtilityMeterTypeRules();
+                allBox.checked = boxes.every((x) => x.checked);
+                updateMeterTypeSummary();
+            };
+            b.addEventListener('change', b._changeHandler);
+        });
+
+        // Initial sync
+        applyUtilityMeterTypeRules();
+        allBox.checked = boxes.every((b) => b.checked);
+        updateMeterTypeSummary();
+    }
+
+    window.toggleReadingsExportPanel = function toggleReadingsExportPanel(event) {
+        if (event && typeof event.stopPropagation === 'function') {
+            event.stopPropagation();
+        }
+        const panel = document.getElementById('readingsExportPanel');
+        if (!panel) return;
+        const isOpen = panel.style.display !== 'none';
+        panel.style.display = isOpen ? 'none' : 'block';
+    };
+
+    function closeReadingsExportPanel() {
+        const panel = document.getElementById('readingsExportPanel');
+        if (!panel) return;
+        panel.style.display = 'none';
+    }
+
+    function bindReadingsExportOutsideClose() {
+        if (window._readingsExportOutsideClickHandler) {
+            document.removeEventListener('click', window._readingsExportOutsideClickHandler);
+            window._readingsExportOutsideClickHandler = null;
+        }
+    }
+
+    function bindReadingsExportToggleButton() {
+        const toggleBtn = document.getElementById('readingsExportToggleBtn');
+        if (!toggleBtn) return;
+
+        if (toggleBtn._clickHandler) {
+            toggleBtn.removeEventListener('click', toggleBtn._clickHandler);
+        }
+
+        toggleBtn._clickHandler = function (e) {
+            e.preventDefault();
+            window.toggleReadingsExportPanel(e);
+        };
+        toggleBtn.addEventListener('click', toggleBtn._clickHandler);
+    }
+
+    function updateExportBlockOptions() {
+        const blockSelect = document.getElementById('exportFilterBlock');
+        if (!blockSelect) return;
+        const currentValue = blockSelect.value || 'all';
+        blockSelect.innerHTML = '<option value="all">Все</option>';
+        (Array.isArray(blocks) ? blocks : []).forEach((block) => {
+            const option = document.createElement('option');
+            option.value = block.name;
+            option.textContent = block.name;
+            if (String(block.name) === String(currentValue)) option.selected = true;
+            blockSelect.appendChild(option);
+        });
+    }
+
+    async function loadExportResidentsByBlock() {
+        const residentSelect = document.getElementById('exportFilterResident');
+        if (!residentSelect) return;
+
+        const currentValue = residentSelect.value || 'all';
+        const blockName = document.getElementById('exportFilterBlock')?.value || 'all';
+        const blockObj = (Array.isArray(blocks) ? blocks : []).find((b) => String(b?.name) === String(blockName));
+
+        try {
+            const perPage = 100;
+            let page = 1;
+            let lastPage = 1;
+            const allResidents = [];
+
+            do {
+                const params = new URLSearchParams();
+                params.append('page', String(page));
+                params.append('per_page', String(perPage));
+                if (blockObj && blockObj.id) params.append('block_id', String(blockObj.id));
+
+                const response = await fetch(`${API_BASE}/api/residents?${params.toString()}`, { credentials: 'include' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                const items = Array.isArray(data)
+                    ? data
+                    : (Array.isArray(data?.items) ? data.items : (Array.isArray(data?.residents) ? data.residents : []));
+                allResidents.push(...items);
+                lastPage = Math.max(1, Number(data?.last_page || data?.pagination?.last_page || 1));
+                page += 1;
+            } while (page <= lastPage);
+
+            residentSelect.innerHTML = '<option value="all">Все</option>';
+            allResidents.forEach((resident) => {
+                const option = document.createElement('option');
+                option.value = resident.id;
+                option.textContent = `№${resident.unit_number || '—'}`;
+                if (String(resident.id) === String(currentValue)) option.selected = true;
+                residentSelect.appendChild(option);
+            });
+
+            if (currentValue !== 'all' && !allResidents.some((r) => String(r?.id) === String(currentValue))) {
+                residentSelect.value = 'all';
+            }
+        } catch (error) {
+            console.error('Export residents load error:', error);
+            residentSelect.innerHTML = '<option value="all">Все</option>';
+        }
+    }
+
+    window.resetReadingsExportFilters = async function resetReadingsExportFilters() {
+        const blockSelect = document.getElementById('exportFilterBlock');
+        const residentSelect = document.getElementById('exportFilterResident');
+        const dateFrom = document.getElementById('exportFilterDateFrom');
+        const dateTo = document.getElementById('exportFilterDateTo');
+        const format = document.getElementById('readingsExportFormat');
+        const allBox = document.getElementById('exportMeterTypeAll');
+        const boxes = Array.from(document.querySelectorAll('#exportFilterMeterTypeDetails .export-meter-type-checkbox'));
+
+        if (blockSelect) blockSelect.value = 'all';
+        if (residentSelect) residentSelect.value = 'all';
+        if (format) format.value = 'xls';
+
+        const d = new Date();
+        if (dateFrom) {
+            dateFrom.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+        if (dateTo) {
+            dateTo.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        boxes.forEach((b) => {
+            b.checked = true;
+            b.disabled = false;
+        });
+        if (allBox) allBox.checked = true;
+        applyExportUtilityMeterTypeRules();
+        updateExportMeterTypeSummary();
+
+        await loadExportResidentsByBlock();
+
+        if (typeof showSuccess === 'function') {
+            showSuccess('Фильтры экспорта сброшены!');
+        }
+    };
+
+    function getSelectedExportMeterTypes() {
+        const boxes = Array.from(document.querySelectorAll('#exportFilterMeterTypeDetails .export-meter-type-checkbox:checked'));
+        const raw = boxes.map((b) => String(b.value || '').trim()).filter(Boolean);
+        const selected = new Set();
+
+        raw.forEach((value) => {
+            if (value === 'utility') {
+                UTILITY_METER_TYPES.forEach((t) => selected.add(t));
+            } else if (ALL_METER_TYPES.includes(value)) {
+                selected.add(value);
+            }
+        });
+
+        return Array.from(selected);
+    }
+
+    function getSelectedExportMeterTypesRaw() {
+        return Array.from(document.querySelectorAll('#exportFilterMeterTypeDetails .export-meter-type-checkbox:checked'))
+            .map((b) => String(b.value || '').trim())
+            .filter(Boolean);
+    }
+
+    function applyExportUtilityMeterTypeRules() {
+        const root = document.getElementById('exportFilterMeterTypeDetails');
+        if (!root) return;
+        const utilityCb = root.querySelector('.export-meter-type-checkbox[value="utility"]');
+        if (!utilityCb) return;
+
+        const utilityChildren = UTILITY_METER_TYPES
+            .map((key) => root.querySelector(`.export-meter-type-checkbox[value="${key}"]`))
+            .filter(Boolean);
+
+        if (utilityCb.checked) {
+            utilityChildren.forEach((cb) => {
+                cb.checked = true;
+                cb.disabled = true;
+            });
+            utilityCb.disabled = false;
+            return;
+        }
+
+        utilityChildren.forEach((cb) => { cb.disabled = false; });
+        const anyChildChecked = utilityChildren.some((cb) => cb.checked);
+        utilityCb.disabled = anyChildChecked;
+        if (anyChildChecked) utilityCb.checked = false;
+    }
+
+    function updateExportMeterTypeSummary() {
+        const summary = document.getElementById('exportFilterMeterTypeSummary');
+        if (!summary) return;
+
+        const selectedResolved = getSelectedExportMeterTypes();
+        if (selectedResolved.length === 0 || selectedResolved.length === ALL_METER_TYPES.length) {
+            summary.textContent = 'Все типы';
+            return;
+        }
+
+        const selectedRaw = getSelectedExportMeterTypesRaw();
+        const utilitySelected = selectedRaw.includes('utility');
+        const hasCustomUtilityMix = selectedRaw.some((v) => v !== 'utility' && !UTILITY_METER_TYPES.includes(v));
+        if (utilitySelected && !hasCustomUtilityMix) {
+            summary.textContent = 'Utility';
+            return;
+        }
+
+        const labels = selectedResolved.map((v) => meterTypeLabels[v] || v);
+        const preview = labels.slice(0, 2).join(', ');
+        summary.textContent = labels.length > 2 ? `${preview} +${labels.length - 2}` : preview;
+    }
+
+    function bindExportMeterTypeMultiSelect() {
+        const details = document.getElementById('exportFilterMeterTypeDetails');
+        if (!details) return;
+
+        const allBox = document.getElementById('exportMeterTypeAll');
+        const selectAllBtn = document.getElementById('exportMeterSelectAllBtn');
+        const clearBtn = document.getElementById('exportMeterClearBtn');
+        const boxes = Array.from(document.querySelectorAll('#exportFilterMeterTypeDetails .export-meter-type-checkbox'));
+        if (!allBox || boxes.length === 0) return;
+
+        if (allBox._changeHandler) allBox.removeEventListener('change', allBox._changeHandler);
+        allBox._changeHandler = function () {
+            const shouldCheck = allBox.checked;
+            boxes.forEach((b) => {
+                b.checked = shouldCheck;
+                b.disabled = false;
+            });
+            applyExportUtilityMeterTypeRules();
+            allBox.checked = boxes.every((x) => x.checked);
+            updateExportMeterTypeSummary();
+        };
+        allBox.addEventListener('change', allBox._changeHandler);
+
+        boxes.forEach((b) => {
+            if (b._changeHandler) b.removeEventListener('change', b._changeHandler);
+            b._changeHandler = function () {
+                applyExportUtilityMeterTypeRules();
+                allBox.checked = boxes.every((x) => x.checked);
+                updateExportMeterTypeSummary();
+            };
+            b.addEventListener('change', b._changeHandler);
+        });
+
+        if (selectAllBtn) {
+            if (selectAllBtn._clickHandler) selectAllBtn.removeEventListener('click', selectAllBtn._clickHandler);
+            selectAllBtn._clickHandler = function () {
+                boxes.forEach((b) => {
+                    b.checked = true;
+                    b.disabled = false;
+                });
+                allBox.checked = true;
+                applyExportUtilityMeterTypeRules();
+                updateExportMeterTypeSummary();
+            };
+            selectAllBtn.addEventListener('click', selectAllBtn._clickHandler);
+        }
+
+        if (clearBtn) {
+            if (clearBtn._clickHandler) clearBtn.removeEventListener('click', clearBtn._clickHandler);
+            clearBtn._clickHandler = function () {
+                boxes.forEach((b) => {
+                    b.checked = false;
+                    b.disabled = false;
+                });
+                allBox.checked = false;
+                applyExportUtilityMeterTypeRules();
+                updateExportMeterTypeSummary();
+            };
+            clearBtn.addEventListener('click', clearBtn._clickHandler);
+        }
+
+        applyExportUtilityMeterTypeRules();
+        allBox.checked = boxes.every((b) => b.checked);
+        updateExportMeterTypeSummary();
+    }
+
+    function buildExportMonthList(fromDateStr, toDateStr) {
+        const now = new Date();
+        const parseMonthValue = (value, fallbackDate) => {
+            const raw = String(value || '').trim();
+            if (!raw) {
+                return new Date(fallbackDate.getFullYear(), fallbackDate.getMonth(), 1);
+            }
+            const parts = raw.split('-');
+            if (parts.length !== 2) throw new Error('Неверный формат месяца');
+            const year = Number(parts[0]);
+            const month = Number(parts[1]);
+            if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
+                throw new Error('Неверный диапазон дат');
+            }
+            return new Date(year, month - 1, 1);
+        };
+
+        let fromDate = parseMonthValue(fromDateStr, now);
+        let toDate = parseMonthValue(toDateStr, now);
+        if (fromDate > toDate) {
+            const t = fromDate;
+            fromDate = toDate;
+            toDate = t;
+        }
+
+        const months = [];
+        const cursor = new Date(fromDate.getFullYear(), fromDate.getMonth(), 1);
+        while (cursor <= toDate) {
+            months.push({ year: cursor.getFullYear(), month: cursor.getMonth() + 1 });
+            cursor.setMonth(cursor.getMonth() + 1);
+        }
+        return months;
+    }
+
+    async function fetchAllReadingsForExportMonth(year, month, filters) {
+        const out = [];
+        let page = 1;
+        let lastPage = 1;
+        do {
+            const params = new URLSearchParams();
+            params.append('page', String(page));
+            params.append('per_page', '100');
+            params.append('year', String(year));
+            params.append('month', String(month));
+            if (filters.blockId) params.append('block_id', String(filters.blockId));
+            if (filters.residentId) params.append('resident_id', String(filters.residentId));
+            if (filters.meterTypes.length > 0 && filters.meterTypes.length < ALL_METER_TYPES.length) {
+                filters.meterTypes.forEach((t) => params.append('meter_type', t));
+            }
+
+            const response = await fetch(`${API_BASE}/api/readings?${params.toString()}`, { credentials: 'include' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            const rows = Array.isArray(data?.rows) ? data.rows : [];
+            out.push(...rows);
+            lastPage = Math.max(1, Number(data?.pagination?.last_page || 1));
+            page += 1;
+        } while (page <= lastPage);
+
+        return out;
+    }
+
+    async function fetchTenantInfoMapForExport(filters) {
+        const map = new Map();
+        const perPage = 200;
+        let page = 1;
+        let lastPage = 1;
+        do {
+            const params = new URLSearchParams();
+            params.append('page', String(page));
+            params.append('per_page', String(perPage));
+            if (filters.blockId) params.append('block_id', String(filters.blockId));
+
+            const response = await fetch(`${API_BASE}/api/tenants?${params.toString()}`, { credentials: 'include' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            const items = Array.isArray(data?.tenants) ? data.tenants : [];
+            items.forEach((tenant) => {
+                const fullName = String(tenant?.full_name || '').trim() || String(tenant?.username || '').trim() || '—';
+                const phone = String(tenant?.phone || '').trim() || '—';
+                const residentIds = Array.isArray(tenant?.resident_ids) ? tenant.resident_ids : [];
+                residentIds.forEach((residentId) => {
+                    const key = Number(residentId);
+                    if (!Number.isFinite(key)) return;
+                    const existing = map.get(key);
+                    if (!existing) {
+                        map.set(key, { fullName, phone });
+                        return;
+                    }
+                    const nameParts = String(existing.fullName || '').split(',').map((x) => x.trim()).filter(Boolean);
+                    if (!nameParts.includes(fullName)) {
+                        nameParts.push(fullName);
+                    }
+                    const phoneParts = String(existing.phone || '').split(',').map((x) => x.trim()).filter(Boolean);
+                    if (phone !== '—' && !phoneParts.includes(phone)) {
+                        phoneParts.push(phone);
+                    }
+                    map.set(key, {
+                        fullName: nameParts.join(', ') || '—',
+                        phone: phoneParts.join(', ') || '—'
+                    });
+                });
+            });
+            lastPage = Math.max(1, Number(data?.pagination?.last_page || 1));
+            page += 1;
+        } while (page <= lastPage);
+
+        return map;
+    }
+
+    function buildReadingsExportRows(monthBuckets, tenantInfoMap = new Map()) {
+        const rows = [];
+        monthBuckets.forEach((bucket) => {
+            const periodText = `${bucket.year}-${String(bucket.month).padStart(2, '0')}`;
+            bucket.rows.forEach((row) => {
+                const meterEntries = Array.isArray(row?.meters) ? row.meters : [];
+                const metersList = meterEntries
+                    .map((m) => `${m.type}: ${Number(m.consumption || 0).toFixed(3)} ${m.unit || ''} (${Number(m.total || 0).toFixed(2)} ₼)`)
+                    .filter(Boolean);
+                const calculatedTotal = meterEntries.reduce((acc, m) => acc + Number(m?.total || 0), 0);
+                const fallbackTotal = Number(row?.total_amount || 0);
+                const residentIdNum = Number(row?.resident_id);
+                const tenantInfo = tenantInfoMap.get(residentIdNum);
+                const residentFullName = tenantInfo?.fullName || '—';
+                const residentPhone = tenantInfo?.phone || '—';
+                rows.push({
+                    period: periodText,
+                    residentCode: row?.resident_code || '—',
+                    residentFullName,
+                    residentPhone,
+                    block: row?.block_name || '—',
+                    unit: row?.unit_number || '—',
+                    total: Number.isFinite(calculatedTotal) ? calculatedTotal : fallbackTotal,
+                    metersList: metersList.length ? metersList : ['—'],
+                });
+            });
+        });
+        return rows;
+    }
+
+    function buildReadingsExportFiltersText(filters) {
+        const chunks = [];
+        const block = document.getElementById('exportFilterBlock');
+        const resident = document.getElementById('exportFilterResident');
+        if (filters.blockName && filters.blockName !== 'all') {
+            chunks.push(`Блок: ${block?.options[block.selectedIndex]?.text || filters.blockName}`);
+        }
+        if (filters.residentId && filters.residentId !== 'all') {
+            chunks.push(`Резидент: ${resident?.options[resident.selectedIndex]?.text || filters.residentId}`);
+        }
+        if (filters.meterTypes.length > 0 && filters.meterTypes.length < ALL_METER_TYPES.length) {
+            chunks.push(`Типы: ${filters.meterTypes.map((t) => meterTypeLabels[t] || t).join(', ')}`);
+        } else {
+            chunks.push('Типы: Все');
+        }
+        chunks.push(`Период: ${filters.dateFrom || '...'} — ${filters.dateTo || '...'}`);
+        return chunks.join(' | ');
+    }
+
+    function exportReadingsToStyledExcel(rows, filtersText) {
+        const esc = (v) => String(v === null || v === undefined ? '' : v)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const bodyRows = rows.map((r) => `
+            <tr>
+                <td>${esc(r.period)}</td>
+                <td>${esc(r.residentCode)}</td>
+                <td>${esc(r.residentFullName)}</td>
+                <td class="phone-cell">${esc(r.residentPhone)}</td>
+                <td>${esc(r.block)}</td>
+                <td>${esc(r.unit)}</td>
+                <td class="meters-cell">${(Array.isArray(r.metersList) ? r.metersList : ['—']).map((meter, idx) => `<div class="meter-line">${esc(String(idx + 1) + ') ' + meter)}</div>`).join('')}</td>
+                <td class="money-cell">${esc(r.total.toFixed(2))}</td>
+            </tr>
+        `).join('');
+
+        const html = `
+            <html><head><meta charset="utf-8" />
+            <style>
+                body { font-family: Calibri, Arial, sans-serif; color: #111827; }
+                .title-table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+                .title-cell { border: 2px solid #1f2937; padding: 12px; background: #f8fafc; }
+                .title-main { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+                .title-sub { font-size: 12px; color: #4b5563; }
+                table { border-collapse: collapse; width: 100%; }
+                .meta td { border: 1px solid #9ca3af; padding: 6px 8px; font-size: 12px; }
+                .meta td:first-child { width: 180px; background: #eef2ff; font-weight: 700; }
+                .data { margin-top: 12px; }
+                .data th, .data td { border: 1px solid #9ca3af; padding: 6px 8px; font-size: 12px; vertical-align: top; }
+                .data th { background: #dbeafe; font-weight: 700; text-align: center; }
+                .money-cell { text-align: right; mso-number-format: "\\@"; }
+                .phone-cell { mso-number-format: "\\@"; }
+                .meters-cell { white-space: normal; line-height: 1.25; }
+                .meter-line { padding: 1px 0; border-bottom: 1px dashed #e5e7eb; }
+                .meter-line:last-child { border-bottom: none; }
+            </style></head><body>
+                <table class="title-table">
+                    <tr><td class="title-cell"><div class="title-main">Отчет по показаниям</div><div class="title-sub">Royal Park - Экспорт для учета</div></td></tr>
+                </table>
+                <table class="meta">
+                    <tr><td>Сформировано</td><td>${esc(new Date().toLocaleString())}</td></tr>
+                    <tr><td>Фильтры</td><td>${esc(filtersText)}</td></tr>
+                    <tr><td>Количество строк</td><td>${esc(rows.length)}</td></tr>
+                </table>
+                <table class="data">
+                    <thead><tr><th>Период</th><th>Резидент</th><th>ФИО жителя</th><th>Номер телефона</th><th>Блок</th><th>№ дома</th><th>Расход по счетчикам</th><th>Итоговая сумма</th></tr></thead>
+                    <tbody>${bodyRows || '<tr><td colspan="8">Нет данных</td></tr>'}</tbody>
+                </table>
+            </body></html>
+        `;
+
+        const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `readings_export_${new Date().toISOString().slice(0, 10)}.xls`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    function exportReadingsToPdf(rows, filtersText) {
+        const esc = (v) => String(v === null || v === undefined ? '' : v)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const tableRows = rows.map((r) => `
+            <tr>
+                <td>${esc(r.period)}</td><td>${esc(r.residentCode)}</td><td>${esc(r.residentFullName)}</td><td>${esc(r.residentPhone)}</td><td>${esc(r.block)}</td>
+                <td>${esc(r.unit)}</td><td>${(Array.isArray(r.metersList) ? r.metersList : ['—']).map((meter, idx) => `<div>${esc(String(idx + 1) + ') ' + meter)}</div>`).join('')}</td><td>${esc(r.total.toFixed(2))}</td>
+            </tr>`).join('');
+        const html = `
+            <html><head><title>Экспорт показаний</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+                table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                th, td { border: 1px solid #ccc; padding: 6px; text-align: left; vertical-align: top; }
+                th { background: #f3f4f6; }
+            </style></head><body>
+                <h2>Отчет по показаниям</h2>
+                <p><strong>Сформировано:</strong> ${esc(new Date().toLocaleString())}</p>
+                <p><strong>Фильтры:</strong> ${esc(filtersText)}</p>
+                <p><strong>Количество:</strong> ${rows.length}</p>
+                <table>
+                    <thead><tr><th>Период</th><th>Резидент</th><th>ФИО жителя</th><th>Номер телефона</th><th>Блок</th><th>№ дома</th><th>Расход по счетчикам</th><th>Итоговая сумма</th></tr></thead>
+                    <tbody>${tableRows || '<tr><td colspan="8">Нет данных</td></tr>'}</tbody>
+                </table>
+            </body></html>
+        `;
+
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        iframe.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(iframe);
+        const doc = iframe.contentWindow?.document;
+        if (!doc || !iframe.contentWindow) {
+            iframe.remove();
+            throw new Error('Не удалось подготовить печать.');
+        }
+        doc.open();
+        doc.write(html);
+        doc.close();
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => iframe.remove(), 1000);
+    }
+
+    window.exportReadings = async function exportReadings() {
+        const exportBtn = document.querySelector('#readingsExportPanel .btn-success');
+        const format = document.getElementById('readingsExportFormat')?.value || 'xls';
+
+        const blockName = document.getElementById('exportFilterBlock')?.value || 'all';
+        const residentIdRaw = document.getElementById('exportFilterResident')?.value || 'all';
+        const residentId = residentIdRaw !== 'all' ? Number(residentIdRaw) : null;
+        const meterTypes = getSelectedExportMeterTypes();
+        const dateFrom = document.getElementById('exportFilterDateFrom')?.value || '';
+        const dateTo = document.getElementById('exportFilterDateTo')?.value || '';
+        const blockObj = (Array.isArray(blocks) ? blocks : []).find((b) => String(b?.name) === String(blockName));
+
+        if (exportBtn) {
+            exportBtn.disabled = true;
+            exportBtn.textContent = 'Экспорт...';
+        }
+
+        try {
+            const months = buildExportMonthList(dateFrom, dateTo);
+            const filters = {
+                blockId: blockObj?.id || null,
+                blockName,
+                residentId: Number.isFinite(residentId) ? residentId : null,
+                meterTypes,
+                dateFrom,
+                dateTo
+            };
+
+            const buckets = [];
+            for (const item of months) {
+                const monthRows = await fetchAllReadingsForExportMonth(item.year, item.month, filters);
+                buckets.push({ year: item.year, month: item.month, rows: monthRows });
+            }
+
+            const tenantInfoMap = await fetchTenantInfoMapForExport(filters);
+            const rows = buildReadingsExportRows(buckets, tenantInfoMap);
+            if (!rows.length) {
+                if (typeof showWarning === 'function') showWarning('Нет данных для экспорта по выбранным фильтрам.');
+                return;
+            }
+
+            const filtersText = buildReadingsExportFiltersText(filters);
+            if (format === 'pdf') {
+                exportReadingsToPdf(rows, filtersText);
+            } else {
+                exportReadingsToStyledExcel(rows, filtersText);
+            }
+            if (typeof showSuccess === 'function') showSuccess('Экспорт выполнен.');
+        } catch (error) {
+            console.error('Readings export error:', error);
+            if (typeof showError === 'function') showError('Ошибка экспорта: ' + error.message);
+        } finally {
+            if (exportBtn) {
+                exportBtn.disabled = false;
+                exportBtn.innerHTML = '<i class="bi bi-box-arrow-down"></i> Экспорт';
+            }
+        }
+    };
 
     // Pagination Functions
     function buildReadingPageList(current, total) {
@@ -2607,6 +3491,33 @@
             initCustomReadingPaginationDropdown();
             // Сначала загружаем все блоки, чтобы фильтр был полным
             await window.loadAllBlocks();
+            bindResidentFilterToBlock();
+            bindMeterTypeMultiSelect();
+            bindExportMeterTypeMultiSelect();
+            bindReadingsExportOutsideClose();
+            bindReadingsExportToggleButton();
+            const exportBlockSelect = document.getElementById('exportFilterBlock');
+            if (exportBlockSelect) {
+                if (exportBlockSelect._changeHandler) {
+                    exportBlockSelect.removeEventListener('change', exportBlockSelect._changeHandler);
+                }
+                exportBlockSelect._changeHandler = function () {
+                    loadExportResidentsByBlock();
+                };
+                exportBlockSelect.addEventListener('change', exportBlockSelect._changeHandler);
+            }
+            await loadExportResidentsByBlock();
+
+            const exportDateFrom = document.getElementById('exportFilterDateFrom');
+            const exportDateTo = document.getElementById('exportFilterDateTo');
+            if (exportDateFrom && !exportDateFrom.value) {
+                const d = new Date();
+                exportDateFrom.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            }
+            if (exportDateTo && !exportDateTo.value) {
+                const d = new Date();
+                exportDateTo.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            }
             
             if (typeof window.loadReadings === 'function') {
                 console.log('Calling loadReadings');

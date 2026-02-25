@@ -46,15 +46,18 @@
         <div class="filters-row">
             <div class="filter-group">
                 <label>Назначение</label>
-                <select id="filterPurpose">
-                    <option value="all">Все</option>
-                    <option value="electricity">Электричество</option>
-                    <option value="gas">Газ</option>
-                    <option value="water">Вода</option>
-                    <option value="service">Услуги</option>
-                    <option value="rent">Аренда</option>
-                    <option value="construction">Строительство</option>
-                </select>
+                <details id="filterPurposeDetails" class="purpose-filter-details">
+                    <summary><span id="filterPurposeSummary">Все</span></summary>
+                    <div class="purpose-filter-dropdown">
+                        <label><input type="checkbox" name="purposeFilter" value="all" checked> Все</label>
+                        <label><input type="checkbox" name="purposeFilter" value="electricity" checked> Электричество</label>
+                        <label><input type="checkbox" name="purposeFilter" value="gas" checked> Газ</label>
+                        <label><input type="checkbox" name="purposeFilter" value="water" checked> Вода</label>
+                        <label><input type="checkbox" name="purposeFilter" value="service" checked> Услуги</label>
+                        <label><input type="checkbox" name="purposeFilter" value="rent" checked> Аренда</label>
+                        <label><input type="checkbox" name="purposeFilter" value="construction" checked> Строительство</label>
+                    </div>
+                </details>
             </div>
 
             <div class="filter-group">
@@ -78,6 +81,13 @@
             </button>
             <button class="btn btn-outline-warning" onclick="clearFilters()">
                 <i class="bi bi-x-circle"></i> Очистить
+            </button>
+            <select id="tariffExportFormat" class="form-select export-format-select" aria-label="Формат экспорта тарифов">
+                <option value="excel">Excel</option>
+                <option value="pdf">PDF</option>
+            </select>
+            <button class="btn btn-outline-success" onclick="exportTariffs()">
+                <i class="bi bi-box-arrow-down"></i> Экспорт
             </button>
             <button class="btn btn-primary" onclick="openCreateModal()">
                 <i class="bi bi-plus-lg"></i> Создать
@@ -246,6 +256,92 @@
         'LEGAL': { label: 'Юридический', key: 'legal', badge: 'bg-primary' }
     };
 
+    const ALL_TARIFF_PURPOSE_KEYS = ['electricity', 'gas', 'water', 'service', 'rent', 'construction'];
+    const TARIFF_PURPOSE_QUERY_MAP = {
+        electricity: 'ELECTRIC',
+        gas: 'GAS',
+        water: 'WATER',
+        service: 'SERVICE',
+        rent: 'RENT',
+        construction: 'CONSTRUCTION'
+    };
+    const TARIFF_PURPOSE_LABELS = {
+        electricity: 'Электричество',
+        gas: 'Газ',
+        water: 'Вода',
+        service: 'Услуги',
+        rent: 'Аренда',
+        construction: 'Строительство'
+    };
+
+    function getSelectedTariffPurposesRaw() {
+        const inputs = Array.from(document.querySelectorAll('#filterPurposeDetails input[name="purposeFilter"]:checked'));
+        return inputs.map((input) => String(input.value || '').trim()).filter(Boolean);
+    }
+
+    function getSelectedTariffPurposeKeys() {
+        const raw = getSelectedTariffPurposesRaw().filter((v) => v !== 'all');
+        if (!raw.length || raw.length >= ALL_TARIFF_PURPOSE_KEYS.length) {
+            return [...ALL_TARIFF_PURPOSE_KEYS];
+        }
+        return raw.filter((v, idx, arr) => ALL_TARIFF_PURPOSE_KEYS.includes(v) && arr.indexOf(v) === idx);
+    }
+
+    function updateTariffPurposeSummary() {
+        const summaryEl = document.getElementById('filterPurposeSummary');
+        if (!summaryEl) return;
+        const selected = getSelectedTariffPurposeKeys();
+        if (selected.length >= ALL_TARIFF_PURPOSE_KEYS.length) {
+            summaryEl.textContent = 'Все';
+            return;
+        }
+        if (selected.length === 1) {
+            summaryEl.textContent = TARIFF_PURPOSE_LABELS[selected[0]] || selected[0];
+            return;
+        }
+        summaryEl.textContent = `${selected.length} выбрано`;
+    }
+
+    function applyTariffPurposeRules(changedValue = null) {
+        const allCb = document.querySelector('#filterPurposeDetails input[name="purposeFilter"][value="all"]');
+        const purposeCbs = Array.from(document.querySelectorAll('#filterPurposeDetails input[name="purposeFilter"]'))
+            .filter((cb) => cb.value !== 'all');
+        if (!allCb || !purposeCbs.length) return;
+
+        if (changedValue === 'all') {
+            if (allCb.checked) {
+                purposeCbs.forEach((cb) => { cb.checked = true; });
+            } else if (!purposeCbs.some((cb) => cb.checked)) {
+                allCb.checked = true;
+                purposeCbs.forEach((cb) => { cb.checked = true; });
+            }
+        } else {
+            const checkedCount = purposeCbs.filter((cb) => cb.checked).length;
+            if (checkedCount === 0) {
+                allCb.checked = true;
+                purposeCbs.forEach((cb) => { cb.checked = true; });
+            } else {
+                allCb.checked = checkedCount === purposeCbs.length;
+            }
+        }
+
+        updateTariffPurposeSummary();
+    }
+
+    function bindTariffPurposeMultiSelect() {
+        const root = document.getElementById('filterPurposeDetails');
+        if (!root || root.dataset.bound === '1') return;
+
+        root.addEventListener('change', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLInputElement) || target.name !== 'purposeFilter') return;
+            applyTariffPurposeRules(target.value);
+        });
+
+        root.dataset.bound = '1';
+        applyTariffPurposeRules('all');
+    }
+
     // Загрузка тарифов из API
     window.loadTariffs = async function () {
         try {
@@ -273,38 +369,7 @@
             }
 
             // Преобразуем данные для отображения
-            tariffsData = tariffs.map(t => {
-                const isConstruction = t.meter_type === 'CONSTRUCTION';
-                return {
-                    id: t.id,
-                    name: t.name,
-                    purpose: meterTypeMap[t.meter_type]?.label || t.meter_type,
-                    purposeKey: meterTypeMap[t.meter_type]?.key || t.meter_type.toLowerCase(),
-                    clientType: customerTypeMap[t.customer_type]?.key || t.customer_type.toLowerCase(),
-                    clientTypeLabel: customerTypeMap[t.customer_type]?.label || t.customer_type,
-                    vat: t.vat_percent,
-                    stableTariff: t.stable_tariff ?? 0,
-                    steps: (t.steps || []).map(s => {
-                        if (isConstruction) {
-                            // Для строительства - даты
-                            return {
-                                from_date: s.from_date,
-                                to_date: s.to_date,
-                                price: s.price,
-                                unit: getUnitForMeterType(t.meter_type)
-                            };
-                        } else {
-                            // Для остальных - числа
-                            return {
-                                from: s.from_value || 0,
-                                to: s.to_value,
-                                price: s.price,
-                                unit: getUnitForMeterType(t.meter_type)
-                            };
-                        }
-                    })
-                };
-            });
+            tariffsData = normalizeTariffsFromApi(tariffs);
 
             console.log('Processed tariffs data:', tariffsData);
             renderTariffsTable(tariffsData);
@@ -331,6 +396,93 @@
             'CONSTRUCTION': 'мес.'
         };
         return units[meterType] || '';
+    }
+
+    function normalizeTariffsFromApi(tariffs = []) {
+        return tariffs.map((t) => {
+            const isConstruction = t.meter_type === 'CONSTRUCTION';
+            return {
+                id: t.id,
+                name: t.name,
+                purpose: meterTypeMap[t.meter_type]?.label || t.meter_type,
+                purposeKey: meterTypeMap[t.meter_type]?.key || t.meter_type.toLowerCase(),
+                clientType: customerTypeMap[t.customer_type]?.key || t.customer_type.toLowerCase(),
+                clientTypeLabel: customerTypeMap[t.customer_type]?.label || t.customer_type,
+                vat: t.vat_percent,
+                stableTariff: t.stable_tariff ?? 0,
+                steps: (t.steps || []).map((s) => {
+                    if (isConstruction) {
+                        return {
+                            from_date: s.from_date,
+                            to_date: s.to_date,
+                            price: s.price,
+                            unit: getUnitForMeterType(t.meter_type)
+                        };
+                    }
+                    return {
+                        from: s.from_value || 0,
+                        to: s.to_value,
+                        price: s.price,
+                        unit: getUnitForMeterType(t.meter_type)
+                    };
+                })
+            };
+        });
+    }
+
+    function buildTariffApiFilterParams() {
+        const selectedPurposes = getSelectedTariffPurposeKeys();
+        const clientType = document.getElementById('filterClientType')?.value || 'all';
+        const searchTerm = String(document.getElementById('filterSearch')?.value || '').trim();
+
+        const clientTypeMap = {
+            'individual': 'INDIVIDUAL',
+            'legal': 'LEGAL'
+        };
+
+        const params = new URLSearchParams();
+        if (clientType !== 'all' && clientTypeMap[clientType]) {
+            params.append('ctype', clientTypeMap[clientType]);
+        }
+        if (searchTerm) {
+            params.append('q', searchTerm);
+        }
+        return { params, selectedPurposes };
+    }
+
+    async function fetchTariffsByCurrentFilters() {
+        const { params, selectedPurposes } = buildTariffApiFilterParams();
+        const isAllSelected = selectedPurposes.length >= ALL_TARIFF_PURPOSE_KEYS.length;
+
+        const fetchSingle = async (requestParams) => {
+            const resp = await fetch(`${API_BASE}/api/tariffs?${requestParams.toString()}`, { credentials: 'include' });
+            if (!resp.ok) throw new Error('Failed to load tariffs');
+            const tariffs = await resp.json();
+            if (!Array.isArray(tariffs)) throw new Error('Invalid response format: expected array');
+            return tariffs;
+        };
+
+        let rawTariffs = [];
+        if (isAllSelected) {
+            rawTariffs = await fetchSingle(params);
+        } else {
+            const responses = await Promise.all(selectedPurposes.map((purposeKey) => {
+                const meter = TARIFF_PURPOSE_QUERY_MAP[purposeKey];
+                const qp = new URLSearchParams(params.toString());
+                if (meter) qp.append('meter', meter);
+                return fetchSingle(qp);
+            }));
+            rawTariffs = responses.flat();
+        }
+
+        const byId = new Map();
+        rawTariffs.forEach((item) => {
+            const key = Number(item?.id);
+            if (Number.isFinite(key) && !byId.has(key)) {
+                byId.set(key, item);
+            }
+        });
+        return normalizeTariffsFromApi(Array.from(byId.values()));
     }
 
     // Инициализация будет выполнена в конце скрипта через IIFE
@@ -429,77 +581,237 @@
         }).join(' ');
     }
 
+    function buildTariffFiltersText() {
+        const clientTypeEl = document.getElementById('filterClientType');
+        const searchEl = document.getElementById('filterSearch');
+
+        const parts = [];
+        const selectedPurposes = getSelectedTariffPurposeKeys();
+        const clientTypeValue = clientTypeEl?.value || 'all';
+        const searchValue = String(searchEl?.value || '').trim();
+
+        if (selectedPurposes.length >= ALL_TARIFF_PURPOSE_KEYS.length) {
+            parts.push('Назначение: Все');
+        } else {
+            const labels = selectedPurposes.map((key) => TARIFF_PURPOSE_LABELS[key] || key);
+            parts.push(`Назначение: ${labels.join(', ')}`);
+        }
+
+        if (clientTypeValue !== 'all' && clientTypeEl) {
+            parts.push(`Тип клиента: ${clientTypeEl.options[clientTypeEl.selectedIndex]?.text || clientTypeValue}`);
+        } else {
+            parts.push('Тип клиента: Все');
+        }
+
+        if (searchValue) {
+            parts.push(`Поиск: ${searchValue}`);
+        }
+
+        return parts.join(' | ');
+    }
+
+    function buildTariffExportRows(rows = []) {
+        return rows.map((t) => {
+            const steps = Array.isArray(t?.steps) ? t.steps : [];
+            const formattedSteps = steps.map((step) => {
+                const price = formatValue(step?.price ?? 0);
+                const unit = step?.unit || '';
+                if (step?.from_date && step?.to_date) {
+                    return `${step.from_date} - ${step.to_date}: ${price} ₼ / ${unit}`;
+                }
+                if (t?.purposeKey === 'rent' || t?.purposeKey === 'service') {
+                    return `${price} ₼ / ${unit}`;
+                }
+                const from = formatValue(step?.from ?? 0);
+                if (step?.to === null || step?.to === undefined) {
+                    return `${from}+: ${price} ₼ / ${unit}`;
+                }
+                const to = formatValue(step?.to);
+                return `${from}-${to}: ${price} ₼ / ${unit}`;
+            }).filter(Boolean);
+
+            return {
+                id: t?.id ?? '—',
+                name: t?.name || '—',
+                purpose: t?.purpose || '—',
+                clientType: t?.clientTypeLabel || '—',
+                vat: Number(t?.vat ?? 0),
+                stableTariff: Number(t?.stableTariff ?? 0),
+                stepsList: formattedSteps.length ? formattedSteps : ['—']
+            };
+        });
+    }
+
+    function exportTariffsToStyledExcel(rows, filtersText) {
+        const esc = (v) => String(v === null || v === undefined ? '' : v)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        const bodyRows = rows.map((r) => `
+            <tr>
+                <td>${esc(r.id)}</td>
+                <td>${esc(r.name)}</td>
+                <td>${esc(r.purpose)}</td>
+                <td>${esc(r.clientType)}</td>
+                <td class="money-cell">${esc(Number(r.vat || 0).toFixed(2))}</td>
+                <td class="money-cell">${esc(Number(r.stableTariff || 0).toFixed(2))}</td>
+                <td class="steps-cell">${(Array.isArray(r.stepsList) ? r.stepsList : ['—']).map((step, idx) => `<div class="step-line">${esc(String(idx + 1) + ') ' + step)}</div>`).join('')}</td>
+            </tr>
+        `).join('');
+
+        const html = `
+            <html><head><meta charset="utf-8" />
+            <style>
+                body { font-family: Calibri, Arial, sans-serif; color: #111827; }
+                .title-table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+                .title-cell { border: 2px solid #1f2937; padding: 12px; background: #f8fafc; }
+                .title-main { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+                .title-sub { font-size: 12px; color: #4b5563; }
+                table { border-collapse: collapse; width: 100%; }
+                .meta td { border: 1px solid #9ca3af; padding: 6px 8px; font-size: 12px; }
+                .meta td:first-child { width: 180px; background: #eef2ff; font-weight: 700; }
+                .data { margin-top: 12px; }
+                .data th, .data td { border: 1px solid #9ca3af; padding: 6px 8px; font-size: 12px; vertical-align: top; }
+                .data th { background: #dbeafe; font-weight: 700; text-align: center; }
+                .money-cell { text-align: right; mso-number-format: "\\@"; }
+                .steps-cell { white-space: normal; line-height: 1.25; }
+                .step-line { padding: 1px 0; border-bottom: 1px dashed #e5e7eb; }
+                .step-line:last-child { border-bottom: none; }
+            </style></head><body>
+                <table class="title-table">
+                    <tr><td class="title-cell"><div class="title-main">Отчет по тарифам</div><div class="title-sub">Royal Park - Экспорт для учета</div></td></tr>
+                </table>
+                <table class="meta">
+                    <tr><td>Сформировано</td><td>${esc(new Date().toLocaleString())}</td></tr>
+                    <tr><td>Фильтры</td><td>${esc(filtersText)}</td></tr>
+                    <tr><td>Количество тарифов</td><td>${esc(rows.length)}</td></tr>
+                </table>
+                <table class="data">
+                    <thead><tr><th>ID</th><th>Название</th><th>Назначение</th><th>Тип клиента</th><th>НДС, %</th><th>Стабильный тариф</th><th>Ступени</th></tr></thead>
+                    <tbody>${bodyRows || '<tr><td colspan="7">Нет данных</td></tr>'}</tbody>
+                </table>
+            </body></html>
+        `;
+
+        const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `tariffs_export_${new Date().toISOString().slice(0, 10)}.xls`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    function exportTariffsToPdf(rows, filtersText) {
+        const esc = (v) => String(v === null || v === undefined ? '' : v)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        const tableRows = rows.map((r) => `
+            <tr>
+                <td>${esc(r.id)}</td>
+                <td>${esc(r.name)}</td>
+                <td>${esc(r.purpose)}</td>
+                <td>${esc(r.clientType)}</td>
+                <td>${esc(Number(r.vat || 0).toFixed(2))}</td>
+                <td>${esc(Number(r.stableTariff || 0).toFixed(2))}</td>
+                <td>${(Array.isArray(r.stepsList) ? r.stepsList : ['—']).map((step, idx) => `<div>${esc(String(idx + 1) + ') ' + step)}</div>`).join('')}</td>
+            </tr>
+        `).join('');
+
+        const html = `
+            <html><head><title>Экспорт тарифов</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+                table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                th, td { border: 1px solid #ccc; padding: 6px; text-align: left; vertical-align: top; }
+                th { background: #f3f4f6; }
+            </style></head><body>
+                <h2>Отчет по тарифам</h2>
+                <p><strong>Сформировано:</strong> ${esc(new Date().toLocaleString())}</p>
+                <p><strong>Фильтры:</strong> ${esc(filtersText)}</p>
+                <p><strong>Количество:</strong> ${rows.length}</p>
+                <table>
+                    <thead><tr><th>ID</th><th>Название</th><th>Назначение</th><th>Тип клиента</th><th>НДС, %</th><th>Стабильный тариф</th><th>Ступени</th></tr></thead>
+                    <tbody>${tableRows || '<tr><td colspan="7">Нет данных</td></tr>'}</tbody>
+                </table>
+            </body></html>
+        `;
+
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        iframe.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow?.document;
+        if (!doc || !iframe.contentWindow) {
+            iframe.remove();
+            throw new Error('Не удалось подготовить печать.');
+        }
+
+        doc.open();
+        doc.write(html);
+        doc.close();
+
+        setTimeout(() => {
+            try {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            } finally {
+                setTimeout(() => iframe.remove(), 1000);
+            }
+        }, 250);
+    }
+
+    window.exportTariffs = async function () {
+        const formatEl = document.getElementById('tariffExportFormat');
+        const exportBtn = document.querySelector('.filters-actions button[onclick="exportTariffs()"]');
+        const format = formatEl?.value || 'excel';
+
+        if (exportBtn) {
+            exportBtn.disabled = true;
+            exportBtn.textContent = 'Экспорт...';
+        }
+
+        try {
+            const filteredTariffs = await fetchTariffsByCurrentFilters();
+            const rows = buildTariffExportRows(filteredTariffs);
+            if (!rows.length) {
+                if (typeof showWarning === 'function') showWarning('Нет данных для экспорта по выбранным фильтрам.');
+                return;
+            }
+            tariffsData = filteredTariffs;
+            const filtersText = buildTariffFiltersText();
+            if (format === 'pdf') {
+                exportTariffsToPdf(rows, filtersText);
+            } else {
+                exportTariffsToStyledExcel(rows, filtersText);
+            }
+            if (typeof showSuccess === 'function') showSuccess('Экспорт выполнен.');
+        } catch (error) {
+            console.error('Tariffs export error:', error);
+            if (typeof showError === 'function') showError('Ошибка экспорта: ' + error.message);
+        } finally {
+            if (exportBtn) {
+                exportBtn.disabled = false;
+                exportBtn.innerHTML = '<i class="bi bi-box-arrow-down"></i> Экспорт';
+            }
+        }
+    };
+
     // function renderBlockTariffs(blocks) {
     //     ...
     // }
 
     // Filter Functions
     window.applyFilters = async function () {
-        const purpose = document.getElementById('filterPurpose').value;
-        const clientType = document.getElementById('filterClientType').value;
-        const searchTerm = document.getElementById('filterSearch').value;
-
-        // Маппинг для API
-        const purposeMap = {
-            'electricity': 'ELECTRIC',
-            'gas': 'GAS',
-            'water': 'WATER',
-            'service': 'SERVICE',
-            'rent': 'RENT',
-            'construction': 'CONSTRUCTION'
-        };
-
-        const clientTypeMap = {
-            'individual': 'INDIVIDUAL',
-            'legal': 'LEGAL'
-        };
-
         try {
-            const params = new URLSearchParams();
-            if (purpose !== 'all' && purposeMap[purpose]) {
-                params.append('meter', purposeMap[purpose]);
-            }
-            if (clientType !== 'all' && clientTypeMap[clientType]) {
-                params.append('ctype', clientTypeMap[clientType]);
-            }
-            if (searchTerm) {
-                params.append('q', searchTerm);
-            }
-
-            let resp = await fetch(`${API_BASE}/api/tariffs?${params.toString()}`, { credentials: 'include' });
-            if (!resp.ok) throw new Error('Failed to load tariffs');
-            const tariffs = await resp.json();
-
-            tariffsData = tariffs.map(t => {
-                const isConstruction = t.meter_type === 'CONSTRUCTION';
-                return {
-                    id: t.id,
-                    name: t.name,
-                    purpose: meterTypeMap[t.meter_type]?.label || t.meter_type,
-                    purposeKey: meterTypeMap[t.meter_type]?.key || t.meter_type.toLowerCase(),
-                    clientType: customerTypeMap[t.customer_type]?.key || t.customer_type.toLowerCase(),
-                    clientTypeLabel: customerTypeMap[t.customer_type]?.label || t.customer_type,
-                    vat: t.vat_percent,
-                    stableTariff: t.stable_tariff ?? 0,
-                    steps: (t.steps || []).map(s => {
-                        if (isConstruction) {
-                            return {
-                                from_date: s.from_date,
-                                to_date: s.to_date,
-                                price: s.price,
-                                unit: getUnitForMeterType(t.meter_type)
-                            };
-                        } else {
-                            return {
-                                from: s.from_value || 0,
-                                to: s.to_value,
-                                price: s.price,
-                                unit: getUnitForMeterType(t.meter_type)
-                            };
-                        }
-                    })
-                };
-            });
+            tariffsData = await fetchTariffsByCurrentFilters();
 
             renderTariffsTable(tariffsData);
             if (typeof showSuccess === 'function') {
@@ -511,7 +823,18 @@
     }
 
     window.clearFilters = function () {
-        document.getElementById('filterPurpose').value = 'all';
+        const allCb = document.querySelector('#filterPurposeDetails input[name="purposeFilter"][value="all"]');
+        const purposeCbs = document.querySelectorAll('#filterPurposeDetails input[name="purposeFilter"]');
+        if (allCb) {
+            allCb.checked = true;
+        }
+        purposeCbs.forEach((cb) => {
+            if (cb instanceof HTMLInputElement) cb.checked = true;
+        });
+        const purposeDetails = document.getElementById('filterPurposeDetails');
+        if (purposeDetails) purposeDetails.open = false;
+        applyTariffPurposeRules('all');
+
         document.getElementById('filterClientType').value = 'all';
         document.getElementById('filterSearch').value = '';
         loadTariffs();
@@ -1351,6 +1674,7 @@
         // Небольшая задержка, чтобы убедиться, что DOM готов
         await new Promise(resolve => setTimeout(resolve, 100));
         console.log('Initializing tariffs page...');
+        bindTariffPurposeMultiSelect();
         if (typeof window.loadTariffs === 'function') {
             await window.loadTariffs();
         } else if (typeof loadTariffs === 'function') {

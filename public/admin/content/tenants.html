@@ -37,6 +37,13 @@
                 <button class="btn btn-outline-secondary" onclick="applyFilters()" style="height: 42px;">
                     <i class="bi bi-funnel"></i> Фильтр
                 </button>
+                <select id="tenantExportFormat" class="form-select form-select-sm" style="max-width: 170px; height: 42px;">
+                    <option value="xls">Excel (Styled)</option>
+                    <option value="pdf">PDF (печать)</option>
+                </select>
+                <button class="btn btn-success" type="button" onclick="exportTenants()" style="height: 42px;">
+                    <i class="bi bi-box-arrow-down"></i> Экспорт
+                </button>
                 <button class="btn btn-primary" onclick="openCreateModal()" style="height: 42px;">
                     <i class="bi bi-plus-lg"></i> Создать жителя
                 </button>
@@ -727,6 +734,289 @@
             loadTenants();
             if (typeof showSuccess === 'function') {
                 showSuccess('Фильтры очищены!');
+            }
+        };
+
+        async function resolveSelectedTenantBlockId() {
+            const blockName = document.getElementById('filterBlock')?.value;
+            if (!blockName || blockName === 'all') return null;
+
+            let block = blocks.find((b) => b.name === blockName);
+            if (block) return block.id;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/blocks`, { credentials: 'include' });
+                if (!response.ok) return null;
+                const blocksData = await response.json();
+                blocks = Array.isArray(blocksData) ? blocksData : (blocksData.blocks || []);
+                block = blocks.find((b) => b.name === blockName);
+                return block ? block.id : null;
+            } catch (_) {
+                return null;
+            }
+        }
+
+        function getTenantMainFilters() {
+            return {
+                search: document.getElementById('filterSearch')?.value.trim() || '',
+                blockName: document.getElementById('filterBlock')?.value || 'all',
+                house: document.getElementById('filterHouse')?.value.trim() || ''
+            };
+        }
+
+        function buildTenantFiltersText(filters) {
+            const chunks = [];
+            const block = document.getElementById('filterBlock');
+            if (filters.search) chunks.push(`Поиск: ${filters.search}`);
+            if (filters.blockName && filters.blockName !== 'all') {
+                chunks.push(`Блок: ${block?.options[block.selectedIndex]?.text || filters.blockName}`);
+            }
+            if (filters.house) chunks.push(`Номер дома: ${filters.house}`);
+            return chunks.length ? chunks.join(' | ') : 'Без фильтров';
+        }
+
+        async function fetchAllTenantsForExport() {
+            const filters = getTenantMainFilters();
+            const blockId = await resolveSelectedTenantBlockId();
+            const perPage = 200;
+            const all = [];
+            let page = 1;
+            let lastPage = 1;
+
+            do {
+                const params = new URLSearchParams();
+                params.append('page', String(page));
+                params.append('per_page', String(perPage));
+                if (filters.search) params.append('q', filters.search);
+                if (blockId) params.append('block_id', String(blockId));
+                if (filters.house) params.append('unit_number', filters.house);
+
+                const response = await fetch(`${API_BASE}/api/tenants?${params.toString()}`, { credentials: 'include' });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                const items = Array.isArray(data?.tenants) ? data.tenants : [];
+                all.push(...items);
+
+                lastPage = Math.max(1, Number(data?.pagination?.last_page || 1));
+                page += 1;
+            } while (page <= lastPage);
+
+            return all;
+        }
+
+        function buildTenantExportRows(items) {
+            return items.map((tenant) => {
+                const homesList = Array.isArray(tenant?.homes)
+                    ? tenant.homes
+                        .map((h) => {
+                            const blockName = String(h?.block_name || '').trim();
+                            const unitNumber = String(h?.unit_number || '').trim();
+                            if (blockName && unitNumber) return `${blockName} / ${unitNumber}`;
+                            return blockName || unitNumber || '';
+                        })
+                        .filter(Boolean)
+                    : [];
+
+                const passwordStatus = tenant?.require_password_change
+                    ? (tenant?.temp_password ? `временный: ${tenant.temp_password}` : 'сброшен')
+                    : 'установлен';
+
+                return {
+                    id: tenant?.id ?? '—',
+                    login: tenant?.username || '—',
+                    fullName: tenant?.full_name || '—',
+                    phone: tenant?.phone || '—',
+                    email: tenant?.email || '—',
+                    lastLogin: tenant?.last_login ? new Date(tenant.last_login).toLocaleString('ru-RU') : '—',
+                    passwordStatus,
+                    homes: homesList.length ? homesList : ['—']
+                };
+            });
+        }
+
+        function exportTenantsToStyledExcel(rows, filtersText) {
+            const esc = (v) => String(v === null || v === undefined ? '' : v)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            const bodyRows = rows.map((r) => `
+                <tr>
+                    <td>${esc(r.id)}</td>
+                    <td>${esc(r.login)}</td>
+                    <td>${esc(r.fullName)}</td>
+                    <td class="phone-cell">${esc(r.phone)}</td>
+                    <td>${esc(r.email)}</td>
+                    <td>${esc(r.lastLogin)}</td>
+                    <td>${esc(r.passwordStatus)}</td>
+                    <td class="homes-cell">${(Array.isArray(r.homes) ? r.homes : ['—']).map((home, idx) => `<div class="home-line">${esc(String(idx + 1) + ') ' + home)}</div>`).join('')}</td>
+                </tr>
+            `).join('');
+
+            const html = `
+                <html>
+                <head>
+                    <meta charset="utf-8" />
+                    <style>
+                        body { font-family: Calibri, Arial, sans-serif; color: #111827; }
+                        .title-table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+                        .title-cell { border: 2px solid #1f2937; padding: 12px; background: #f8fafc; }
+                        .title-main { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+                        .title-sub { font-size: 12px; color: #4b5563; }
+                        table { border-collapse: collapse; width: 100%; }
+                        .meta td { border: 1px solid #9ca3af; padding: 6px 8px; font-size: 12px; }
+                        .meta td:first-child { width: 180px; background: #eef2ff; font-weight: 700; }
+                        .data { margin-top: 12px; }
+                        .data th, .data td { border: 1px solid #9ca3af; padding: 6px 8px; font-size: 12px; vertical-align: top; }
+                        .data th { background: #dbeafe; font-weight: 700; text-align: center; }
+                        .phone-cell { mso-number-format: "\\@"; }
+                        .homes-cell { white-space: normal; line-height: 1.25; }
+                        .home-line { padding: 1px 0; border-bottom: 1px dashed #e5e7eb; }
+                        .home-line:last-child { border-bottom: none; }
+                    </style>
+                </head>
+                <body>
+                    <table class="title-table">
+                        <tr><td class="title-cell"><div class="title-main">Отчет по жителям</div><div class="title-sub">Royal Park - Экспорт для учета</div></td></tr>
+                    </table>
+                    <table class="meta">
+                        <tr><td>Сформировано</td><td>${esc(new Date().toLocaleString())}</td></tr>
+                        <tr><td>Фильтры</td><td>${esc(filtersText)}</td></tr>
+                        <tr><td>Количество жителей</td><td>${esc(rows.length)}</td></tr>
+                    </table>
+                    <table class="data">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Логин</th>
+                                <th>ФИО</th>
+                                <th>Телефон</th>
+                                <th>Email</th>
+                                <th>Последний вход</th>
+                                <th>Пароль</th>
+                                <th>Дома</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${bodyRows || '<tr><td colspan="8">Нет данных</td></tr>'}
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `;
+
+            const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `tenants_export_${new Date().toISOString().slice(0, 10)}.xls`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function exportTenantsToPdf(rows, filtersText) {
+            const esc = (v) => String(v === null || v === undefined ? '' : v)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            const tableRows = rows.map((r) => `
+                <tr>
+                    <td>${esc(r.id)}</td>
+                    <td>${esc(r.login)}</td>
+                    <td>${esc(r.fullName)}</td>
+                    <td>${esc(r.phone)}</td>
+                    <td>${esc(r.email)}</td>
+                    <td>${esc(r.lastLogin)}</td>
+                    <td>${esc(r.passwordStatus)}</td>
+                    <td>${(Array.isArray(r.homes) ? r.homes : ['—']).map((home, idx) => `<div>${esc(String(idx + 1) + ') ' + home)}</div>`).join('')}</td>
+                </tr>
+            `).join('');
+
+            const html = `
+                <html><head><title>Экспорт жителей</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+                    h2 { margin: 0 0 8px; }
+                    p { margin: 0 0 12px; color: #555; }
+                    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                    th, td { border: 1px solid #ccc; padding: 6px; text-align: left; vertical-align: top; }
+                    th { background: #f3f4f6; }
+                </style></head>
+                <body>
+                    <h2>Отчет по жителям</h2>
+                    <p><strong>Сформировано:</strong> ${esc(new Date().toLocaleString())}</p>
+                    <p><strong>Фильтры:</strong> ${esc(filtersText)}</p>
+                    <p><strong>Количество:</strong> ${rows.length}</p>
+                    <table>
+                        <thead>
+                            <tr><th>ID</th><th>Логин</th><th>ФИО</th><th>Телефон</th><th>Email</th><th>Последний вход</th><th>Пароль</th><th>Дома</th></tr>
+                        </thead>
+                        <tbody>${tableRows || '<tr><td colspan="8">Нет данных</td></tr>'}</tbody>
+                    </table>
+                </body></html>
+            `;
+
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            iframe.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(iframe);
+            const doc = iframe.contentWindow?.document;
+            if (!doc || !iframe.contentWindow) {
+                iframe.remove();
+                throw new Error('Не удалось подготовить печать.');
+            }
+
+            doc.open();
+            doc.write(html);
+            doc.close();
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+            setTimeout(() => iframe.remove(), 1000);
+        }
+
+        window.exportTenants = async function exportTenants() {
+            const exportBtn = document.querySelector('.filter-actions .btn-success');
+            const format = document.getElementById('tenantExportFormat')?.value || 'xls';
+
+            if (exportBtn) {
+                exportBtn.disabled = true;
+                exportBtn.textContent = 'Экспорт...';
+            }
+
+            try {
+                const allItems = await fetchAllTenantsForExport();
+                if (!allItems.length) {
+                    if (typeof showWarning === 'function') showWarning('Нет данных для экспорта по выбранным фильтрам.');
+                    return;
+                }
+
+                const rows = buildTenantExportRows(allItems);
+                const filtersText = buildTenantFiltersText(getTenantMainFilters());
+
+                if (format === 'pdf') {
+                    exportTenantsToPdf(rows, filtersText);
+                } else {
+                    exportTenantsToStyledExcel(rows, filtersText);
+                }
+
+                if (typeof showSuccess === 'function') showSuccess('Экспорт выполнен.');
+            } catch (error) {
+                console.error('Tenants export error:', error);
+                if (typeof showError === 'function') {
+                    showError('Ошибка экспорта: ' + error.message);
+                }
+            } finally {
+                if (exportBtn) {
+                    exportBtn.disabled = false;
+                    exportBtn.innerHTML = '<i class="bi bi-box-arrow-down"></i> Экспорт';
+                }
             }
         };
 

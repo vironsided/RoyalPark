@@ -51,6 +51,57 @@
             transition: all 0.3s;
         }
 
+        .purpose-filter-details {
+            position: relative;
+            width: 100%;
+        }
+
+        .purpose-filter-details>summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+            min-height: 42px;
+            display: flex;
+            align-items: center;
+        }
+
+        .purpose-filter-details>summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .purpose-filter-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            z-index: 30;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            padding: 8px;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+        .purpose-filter-dropdown label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+            padding: 6px 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .purpose-filter-dropdown label:hover {
+            background: rgba(102, 126, 234, 0.08);
+        }
+
         .filter-group select:focus,
         .filter-group input:focus {
             outline: none;
@@ -94,10 +145,54 @@
             color: #f6f7ff !important;
         }
 
+        [data-theme="dark"] .purpose-filter-details>summary,
+        body[data-theme="dark"] .purpose-filter-details>summary,
+        html[data-theme="dark"] .purpose-filter-details>summary,
+        [data-theme="dark"] .purpose-filter-dropdown,
+        body[data-theme="dark"] .purpose-filter-dropdown,
+        html[data-theme="dark"] .purpose-filter-dropdown {
+            background: #242831 !important;
+            color: #f6f7ff !important;
+            border-color: rgba(255, 255, 255, 0.12) !important;
+        }
+
+        [data-theme="dark"] .purpose-filter-dropdown label:hover,
+        body[data-theme="dark"] .purpose-filter-dropdown label:hover,
+        html[data-theme="dark"] .purpose-filter-dropdown label:hover {
+            background: rgba(255, 255, 255, 0.08) !important;
+        }
+
         .filters-actions {
             display: flex;
             gap: 10px;
             justify-content: flex-end;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filters-actions .export-format-select {
+            min-width: 120px;
+            width: 120px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background: #fff;
+            color: #212529;
+            font-size: 0.95rem;
+        }
+
+        .filters-actions .export-format-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+
+        [data-theme="dark"] .filters-actions .export-format-select,
+        body[data-theme="dark"] .filters-actions .export-format-select,
+        html[data-theme="dark"] .filters-actions .export-format-select {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: #fefefe !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
         }
 
         /* Карточка списка тарифов оформляется так же, как и стандартные .card */

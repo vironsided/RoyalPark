@@ -618,7 +618,8 @@
                     <meta charset="utf-8" />
                     <style>
                         body { font-family: Calibri, Arial, sans-serif; color: #111827; }
-                        .title-wrap { border: 2px solid #1f2937; padding: 12px; margin-bottom: 10px; background: #f8fafc; }
+                        .title-table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+                        .title-cell { border: 2px solid #1f2937; padding: 12px; background: #f8fafc; }
                         .title-main { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
                         .title-sub { font-size: 12px; color: #4b5563; }
                         table { border-collapse: collapse; width: 100%; }
@@ -634,10 +635,9 @@
                     </style>
                 </head>
                 <body>
-                    <div class="title-wrap">
-                        <div class="title-main">Отчет по резидентам</div>
-                        <div class="title-sub">Royal Park • Экспорт для учета</div>
-                    </div>
+                    <table class="title-table">
+                        <tr><td class="title-cell"><div class="title-main">Отчет по резидентам</div><div class="title-sub">Royal Park - Экспорт для учета</div></td></tr>
+                    </table>
                     <table class="meta">
                         <tr><td>Сформировано</td><td>${esc(new Date().toLocaleString())}</td></tr>
                         <tr><td>Фильтры</td><td>${esc(filtersText)}</td></tr>

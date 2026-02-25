@@ -70,6 +70,22 @@
             margin-top: 10px;
         }
 
+        #tenantExportFormat {
+            padding: 10px 15px;
+            background: #ffffff;
+            color: #212529;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            min-width: 170px;
+        }
+
+        #tenantExportFormat:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
         @media (max-width: 1200px) {
             .filter-actions {
                 width: 100%;
@@ -100,6 +116,14 @@
         body[data-theme="dark"] .filter-group select,
         html[data-theme="dark"] .filter-group input,
         html[data-theme="dark"] .filter-group select {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: #fefefe !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        }
+
+        [data-theme="dark"] #tenantExportFormat,
+        body[data-theme="dark"] #tenantExportFormat,
+        html[data-theme="dark"] #tenantExportFormat {
             background: rgba(255, 255, 255, 0.05) !important;
             color: #fefefe !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;

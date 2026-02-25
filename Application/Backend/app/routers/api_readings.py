@@ -536,7 +536,7 @@ def list_readings(
     db: Session = Depends(get_db),
     block_id: Optional[int] = Query(None),
     resident_id: Optional[int] = Query(None),
-    meter_type: Optional[str] = Query(None),
+    meter_type: Optional[List[str]] = Query(None),
     year: Optional[int] = Query(None),
     month: Optional[int] = Query(None),
     q: Optional[str] = Query(None),
@@ -578,8 +578,10 @@ def list_readings(
         readings_q = readings_q.filter(Resident.block_id == block_id)
     if resident_id:
         readings_q = readings_q.filter(Resident.id == resident_id)
-    if meter_type in {"ELECTRIC", "GAS", "WATER", "SEWERAGE", "SERVICE", "RENT", "CONSTRUCTION"}:
-        readings_q = readings_q.filter(ResidentMeter.meter_type == MeterType(meter_type))
+    allowed_types = {"ELECTRIC", "GAS", "WATER", "SEWERAGE", "SERVICE", "RENT", "CONSTRUCTION"}
+    selected_types = [t for t in (meter_type or []) if t in allowed_types]
+    if selected_types:
+        readings_q = readings_q.filter(ResidentMeter.meter_type.in_([MeterType(t) for t in selected_types]))
     if q:
         like = f"%{q.strip()}%"
         readings_q = readings_q.filter(
@@ -1449,7 +1451,7 @@ def list_readings_public(
     db: Session = Depends(get_db),
     block_id: Optional[int] = Query(None),
     resident_id: Optional[int] = Query(None),
-    meter_type: Optional[str] = Query(None),
+    meter_type: Optional[List[str]] = Query(None),
     year: Optional[int] = Query(None),
     month: Optional[int] = Query(None),
     q: Optional[str] = Query(None),
