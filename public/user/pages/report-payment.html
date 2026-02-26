@@ -1248,6 +1248,7 @@ async function initPaymentPage() {
         let displayName = codeFromSession || '';
         let advanceValue = null;
         let userFullName = '';
+        let linkedResidentCodes = [];
 
         // fallback helper to load user profile name
         async function fetchUserName() {
@@ -1280,6 +1281,10 @@ async function initPaymentPage() {
                 const data = await resp.json();
                 const residents = data?.residents || [];
                 const summary = data?.summary || {};
+                linkedResidentCodes = residents
+                    .map(r => (r?.code || r?.resident_code || '').toString().trim())
+                    .filter(Boolean);
+                linkedResidentCodes = Array.from(new Set(linkedResidentCodes));
 
                 if (residents.length) {
                     // prefer match by code or resident_code, else first resident
@@ -1316,6 +1321,21 @@ async function initPaymentPage() {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             }).format(adv) + ' ₼';
+        }
+
+        // Для пополнения аванса показываем все дома владельца,
+        // так как аванс общий и может тратиться на любой из них.
+        const isTopupMode = isAdvanceTopupScope(sessionStorage.getItem('paymentScope'));
+        if (isTopupMode) {
+            const paymentResidentEl = document.getElementById('paymentResident');
+            if (paymentResidentEl) {
+                const allLinked = linkedResidentCodes.join(', ');
+                if (allLinked) {
+                    paymentResidentEl.textContent = allLinked;
+                } else if (codeFromSession) {
+                    paymentResidentEl.textContent = codeFromSession;
+                }
+            }
         }
         
         // Отключаем карту Royal Park:
@@ -1496,7 +1516,7 @@ async function initPaymentPage() {
             }
 
             if (paymentResidentEl) {
-                paymentResidentEl.textContent = residentCodeStored || '—';
+                paymentResidentEl.textContent = isAdvanceTopupMode ? '—' : (residentCodeStored || '—');
             }
 
             // В режиме пополнения аванса счёт/период должны быть пустыми.
