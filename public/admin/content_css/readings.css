@@ -151,6 +151,36 @@
         html[data-theme="dark"] .multi-filter-panel {
             background: #242831 !important;
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(102, 126, 234, 0.55) #1f2432;
+        }
+
+        [data-theme="dark"] .multi-filter-panel::-webkit-scrollbar,
+        body[data-theme="dark"] .multi-filter-panel::-webkit-scrollbar,
+        html[data-theme="dark"] .multi-filter-panel::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        [data-theme="dark"] .multi-filter-panel::-webkit-scrollbar-track,
+        body[data-theme="dark"] .multi-filter-panel::-webkit-scrollbar-track,
+        html[data-theme="dark"] .multi-filter-panel::-webkit-scrollbar-track {
+            background: #1f2432;
+            border-radius: 8px;
+        }
+
+        [data-theme="dark"] .multi-filter-panel::-webkit-scrollbar-thumb,
+        body[data-theme="dark"] .multi-filter-panel::-webkit-scrollbar-thumb,
+        html[data-theme="dark"] .multi-filter-panel::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.55);
+            border-radius: 8px;
+            border: 2px solid #1f2432;
+        }
+
+        [data-theme="dark"] .multi-filter-panel::-webkit-scrollbar-thumb:hover,
+        body[data-theme="dark"] .multi-filter-panel::-webkit-scrollbar-thumb:hover,
+        html[data-theme="dark"] .multi-filter-panel::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.75);
         }
 
         [data-theme="dark"] .multi-filter-item,
@@ -760,6 +790,12 @@
             justify-content: center;
         }
 
+        /* Keep meter rows and status rows on the same horizontal line */
+        .reading-row > .reading-col:nth-child(2),
+        .reading-row > .reading-col:nth-child(3) {
+            justify-content: flex-start;
+        }
+
         .reading-actions {
             display: flex;
             gap: 10px;
@@ -959,11 +995,18 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            min-height: 34px;
         }
 
         .amount-item {
             justify-content: space-between;
             width: 100%;
+        }
+
+        .meter-value,
+        .status-pill,
+        .amount-value {
+            white-space: nowrap;
         }
 
         .amount-value {
@@ -1021,6 +1064,12 @@
             background: rgba(255, 99, 132, 0.15);
             color: #aa2746;
             border: 1px solid rgba(255, 99, 132, 0.35);
+        }
+
+        .status-partial {
+            background: rgba(245, 158, 11, 0.18);
+            color: #9a6200;
+            border: 1px solid rgba(245, 158, 11, 0.4);
         }
 
         .amount-value-alert {

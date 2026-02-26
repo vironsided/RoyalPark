@@ -56,19 +56,25 @@ def _is_period_paid(db: Session, resident_id: int, year: int, month: int) -> boo
     return bool(inv)
 
 
-def _meter_reading_payment_lock_map(
+def _is_water_line_desc(desc: str | None) -> bool:
+    low = (desc or "").lower()
+    return ("вода" in low) or ("water" in low) or ("meter_cold_water" in low)
+
+
+def _is_sewer_line_desc(desc: str | None) -> bool:
+    low = (desc or "").lower()
+    return ("канализац" in low) or ("sewerage" in low) or ("meter_sewerage" in low)
+
+
+def _invoice_line_payment_state_for_period(
     db: Session,
     resident_id: int,
     year: int,
     month: int,
 ) -> dict[int, dict]:
     """
-    Возвращает карту блокировок по meter_reading_id для периода инвойса.
-    Логика распределения оплаты:
-    - берём фактически оплаченный total по инвойсу;
-    - последовательно покрываем строки InvoiceLine (FIFO по id);
-    - строка считается заблокированной, если покрыта полностью.
-    - Авто-канализация (meter_reading_id = None) учитывается первой и блокирует WATER показания.
+    Детализация оплаты по строкам инвойса за период.
+    Возвращает карту: line_id -> {meter_reading_id, description, line_total, paid_amount, remaining_amount}.
     """
     inv = (
         db.query(Invoice)
@@ -89,19 +95,31 @@ def _meter_reading_payment_lock_map(
         .order_by(PaymentApplication.created_at.asc(), PaymentApplication.id.asc())
         .all()
     )
-    if not apps:
-        return {}
-
     all_lines = (
         db.query(InvoiceLine)
         .filter(InvoiceLine.invoice_id == inv.id)
         .order_by(InvoiceLine.id.asc())
         .all()
     )
+    if not all_lines:
+        return {}
 
-    line_totals: dict[int, Decimal] = {int(line.id): money(Decimal(str(line.amount_total or 0))) for line in all_lines if line.id is not None}
+    line_totals: dict[int, Decimal] = {
+        int(line.id): money(Decimal(str(line.amount_total or 0)))
+        for line in all_lines
+        if line.id is not None
+    }
     paid_by_line: dict[int, Decimal] = {lid: Decimal("0") for lid in line_totals}
-    line_desc_by_id: dict[int, str] = {int(line.id): (line.description or "") for line in all_lines if line.id is not None}
+    line_desc_by_id: dict[int, str] = {
+        int(line.id): (line.description or "")
+        for line in all_lines
+        if line.id is not None
+    }
+    line_reading_id_by_id: dict[int, int | None] = {
+        int(line.id): (int(line.meter_reading_id) if line.meter_reading_id is not None else None)
+        for line in all_lines
+        if line.id is not None
+    }
 
     def _parse_selected_line_ids(reference: str | None) -> list[int]:
         if not reference:
@@ -121,20 +139,6 @@ def _meter_reading_payment_lock_map(
             except Exception:
                 continue
         return out
-
-    def _allocate(amount: Decimal, line_ids: list[int]) -> None:
-        remaining_amt = Decimal(str(amount or 0))
-        for lid in line_ids:
-            if remaining_amt <= 0:
-                break
-            if lid not in line_totals:
-                continue
-            cap = max(line_totals[lid] - paid_by_line[lid], Decimal("0"))
-            if cap <= 0:
-                continue
-            take = min(cap, remaining_amt)
-            paid_by_line[lid] += take
-            remaining_amt -= take
 
     def _is_water_line_desc(desc: str | None) -> bool:
         low = (desc or "").lower()
@@ -174,6 +178,20 @@ def _meter_reading_payment_lock_map(
 
         return [lid for lid in sorted(unique_ids, key=_key)]
 
+    def _allocate(amount: Decimal, line_ids: list[int]) -> None:
+        remaining_amt = Decimal(str(amount or 0))
+        for lid in line_ids:
+            if remaining_amt <= 0:
+                break
+            if lid not in line_totals:
+                continue
+            cap = max(line_totals[lid] - paid_by_line[lid], Decimal("0"))
+            if cap <= 0:
+                continue
+            take = min(cap, remaining_amt)
+            paid_by_line[lid] += take
+            remaining_amt -= take
+
     default_order = sorted(line_totals.keys())
     for app in apps:
         amt = Decimal(str(app.amount_applied or 0))
@@ -185,19 +203,49 @@ def _meter_reading_payment_lock_map(
         else:
             _allocate(amt, default_order)
 
-    lock_map: dict[int, dict] = {}
-    for line in all_lines:
-        if line.meter_reading_id is None or line.id is None:
-            continue
-        lid = int(line.id)
-        total = line_totals.get(lid, Decimal("0"))
+    result: dict[int, dict] = {}
+    for lid, total in line_totals.items():
         paid = money(paid_by_line.get(lid, Decimal("0")))
         remaining = max(total - paid, Decimal("0"))
-        lock_map[int(line.meter_reading_id)] = {
-            "locked": remaining <= Decimal("0.0001"),
+        result[lid] = {
+            "meter_reading_id": line_reading_id_by_id.get(lid),
+            "description": line_desc_by_id.get(lid) or "",
             "line_total": float(total),
             "paid_amount": float(paid),
             "remaining_amount": float(money(remaining)),
+        }
+    return result
+
+
+def _meter_reading_payment_lock_map(
+    db: Session,
+    resident_id: int,
+    year: int,
+    month: int,
+) -> dict[int, dict]:
+    """
+    Возвращает карту блокировок по meter_reading_id для периода инвойса.
+    Логика распределения оплаты:
+    - берём фактически оплаченный total по инвойсу;
+    - последовательно покрываем строки InvoiceLine (FIFO по id);
+    - строка считается заблокированной, если покрыта полностью.
+    - Авто-канализация (meter_reading_id = None) учитывается первой и блокирует WATER показания.
+    """
+    line_state = _invoice_line_payment_state_for_period(db, resident_id, year, month)
+    if not line_state:
+        return {}
+
+    lock_map: dict[int, dict] = {}
+    for _, state in line_state.items():
+        meter_reading_id = state.get("meter_reading_id")
+        if meter_reading_id is None:
+            continue
+        remaining = Decimal(str(state.get("remaining_amount", 0) or 0))
+        lock_map[int(meter_reading_id)] = {
+            "locked": remaining <= Decimal("0.0001"),
+            "line_total": float(state.get("line_total", 0) or 0),
+            "paid_amount": float(state.get("paid_amount", 0) or 0),
+            "remaining_amount": float(state.get("remaining_amount", 0) or 0),
         }
 
     return lock_map
@@ -638,6 +686,7 @@ def list_readings(
                 "unit": unit,
                 "consumption": Decimal("0"),
                 "total": Decimal("0"),
+                "reading_ids": [],
             })
 
         # Если у резидента нет реального SEWERAGE-счётчика — показываем авто-канализацию как отдельный тариф.
@@ -661,6 +710,7 @@ def list_readings(
                     mrow = ensure_mrow()
                     mrow["consumption"] += water_cons
                     mrow["total"] += water_total
+                    mrow["reading_ids"].append(int(rd.id))
 
                 if include_sewerage:
                     auto_sewer = entry.setdefault("auto_sewer", {
@@ -675,12 +725,14 @@ def list_readings(
                     mrow = ensure_mrow()
                     mrow["consumption"] += cons
                     mrow["total"] += total
+                    mrow["reading_ids"].append(int(rd.id))
         else:
             meter_type_value = meter.meter_type.value
             if (not filter_by_meter_type) or (meter_type_value in selected_types_set):
                 mrow = ensure_mrow()
                 mrow["consumption"] += cons
                 mrow["total"] += total
+                mrow["reading_ids"].append(int(rd.id))
 
         # Нужна "последняя" запись за период для сортировки (новые сверху)
         cur_max = entry.get("max_reading_date")
@@ -697,6 +749,22 @@ def list_readings(
         ).all()
     )
 
+    payment_lock_maps: dict[int, dict[int, dict]] = {}
+    line_payment_states: dict[int, dict[int, dict]] = {}
+    for res_id in rows.keys():
+        payment_lock_maps[int(res_id)] = _meter_reading_payment_lock_map(
+            db=db,
+            resident_id=int(res_id),
+            year=year,
+            month=month,
+        )
+        line_payment_states[int(res_id)] = _invoice_line_payment_state_for_period(
+            db=db,
+            resident_id=int(res_id),
+            year=year,
+            month=month,
+        )
+
     # Формируем ответ
     result_rows = []
     for res_id, data in rows.items():
@@ -704,6 +772,7 @@ def list_readings(
         meters_list = []
         total_amount = Decimal("0")
         reading_date = data.get("max_reading_date")  # last reading date for sorting/display
+        has_editable_meters = False
         
         for meter_id, mdata in data["meters"].items():
             meter = mdata["meter"]
@@ -728,12 +797,52 @@ def list_readings(
                 display_type = "Строительство"
             else:
                 display_type = "Неизвестно"
+
+            meter_lock_map = payment_lock_maps.get(int(res_id), {})
+            reading_ids = [int(x) for x in (mdata.get("reading_ids") or []) if x is not None]
+
+            line_total_amount = Decimal("0")
+            paid_amount = Decimal("0")
+            remaining_amount = Decimal("0")
+            has_payment_meta = False
+
+            for rid in reading_ids:
+                meta = meter_lock_map.get(rid)
+                if not meta:
+                    continue
+                has_payment_meta = True
+                line_total_amount += Decimal(str(meta.get("line_total", 0) or 0))
+                paid_amount += Decimal(str(meta.get("paid_amount", 0) or 0))
+                remaining_amount += Decimal(str(meta.get("remaining_amount", 0) or 0))
+
+            if not has_payment_meta:
+                line_total_amount = Decimal(str(total))
+                paid_amount = Decimal("0")
+                remaining_amount = Decimal(str(total))
+
+            line_total_amount = money(line_total_amount)
+            paid_amount = money(paid_amount)
+            remaining_amount = money(remaining_amount)
+
+            meter_is_paid = line_total_amount > Decimal("0.0001") and remaining_amount <= Decimal("0.0001")
+            meter_is_partial = paid_amount > Decimal("0.0001") and remaining_amount > Decimal("0.0001")
+            payment_status = "Оплачено" if meter_is_paid else ("Частично" if meter_is_partial else "Не оплачено")
+            meter_is_editable = paid_amount <= Decimal("0.0001")
+            if meter_is_editable:
+                has_editable_meters = True
             
             meters_list.append({
                 "type": display_type,
                 "consumption": consumption,
                 "unit": mdata["unit"],
                 "total": total,
+                "is_paid": meter_is_paid,
+                "is_partial": meter_is_partial,
+                "is_editable": meter_is_editable,
+                "payment_status": payment_status,
+                "paid_amount": float(paid_amount),
+                "remaining_amount": float(remaining_amount),
+                "line_total_amount": float(line_total_amount),
             })
 
         auto_sewer = data.get("auto_sewer")
@@ -741,11 +850,44 @@ def list_readings(
             auto_cons = float(auto_sewer["consumption"])
             auto_total = float(auto_sewer["total"])
             total_amount += Decimal(auto_total)
+
+            resident_line_state = line_payment_states.get(int(res_id), {})
+            sewer_line_states = [
+                state
+                for state in resident_line_state.values()
+                if _is_sewer_line_desc((state.get("description") or ""))
+            ]
+
+            sewer_line_total = money(
+                sum((Decimal(str(s.get("line_total", 0) or 0)) for s in sewer_line_states), Decimal("0"))
+            )
+            sewer_paid = money(
+                sum((Decimal(str(s.get("paid_amount", 0) or 0)) for s in sewer_line_states), Decimal("0"))
+            )
+            sewer_remaining = money(
+                sum((Decimal(str(s.get("remaining_amount", 0) or 0)) for s in sewer_line_states), Decimal("0"))
+            )
+            if not sewer_line_states:
+                sewer_line_total = money(Decimal(str(auto_total)))
+                sewer_paid = Decimal("0")
+                sewer_remaining = sewer_line_total
+
+            sewer_is_paid = sewer_line_total > Decimal("0.0001") and sewer_remaining <= Decimal("0.0001")
+            sewer_is_partial = sewer_paid > Decimal("0.0001") and sewer_remaining > Decimal("0.0001")
+            sewer_payment_status = "Оплачено" if sewer_is_paid else ("Частично" if sewer_is_partial else "Не оплачено")
+
             meters_list.append({
                 "type": "Канализация",
                 "consumption": auto_cons,
                 "unit": auto_sewer["unit"],
                 "total": auto_total,
+                "is_paid": sewer_is_paid,
+                "is_partial": sewer_is_partial,
+                "is_editable": sewer_paid <= Decimal("0.0001"),
+                "payment_status": sewer_payment_status,
+                "paid_amount": float(sewer_paid),
+                "remaining_amount": float(sewer_remaining),
+                "line_total_amount": float(sewer_line_total),
             })
 
         if not meters_list:
@@ -760,6 +902,7 @@ def list_readings(
             "meters": meters_list,
             "total_amount": float(total_amount),
             "is_paid": res_id in paid_resident_ids,
+            "has_editable_meters": has_editable_meters,
             "reading_date": reading_date.strftime("%Y-%m-%d") if reading_date else None,
             "_reading_date_dt": reading_date,
         })
@@ -955,6 +1098,12 @@ def get_resident_meters(
         payment_meta = None
         if existing:
             payment_meta = payment_lock_map.get(int(existing.id))
+
+        paid_amount = Decimal(str(payment_meta.get("paid_amount", 0))) if payment_meta else Decimal("0")
+        full_locked = bool(payment_meta and payment_meta.get("locked"))
+        # По бизнес-правилу редактирование запрещено, если по строке уже есть любая оплата
+        # (частичная или полная).
+        payment_locked = full_locked or (paid_amount > Decimal("0.0001"))
         
         meters.append({
             "meter_id": m.id,
@@ -975,7 +1124,7 @@ def get_resident_meters(
             "existing_reading_id": (existing.id if existing else None),
             "last_reading_id": (last_any.id if last_any else None),
             "existing_photo_url": existing_photo_url,
-            "payment_locked": bool(payment_meta and payment_meta.get("locked")),
+            "payment_locked": payment_locked,
             "paid_amount": float(payment_meta.get("paid_amount", 0)) if payment_meta else 0.0,
             "remaining_amount": float(payment_meta.get("remaining_amount", 0)) if payment_meta else 0.0,
             "line_total_amount": float(payment_meta.get("line_total", 0)) if payment_meta else 0.0,

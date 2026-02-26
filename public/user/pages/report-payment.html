@@ -1999,12 +1999,10 @@ async function submitPayment(event) {
             clearPaymentSessionData();
             stopPaymentCountdown();
 
-            // Фильтр для черновиков на странице счетов
-            sessionStorage.setItem('billsFilterStatuses', JSON.stringify(['DRAFT']));
-            sessionStorage.setItem('billsSystemFilterMeta', JSON.stringify({
-                source: 'report_payment',
-                ts: Date.now()
-            }));
+            // После оплаты не фиксируем фильтр по статусу:
+            // страница "Мои счета" должна открываться с "Все".
+            sessionStorage.removeItem('billsFilterStatuses');
+            sessionStorage.removeItem('billsSystemFilterMeta');
 
             setTimeout(() => {
                 if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
@@ -2068,44 +2066,21 @@ async function submitPayment(event) {
                 }, 300);
             }
             
-            // Set filter to show DRAFT status invoices on bills page
-            sessionStorage.setItem('billsFilterStatuses', JSON.stringify(['DRAFT']));
-            sessionStorage.setItem('billsSystemFilterMeta', JSON.stringify({
-                source: 'report_payment',
-                ts: Date.now()
-            }));
+            // После оплаты не фиксируем фильтр по статусу:
+            // страница "Мои счета" должна открываться с "Все".
+            sessionStorage.removeItem('billsFilterStatuses');
+            sessionStorage.removeItem('billsSystemFilterMeta');
             
             // Redirect to dashboard to show updated data
             setTimeout(() => {
                 if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
-                    // Navigate to dashboard
+                    // Navigate to dashboard.
+                    // Dashboard data will be refreshed once by SPA router (afterContentRender),
+                    // so do not trigger extra manual reloads here.
                     window.userSpaRouter.navigate('dashboard', true);
-                    
-                    // Refresh dashboard data after navigation
-                    setTimeout(() => {
-                        if (typeof loadDashboardData === 'function') {
-                            console.log('Refreshing dashboard after payment...');
-                            loadDashboardData(true).then(() => {
-                                console.log('Dashboard refreshed successfully');
-                                setTimeout(() => {
-                                    if (typeof loadDashboardData === 'function') {
-                                        loadDashboardData(true);
-                                    }
-                                }, 500);
-                            }).catch(err => {
-                                console.error('Failed to refresh dashboard:', err);
-                            });
-                        }
-                    }, 500);
                 } else {
                     // Fallback for regular navigation
                     window.location.href = '/user/dashboard.html';
-                    
-                    setTimeout(() => {
-                        if (typeof loadDashboardData === 'function') {
-                            loadDashboardData();
-                        }
-                    }, 500);
                 }
             }, 1500);
         } else {

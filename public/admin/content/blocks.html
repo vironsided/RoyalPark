@@ -832,12 +832,16 @@
                 console.log('Plan overlay cached, polygons:', planOverlay.querySelectorAll('.plan-area').length);
             }
 
-            // Настройка обработчиков для полигонов плана через делегирование
-            // Примечание: tooltip обрабатывается в admin.js (initPlanTooltip), 
-            // здесь только обработчик клика через делегирование (чтобы не пересоздавать обработчики)
-            if (planOverlay && !planOverlay.dataset.clickHandlerBound) {
-                planOverlay.dataset.clickHandlerBound = 'true';
-                planOverlay.addEventListener('click', (e) => {
+            // Настройка обработчиков для полигонов плана через делегирование.
+            // Важно: при SPA-возврате overlay может восстанавливаться из cloneNode,
+            // а cloneNode переносит data-атрибуты, но НЕ переносит addEventListener-хендлеры.
+            // Поэтому не полагаемся на data-flag и каждый раз перевешиваем обработчик безопасно.
+            if (planOverlay) {
+                if (typeof planOverlay._planClickHandler === 'function') {
+                    planOverlay.removeEventListener('click', planOverlay._planClickHandler);
+                }
+
+                const handlePlanClick = (e) => {
                     const area = e.target.closest('.plan-area');
                     if (!area) return;
 
@@ -850,7 +854,10 @@
                     } else {
                         selectBlock(blockCode);
                     }
-                });
+                };
+
+                planOverlay.addEventListener('click', handlePlanClick);
+                planOverlay._planClickHandler = handlePlanClick;
             }
         }, 150);
     }

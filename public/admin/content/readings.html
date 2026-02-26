@@ -111,7 +111,7 @@
     </div>
 
     <div class="readings-export-toolbar">
-        <button class="btn btn-outline-secondary" id="readingsExportToggleBtn" type="button">
+        <button class="btn btn-outline-success" id="readingsExportToggleBtn" type="button">
             <i class="bi bi-box-arrow-down"></i> Экспорт
         </button>
     </div>
@@ -613,11 +613,14 @@
             }).join('');
 
             const amountsHtml = row.meters.map(m => {
-                const statusClass = row.is_paid ? 'status-paid' : 'status-due';
-                const amountClass = row.is_paid ? '' : 'amount-value-alert';
+                const isPaid = !!m.is_paid;
+                const isPartial = !!m.is_partial;
+                const statusClass = isPaid ? 'status-paid' : (isPartial ? 'status-partial' : 'status-due');
+                const amountClass = isPaid || isPartial ? '' : 'amount-value-alert';
+                const statusText = m.payment_status || (isPaid ? 'Оплачено' : (isPartial ? 'Частично' : 'Не оплачено'));
                 return `
                         <div class="amount-item">
-                            <span class="status-pill ${statusClass}">${row.is_paid ? 'Оплачено' : m.type}</span>
+                            <span class="status-pill ${statusClass}">${statusText}</span>
                             <span class="amount-value ${amountClass}">${m.total.toFixed(2)} ₼</span>
                         </div>
                     `;
@@ -649,7 +652,7 @@
                         </div>
                         <div class="reading-col reading-col-actions">
                             <div class="reading-actions">
-                                ${!row.is_paid ? `
+                                ${row.has_editable_meters ? `
                                     <button class="table-btn table-btn-primary" type="button" onclick="openReadingEditor(${row.resident_id})">
                                         <i class="bi bi-pencil"></i>
                                         Редактировать
@@ -2078,11 +2081,11 @@
 
     window.openReadingEditor = async function openReadingEditor(residentId) {
         const resident = readingsData?.rows?.find(r => r.resident_id === residentId);
-        if (resident?.is_paid) {
+        if (resident && resident.has_editable_meters === false) {
             if (typeof showWarning === 'function') {
-                showWarning('Редактирование отключено: счет за период полностью оплачен');
+                showWarning('Редактирование отключено: все строки уже оплачены или частично оплачены');
             } else if (typeof showError === 'function') {
-                showError('Редактирование отключено: счет за период полностью оплачен');
+                showError('Редактирование отключено: все строки уже оплачены или частично оплачены');
             }
             return;
         }

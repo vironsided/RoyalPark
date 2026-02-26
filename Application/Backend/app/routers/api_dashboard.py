@@ -10,7 +10,7 @@ from sqlalchemy import func, and_
 from ..database import get_db
 from ..models import (
     User, Resident, Payment, Invoice, Block,
-    Notification, NotificationStatus, PaymentMethod,
+    Notification, NotificationStatus, PaymentMethod, PaymentApplication, InvoiceStatus,
     MeterReading, ResidentMeter, MeterType, Tariff
 )
 from ..utils import now_baku, to_baku_datetime
@@ -225,6 +225,38 @@ def get_recent_payments(
         payments = db.query(Payment).join(Resident, Resident.id == Payment.resident_id).order_by(
             Payment.received_at.desc()
         ).limit(limit).all()
+
+        resident_ids = list({p.resident_id for p in payments if p.resident_id is not None})
+
+        outstanding_by_resident: dict[int, Decimal] = {}
+        if resident_ids:
+            open_invoice_totals = {
+                int(resident_id): Decimal(str(total_amount or 0))
+                for resident_id, total_amount in db.query(
+                    Invoice.resident_id,
+                    func.coalesce(func.sum(Invoice.amount_total), 0)
+                ).filter(
+                    Invoice.resident_id.in_(resident_ids),
+                    Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
+                ).group_by(Invoice.resident_id).all()
+            }
+
+            applied_to_open_invoices = {
+                int(resident_id): Decimal(str(applied_amount or 0))
+                for resident_id, applied_amount in db.query(
+                    Invoice.resident_id,
+                    func.coalesce(func.sum(PaymentApplication.amount_applied), 0)
+                ).join(Invoice, Invoice.id == PaymentApplication.invoice_id).filter(
+                    Invoice.resident_id.in_(resident_ids),
+                    Invoice.status.in_([InvoiceStatus.ISSUED, InvoiceStatus.PARTIAL])
+                ).group_by(Invoice.resident_id).all()
+            }
+
+            for resident_id in resident_ids:
+                total_open = open_invoice_totals.get(resident_id, Decimal("0"))
+                total_applied = applied_to_open_invoices.get(resident_id, Decimal("0"))
+                remaining = total_open - total_applied
+                outstanding_by_resident[resident_id] = remaining if remaining > Decimal("0") else Decimal("0")
         
         result = []
         for payment in payments:
@@ -233,10 +265,20 @@ def get_recent_payments(
             resident_code = f"{block_name} / {unit_number}" if block_name and unit_number else "—"
             resident_info = f"Блок {block_name}, №{unit_number}" if block_name and unit_number else "—"
             
-            # Определяем статус платежа
+            # Определяем статус для блока "Последние платежи":
+            # - полностью погашено: после этого платежа у резидента нет открытого долга
+            # - частично погашено: платеж разнесен, но открытый долг еще есть
+            # - аванс зачислен: платеж ушел в аванс (не разнесен по начислениям)
             applied_total = sum([app.amount_applied for app in payment.applications], Decimal("0"))
-            leftover = payment.amount_total - applied_total
-            status = "Оплачено" if leftover <= Decimal("0.01") else "В обработке"
+            tolerance = Decimal("0.01")
+            outstanding_after_payment = outstanding_by_resident.get(payment.resident_id, Decimal("0"))
+
+            if applied_total <= tolerance:
+                status = "Оплачено (аванс зачислен)"
+            elif outstanding_after_payment <= tolerance:
+                status = "Оплачено (полностью погашено)"
+            else:
+                status = "Оплачено (частично погашено)"
             
             result.append(RecentPaymentOut(
                 id=payment.id,
@@ -326,7 +368,7 @@ def get_recent_activity(
 
 @router.get("/payment-chart")
 def get_payment_chart_data(
-    period: str = Query("week", regex="^(week|month|year)$"),
+    period: str = Query("week", regex="^(day|week|month|year)$"),
     db: Session = Depends(get_db),
 ):
     """Получить данные для графика платежей (публичный endpoint)."""
@@ -335,7 +377,28 @@ def get_payment_chart_data(
         labels = []
         data = []
         
-        if period == "week":
+        if period == "day":
+            # Данные за текущий день по часам (24 точки)
+            current_day = now.date()
+            for hour in range(24):
+                labels.append(f"{hour:02d}:00")
+
+                hour_start = datetime.combine(
+                    current_day,
+                    datetime.min.time().replace(hour=hour),
+                    tzinfo=now.tzinfo
+                )
+                hour_end = hour_start + timedelta(hours=1) - timedelta(microseconds=1)
+
+                total = db.query(func.sum(Payment.amount_total)).filter(
+                    and_(
+                        Payment.received_at >= hour_start,
+                        Payment.received_at <= hour_end
+                    )
+                ).scalar() or Decimal("0")
+                data.append(float(total))
+
+        elif period == "week":
             # Данные за последние 7 дней
             labels = []
             data = []
@@ -379,15 +442,18 @@ def get_payment_chart_data(
             labels = []
             data = []
             month_names = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"]
+            current_month_idx = now.year * 12 + (now.month - 1)
             for i in range(11, -1, -1):
-                month_date = now.date() - timedelta(days=30 * i)
-                labels.append(month_names[month_date.month - 1])
-                
-                month_start = date(month_date.year, month_date.month, 1)
-                if month_date.month == 12:
-                    month_end = date(month_date.year + 1, 1, 1) - timedelta(days=1)
+                month_idx = current_month_idx - i
+                year = month_idx // 12
+                month = (month_idx % 12) + 1
+                labels.append(month_names[month - 1])
+
+                month_start = date(year, month, 1)
+                if month == 12:
+                    month_end = date(year + 1, 1, 1) - timedelta(days=1)
                 else:
-                    month_end = date(month_date.year, month_date.month + 1, 1) - timedelta(days=1)
+                    month_end = date(year, month + 1, 1) - timedelta(days=1)
                 
                 month_start_dt = datetime.combine(month_start, datetime.min.time(), tzinfo=now.tzinfo)
                 month_end_dt = datetime.combine(month_end, datetime.max.time(), tzinfo=now.tzinfo)

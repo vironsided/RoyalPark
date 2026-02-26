@@ -62,9 +62,10 @@
             <div class="chart-header">
                 <h3 class="chart-title">Статистика платежей</h3>
                 <div class="chart-controls">
-                    <button class="chart-btn active">Неделя</button>
-                    <button class="chart-btn">Месяц</button>
-                    <button class="chart-btn">Год</button>
+                    <button class="chart-btn" data-period="day">День</button>
+                    <button class="chart-btn active" data-period="week">Неделя</button>
+                    <button class="chart-btn" data-period="month">Месяц</button>
+                    <button class="chart-btn" data-period="year">Год</button>
                 </div>
             </div>
             <div class="chart-container" style="position: relative; height: 350px; padding: 20px;">
@@ -266,9 +267,19 @@
                 return;
             }
 
+            const getPaymentStatusMeta = (statusRaw) => {
+                const status = String(statusRaw || '').trim().toLowerCase();
+                if (status.includes('аванс')) {
+                    return { className: 'badge-info', text: 'Оплачено (аванс зачислен)' };
+                }
+                if (status.includes('частично')) {
+                    return { className: 'badge-warning', text: 'Оплачено (частично погашено)' };
+                }
+                return { className: 'badge-success', text: 'Оплачено (полностью погашено)' };
+            };
+
             tbody.innerHTML = payments.map(payment => {
-                const statusClass = payment.status === 'Оплачено' ? 'badge-success' : 'badge-warning';
-                const statusText = payment.status === 'Оплачено' ? 'Оплачено' : 'В обработке';
+                const statusMeta = getPaymentStatusMeta(payment.status);
                 const date = new Date(payment.received_at).toLocaleDateString('ru-RU');
 
                 return `
@@ -278,7 +289,7 @@
                     <td>${payment.resident_code || '—'}</td>
                     <td>₼${payment.amount_total.toFixed(2)}</td>
                     <td>${date}</td>
-                    <td><span class="badge ${statusClass}">${statusText}</span></td>
+                    <td><span class="badge ${statusMeta.className}">${statusMeta.text}</span></td>
                 </tr>
             `;
             }).join('');
@@ -429,13 +440,34 @@
             gradientFill.addColorStop(1, 'rgba(15, 23, 42, 0)');        // transparent bottom
 
             // Загружаем данные для всех периодов
-            const [weekChartData, monthChartData, yearChartData] = await Promise.all([
+            const [dayChartData, weekChartData, monthChartData, yearChartData] = await Promise.all([
+                loadChartData('day'),
                 loadChartData('week'),
                 loadChartData('month'),
                 loadChartData('year')
             ]);
 
             // Формируем данные для графика
+            const dayData = {
+                labels: dayChartData.labels.length > 0
+                    ? dayChartData.labels
+                    : Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`),
+                datasets: [{
+                    label: 'Платежи (₼)',
+                    data: dayChartData.data.length > 0 ? dayChartData.data : Array.from({ length: 24 }, () => 0),
+                    borderColor: '#f97316',
+                    backgroundColor: gradientFill,
+                    tension: 0.45,
+                    fill: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#f97316',
+                    pointBorderColor: '#0f172a',
+                    pointBorderWidth: 2,
+                    pointHoverBorderWidth: 2
+                }]
+            };
+
             const weekData = {
                 labels: weekChartData.labels.length > 0 ? weekChartData.labels : ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
                 datasets: [{
@@ -491,6 +523,12 @@
             };
 
             let currentData = weekData;
+            const periodDataMap = {
+                day: dayData,
+                week: weekData,
+                month: monthData,
+                year: yearData
+            };
 
             // Create chart
             window.paymentChartInstance = new Chart(ctx, {
@@ -569,7 +607,7 @@
 
             // Chart period buttons
             const chartButtons = document.querySelectorAll('.chart-btn');
-            chartButtons.forEach((btn, index) => {
+            chartButtons.forEach((btn) => {
                 btn.addEventListener('click', async function () {
                     // Remove active class from all buttons
                     chartButtons.forEach(b => b.classList.remove('active'));
@@ -578,17 +616,8 @@
                     this.classList.add('active');
 
                     // Load and update chart data based on period
-                    let period = 'week';
-                    if (index === 0) {
-                        period = 'week';
-                        currentData = weekData;
-                    } else if (index === 1) {
-                        period = 'month';
-                        currentData = monthData;
-                    } else if (index === 2) {
-                        period = 'year';
-                        currentData = yearData;
-                    }
+                    const period = this.dataset.period || 'week';
+                    currentData = periodDataMap[period] || weekData;
 
                     // Загружаем свежие данные для выбранного периода
                     const freshData = await loadChartData(period);

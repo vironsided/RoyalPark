@@ -92,8 +92,8 @@
         </div>
     </div>
 
-    <div class="invoices-export-toolbar">
-        <button class="btn btn-outline-secondary" id="invoicesExportToggleBtn" type="button">
+    <div class="invoices-export-toolbar d-flex justify-content-end">
+        <button class="btn btn-outline-success" id="invoicesExportToggleBtn" type="button">
             <i class="bi bi-box-arrow-down"></i> Экспорт
         </button>
     </div>
@@ -836,6 +836,32 @@
         return null;
     }
 
+    function getInvoiceLineRemainingGroup(line) {
+        const description = String(line?.description || '').trim();
+        const text = description.toLowerCase();
+        const isStable = text.includes('стабил') || text.includes('stable');
+
+        if (isStable) {
+            if (text.includes('электр') || text.includes('electric')) {
+                return { key: 'STABLE_ELECTRIC', label: 'Стабильный тариф (Электричество)' };
+            }
+            if (text.includes('газ')) {
+                return { key: 'STABLE_GAS', label: 'Стабильный тариф (Газ)' };
+            }
+            if (text.includes('вод')) {
+                return { key: 'STABLE_WATER', label: 'Стабильный тариф (Вода)' };
+            }
+            if (text.includes('канализ')) {
+                return { key: 'STABLE_SEWERAGE', label: 'Стабильный тариф (Канализация)' };
+            }
+            return { key: 'STABLE_OTHER', label: description || 'Стабильный тариф' };
+        }
+
+        const type = detectInvoiceLineMeterType(line);
+        if (!type) return null;
+        return { key: type, label: INVOICE_METER_LABELS[type] || type };
+    }
+
     function collectInvoiceMeterTypes(invoice) {
         const set = new Set();
         const lines = Array.isArray(invoice?.lines) ? invoice.lines : [];
@@ -905,18 +931,20 @@
 
             const remainingByType = {};
             serviceLines.forEach((line) => {
-                const type = detectInvoiceLineMeterType(line);
-                if (!type) return;
+                const group = getInvoiceLineRemainingGroup(line);
+                if (!group) return;
                 const rem = Number(line?.remaining_amount || 0);
-                remainingByType[type] = (remainingByType[type] || 0) + rem;
+                if (!remainingByType[group.key]) {
+                    remainingByType[group.key] = { label: group.label, value: 0 };
+                }
+                remainingByType[group.key].value += rem;
             });
-            const serviceRemainingLines = Object.entries(remainingByType).map(([type, rem]) => {
-                const label = INVOICE_METER_LABELS[type] || type;
-                const value = Number(rem || 0);
-                if (value <= 0.0001) {
+            const serviceRemainingLines = Object.values(remainingByType).map(({ label, value }) => {
+                const safeValue = Number(value || 0);
+                if (safeValue <= 0.0001) {
                     return `${label}: 0.00 ₼`;
                 }
-                return `${label.toLowerCase()} ${value.toFixed(2)} ₼`;
+                return `${label.toLowerCase()} ${safeValue.toFixed(2)} ₼`;
             });
 
             return {

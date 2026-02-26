@@ -1239,6 +1239,135 @@ window.showSuccess = function showSuccess(message) {
     return showAlert(message, 'Успешно', 'success');
 };
 
+// Dashboard news cache (for opening modal without navigation)
+window._dashboardNewsCache = [];
+
+function getDashboardLang() {
+    return localStorage.getItem('language') || 'ru';
+}
+
+function parseNewsLocalizedField(value) {
+    if (!value) return {};
+    if (typeof value === 'object') return value;
+    try {
+        return JSON.parse(value);
+    } catch (e) {
+        return {};
+    }
+}
+
+function pickNewsLocalizedText(multilangObj, lang, fallbackText) {
+    if (!multilangObj || typeof multilangObj !== 'object') return fallbackText;
+    return (multilangObj[lang] && multilangObj[lang].trim()) ||
+           (multilangObj.ru && multilangObj.ru.trim()) ||
+           (multilangObj.az && multilangObj.az.trim()) ||
+           (multilangObj.en && multilangObj.en.trim()) ||
+           fallbackText;
+}
+
+function formatDashboardNewsDate(dateValue, lang) {
+    const locale = lang === 'ru' ? 'ru-RU' : (lang === 'az' ? 'az' : 'en-US');
+    try {
+        const d = new Date(dateValue);
+        const formatted = d.toLocaleDateString(locale, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        if (formatted.includes('M')) throw new Error('Fallback');
+        return formatted;
+    } catch (e) {
+        const d = new Date(dateValue);
+        return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    }
+}
+
+function ensureDashboardNewsModal() {
+    let overlay = document.getElementById('dashboardNewsDetailModal');
+    if (overlay) return overlay;
+
+    if (!document.getElementById('dashboard-news-modal-style')) {
+        const style = document.createElement('style');
+        style.id = 'dashboard-news-modal-style';
+        style.textContent = `
+            .dashboard-news-modal-overlay {
+                position: fixed; inset: 0; background: rgba(6, 12, 24, 0.6);
+                backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center;
+                z-index: 12000; padding: 16px;
+            }
+            .dashboard-news-modal-overlay.show { display: flex; }
+            .dashboard-news-modal {
+                width: min(760px, 100%); max-height: min(82vh, 760px); overflow: hidden;
+                background: #242831; border: 1px solid rgba(255,255,255,0.12); border-radius: 14px;
+                box-shadow: 0 18px 40px rgba(0,0,0,0.45); display: flex; flex-direction: column;
+            }
+            .dashboard-news-modal-header {
+                display: flex; align-items: center; gap: 12px; padding: 16px 18px;
+                border-bottom: 1px solid rgba(255,255,255,0.08);
+            }
+            .dashboard-news-modal-icon {
+                width: 42px; height: 42px; border-radius: 12px; display: inline-flex;
+                align-items: center; justify-content: center; color: #fff; font-size: 18px;
+            }
+            .dashboard-news-modal-title-wrap { flex: 1; min-width: 0; }
+            .dashboard-news-modal-title {
+                margin: 0; color: #f6f7ff; font-weight: 700; font-size: 1.08rem; line-height: 1.3;
+            }
+            .dashboard-news-modal-date { margin-top: 4px; color: #9aa4b2; font-size: 0.85rem; }
+            .dashboard-news-modal-close {
+                border: none; background: transparent; color: #b9c2cf; font-size: 28px; line-height: 1;
+                cursor: pointer; padding: 0 2px;
+            }
+            .dashboard-news-modal-close:hover { color: #fff; }
+            .dashboard-news-modal-body { padding: 18px; overflow: auto; color: #eef2ff; white-space: pre-wrap; line-height: 1.6; }
+            .dashboard-news-modal-footer { padding: 14px 18px; border-top: 1px solid rgba(255,255,255,0.08); text-align: right; }
+            .dashboard-news-modal-close-btn {
+                border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.08);
+                color: #f6f7ff; border-radius: 10px; padding: 8px 14px; cursor: pointer;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    overlay = document.createElement('div');
+    overlay.id = 'dashboardNewsDetailModal';
+    overlay.className = 'dashboard-news-modal-overlay';
+    overlay.innerHTML = `
+        <div class="dashboard-news-modal" role="dialog" aria-modal="true" aria-labelledby="dashboardNewsDetailTitle">
+            <div class="dashboard-news-modal-header">
+                <div class="dashboard-news-modal-icon" id="dashboardNewsDetailIcon"></div>
+                <div class="dashboard-news-modal-title-wrap">
+                    <h3 class="dashboard-news-modal-title" id="dashboardNewsDetailTitle"></h3>
+                    <div class="dashboard-news-modal-date" id="dashboardNewsDetailDate"></div>
+                </div>
+                <button type="button" class="dashboard-news-modal-close" id="dashboardNewsDetailCloseTop">&times;</button>
+            </div>
+            <div class="dashboard-news-modal-body" id="dashboardNewsDetailContent"></div>
+            <div class="dashboard-news-modal-footer">
+                <button type="button" class="dashboard-news-modal-close-btn" id="dashboardNewsDetailCloseBtn">Закрыть</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const close = () => {
+        overlay.classList.remove('show');
+        document.body.style.overflow = '';
+    };
+    overlay.querySelector('#dashboardNewsDetailCloseTop')?.addEventListener('click', close);
+    overlay.querySelector('#dashboardNewsDetailCloseBtn')?.addEventListener('click', close);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) close();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && overlay.classList.contains('show')) close();
+    });
+
+    return overlay;
+}
+
 // Load latest 3 news for dashboard
 window.loadDashboardNews = async function loadDashboardNews() {
     const newsGrid = document.getElementById('dashboardNewsGrid');
@@ -1281,21 +1410,89 @@ window.loadDashboardNews = async function loadDashboardNews() {
             return targetBlocks.some(b => residentBlocks.includes(b));
         });
         
-        // Сортируем по приоритету и дате, берем первые 3
-        const sortedNews = [...filteredByBlock].sort((a, b) => {
+        // Сортируем по приоритету и дате
+        const sortedAllNews = [...filteredByBlock].sort((a, b) => {
             if (b.priority !== a.priority) {
                 return b.priority - a.priority;
             }
             return new Date(b.published_at) - new Date(a.published_at);
-        }).slice(0, 3);
-        
-        renderDashboardNews(sortedNews, lang);
+        });
+
+        // Cache full sorted set for modal opening on dashboard
+        window._dashboardNewsCache = sortedAllNews;
+
+        // Показываем только первые 3
+        renderDashboardNews(sortedAllNews.slice(0, 3), lang);
     } catch (error) {
         console.error('Error loading dashboard news:', error);
         const newsGrid = document.getElementById('dashboardNewsGrid');
         if (newsGrid) {
             newsGrid.innerHTML = '<div class="text-center p-4 text-muted">Не удалось загрузить новости</div>';
         }
+    }
+};
+
+// Open dashboard news modal on the same page (without navigation)
+window.openDashboardNewsDetail = async function openDashboardNewsDetail(newsId) {
+    const id = parseInt(newsId, 10);
+    if (!Number.isFinite(id)) return;
+
+    const modal = ensureDashboardNewsModal();
+    const modalTitle = document.getElementById('dashboardNewsDetailTitle');
+    const modalContent = document.getElementById('dashboardNewsDetailContent');
+    const modalDate = document.getElementById('dashboardNewsDetailDate');
+    const modalIcon = document.getElementById('dashboardNewsDetailIcon');
+    if (!modal || !modalTitle || !modalContent || !modalDate) return;
+
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    modalTitle.textContent = 'Загрузка...';
+    modalContent.textContent = '';
+    modalDate.textContent = '';
+
+    try {
+        let news = (window._dashboardNewsCache || []).find(n => n.id === id);
+
+        if (!news) {
+            const response = await fetch(`${API_BASE_URL}/api/news/admin?per_page=100`, {
+                credentials: 'include'
+            });
+            if (!response.ok) throw new Error('Failed to load news');
+            const data = await response.json();
+            const items = data.items || [];
+            window._dashboardNewsCache = items;
+            news = items.find(n => n.id === id);
+        }
+
+        if (!news) throw new Error('News not found');
+
+        const lang = getDashboardLang();
+        const titleObj = parseNewsLocalizedField(news.title);
+        const contentObj = parseNewsLocalizedField(news.content);
+        const titleText = pickNewsLocalizedText(titleObj, lang, 'Без заголовка');
+        const contentText = pickNewsLocalizedText(contentObj, lang, 'Нет содержания');
+
+        const iconMap = {
+            info: 'bi-info-circle-fill',
+            announcement: 'bi-megaphone-fill',
+            star: 'bi-star-fill',
+            warning: 'bi-exclamation-triangle-fill',
+            calendar: 'bi-calendar-event-fill',
+            tools: 'bi-tools'
+        };
+
+        modalTitle.textContent = titleText;
+        modalContent.textContent = contentText;
+        modalDate.textContent = formatDashboardNewsDate(news.published_at, lang);
+        if (modalIcon) {
+            modalIcon.style.background = news.icon_color || '#667eea';
+            modalIcon.innerHTML = `<i class="bi ${iconMap[news.icon] || 'bi-info-circle-fill'}"></i>`;
+        }
+    } catch (e) {
+        console.error('Failed to open dashboard news modal', e);
+        modalTitle.textContent = 'Ошибка';
+        modalContent.textContent = 'Не удалось загрузить новость. Попробуйте позже.';
+        modalDate.textContent = '';
     }
 };
 
@@ -1374,7 +1571,7 @@ function renderDashboardNews(newsItems, lang) {
         const iconShadow = `0 4px 15px ${iconColor}66`;
         
         return `
-            <div class="news-item" onclick="if(window.openNewsDetail){window.openNewsDetail(${news.id})}">
+            <div class="news-item" onclick="if(window.openDashboardNewsDetail){window.openDashboardNewsDetail(${news.id})}">
                 <div class="news-icon" style="background-color: ${iconColor} !important; box-shadow: ${iconShadow} !important;">
                     <i class="bi ${iconMap[news.icon] || 'bi-info-circle-fill'}"></i>
                 </div>

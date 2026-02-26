@@ -276,6 +276,24 @@
     color-scheme: dark; /* попытка затемнить всплывающий календарь в поддерживаемых браузерах */
 }
 
+/* Native picker dark mode (date/time/datetime-local/month) */
+/* Для showPicker()/браузерных календарей нужен color-scheme на контейнере и на самих полях */
+html[data-theme="dark"],
+body[data-theme="dark"] {
+    color-scheme: dark;
+}
+
+[data-theme="dark"] input[type="datetime-local"],
+[data-theme="dark"] input[type="time"],
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="month"],
+body[data-theme="dark"] input[type="datetime-local"],
+body[data-theme="dark"] input[type="time"],
+body[data-theme="dark"] input[type="date"],
+body[data-theme="dark"] input[type="month"] {
+    color-scheme: dark !important;
+}
+
 /* Meter Verification Dark Mode */
 [data-theme="dark"] .meter-header {
     background: linear-gradient(135deg, #2d3139 0%, #242831 100%);
@@ -389,6 +407,48 @@
 [data-theme="dark"] .dropdown-item:hover {
     background: #2d3139;
     color: #667eea;
+}
+
+/* Native select dropdown dark scrollbars */
+[data-theme="dark"] select,
+[data-theme="dark"] .form-select,
+body[data-theme="dark"] select,
+body[data-theme="dark"] .form-select {
+    color-scheme: dark;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(102, 126, 234, 0.55) #1f2432;
+}
+
+[data-theme="dark"] select::-webkit-scrollbar,
+[data-theme="dark"] .form-select::-webkit-scrollbar,
+body[data-theme="dark"] select::-webkit-scrollbar,
+body[data-theme="dark"] .form-select::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+[data-theme="dark"] select::-webkit-scrollbar-track,
+[data-theme="dark"] .form-select::-webkit-scrollbar-track,
+body[data-theme="dark"] select::-webkit-scrollbar-track,
+body[data-theme="dark"] .form-select::-webkit-scrollbar-track {
+    background: #1f2432;
+    border-radius: 8px;
+}
+
+[data-theme="dark"] select::-webkit-scrollbar-thumb,
+[data-theme="dark"] .form-select::-webkit-scrollbar-thumb,
+body[data-theme="dark"] select::-webkit-scrollbar-thumb,
+body[data-theme="dark"] .form-select::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.55);
+    border-radius: 8px;
+    border: 2px solid #1f2432;
+}
+
+[data-theme="dark"] select::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .form-select::-webkit-scrollbar-thumb:hover,
+body[data-theme="dark"] select::-webkit-scrollbar-thumb:hover,
+body[data-theme="dark"] .form-select::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.75);
 }
 
 /* Notifications */

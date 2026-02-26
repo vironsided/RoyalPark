@@ -511,10 +511,11 @@
         position: relative;
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 8px;
+        border-radius: 12px !important;
         padding: 0;
         overflow: visible;
         z-index: 25;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     }
 
     .invoices-export-panel .service-filter-details summary {
@@ -527,6 +528,11 @@
         font-size: 0.92rem;
         list-style: none;
         min-height: 42px;
+        border: none !important;
+        margin: 0;
+        border-radius: 12px !important;
+        background: transparent !important;
+        transition: background-color 0.2s ease, color 0.2s ease;
     }
 
     .invoices-export-panel .service-filter-details summary::after {
@@ -537,6 +543,16 @@
         transform: translateY(-50%);
         color: rgba(255, 255, 255, 0.8);
         font-size: 0.78rem;
+        transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .invoices-export-panel .service-filter-details summary:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .invoices-export-panel .service-filter-details:focus-within {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
     }
 
     .invoices-export-panel .service-filter-details[open] summary::after {
@@ -561,7 +577,7 @@
         width: max-content;
         background: #1f2432;
         border: 1px solid rgba(255, 255, 255, 0.14);
-        border-radius: 10px;
+        border-radius: 12px;
         padding: 10px;
         z-index: 10050;
         box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
@@ -627,6 +643,10 @@
         opacity: 1 !important;
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
+    }
+
+    [data-theme="dark"] .invoices-export-panel #exportInvoiceMeterTypeSummary {
+        border-radius: 12px !important;
     }
 
     [data-theme="dark"] .invoices-export-panel .service-filter-options label:hover {

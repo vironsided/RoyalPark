@@ -230,10 +230,10 @@
                                 const selectedSet = new Set(selectedIds);
                                 const selectedIncludesCurrentBundle = !!(
                                     currentBundle &&
-                                    (currentBundle.allIds || []).some(id => selectedSet.has(Number(id)))
+                                    (currentBundle.waterIds || []).some(id => selectedSet.has(Number(id)))
                                 );
                                 if (selectedIncludesCurrentBundle && freshBundle) {
-                                    for (const id of (freshBundle.allIds || [])) {
+                                    for (const id of (freshBundle.sewerIds || [])) {
                                         const n = Number(id || 0);
                                         if (n > 0) selectedSet.add(n);
                                     }
@@ -696,9 +696,10 @@
                 else if (isWaterDescription(desc)) waterIds.push(id);
             }
             if (!waterIds.length || !sewerIds.length) return null;
-            const primaryWaterId = waterIds[0];
-            const allIds = Array.from(new Set([...waterIds, ...sewerIds]));
-            return { primaryWaterId, allIds };
+            return {
+                waterIds: Array.from(new Set(waterIds)),
+                sewerIds: Array.from(new Set(sewerIds)),
+            };
         }
 
         function getExpandedSelectedLineIds(invoice) {
@@ -707,9 +708,9 @@
             if (!bundle || !selected.length) return selected;
 
             const out = new Set(selected);
-            const hasBundleSelected = selected.some(id => bundle.allIds.includes(id));
-            if (hasBundleSelected) {
-                bundle.allIds.forEach(id => out.add(id));
+            const hasSelectedWater = selected.some(id => bundle.waterIds.includes(id));
+            if (hasSelectedWater) {
+                bundle.sewerIds.forEach(id => out.add(id));
             }
             return Array.from(out);
         }
@@ -789,24 +790,13 @@
             
             const lang = localStorage.getItem('language') || 'ru';
             const waterSewerBundle = getWaterSewerBundle(lines);
-            const waterSewerIds = new Set((waterSewerBundle?.allIds || []).map(Number));
-            const bundleRemaining = waterSewerBundle
-                ? lines.reduce((sum, line) => {
-                    const id = Number(line?.id || 0);
-                    if (!id || !waterSewerIds.has(id)) return sum;
-                    const rem = Math.max(0, Number(line?.remaining_amount ?? line?.amount_total ?? 0));
-                    return sum + rem;
-                }, 0)
-                : 0;
+            const sewerIds = new Set((waterSewerBundle?.sewerIds || []).map(Number));
             const idsFromData = new Set(
                 lines
                     .filter(line => {
                         const lineId = Number(line?.id || 0);
                         if (lineId <= 0) return false;
-                        if (waterSewerBundle && waterSewerIds.has(lineId)) {
-                            // Для связки Вода+Канализация селектор всегда живёт на строке воды.
-                            return lineId === waterSewerBundle.primaryWaterId && bundleRemaining > 0;
-                        }
+                        if (sewerIds.has(lineId)) return false;
                         return Number(line?.remaining_amount ?? line?.amount_total ?? 0) > 0;
                     })
                     .map(line => Number(line.id))
@@ -835,13 +825,10 @@
                 let showCheckbox = isFirstForId;
                 let selectable = lineId > 0 && remainingAmount > 0;
 
-                if (waterSewerBundle && waterSewerIds.has(lineId)) {
-                    checkboxLineId = waterSewerBundle.primaryWaterId;
-                    showCheckbox = isFirstForId && lineId === waterSewerBundle.primaryWaterId && !isSewerageLine;
-                    selectable = showCheckbox && bundleRemaining > 0;
-                } else if (isSewerageLine) {
+                if (isSewerageLine || sewerIds.has(lineId)) {
                     // Подстраховка: у канализации отдельного чекбокса быть не должно.
                     showCheckbox = false;
+                    selectable = false;
                 }
 
                 const checked = selectable && selectedPayableLineIds.has(checkboxLineId);

@@ -75,28 +75,28 @@
         
         <div class="payments-filters-actions">
             <div class="payments-filters-actions-left">
+                <input type="number" id="filterAmountMin" placeholder="Сумма от" step="0.01" min="0" aria-label="Минимальная сумма для экспорта">
+                <input type="number" id="filterAmountMax" placeholder="Сумма до" step="0.01" min="0" aria-label="Максимальная сумма для экспорта">
+                <label class="export-only-checkbox">
+                    <input type="checkbox" id="filterAllocatedOnly">
+                    Только распределенные
+                </label>
+            </div>
+            <div class="payments-filters-actions-right">
+                <select id="paymentExportFormat" aria-label="Формат экспорта">
+                    <option value="csv">Excel (CSV)</option>
+                    <option value="pdf">PDF (печать)</option>
+                </select>
                 <button class="btn-filter" onclick="applyPaymentFilters()">
                     <i class="bi bi-funnel"></i> Фильтр
                 </button>
-                <div class="payments-export-controls">
-                    <select id="paymentExportFormat" aria-label="Формат экспорта">
-                        <option value="csv">Excel (CSV)</option>
-                        <option value="pdf">PDF (печать)</option>
-                    </select>
-                    <input type="number" id="filterAmountMin" placeholder="Сумма от" step="0.01" min="0" aria-label="Минимальная сумма для экспорта">
-                    <input type="number" id="filterAmountMax" placeholder="Сумма до" step="0.01" min="0" aria-label="Максимальная сумма для экспорта">
-                    <label class="export-only-checkbox">
-                        <input type="checkbox" id="filterAllocatedOnly">
-                        Только распределенные
-                    </label>
-                    <button class="btn-export" type="button" onclick="exportPayments()">
-                        <i class="bi bi-box-arrow-down"></i> Экспорт
-                    </button>
-                </div>
+                <button class="btn btn-success" type="button" onclick="exportPayments()">
+                    <i class="bi bi-box-arrow-down"></i> Экспорт
+                </button>
+                <button class="btn-accept-payment" onclick="acceptPayment()">
+                    Принять платеж
+                </button>
             </div>
-            <button class="btn-accept-payment" onclick="acceptPayment()">
-                Принять платеж
-            </button>
         </div>
     </div>
 
@@ -296,9 +296,40 @@
     };
     const invoiceBreakdownCache = new Map();
     const invoiceAllocationCache = new Map();
+    let clientFilteredPayments = null;
+
+    function renderClientPaymentsPage() {
+        if (!Array.isArray(clientFilteredPayments)) return false;
+
+        const total = clientFilteredPayments.length;
+        const totalPages = Math.max(1, Math.ceil(total / paginationState.itemsPerPage));
+        paginationState.totalItems = total;
+        paginationState.totalPages = totalPages;
+        if (paginationState.currentPage > totalPages) {
+            paginationState.currentPage = totalPages;
+        }
+
+        const start = (paginationState.currentPage - 1) * paginationState.itemsPerPage;
+        const end = start + paginationState.itemsPerPage;
+        const pageItems = clientFilteredPayments.slice(start, end);
+
+        paymentsData = {
+            items: pageItems,
+            total,
+            page: paginationState.currentPage,
+            per_page: paginationState.itemsPerPage,
+            last_page: totalPages
+        };
+        renderTable();
+        return true;
+    }
     
     // Load payments from API
-    async function loadPayments() {
+    async function loadPayments(forceServer = false) {
+        if (!forceServer && renderClientPaymentsPage()) {
+            return;
+        }
+
         const tbody = document.getElementById('paymentsTable');
         if (tbody) {
             tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Загрузка...</td></tr>';
@@ -1440,9 +1471,36 @@
     };
     
     // Filter functions
-    window.applyPaymentFilters = function() {
+    window.applyPaymentFilters = async function() {
         paginationState.currentPage = 1;
-        loadPayments();
+        const tbody = document.getElementById('paymentsTable');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Применение фильтров...</td></tr>';
+        }
+
+        try {
+            const selectedServices = getSelectedExportServices();
+            const extraFilters = getExportExtraFilters();
+            const items = await fetchAllFilteredPayments(); // базовые фильтры API: resident/method/date/search
+
+            const filtered = [];
+            for (const payment of items) {
+                const serviceBreakdown = await buildPaymentServiceBreakdown(payment);
+                if (paymentMatchesExportFilters(payment, selectedServices, extraFilters, serviceBreakdown)) {
+                    filtered.push(payment);
+                }
+            }
+
+            clientFilteredPayments = filtered;
+            renderClientPaymentsPage();
+        } catch (error) {
+            console.error('Error applying full payment filters:', error);
+            clientFilteredPayments = null;
+            await loadPayments(true);
+            if (typeof showError === 'function') {
+                showError('Ошибка применения фильтров: ' + error.message);
+            }
+        }
     };
     
     // Load residents for filters and modal (учитываем пагинацию API)

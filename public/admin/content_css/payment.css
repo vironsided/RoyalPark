@@ -229,23 +229,27 @@
        display: flex;
        justify-content: space-between;
        align-items: center;
-       gap: 15px;
+       gap: 12px;
+       flex-wrap: wrap;
    }
 
   .payments-filters-actions-left {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
   }
 
-  .payments-export-controls {
+  .payments-filters-actions-right {
       display: flex;
       align-items: center;
+      justify-content: flex-end;
       gap: 10px;
+      flex-wrap: wrap;
+      margin-left: auto;
   }
 
-  .payments-export-controls select {
+  .payments-filters-actions #paymentExportFormat {
       min-width: 160px;
       padding: 10px 12px;
       background: rgba(255, 255, 255, 0.05) !important;
@@ -255,7 +259,7 @@
       font-size: 0.95rem;
   }
 
-  .payments-export-controls input[type="number"] {
+  .payments-filters-actions-left input[type="number"] {
       width: 125px;
       padding: 10px 12px;
       background: rgba(255, 255, 255, 0.05) !important;
@@ -265,7 +269,7 @@
       font-size: 0.92rem;
   }
 
-  .payments-export-controls .export-only-checkbox {
+  .payments-filters-actions-left .export-only-checkbox {
       display: inline-flex;
       align-items: center;
       gap: 6px;
