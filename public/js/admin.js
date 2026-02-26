@@ -467,6 +467,15 @@ function addRippleEffect() {
     let tooltip = null;
     let titleEl = null;
     let descEl = null;
+    const isMobileOrTouch = () => window.matchMedia('(max-width: 768px)').matches || ('ontouchstart' in window);
+
+    function hideTooltip() {
+        if (!tooltip) return;
+        tooltip.classList.add('hidden');
+        tooltip.classList.remove('visible');
+        currentArea = null;
+        window.currentArea = null;
+    }
 
     function ensurePlanTooltipElement() {
         // Проверяем существующий элемент
@@ -553,14 +562,13 @@ function addRippleEffect() {
 
     // Обработчик входа мыши
     function handleEnter(event) {
+        if (isMobileOrTouch()) {
+            hideTooltip();
+            return;
+        }
         const polygon = getPolygonFromEvent(event);
         if (!polygon) {
-            if (currentArea && tooltip) {
-                tooltip.classList.add('hidden');
-                tooltip.classList.remove('visible');
-                currentArea = null;
-                window.currentArea = null;
-            }
+            hideTooltip();
             return;
         }
 
@@ -613,6 +621,10 @@ function addRippleEffect() {
 
     // Обработчик движения мыши
     function moveTooltip(event) {
+        if (isMobileOrTouch()) {
+            hideTooltip();
+            return;
+        }
         if (!currentArea || !tooltip) return;
         
         tooltip.style.left = `${event.clientX}px`;
@@ -621,14 +633,13 @@ function addRippleEffect() {
 
     // Обработчик выхода мыши
     function handleLeave(event) {
+        if (isMobileOrTouch()) {
+            hideTooltip();
+            return;
+        }
         const polygon = getPolygonFromEvent(event);
         if (!polygon || polygon === currentArea) {
-            if (tooltip) {
-                tooltip.classList.add('hidden');
-                tooltip.classList.remove('visible');
-            }
-            currentArea = null;
-            window.currentArea = null;
+            hideTooltip();
         }
     }
 
@@ -637,6 +648,9 @@ function addRippleEffect() {
     document.addEventListener('mouseover', handleEnter, { passive: true });
     document.addEventListener('mousemove', moveTooltip, { passive: true });
     document.addEventListener('mouseout', handleLeave, { passive: true });
+    window.addEventListener('scroll', hideTooltip, { passive: true });
+    document.addEventListener('touchstart', hideTooltip, { passive: true });
+    document.addEventListener('click', hideTooltip, { passive: true });
     
     // Отладочная функция для проверки работы tooltip
     window.debugPlanTooltip = function() {

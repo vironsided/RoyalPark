@@ -213,3 +213,39 @@
     font-weight: 600;
 }
 
+@media (max-width: 768px) {
+    .table-pagination {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px;
+        align-items: flex-start;
+    }
+
+    .pagination-controls {
+        order: 1;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+        scrollbar-width: thin;
+    }
+
+    .pagination-pages {
+        display: flex;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+    }
+
+    .pagination-info {
+        order: 2;
+        font-size: 0.82rem;
+        line-height: 1.25;
+    }
+
+    .pagination-per-page {
+        order: 3;
+        margin-left: auto;
+        font-size: 0.82rem;
+    }
+}
+

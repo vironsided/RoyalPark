@@ -348,6 +348,10 @@
          /* То же соотношение сторон на мобильных */
          padding-bottom: calc(1536 / 2752 * 100%);
      }
+
+    .plan-tooltip {
+        display: none !important;
+    }
  }
 
  .content-wrapper {

@@ -826,6 +826,42 @@
        grid-column: 1 / -1;
    }
 
+   @media (max-width: 768px) {
+       .payments-page .table-pagination {
+           flex-wrap: wrap;
+           gap: 10px;
+           padding: 12px;
+           align-items: flex-start;
+       }
+
+       .payments-page .pagination-controls {
+           order: 1;
+           width: 100%;
+           overflow-x: auto;
+           -webkit-overflow-scrolling: touch;
+           padding-bottom: 4px;
+           scrollbar-width: thin;
+       }
+
+       .payments-page .pagination-pages {
+           display: flex;
+           flex-wrap: nowrap;
+           white-space: nowrap;
+       }
+
+       .payments-page .pagination-info {
+           order: 2;
+           font-size: 0.82rem;
+           line-height: 1.25;
+       }
+
+       .payments-page .pagination-per-page {
+           order: 3;
+           margin-left: auto;
+           font-size: 0.82rem;
+       }
+   }
+
    .accept-payment-date-wrapper {
        position: relative;
        display: flex;

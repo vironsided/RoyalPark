@@ -3424,3 +3424,155 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
     word-wrap: break-word;
 }
 
+/* Mobile hardening for all admin SPA pages (no desktop impact) */
+@media (max-width: 768px) {
+    #spa-content,
+    .dashboard-content {
+        min-width: 0;
+    }
+
+    #spa-content .card-body,
+    .dashboard-content .card-body {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #spa-content .card-body table,
+    #spa-content .card-body .table,
+    .dashboard-content .card-body table,
+    .dashboard-content .card-body .table {
+        min-width: 640px;
+    }
+
+    #spa-content .filters-actions,
+    .dashboard-content .filters-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    /* Mobile: keep any table pagination readable and non-overflowing */
+    .table-pagination {
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .table-pagination .pagination-controls {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+    }
+
+    .table-pagination .pagination-pages {
+        display: flex;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+    }
+
+    .table-pagination .pagination-info,
+    .table-pagination .pagination-per-page {
+        font-size: 0.82rem;
+        line-height: 1.25;
+    }
+
+    /* Mobile: export format selects should not break layout */
+    #paymentExportFormat,
+    #invoicesExportFormat,
+    #readingsExportFormat,
+    #tariffExportFormat,
+    #tenantExportFormat,
+    #residentExportFormat {
+        max-width: 100% !important;
+        width: 100% !important;
+        min-height: 40px;
+        background: rgba(255, 255, 255, 0.06);
+        color: #f5f7ff;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        color-scheme: dark;
+    }
+
+    #paymentExportFormat option,
+    #invoicesExportFormat option,
+    #readingsExportFormat option,
+    #tariffExportFormat option,
+    #tenantExportFormat option,
+    #residentExportFormat option {
+        background: #1f2432;
+        color: #f5f7ff;
+    }
+
+    /* Mobile: dropdown panels should open proportionally to viewport */
+    .multi-filter-panel,
+    .service-filter-dropdown,
+    .purpose-filter-dropdown,
+    .custom-log-filter-select .select-options,
+    .custom-pag-select .select-options {
+        max-height: min(42vh, 300px) !important;
+        overflow-y: auto !important;
+        max-width: calc(100vw - 28px);
+    }
+
+    .custom-log-filter-select .select-options,
+    .custom-pag-select .select-options {
+        left: 0;
+        right: auto;
+    }
+
+    /* Account modal: responsive and fully visible on small screens */
+    .account-modal-overlay {
+        padding: 10px;
+        align-items: flex-start;
+        overflow-y: auto;
+    }
+
+    #accountModal .account-modal {
+        width: min(96vw, 760px) !important;
+        max-width: min(96vw, 760px) !important;
+        max-height: min(94dvh, 920px) !important;
+        margin: 0 auto;
+    }
+
+    #accountModal .account-modal-header {
+        padding: 1rem 1rem 0.9rem 1rem;
+    }
+
+    #accountModal .account-modal-body {
+        padding: 1rem !important;
+        overflow-y: auto !important;
+    }
+
+    #accountModal .account-modal-footer {
+        padding: 0.75rem 1rem !important;
+    }
+
+    #accountModal .account-avatar-large {
+        width: 72px;
+        height: 72px;
+        font-size: 1.9rem;
+        margin-bottom: 0.8rem;
+    }
+
+    /* Notifications modal: responsive with stable footer */
+    #notificationsModal .account-modal {
+        width: min(96vw, 760px) !important;
+        max-width: min(96vw, 760px) !important;
+        max-height: min(94dvh, 920px) !important;
+        margin: 0 auto;
+    }
+
+    #notificationsModal .account-modal-header {
+        padding: 1rem 1rem 0.9rem 1rem;
+    }
+
+    #notificationsModal .account-modal-body {
+        padding: 1rem !important;
+        overflow-y: auto !important;
+    }
+
+    #notificationsModal .account-modal-footer {
+        padding: 0.75rem 1rem !important;
+    }
+}
+

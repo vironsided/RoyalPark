@@ -629,6 +629,7 @@
             const readingKey = `${row.block_name.toLowerCase()}_${row.unit_number}`;
             const residentTotal = row.total_amount || 0;
             return `
+                    <div class="reading-row-scroll">
                     <div class="reading-row" data-reading-key="${readingKey}" data-resident-id="${row.resident_id}">
                         <div class="reading-col reading-col-resident">
                             <div class="resident-badge">
@@ -664,6 +665,7 @@
                                 </button>
                             </div>
                         </div>
+                    </div>
                     </div>
                     
                 `;
@@ -1473,6 +1475,9 @@
 
             const filtersText = buildReadingsExportFiltersText(filters);
             if (format === 'pdf') {
+                if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches && typeof showInfo === 'function') {
+                    showInfo('На мобильных PDF открывается через системный диалог печати/сохранения.');
+                }
                 exportReadingsToPdf(rows, filtersText);
             } else {
                 exportReadingsToStyledExcel(rows, filtersText);

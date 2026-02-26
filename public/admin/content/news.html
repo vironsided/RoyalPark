@@ -1053,6 +1053,48 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
     color: #ffffff !important;
     font-weight: 600 !important;
 }
+
+@media (max-width: 768px) {
+    #newsTableContainer {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #newsTableContainer .table {
+        min-width: 760px;
+    }
+
+    #newsTableContainer .table-pagination {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px;
+        align-items: flex-start;
+    }
+
+    #newsTableContainer .pagination-controls {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+    }
+
+    #newsTableContainer .pagination-pages {
+        display: flex;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+    }
+
+    #newsTableContainer .pagination-info {
+        font-size: 0.82rem;
+        line-height: 1.25;
+    }
+
+    #newsTableContainer .pagination-per-page {
+        margin-left: auto;
+        font-size: 0.82rem;
+    }
+}
 </style>
 
 <script>

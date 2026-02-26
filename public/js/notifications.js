@@ -283,14 +283,26 @@ style.textContent = `
     
     @media (max-width: 768px) {
         #toast-container {
-            left: 20px;
-            right: 20px;
-            top: 70px;
+            left: 12px;
+            right: 12px;
+            top: 72px;
+            gap: 8px;
         }
         
         .toast {
             min-width: auto;
             width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            transform: translateY(-14px);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+        }
+
+        .toast.hide {
+            transform: translateY(-14px);
         }
     }
     
