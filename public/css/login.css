@@ -858,18 +858,6 @@ html {
 /* 🌓 THEME TOGGLE & 🌍 LANGUAGE SELECTOR - LOGIN PAGE */
 /* Override global.css positioning for login page */
 
-/* Theme Toggle Button - Right Top Corner */
-.theme-toggle {
-    position: fixed !important;
-    top: 20px !important;
-    right: 20px !important;
-    width: 60px !important;
-    height: 60px !important;
-    border-radius: 50% !important;
-    z-index: 10000 !important;
-    margin-left: 0 !important;
-}
-
 /* Language Selector - Right Top Corner */
 .language-selector {
     position: fixed !important;
@@ -889,13 +877,6 @@ html {
 
 /* Responsive for Login Page */
 @media (max-width: 768px) {
-    .theme-toggle {
-        top: 15px !important;
-        right: 15px !important;
-        width: 50px !important;
-        height: 50px !important;
-    }
-    
     .language-selector {
         top: 75px !important;
         right: 15px !important;

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
@@ -630,7 +630,6 @@
 
         document.addEventListener('DOMContentLoaded', function () {
             // Устанавливаем темную тему по умолчанию (интерфейс всегда будет темным)
-            const savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', 'dark');
             localStorage.setItem('theme', 'dark');
 

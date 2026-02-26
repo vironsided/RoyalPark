@@ -73,52 +73,6 @@
     --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
 }
 
-/* 🌓 Theme Toggle Button */
-.theme-toggle {
-    position: relative !important;
-    top: auto !important;
-    right: auto !important;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    transition: all 0.3s ease;
-    z-index: 10 !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.2rem;
-    opacity: 1 !important;
-    visibility: visible !important;
-    margin-left: 0.5rem;
-}
-
-.theme-toggle:hover {
-    transform: translateY(-3px) rotate(15deg);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-}
-
-.theme-toggle:active {
-    transform: translateY(-1px) rotate(15deg);
-}
-
-.theme-toggle i {
-    transition: all 0.3s ease;
-}
-
-[data-theme="dark"] .theme-toggle {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
-}
-
-[data-theme="dark"] .theme-toggle:hover {
-    box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
-}
-
 /* 🌍 LANGUAGE SELECTOR */
 .language-selector {
     position: relative !important;
@@ -246,11 +200,6 @@
         font-size: 0.5rem;
     }
     
-    .theme-toggle {
-        width: 45px;
-        height: 45px;
-        font-size: 1rem;
-    }
 }
 
 * {

@@ -193,7 +193,6 @@
         display: none;
     }
 
-    .top-bar-actions .theme-toggle,
     .top-bar-actions .language-selector {
         display: none !important;
     }
@@ -3279,23 +3278,6 @@ body[data-theme="dark"] .user-bills-section select option {
 
 [data-theme="dark"] .page-breadcrumb .breadcrumb-separator {
     color: rgba(255, 255, 255, 0.4);
-}
-
-/* Light theme breadcrumb adjustments */
-[data-theme="light"] .page-breadcrumb {
-    color: rgba(0, 0, 0, 0.6);
-}
-
-[data-theme="light"] .page-breadcrumb .breadcrumb-link {
-    color: var(--primary-color, #667eea);
-}
-
-[data-theme="light"] .page-breadcrumb .breadcrumb-link:hover {
-    color: var(--primary-dark, #5a6bc9);
-}
-
-[data-theme="light"] .page-breadcrumb .breadcrumb-separator {
-    color: rgba(0, 0, 0, 0.4);
 }
 
 /* Modal overlay and dialogs */

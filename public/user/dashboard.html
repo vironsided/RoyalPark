@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -119,9 +119,6 @@
                         <i class="bi bi-bell-fill"></i>
                         <span class="notification-badge">2</span>
                     </button>
-
-                    <!-- Кнопка темы создаётся автоматически в theme.js и будет стоять здесь,
-                         перед переключателем языка (language-selector из i18n.js) -->
 
                     <div class="user-profile" id="accountProfileBtn">
                         <div class="user-avatar">...</div>
@@ -467,14 +464,6 @@
                                         <option value="en">English</option>
                                     </select>
                                 </div>
-                                <!-- <div class="account-form-group">
-                                    <label>Тема оформления</label>
-                                    <select id="accountTheme">
-                                        <option value="light">Светлая</option>
-                                        <option value="dark">Тёмная</option>
-                                        <option value="auto">Автоматически</option>
-                                    </select>
-                                </div> -->
                             </div>
                         </div>
 
@@ -573,7 +562,6 @@
                 const phone = document.getElementById('accountPhoneInput')?.value || '';
                 const email = document.getElementById('accountEmailInput')?.value || '';
                 const lang = document.getElementById('accountLanguage')?.value || '';
-                const theme = document.getElementById('accountTheme')?.value || '';
                 const currentPassword = document.getElementById('currentPassword')?.value || '';
                 const newPassword = document.getElementById('newPassword')?.value || '';
                 const confirmPassword = document.getElementById('confirmPassword')?.value || '';
@@ -584,7 +572,6 @@
                     phone,
                     email,
                     lang,
-                    theme,
                     currentPassword,
                     newPassword,
                     confirmPassword,
@@ -701,11 +688,8 @@
                     accountModal.classList.add('show');
                     document.body.style.overflow = 'hidden';
                     const savedLang = localStorage.getItem('language') || 'ru';
-                    const savedTheme = localStorage.getItem('theme') || 'dark';
                     const langSelect = document.getElementById('accountLanguage');
-                    const themeSelect = document.getElementById('accountTheme');
                     if (langSelect) langSelect.value = savedLang;
-                    if (themeSelect) themeSelect.value = savedTheme;
                     
                     // Load user profile from backend
                     loadUserProfile();
@@ -1028,7 +1012,6 @@
             if (accountModalSave) {
                 accountModalSave.addEventListener('click', async function() {
                     const langSelect = document.getElementById('accountLanguage');
-                    const themeSelect = document.getElementById('accountTheme');
                     
                     // Disable button during request
                     accountModalSave.disabled = true;
@@ -1049,7 +1032,7 @@
                             }
                         }
                         
-                        // Save language and theme to localStorage
+                        // Save language to localStorage
                         if (langSelect) {
                             const lang = langSelect.value;
                             localStorage.setItem('language', lang);
@@ -1060,11 +1043,6 @@
                                     window.i18n.applyLanguage(lang);
                                 }
                             }
-                        }
-                        
-                        if (themeSelect && themeSelect.value !== 'auto') {
-                            localStorage.setItem('theme', themeSelect.value);
-                            document.documentElement.setAttribute('data-theme', themeSelect.value);
                         }
                         
                         // Clear password fields

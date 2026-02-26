@@ -242,9 +242,7 @@ const translations = {
         status_verified: "Проверено",
         status_anomaly: "Аномалия",
         
-        // Notifications / Theme
-        theme_light: "Светлая тема",
-        theme_dark: "Темная тема",
+        // Notifications
         language_changed: "Язык изменен",
         filters_applied: "Фильтры применены успешно!",
         filters_reset: "Фильтры сброшены",
@@ -764,9 +762,7 @@ const translations = {
         status_verified: "Yoxlanılıb",
         status_anomaly: "Anomaliya",
         
-        // Notifications / Theme
-        theme_light: "İşıqlı tema",
-        theme_dark: "Qaranlıq tema",
+        // Notifications
         language_changed: "Dil dəyişdirildi",
         filters_applied: "Filterlər uğurla tətbiq edildi!",
         filters_reset: "Filterlər sıfırlandı",
@@ -1287,9 +1283,7 @@ const translations = {
         status_verified: "Verified",
         status_anomaly: "Anomaly",
         
-        // Notifications / Theme
-        theme_light: "Light Theme",
-        theme_dark: "Dark Theme",
+        // Notifications
         language_changed: "Language Changed",
         filters_applied: "Filters applied successfully!",
         filters_reset: "Filters reset",
