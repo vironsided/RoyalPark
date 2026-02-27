@@ -10,7 +10,7 @@
             </div>
             <div class="stat-details">
                 <div class="stat-value">0</div>
-                <div class="stat-label">Всего блоков</div>
+                <div class="stat-label" data-i18n="blocks_stat_total_blocks">Всего блоков</div>
                 <div class="stat-change positive">↑ 100%</div>
             </div>
         </div>
@@ -23,8 +23,8 @@
             </div>
             <div class="stat-details">
                 <div class="stat-value">0</div>
-                <div class="stat-label">Активные дома</div>
-                <div class="stat-change positive">↑ 25 новых</div>
+                <div class="stat-label" data-i18n="blocks_stat_active_houses">Активные дома</div>
+                <div class="stat-change positive" data-i18n="blocks_stat_new_hint">↑ 25 новых</div>
             </div>
         </div>
 
@@ -36,8 +36,8 @@
             </div>
             <div class="stat-details">
                 <div class="stat-value">0%</div>
-                <div class="stat-label">Заселенность</div>
-                <div class="stat-change positive">↑ 5% за месяц</div>
+                <div class="stat-label" data-i18n="blocks_stat_occupancy">Заселенность</div>
+                <div class="stat-change positive" data-i18n="blocks_stat_growth_hint">↑ 5% за месяц</div>
             </div>
         </div>
 
@@ -49,8 +49,8 @@
             </div>
             <div class="stat-details">
                 <div class="stat-value">0</div>
-                <div class="stat-label">Неактивные дома</div>
-                <div class="stat-change negative">Требуют внимания</div>
+                <div class="stat-label" data-i18n="blocks_stat_inactive_houses">Неактивные дома</div>
+                <div class="stat-change negative" data-i18n="blocks_stat_attention_hint">Требуют внимания</div>
             </div>
         </div>
 
@@ -71,10 +71,10 @@
     <!-- Complex Map -->
     <div class="block-map-container">
         <div class="block-actions">
-            <h2 class="mb-0 flex-grow-1">План комплекса Royal Park</h2>
-            <input type="text" id="newBlockName" class="form-control" placeholder="Название нового блока">
+            <h2 class="mb-0 flex-grow-1" data-i18n="blocks_plan_title">План комплекса Royal Park</h2>
+            <input type="text" id="newBlockName" class="form-control" data-i18n-placeholder="blocks_new_block_placeholder" placeholder="Название нового блока">
             <button class="btn btn-success w-auto" onclick="createBlock()">
-                <i class="bi bi-plus-lg"></i> Создать блок
+                <i class="bi bi-plus-lg"></i> <span data-i18n="blocks_create_button">Создать блок</span>
             </button>
         </div>
 
@@ -85,7 +85,7 @@
         <div class="complex-plan-wrapper">
             <div class="complex-plan-header">
                 <div>
-                    <h5 class="mb-1 text-white">План комплекса Royal Park</h5>
+                    <h5 class="mb-1 text-white" data-i18n="blocks_plan_title">План комплекса Royal Park</h5>
                 </div>
                 <div class="plan-legend">
                     <span data-block-code="A"><i style="background:#5ba344"></i> Блок A</span>
@@ -101,7 +101,7 @@
                 </div>
             </div>
             <div class="plan-image-frame">
-                <img src="/images/edited-photo.png" alt="План комплекса Royal Park">
+                <img src="/images/edited-photo.png" data-i18n-title="blocks_plan_title" alt="План комплекса Royal Park">
                 <svg class="plan-overlay" viewBox="0 0 2752 1536" preserveAspectRatio="xMidYMid meet"
                     aria-hidden="true">
                     <!-- Для каждого блока кладём в data-block-info готовый HTML-список -->
@@ -148,39 +148,39 @@
     <div class="block-details mt-4" id="blockDetails" style="display: none;">
         <div class="card">
             <div class="card-header">
-                <h3 id="selectedBlockName">Детали блока</h3>
+                <h3 id="selectedBlockName" data-i18n="blocks_details_title">Детали блока</h3>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <h5>Основная информация</h5>
+                        <h5 data-i18n="blocks_main_info_title">Основная информация</h5>
                         <ul class="list-unstyled">
                             <!-- <li><strong>Этажей:</strong> <span id="blockFloors">-</span></li> -->
-                            <li><strong>Домов:</strong> <span id="blockApartments">-</span></li>
-                            <li><strong>Активных:</strong> <span id="blockActive">-</span></li>
-                            <li><strong>Неактивных:</strong> <span id="blockInactive">-</span></li>
+                            <li><strong data-i18n="blocks_houses_label">Домов:</strong> <span id="blockApartments">-</span></li>
+                            <li><strong data-i18n="blocks_active_label">Активных:</strong> <span id="blockActive">-</span></li>
+                            <li><strong data-i18n="blocks_inactive_label">Неактивных:</strong> <span id="blockInactive">-</span></li>
                             <!-- <li><strong>Жителей:</strong> <span id="blockResidents">-</span></li> -->
-                            <li><strong>Заселенность:</strong> <span id="blockOccupancy">-</span></li>
+                            <li><strong data-i18n="blocks_occupancy_label">Заселенность:</strong> <span id="blockOccupancy">-</span></li>
                         </ul>
                     </div>
                     <div class="col-md-6">
-                        <h5>Быстрые действия</h5>
+                        <h5 data-i18n="blocks_quick_actions_title">Быстрые действия</h5>
                         <div class="d-flex flex-column gap-2">
                             <!-- <button class="btn btn-success btn-sm" onclick="viewApartments()">
                                 <i class="bi bi-list"></i> Список квартир
                             </button> -->
                             <button class="btn btn-outline-primary btn-sm" onclick="viewResidents()">
-                                <i class="bi bi-people"></i> Список жителей
+                                <i class="bi bi-people"></i> <span data-i18n="blocks_residents_list_button">Список жителей</span>
                             </button>
                             <!-- <button class="btn btn-outline-secondary btn-sm" onclick="viewMeters()">
                                 <i class="bi bi-speedometer"></i> Показатели счетчиков
                             </button> -->
                             <hr>
                             <button class="btn btn-warning btn-sm" onclick="renameBlock()">
-                                <i class="bi bi-pencil"></i> Переименовать
+                                <i class="bi bi-pencil"></i> <span data-i18n="blocks_rename_button">Переименовать</span>
                             </button>
                             <button class="btn btn-danger btn-sm" onclick="deleteBlock()">
-                                <i class="bi bi-trash"></i> Удалить блок
+                                <i class="bi bi-trash"></i> <span data-i18n="blocks_delete_button">Удалить блок</span>
                             </button>
                         </div>
                     </div>
@@ -192,6 +192,37 @@
 
 <script>
     const API_BASE = 'http://localhost:8000';
+    const t = (key, fallback) => (window.i18n && typeof window.i18n.translate === 'function')
+        ? window.i18n.translate(key)
+        : fallback;
+    const getCurrentLang = () => (window.i18n?.currentLanguage || localStorage.getItem('language') || 'ru');
+    const formatText = (key, fallback, vars = {}) => {
+        let text = t(key, fallback);
+        Object.keys(vars).forEach((k) => {
+            text = text.replace(`{${k}}`, vars[k]);
+        });
+        return text;
+    };
+    const blockLabel = (name) => `${t('user_resident_block_label', 'Блок')} ${name}`;
+    const getHousesWord = (count) => {
+        const lang = getCurrentLang();
+        if (lang === 'en') return count === 1 ? 'house' : 'houses';
+        if (lang === 'az') return 'bina';
+        if (count % 10 === 1 && count % 100 !== 11) return 'дом';
+        if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) return 'дома';
+        return 'домов';
+    };
+    const localizePlanLegend = () => {
+        document.querySelectorAll('.plan-legend span[data-block-code]').forEach((item) => {
+            const code = item.getAttribute('data-block-code');
+            if (!code) return;
+            if (code === 'G3') {
+                item.innerHTML = `<i style="background:#6e1600"></i> ${t('blocks_corpus_word', 'Корпус')} G 3`;
+            } else {
+                item.innerHTML = `<i style="background:${item.querySelector('i')?.style.background || '#5ba344'}"></i> ${t('user_resident_block_label', 'Блок')} ${code}`;
+            }
+        });
+    };
     let blocks = [];
     let residents = [];
     let selectedBlock = null;
@@ -409,7 +440,7 @@
             const emptyMessage = document.createElement('div');
             emptyMessage.className = 'empty-blocks-message';
             emptyMessage.style.cssText = 'text-align: center; padding: 40px; color: #999;';
-            emptyMessage.textContent = 'Блоки не найдены. Создайте первый блок.';
+            emptyMessage.textContent = t('blocks_no_blocks_message', 'Блоки не найдены. Создайте первый блок.');
             complexMap.appendChild(emptyMessage);
             return;
         }
@@ -432,14 +463,14 @@
             blockCard.setAttribute('data-block-id', block.id);
             blockCard.setAttribute('onclick', `selectBlockById(${block.id})`);
             blockCard.innerHTML = `
-                <div class="block-name">Блок ${block.name}</div>
+                <div class="block-name">${blockLabel(block.name)}</div>
                 <div class="block-info">
-                    <div>${stats.total} ${stats.total === 1 ? 'дом' : stats.total < 5 ? 'дома' : 'домов'}</div>
+                    <div>${stats.total} ${getHousesWord(stats.total)}</div>
                     <div class="block-status-info">
-                        <span class="block-active-count">Активных: ${stats.active}</span>
-                        <span class="block-inactive-count">Неактивных: ${stats.inactive}</span>
+                        <span class="block-active-count">${t('blocks_active_label_short', 'Активных')}: ${stats.active}</span>
+                        <span class="block-inactive-count">${t('blocks_inactive_label_short', 'Неактивных')}: ${stats.inactive}</span>
                     </div>
-                    <div>${stats.occupancy}% заселённость</div>
+                    <div>${stats.occupancy}% ${t('blocks_occupancy_short', 'заселённость')}</div>
                 </div>
             `;
             complexMap.appendChild(blockCard);
@@ -468,7 +499,7 @@
 
         // Show block details
         document.getElementById('blockDetails').style.display = 'block';
-        document.getElementById('selectedBlockName').textContent = `Блок ${blockName}`;
+        document.getElementById('selectedBlockName').textContent = blockLabel(blockName);
 
         // Загружаем реальные данные для выбранного блока
         if (selectedBlockId) {
@@ -508,9 +539,9 @@
 
         if (!blockName) {
             if (window.showWarning) {
-                showWarning('Пожалуйста, введите название блока');
+                showWarning(t('blocks_warning_enter_name', 'Пожалуйста, введите название блока'));
             } else {
-                alert('Пожалуйста, введите название блока');
+                alert(t('blocks_warning_enter_name', 'Пожалуйста, введите название блока'));
             }
             return;
         }
@@ -523,7 +554,7 @@
                 body: JSON.stringify({ name: blockName })
             });
             if (!resp.ok) {
-                const errorData = await resp.json().catch(() => ({ detail: 'Ошибка создания блока' }));
+                const errorData = await resp.json().catch(() => ({ detail: t('blocks_create_error', 'Ошибка создания блока') }));
                 throw new Error(errorData.detail || 'Failed to create block');
             }
 
@@ -539,16 +570,16 @@
             updatePlanTooltips();
 
             if (window.showSuccess) {
-                showSuccess(`Блок "${blockName}" успешно создан!`);
+                showSuccess(formatText('blocks_created_success', 'Блок "{name}" успешно создан!', { name: blockName }));
             } else {
-                alert(`Блок "${blockName}" успешно создан!`);
+                alert(formatText('blocks_created_success', 'Блок "{name}" успешно создан!', { name: blockName }));
             }
         } catch (e) {
             console.error('Create block error:', e);
             if (window.showError) {
-                showError(`❌ Не удалось создать блок: ${e.message}`);
+                showError(formatText('blocks_create_failed', 'Не удалось создать блок: {message}', { message: e.message }));
             } else {
-                alert(`Не удалось создать блок: ${e.message}`);
+                alert(formatText('blocks_create_failed', 'Не удалось создать блок: {message}', { message: e.message }));
             }
         }
     }
@@ -558,9 +589,9 @@
 
         if (!selectedBlockId) {
             if (typeof showWarning === 'function') {
-                showWarning('Пожалуйста, выберите блок');
+                showWarning(t('blocks_warning_select_block', 'Пожалуйста, выберите блок'));
             } else {
-                alert('Пожалуйста, выберите блок');
+                alert(t('blocks_warning_select_block', 'Пожалуйста, выберите блок'));
             }
             return;
         }
@@ -568,7 +599,7 @@
         // Используем showPrompt с колбэком
         if (typeof showPrompt === 'function') {
             showPrompt(
-                `Введите новое название для блока ${selectedBlock}:`,
+                formatText('blocks_rename_prompt', 'Введите новое название для блока {block}:', { block: selectedBlock }),
                 selectedBlock,
                 async (newName) => {
                     if (!newName || !newName.trim() || newName.trim() === selectedBlock) {
@@ -578,7 +609,7 @@
                 }
             );
         } else {
-            const newName = prompt(`Введите новое название для блока ${selectedBlock}:`, selectedBlock);
+            const newName = prompt(formatText('blocks_rename_prompt', 'Введите новое название для блока {block}:', { block: selectedBlock }), selectedBlock);
             if (newName && newName.trim() && newName.trim() !== selectedBlock) {
                 performRename(newName.trim());
             }
@@ -594,7 +625,7 @@
                 body: JSON.stringify({ name: newName })
             });
             if (!resp.ok) {
-                const errorData = await resp.json().catch(() => ({ detail: 'Ошибка переименования' }));
+                const errorData = await resp.json().catch(() => ({ detail: t('blocks_rename_error', 'Ошибка переименования') }));
                 throw new Error(errorData.detail || 'Failed to rename block');
             }
 
@@ -604,7 +635,7 @@
             // Обновляем заголовок сразу
             const selectedBlockNameEl = document.getElementById('selectedBlockName');
             if (selectedBlockNameEl) {
-                selectedBlockNameEl.textContent = `Блок ${newName}`;
+                selectedBlockNameEl.textContent = blockLabel(newName);
             }
 
             // Обновляем карточку блока в списке
@@ -613,7 +644,7 @@
                 blockCard.setAttribute('data-block', newName);
                 const blockNameEl = blockCard.querySelector('.block-name');
                 if (blockNameEl) {
-                    blockNameEl.textContent = `Блок ${newName}`;
+                    blockNameEl.textContent = blockLabel(newName);
                 }
             }
 
@@ -631,16 +662,16 @@
             }
 
             if (typeof showSuccess === 'function') {
-                showSuccess(`Блок успешно переименован в "${newName}"!`);
+                showSuccess(formatText('blocks_renamed_success', 'Блок успешно переименован в "{name}"!', { name: newName }));
             } else {
-                alert(`Блок успешно переименован в "${newName}"!`);
+                alert(formatText('blocks_renamed_success', 'Блок успешно переименован в "{name}"!', { name: newName }));
             }
         } catch (e) {
             console.error('Rename block error:', e);
             if (typeof showError === 'function') {
-                showError(`❌ Не удалось переименовать блок: ${e.message}`);
+                showError(formatText('blocks_rename_failed', 'Не удалось переименовать блок: {message}', { message: e.message }));
             } else {
-                alert(`Не удалось переименовать блок: ${e.message}`);
+                alert(formatText('blocks_rename_failed', 'Не удалось переименовать блок: {message}', { message: e.message }));
             }
         }
     }
@@ -650,9 +681,9 @@
 
         if (!selectedBlockId) {
             if (typeof showWarning === 'function') {
-                showWarning('Пожалуйста, выберите блок');
+                showWarning(t('blocks_warning_select_block', 'Пожалуйста, выберите блок'));
             } else {
-                alert('Пожалуйста, выберите блок');
+                alert(t('blocks_warning_select_block', 'Пожалуйста, выберите блок'));
             }
             return;
         }
@@ -660,7 +691,7 @@
         // Используем showConfirm с колбэком
         if (typeof showConfirm === 'function') {
             showConfirm(
-                `Вы уверены, что хотите удалить блок "${selectedBlock}"?`,
+                formatText('blocks_delete_confirm', 'Вы уверены, что хотите удалить блок "{block}"?', { block: selectedBlock }),
                 async (confirmed) => {
                     // Удаление происходит ТОЛЬКО если confirmed === true (нажата кнопка OK)
                     if (confirmed === true) {
@@ -674,7 +705,7 @@
                 }
             );
         } else {
-            if (confirm(`Вы уверены, что хотите удалить блок "${selectedBlock}"?`)) {
+            if (confirm(formatText('blocks_delete_confirm', 'Вы уверены, что хотите удалить блок "{block}"?', { block: selectedBlock }))) {
                 performDelete();
             }
         }
@@ -701,26 +732,26 @@
             selectedBlockId = null;
 
             if (typeof showSuccess === 'function') {
-                showSuccess('Блок успешно удален!');
+                showSuccess(t('blocks_deleted_success', 'Блок успешно удален!'));
             } else {
-                alert('Блок успешно удален!');
+                alert(t('blocks_deleted_success', 'Блок успешно удален!'));
             }
         } catch (e) {
             console.error('Delete block error:', e);
             if (typeof showError === 'function') {
-                showError('❌ Не удалось удалить блок');
+                showError(t('blocks_delete_failed', 'Не удалось удалить блок'));
             } else {
-                alert('Не удалось удалить блок');
+                alert(t('blocks_delete_failed', 'Не удалось удалить блок'));
             }
         }
     }
 
     window.viewApartments = function () {
         if (!selectedBlock) {
-            showWarning('Пожалуйста, выберите блок');
+            showWarning(t('blocks_warning_select_block', 'Пожалуйста, выберите блок'));
             return;
         }
-        showInfo(`Переход к списку квартир блока ${selectedBlock}...`);
+        showInfo(formatText('blocks_navigate_apartments', 'Переход к списку квартир блока {block}...', { block: selectedBlock }));
         // TODO: Navigate to apartments page with block filter
         // window.location.href = `/admin/apartments.html?block=${selectedBlock}`;
     }
@@ -728,9 +759,9 @@
     window.viewResidents = function () {
         if (!selectedBlock || !selectedBlockId) {
             if (typeof showWarning === 'function') {
-                showWarning('Пожалуйста, выберите блок');
+                showWarning(t('blocks_warning_select_block', 'Пожалуйста, выберите блок'));
             } else {
-                alert('Пожалуйста, выберите блок');
+                alert(t('blocks_warning_select_block', 'Пожалуйста, выберите блок'));
             }
             return;
         }
@@ -748,10 +779,10 @@
 
     window.viewMeters = function () {
         if (!selectedBlock) {
-            showWarning('Пожалуйста, выберите блок');
+            showWarning(t('blocks_warning_select_block', 'Пожалуйста, выберите блок'));
             return;
         }
-        showInfo(`Переход к показателям счетчиков блока ${selectedBlock}...`);
+        showInfo(formatText('blocks_navigate_meters', 'Переход к показателям счетчиков блока {block}...', { block: selectedBlock }));
         // TODO: Navigate to meters page with block filter
         // window.location.href = `/admin/meters.html?block=${selectedBlock}`;
     }
@@ -777,14 +808,14 @@
             const stats = getBlockStats(block.id);
 
             // Обновляем label (как на карточке: "Блок А")
-            const blockLabel = `Блок ${block.name}`;
-            polygon.setAttribute('data-block-label', blockLabel);
+            polygon.setAttribute('data-block-label', blockLabel(block.name));
 
             // Формируем данные в том же формате, что и на карточках
             // На карточке: "2 дома" и "100% заселённость"
-            const housesText = stats.total === 1 ? 'дом' : (stats.total < 5 ? 'дома' : 'домов');
-            const housesInfo = stats.total > 0 ? `${stats.total} ${housesText}` : 'Нет домов';
-            const occupancyInfo = `${stats.occupancy}% заселённость`;
+            const housesInfo = stats.total > 0
+                ? `${stats.total} ${getHousesWord(stats.total)}`
+                : t('blocks_no_houses', 'Нет домов');
+            const occupancyInfo = `${stats.occupancy}% ${t('blocks_occupancy_short', 'заселённость')}`;
 
             // Формируем HTML для tooltip с теми же данными, что и на карточке
             const tooltipInfo = `
@@ -808,6 +839,7 @@
     async function initBlocksPage() {
         // Сбрасываем флаг загрузки при инициализации
         blocksLoaded = false;
+        localizePlanLegend();
 
         await Promise.all([
             loadBlocks(),
@@ -874,6 +906,16 @@
     window._blocksContentLoadedHandler = (e) => {
         if (e.detail && e.detail.route === '/blocks') {
             initBlocksPage();
+        }
+    };
+
+    window.refreshPageTranslations = function () {
+        if (!window.location.hash.includes('/blocks')) return;
+        localizePlanLegend();
+        renderBlocks();
+        updatePlanTooltips();
+        if (selectedBlockId) {
+            selectBlockById(selectedBlockId);
         }
     };
 

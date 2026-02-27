@@ -1,6 +1,6 @@
 <link rel="stylesheet" href="/admin/content_css/tariffs.css">
 <div class="content-wrapper">
-    <h2 class="mb-4">Тарифы по блокам</h2>
+    <h2 class="mb-4" data-i18n="tariffs_page_title">Тарифы по блокам</h2>
 
     <!-- Stats Grid -->
     <div class="stats-grid" style="margin-bottom: 2rem;">
@@ -11,8 +11,8 @@
             </div>
             <div class="stat-details">
                 <div class="stat-value" id="stat-electricity-tariffs">0.00</div>
-                <div class="stat-label">₼ за месяц</div>
-                <div class="stat-change">Электричество</div>
+                <div class="stat-label" data-i18n="tariffs_stat_per_month">₼ за месяц</div>
+                <div class="stat-change" data-i18n="meter_electricity">Электричество</div>
             </div>
         </div>
 
@@ -23,8 +23,8 @@
             </div>
             <div class="stat-details">
                 <div class="stat-value" id="stat-water-tariffs">0.00</div>
-                <div class="stat-label">₼ за месяц</div>
-                <div class="stat-change">Вода</div>
+                <div class="stat-label" data-i18n="tariffs_stat_per_month">₼ за месяц</div>
+                <div class="stat-change" data-i18n="meter_cold_water">Вода</div>
             </div>
         </div>
 
@@ -35,8 +35,8 @@
             </div>
             <div class="stat-details">
                 <div class="stat-value" id="stat-gas-tariffs">0.00</div>
-                <div class="stat-label">₼ за месяц</div>
-                <div class="stat-change">Газ</div>
+                <div class="stat-label" data-i18n="tariffs_stat_per_month">₼ за месяц</div>
+                <div class="stat-change" data-i18n="meter_gas">Газ</div>
             </div>
         </div>
     </div>
@@ -45,52 +45,52 @@
     <div class="filters-container">
         <div class="filters-row">
             <div class="filter-group">
-                <label>Назначение</label>
+                <label data-i18n="tariffs_filter_purpose">Назначение</label>
                 <details id="filterPurposeDetails" class="purpose-filter-details">
-                    <summary><span id="filterPurposeSummary">Все</span></summary>
+                    <summary><span id="filterPurposeSummary" data-i18n="all">Все</span></summary>
                     <div class="purpose-filter-dropdown">
-                        <label><input type="checkbox" name="purposeFilter" value="all" checked> Все</label>
-                        <label><input type="checkbox" name="purposeFilter" value="electricity" checked> Электричество</label>
-                        <label><input type="checkbox" name="purposeFilter" value="gas" checked> Газ</label>
-                        <label><input type="checkbox" name="purposeFilter" value="water" checked> Вода</label>
-                        <label><input type="checkbox" name="purposeFilter" value="service" checked> Услуги</label>
-                        <label><input type="checkbox" name="purposeFilter" value="rent" checked> Аренда</label>
-                        <label><input type="checkbox" name="purposeFilter" value="construction" checked> Строительство</label>
+                        <label><input type="checkbox" name="purposeFilter" value="all" checked> <span data-i18n="all">Все</span></label>
+                        <label><input type="checkbox" name="purposeFilter" value="electricity" checked> <span data-i18n="meter_electricity">Электричество</span></label>
+                        <label><input type="checkbox" name="purposeFilter" value="gas" checked> <span data-i18n="meter_gas">Газ</span></label>
+                        <label><input type="checkbox" name="purposeFilter" value="water" checked> <span data-i18n="meter_cold_water">Вода</span></label>
+                        <label><input type="checkbox" name="purposeFilter" value="service" checked> <span data-i18n="tariffs_purpose_service">Услуги</span></label>
+                        <label><input type="checkbox" name="purposeFilter" value="rent" checked> <span data-i18n="tariffs_purpose_rent">Аренда</span></label>
+                        <label><input type="checkbox" name="purposeFilter" value="construction" checked> <span data-i18n="tariffs_purpose_construction">Строительство</span></label>
                     </div>
                 </details>
             </div>
 
             <div class="filter-group">
-                <label>Тип клиента</label>
+                <label data-i18n="tariffs_filter_client_type">Тип клиента</label>
                 <select id="filterClientType">
-                    <option value="all">Все</option>
-                    <option value="individual">Индивидуальное</option>
-                    <option value="legal">Юр лицо</option>
+                    <option value="all" data-i18n="all">Все</option>
+                    <option value="individual" data-i18n="tariffs_client_individual_short">Индивидуальное</option>
+                    <option value="legal" data-i18n="tariffs_client_legal_short">Юр лицо</option>
                 </select>
             </div>
 
             <div class="filter-group">
-                <label>Поиск</label>
-                <input type="text" id="filterSearch" placeholder="Название тарифа">
+                <label data-i18n="search">Поиск</label>
+                <input type="text" id="filterSearch" data-i18n-placeholder="tariffs_search_placeholder" placeholder="Название тарифа">
             </div>
         </div>
 
         <div class="filters-actions">
             <button class="btn btn-outline-secondary" onclick="applyFilters()">
-                <i class="bi bi-funnel"></i> Фильтр
+                <i class="bi bi-funnel"></i> <span data-i18n="user_resident_filter_btn">Фильтр</span>
             </button>
             <button class="btn btn-outline-warning" onclick="clearFilters()">
-                <i class="bi bi-x-circle"></i> Очистить
+                <i class="bi bi-x-circle"></i> <span data-i18n="user_resident_reset_btn">Очистить</span>
             </button>
-            <select id="tariffExportFormat" class="form-select export-format-select" aria-label="Формат экспорта тарифов">
+            <select id="tariffExportFormat" class="form-select export-format-select" data-i18n-title="tariffs_export_format" aria-label="Формат экспорта тарифов">
                 <option value="excel">Excel</option>
                 <option value="pdf">PDF</option>
             </select>
             <button class="btn btn-success" onclick="exportTariffs()">
-                <i class="bi bi-box-arrow-down"></i> Экспорт
+                <i class="bi bi-box-arrow-down"></i> <span data-i18n="tariffs_export_button">Экспорт</span>
             </button>
             <button class="btn btn-primary" onclick="openCreateModal()">
-                <i class="bi bi-plus-lg"></i> Создать
+                <i class="bi bi-plus-lg"></i> <span data-i18n="tariffs_create_button">Создать</span>
             </button>
         </div>
     </div>
@@ -99,20 +99,20 @@
     <div id="tariffsContainer">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h3>Список тарифов</h3>
+                <h3 data-i18n="tariffs_list_title">Список тарифов</h3>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover tariffs-table">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Название</th>
-                            <th>Назначение</th>
-                            <th>Тип клиента</th>
-                            <th>НДС, %</th>
-                            <th>Стабильный тариф</th>
-                            <th>Ступени</th>
-                            <th class="text-center">Действия</th>
+                            <th data-i18n="tariffs_col_name">Название</th>
+                            <th data-i18n="tariffs_filter_purpose">Назначение</th>
+                            <th data-i18n="tariffs_filter_client_type">Тип клиента</th>
+                            <th data-i18n="tariffs_col_vat">НДС, %</th>
+                            <th data-i18n="stable_tariff">Стабильный тариф</th>
+                            <th data-i18n="tariffs_col_steps">Ступени</th>
+                            <th class="text-center" data-i18n="tariffs_col_actions">Действия</th>
                         </tr>
                     </thead>
                     <tbody id="tariffsTableBody">
@@ -135,7 +135,7 @@
 <div class="modal-overlay" id="createTariffModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>Создать тариф</h2>
+            <h2 data-i18n="tariffs_modal_create_title">Создать тариф</h2>
             <button class="modal-close" onclick="closeCreateModal()">
                 <i class="bi bi-x-lg"></i>
             </button>
@@ -143,37 +143,37 @@
 
         <form id="createTariffForm" onsubmit="createTariff(event)">
             <div class="form-group">
-                <label>Название тарифа</label>
+                <label data-i18n="tariffs_name_label">Название тарифа</label>
                 <input type="text" id="tariffName" required>
             </div>
 
             <div class="form-group">
-                <label>Для чего</label>
+                <label data-i18n="tariffs_purpose_label">Для чего</label>
                 <select id="tariffPurpose" required onchange="updateUnitsForPurpose(); updateStepFieldsType();">
-                    <option value="electricity">Электричество</option>
-                    <option value="gas">Газ</option>
-                    <option value="water">Вода</option>
-                    <option value="service">Услуги</option>
-                    <option value="rent">Аренда</option>
-                    <option value="construction">Строительство</option>
+                    <option value="electricity" data-i18n="meter_electricity">Электричество</option>
+                    <option value="gas" data-i18n="meter_gas">Газ</option>
+                    <option value="water" data-i18n="meter_cold_water">Вода</option>
+                    <option value="service" data-i18n="tariffs_purpose_service">Услуги</option>
+                    <option value="rent" data-i18n="tariffs_purpose_rent">Аренда</option>
+                    <option value="construction" data-i18n="tariffs_purpose_construction">Строительство</option>
                 </select>
             </div>
 
             <div class="form-group">
-                <label>Тип тарифа</label>
+                <label data-i18n="tariffs_type_label">Тип тарифа</label>
                 <select id="tariffType" required>
-                    <option value="individual">Индивидуальный</option>
-                    <option value="legal">Юридическое лицо</option>
+                    <option value="individual" data-i18n="tariffs_client_individual">Индивидуальный</option>
+                    <option value="legal" data-i18n="tariffs_client_legal">Юридическое лицо</option>
                 </select>
             </div>
 
             <div class="form-group">
-                <label>НДС, %</label>
+                <label data-i18n="tariffs_col_vat">НДС, %</label>
                 <input type="number" id="tariffVAT" value="0" min="0" max="100">
             </div>
 
             <div class="form-group" id="stableTariffGroup" style="display:none;">
-                <label>Стабильный тариф</label>
+                <label data-i18n="stable_tariff">Стабильный тариф</label>
                 <input type="number" id="tariffStableTariff" value="0" min="0" step="0.01">
                 <small style="display:block; opacity:0.75; margin-top:6px;">
                     Фиксированная сумма в месяц (только Электричество/Газ). Добавляется независимо от расхода.
@@ -181,7 +181,7 @@
             </div>
 
             <div class="form-group" id="seweragePercentGroup" style="display:none;">
-                <label>Канализация, % от воды</label>
+                <label data-i18n="tariffs_sewerage_percent_label">Канализация, % от воды</label>
                 <input type="number" id="tariffSeweragePercent" value="0" min="0" max="100" step="0.01">
                 <small style="display:block; opacity:0.75; margin-top:6px;">
                     Будет добавлена отдельной строкой в счёт как процент от суммы воды.
@@ -190,33 +190,33 @@
 
             <div class="tariff-steps">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4>Ступени</h4>
+                    <h4 data-i18n="tariffs_col_steps">Ступени</h4>
                     <button type="button" class="btn btn-sm btn-primary" onclick="addTariffStep()">
-                        <i class="bi bi-plus-lg"></i> Добавить ступень
+                        <i class="bi bi-plus-lg"></i> <span data-i18n="tariffs_add_step">Добавить ступень</span>
                     </button>
                 </div>
 
                 <div id="tariffStepsContainer">
                     <div class="step-row">
                         <div class="step-input-group">
-                            <label>ОТ (вкл.)</label>
+                            <label data-i18n="tariffs_step_from">ОТ (вкл.)</label>
                             <input type="number" value="0" min="0" step="0.01">
                         </div>
                         <div class="step-input-group">
-                            <label>ДО (искл.)</label>
-                            <input type="text" value="" placeholder="∞ для бесконечности">
+                            <label data-i18n="tariffs_step_to">ДО (искл.)</label>
+                            <input type="text" value="" data-i18n-placeholder="tariffs_step_infinity_placeholder" placeholder="∞ для бесконечности">
                         </div>
                         <div class="step-input-group">
-                            <label>Ед. изм.</label>
+                            <label data-i18n="tariffs_step_unit">Ед. изм.</label>
                             <input type="text" value="кВт-ч" class="unit-chip" readonly>
                         </div>
                         <div class="step-input-group">
-                            <label>Цена</label>
+                            <label data-i18n="amount">Цена</label>
                             <input type="number" step="any" min="0" required>
                         </div>
                         <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)"
                             style="height: 38px; white-space: nowrap;">
-                            <i class="bi bi-trash"></i> Удалить
+                            <i class="bi bi-trash"></i> <span data-i18n="action_delete">Удалить</span>
                         </button>
                     </div>
                 </div>
@@ -224,10 +224,10 @@
 
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">
-                    Отмена
+                    <span data-i18n="cancel">Отмена</span>
                 </button>
                 <button type="submit" class="btn btn-primary">
-                    Создать
+                    <span data-i18n="tariffs_create_button">Создать</span>
                 </button>
             </div>
         </form>
@@ -236,24 +236,34 @@
 
 <script>
     const API_BASE = 'http://localhost:8000';
+    const t = (key, fallback) => (window.i18n && typeof window.i18n.translate === 'function')
+        ? window.i18n.translate(key)
+        : fallback;
+    const tr = (key, fallback, vars = {}) => {
+        let text = t(key, fallback);
+        Object.keys(vars).forEach((k) => {
+            text = text.replace(`{${k}}`, vars[k]);
+        });
+        return text;
+    };
     let tariffsData = [];
     let seweragePercentDirty = false;
     let editingTariffId = null;
 
     // Маппинг типов для отображения
     const meterTypeMap = {
-        'ELECTRIC': { label: 'Электричество', key: 'electricity', badge: 'bg-info' },
-        'GAS': { label: 'Газ', key: 'gas', badge: 'bg-danger' },
-        'WATER': { label: 'Вода', key: 'water', badge: 'bg-primary' },
-        'SEWERAGE': { label: 'Канализация', key: 'sewerage', badge: 'bg-secondary' },
-        'SERVICE': { label: 'Услуги', key: 'service', badge: 'bg-warning text-dark' },
-        'RENT': { label: 'Аренда', key: 'rent', badge: 'bg-success' },
-        'CONSTRUCTION': { label: 'Строительство', key: 'construction', badge: 'bg-dark' }
+        'ELECTRIC': { labelKey: 'meter_electricity', key: 'electricity', badge: 'bg-info' },
+        'GAS': { labelKey: 'meter_gas', key: 'gas', badge: 'bg-danger' },
+        'WATER': { labelKey: 'meter_cold_water', key: 'water', badge: 'bg-primary' },
+        'SEWERAGE': { labelKey: 'meter_sewerage', key: 'sewerage', badge: 'bg-secondary' },
+        'SERVICE': { labelKey: 'tariffs_purpose_service', key: 'service', badge: 'bg-warning text-dark' },
+        'RENT': { labelKey: 'tariffs_purpose_rent', key: 'rent', badge: 'bg-success' },
+        'CONSTRUCTION': { labelKey: 'tariffs_purpose_construction', key: 'construction', badge: 'bg-dark' }
     };
 
     const customerTypeMap = {
-        'INDIVIDUAL': { label: 'Индивидуальный', key: 'individual', badge: 'bg-success' },
-        'LEGAL': { label: 'Юридический', key: 'legal', badge: 'bg-primary' }
+        'INDIVIDUAL': { labelKey: 'tariffs_client_individual', key: 'individual', badge: 'bg-success' },
+        'LEGAL': { labelKey: 'tariffs_client_legal', key: 'legal', badge: 'bg-primary' }
     };
 
     const ALL_TARIFF_PURPOSE_KEYS = ['electricity', 'gas', 'water', 'service', 'rent', 'construction'];
@@ -266,12 +276,12 @@
         construction: 'CONSTRUCTION'
     };
     const TARIFF_PURPOSE_LABELS = {
-        electricity: 'Электричество',
-        gas: 'Газ',
-        water: 'Вода',
-        service: 'Услуги',
-        rent: 'Аренда',
-        construction: 'Строительство'
+        electricity: 'meter_electricity',
+        gas: 'meter_gas',
+        water: 'meter_cold_water',
+        service: 'tariffs_purpose_service',
+        rent: 'tariffs_purpose_rent',
+        construction: 'tariffs_purpose_construction'
     };
 
     function getSelectedTariffPurposesRaw() {
@@ -292,14 +302,15 @@
         if (!summaryEl) return;
         const selected = getSelectedTariffPurposeKeys();
         if (selected.length >= ALL_TARIFF_PURPOSE_KEYS.length) {
-            summaryEl.textContent = 'Все';
+            summaryEl.textContent = t('all', 'Все');
             return;
         }
         if (selected.length === 1) {
-            summaryEl.textContent = TARIFF_PURPOSE_LABELS[selected[0]] || selected[0];
+            const key = TARIFF_PURPOSE_LABELS[selected[0]];
+            summaryEl.textContent = key ? t(key, selected[0]) : selected[0];
             return;
         }
-        summaryEl.textContent = `${selected.length} выбрано`;
+        summaryEl.textContent = tr('tariffs_selected_count', '{count} выбрано', { count: selected.length });
     }
 
     function applyTariffPurposeRules(changedValue = null) {
@@ -378,7 +389,7 @@
             // Показываем ошибку только если оба endpoint не работают
             // (если публичный endpoint работает, мы не должны попадать в этот catch)
             if (typeof showError === 'function') {
-                showError(`❌ Не удалось загрузить тарифы: ${e.message}`);
+                showError(tr('tariffs_load_failed', 'Не удалось загрузить тарифы: {message}', { message: e.message }));
             }
             tariffsData = [];
             renderTariffsTable([]);
@@ -399,31 +410,33 @@
     }
 
     function normalizeTariffsFromApi(tariffs = []) {
-        return tariffs.map((t) => {
-            const isConstruction = t.meter_type === 'CONSTRUCTION';
+        return tariffs.map((tariffItem) => {
+            const isConstruction = tariffItem.meter_type === 'CONSTRUCTION';
             return {
-                id: t.id,
-                name: t.name,
-                purpose: meterTypeMap[t.meter_type]?.label || t.meter_type,
-                purposeKey: meterTypeMap[t.meter_type]?.key || t.meter_type.toLowerCase(),
-                clientType: customerTypeMap[t.customer_type]?.key || t.customer_type.toLowerCase(),
-                clientTypeLabel: customerTypeMap[t.customer_type]?.label || t.customer_type,
-                vat: t.vat_percent,
-                stableTariff: t.stable_tariff ?? 0,
-                steps: (t.steps || []).map((s) => {
+                id: tariffItem.id,
+                name: tariffItem.name,
+                purpose: t(meterTypeMap[tariffItem.meter_type]?.labelKey, tariffItem.meter_type),
+                purposeLabelKey: meterTypeMap[tariffItem.meter_type]?.labelKey || '',
+                purposeKey: meterTypeMap[tariffItem.meter_type]?.key || tariffItem.meter_type.toLowerCase(),
+                clientType: customerTypeMap[tariffItem.customer_type]?.key || tariffItem.customer_type.toLowerCase(),
+                clientTypeLabel: t(customerTypeMap[tariffItem.customer_type]?.labelKey, tariffItem.customer_type),
+                clientTypeLabelKey: customerTypeMap[tariffItem.customer_type]?.labelKey || '',
+                vat: tariffItem.vat_percent,
+                stableTariff: tariffItem.stable_tariff ?? 0,
+                steps: (tariffItem.steps || []).map((s) => {
                     if (isConstruction) {
                         return {
                             from_date: s.from_date,
                             to_date: s.to_date,
                             price: s.price,
-                            unit: getUnitForMeterType(t.meter_type)
+                            unit: getUnitForMeterType(tariffItem.meter_type)
                         };
                     }
                     return {
                         from: s.from_value || 0,
                         to: s.to_value,
                         price: s.price,
-                        unit: getUnitForMeterType(t.meter_type)
+                        unit: getUnitForMeterType(tariffItem.meter_type)
                     };
                 })
             };
@@ -500,25 +513,32 @@
             tbody.innerHTML = `
                     <tr>
                         <td colspan="8" class="empty-table">
-                            Нет тарифов по указанным параметрам
+                            ${t('tariffs_empty_filtered', 'Нет тарифов по указанным параметрам')}
                         </td>
                     </tr>
                 `;
             return;
         }
 
-        tbody.innerHTML = data.map(tariff => `
+        tbody.innerHTML = data.map(tariff => {
+            const purposeText = tariff.purposeLabelKey
+                ? t(tariff.purposeLabelKey, tariff.purpose || tariff.purposeKey || '—')
+                : (tariff.purpose || tariff.purposeKey || '—');
+            const clientTypeText = tariff.clientTypeLabelKey
+                ? t(tariff.clientTypeLabelKey, tariff.clientTypeLabel || tariff.clientType || '—')
+                : (tariff.clientTypeLabel || tariff.clientType || '—');
+            return `
                 <tr>
                     <td>${tariff.id}</td>
                     <td>${tariff.name}</td>
                     <td>
                         <span class="badge ${getPurposeBadgeClass(tariff.purposeKey)}">
-                            ${tariff.purpose}
+                            ${purposeText}
                         </span>
                     </td>
                     <td>
                         <span class="badge ${tariff.clientType === 'legal' ? 'bg-primary' : 'bg-success'}">
-                            ${tariff.clientTypeLabel}
+                            ${clientTypeText}
                         </span>
                     </td>
                     <td>${tariff.vat}%</td>
@@ -526,12 +546,13 @@
                     <td>${formatSteps(tariff.steps, tariff.purposeKey)}</td>
                     <td>
                         <div class="table-actions">
-                            <button class="btn btn-sm btn-outline-info" onclick="editTariff(${tariff.id})">Редактировать</button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteTariff(${tariff.id})">Удалить</button>
+                            <button class="btn btn-sm btn-outline-info" onclick="editTariff(${tariff.id})">${t('tariffs_edit_button', 'Редактировать')}</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteTariff(${tariff.id})">${t('action_delete', 'Удалить')}</button>
                         </div>
                     </td>
                 </tr>
-            `).join('');
+            `;
+        }).join('');
     }
 
     function getPurposeBadgeClass(purposeKey) {
@@ -591,20 +612,20 @@
         const searchValue = String(searchEl?.value || '').trim();
 
         if (selectedPurposes.length >= ALL_TARIFF_PURPOSE_KEYS.length) {
-            parts.push('Назначение: Все');
+            parts.push(`${t('tariffs_filter_purpose', 'Назначение')}: ${t('all', 'Все')}`);
         } else {
-            const labels = selectedPurposes.map((key) => TARIFF_PURPOSE_LABELS[key] || key);
-            parts.push(`Назначение: ${labels.join(', ')}`);
+            const labels = selectedPurposes.map((key) => t(TARIFF_PURPOSE_LABELS[key], key));
+            parts.push(`${t('tariffs_filter_purpose', 'Назначение')}: ${labels.join(', ')}`);
         }
 
         if (clientTypeValue !== 'all' && clientTypeEl) {
-            parts.push(`Тип клиента: ${clientTypeEl.options[clientTypeEl.selectedIndex]?.text || clientTypeValue}`);
+            parts.push(`${t('tariffs_filter_client_type', 'Тип клиента')}: ${clientTypeEl.options[clientTypeEl.selectedIndex]?.text || clientTypeValue}`);
         } else {
-            parts.push('Тип клиента: Все');
+            parts.push(`${t('tariffs_filter_client_type', 'Тип клиента')}: ${t('all', 'Все')}`);
         }
 
         if (searchValue) {
-            parts.push(`Поиск: ${searchValue}`);
+            parts.push(`${t('search', 'Поиск')}: ${searchValue}`);
         }
 
         return parts.join(' | ');
@@ -633,8 +654,8 @@
             return {
                 id: t?.id ?? '—',
                 name: t?.name || '—',
-                purpose: t?.purpose || '—',
-                clientType: t?.clientTypeLabel || '—',
+                purpose: (t?.purposeLabelKey ? window.i18n?.translate(t.purposeLabelKey) : '') || t?.purpose || '—',
+                clientType: (t?.clientTypeLabelKey ? window.i18n?.translate(t.clientTypeLabelKey) : '') || t?.clientTypeLabel || '—',
                 vat: Number(t?.vat ?? 0),
                 stableTariff: Number(t?.stableTariff ?? 0),
                 stepsList: formattedSteps.length ? formattedSteps : ['—']
@@ -677,16 +698,16 @@
                 .step-line:last-child { border-bottom: none; }
             </style></head><body>
                 <table class="title-table">
-                    <tr><td class="title-cell"><div class="title-main">Отчет по тарифам</div><div class="title-sub">Royal Park - Экспорт для учета</div></td></tr>
+                    <tr><td class="title-cell"><div class="title-main">${t('tariffs_report_title', 'Отчет по тарифам')}</div><div class="title-sub">${t('tariffs_report_subtitle', 'Royal Park - Экспорт для учета')}</div></td></tr>
                 </table>
                 <table class="meta">
-                    <tr><td>Сформировано</td><td>${esc(new Date().toLocaleString())}</td></tr>
-                    <tr><td>Фильтры</td><td>${esc(filtersText)}</td></tr>
-                    <tr><td>Количество тарифов</td><td>${esc(rows.length)}</td></tr>
+                    <tr><td>${t('tariffs_generated_at', 'Сформировано')}</td><td>${esc(new Date().toLocaleString())}</td></tr>
+                    <tr><td>${t('tariffs_filters', 'Фильтры')}</td><td>${esc(filtersText)}</td></tr>
+                    <tr><td>${t('tariffs_count', 'Количество тарифов')}</td><td>${esc(rows.length)}</td></tr>
                 </table>
                 <table class="data">
-                    <thead><tr><th>Название</th><th>Назначение</th><th>Тип клиента</th><th>НДС, %</th><th>Стабильный тариф</th><th>Ступени</th></tr></thead>
-                    <tbody>${bodyRows || '<tr><td colspan="6">Нет данных</td></tr>'}</tbody>
+                    <thead><tr><th>${t('tariffs_col_name', 'Название')}</th><th>${t('tariffs_filter_purpose', 'Назначение')}</th><th>${t('tariffs_filter_client_type', 'Тип клиента')}</th><th>${t('tariffs_col_vat', 'НДС, %')}</th><th>${t('stable_tariff', 'Стабильный тариф')}</th><th>${t('tariffs_col_steps', 'Ступени')}</th></tr></thead>
+                    <tbody>${bodyRows || `<tr><td colspan="6">${t('tariffs_no_data', 'Нет данных')}</td></tr>`}</tbody>
                 </table>
             </body></html>
         `;
@@ -718,20 +739,20 @@
         `).join('');
 
         const html = `
-            <html><head><title>Экспорт тарифов</title>
+            <html><head><title>${t('tariffs_export_button', 'Экспорт')}</title>
             <style>
                 body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
                 table { width: 100%; border-collapse: collapse; font-size: 11px; }
                 th, td { border: 1px solid #ccc; padding: 6px; text-align: left; vertical-align: top; }
                 th { background: #f3f4f6; }
             </style></head><body>
-                <h2>Отчет по тарифам</h2>
-                <p><strong>Сформировано:</strong> ${esc(new Date().toLocaleString())}</p>
-                <p><strong>Фильтры:</strong> ${esc(filtersText)}</p>
-                <p><strong>Количество:</strong> ${rows.length}</p>
+                <h2>${t('tariffs_report_title', 'Отчет по тарифам')}</h2>
+                <p><strong>${t('tariffs_generated_at', 'Сформировано')}:</strong> ${esc(new Date().toLocaleString())}</p>
+                <p><strong>${t('tariffs_filters', 'Фильтры')}:</strong> ${esc(filtersText)}</p>
+                <p><strong>${t('tariffs_count_short', 'Количество')}:</strong> ${rows.length}</p>
                 <table>
-                    <thead><tr><th>Название</th><th>Назначение</th><th>Тип клиента</th><th>НДС, %</th><th>Стабильный тариф</th><th>Ступени</th></tr></thead>
-                    <tbody>${tableRows || '<tr><td colspan="6">Нет данных</td></tr>'}</tbody>
+                    <thead><tr><th>${t('tariffs_col_name', 'Название')}</th><th>${t('tariffs_filter_purpose', 'Назначение')}</th><th>${t('tariffs_filter_client_type', 'Тип клиента')}</th><th>${t('tariffs_col_vat', 'НДС, %')}</th><th>${t('stable_tariff', 'Стабильный тариф')}</th><th>${t('tariffs_col_steps', 'Ступени')}</th></tr></thead>
+                    <tbody>${tableRows || `<tr><td colspan="6">${t('tariffs_no_data', 'Нет данных')}</td></tr>`}</tbody>
                 </table>
             </body></html>
         `;
@@ -749,7 +770,7 @@
         const doc = iframe.contentWindow?.document;
         if (!doc || !iframe.contentWindow) {
             iframe.remove();
-            throw new Error('Не удалось подготовить печать.');
+            throw new Error(t('tariffs_print_prepare_error', 'Не удалось подготовить печать.'));
         }
 
         doc.open();
@@ -773,14 +794,14 @@
 
         if (exportBtn) {
             exportBtn.disabled = true;
-            exportBtn.textContent = 'Экспорт...';
+            exportBtn.textContent = t('tariffs_export_in_progress', 'Экспорт...');
         }
 
         try {
             const filteredTariffs = await fetchTariffsByCurrentFilters();
             const rows = buildTariffExportRows(filteredTariffs);
             if (!rows.length) {
-                if (typeof showWarning === 'function') showWarning('Нет данных для экспорта по выбранным фильтрам.');
+                if (typeof showWarning === 'function') showWarning(t('tariffs_export_no_data', 'Нет данных для экспорта по выбранным фильтрам.'));
                 return;
             }
             tariffsData = filteredTariffs;
@@ -790,14 +811,14 @@
             } else {
                 exportTariffsToStyledExcel(rows, filtersText);
             }
-            if (typeof showSuccess === 'function') showSuccess('Экспорт выполнен.');
+            if (typeof showSuccess === 'function') showSuccess(t('export_completed', 'Экспорт выполнен.'));
         } catch (error) {
             console.error('Tariffs export error:', error);
-            if (typeof showError === 'function') showError('Ошибка экспорта: ' + error.message);
+            if (typeof showError === 'function') showError(`${t('error_prefix', 'Ошибка')}: ${error.message}`);
         } finally {
             if (exportBtn) {
                 exportBtn.disabled = false;
-                exportBtn.innerHTML = '<i class="bi bi-box-arrow-down"></i> Экспорт';
+                exportBtn.innerHTML = `<i class="bi bi-box-arrow-down"></i> ${t('tariffs_export_button', 'Экспорт')}`;
             }
         }
     };
@@ -813,7 +834,7 @@
 
             renderTariffsTable(tariffsData);
             if (typeof showSuccess === 'function') {
-                showSuccess('Фильтры применены!');
+                showSuccess(t('filters_applied', 'Фильтры применены успешно!'));
             }
         } catch (e) {
             console.error('Filter error:', e);
@@ -837,7 +858,7 @@
         document.getElementById('filterSearch').value = '';
         loadTariffs();
         if (typeof showSuccess === 'function') {
-            showSuccess('Фильтры очищены!');
+            showSuccess(t('filters_reset', 'Фильтры сброшены'));
         }
     }
 
@@ -890,11 +911,11 @@
         // Возвращаем заголовок и кнопку
         const modalTitle = document.querySelector('#createTariffModal .modal-header h2');
         if (modalTitle) {
-            modalTitle.textContent = 'Создать тариф';
+            modalTitle.textContent = t('tariffs_modal_create_title', 'Создать тариф');
         }
         const submitBtn = document.querySelector('#createTariffForm button[type="submit"]');
         if (submitBtn) {
-            submitBtn.textContent = 'Создать';
+            submitBtn.textContent = t('tariffs_create_button', 'Создать');
         }
     }
 
@@ -1076,12 +1097,12 @@
                     const fromValue = fromInput.value || '';
                     const toValue = toInput.value || '';
 
-                    fromGroup.querySelector('label').textContent = 'Дата от';
+                    fromGroup.querySelector('label').textContent = t('tariffs_date_from', 'Дата от');
                     fromInput.type = 'date';
                     fromInput.value = fromValue;
                     fromInput.placeholder = '';
 
-                    toGroup.querySelector('label').textContent = 'Дата до';
+                    toGroup.querySelector('label').textContent = t('tariffs_date_to', 'Дата до');
                     toInput.type = 'date';
                     toInput.value = toValue;
                     toInput.placeholder = '';
@@ -1097,16 +1118,16 @@
                     const fromValue = fromInput.value || '0';
                     const toValue = toInput.value || '';
 
-                    fromGroup.querySelector('label').textContent = 'ОТ (вкл.)';
+                    fromGroup.querySelector('label').textContent = t('tariffs_step_from', 'ОТ (вкл.)');
                     fromInput.type = 'number';
                     fromInput.min = '0';
                     fromInput.step = '0.01';
                     fromInput.value = fromValue;
 
-                    toGroup.querySelector('label').textContent = 'ДО (искл.)';
+                    toGroup.querySelector('label').textContent = t('tariffs_step_to', 'ДО (искл.)');
                     toInput.type = 'text';
                     toInput.value = toValue;
-                    toInput.placeholder = '∞ для бесконечности';
+                    toInput.placeholder = t('tariffs_step_infinity_placeholder', '∞ для бесконечности');
 
                     if (unitGroup) {
                         unitGroup.style.display = '';
@@ -1140,9 +1161,9 @@
 
             if (!lastToValue || lastToValue === '∞') {
                 if (typeof showWarning === 'function') {
-                    showWarning('Укажите граничное значение "ДО (искл.)" для предыдущей ступени.');
+                showWarning(t('tariffs_step_to_required', 'Укажите граничное значение "ДО (искл.)" для предыдущей ступени.'));
                 } else {
-                    alert('Укажите граничное значение "ДО (искл.)" для предыдущей ступени.');
+                alert(t('tariffs_step_to_required', 'Укажите граничное значение "ДО (искл.)" для предыдущей ступени.'));
                 }
                 return;
             }
@@ -1162,69 +1183,69 @@
             // Для аренды и услуг - без От и До
             newStep.innerHTML = `
                 <div class="step-input-group" style="display: none;">
-                    <label>ОТ (вкл.)</label>
+                    <label>${t('tariffs_step_from', 'ОТ (вкл.)')}</label>
                     <input type="number" value="0" min="0" step="0.01">
                 </div>
                 <div class="step-input-group" style="display: none;">
-                    <label>ДО (искл.)</label>
-                    <input type="text" value="" placeholder="∞ для бесконечности">
+                    <label>${t('tariffs_step_to', 'ДО (искл.)')}</label>
+                    <input type="text" value="" placeholder="${t('tariffs_step_infinity_placeholder', '∞ для бесконечности')}">
                 </div>
                 <div class="step-input-group">
-                    <label>Ед. изм.</label>
+                    <label>${t('tariffs_step_unit', 'Ед. изм.')}</label>
                     <input type="text" value="${unit}" class="unit-chip" readonly>
                 </div>
                 <div class="step-input-group">
-                    <label>Цена</label>
+                    <label>${t('amount', 'Цена')}</label>
                     <input type="number" step="any" min="0" required>
                 </div>
                 <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
-                    <i class="bi bi-trash"></i> Удалить
+                    <i class="bi bi-trash"></i> ${t('action_delete', 'Удалить')}
                 </button>
             `;
         } else if (isConstruction) {
             // Для строительства - поля с датами
             newStep.innerHTML = `
                     <div class="step-input-group">
-                        <label>Дата от</label>
+                        <label>${t('tariffs_date_from', 'Дата от')}</label>
                         <input type="date" value="" required>
                     </div>
                     <div class="step-input-group">
-                        <label>Дата до</label>
+                        <label>${t('tariffs_date_to', 'Дата до')}</label>
                         <input type="date" value="" required>
                     </div>
                     <div class="step-input-group">
-                        <label>Ед. изм.</label>
+                        <label>${t('tariffs_step_unit', 'Ед. изм.')}</label>
                         <input type="text" value="${unit}" class="unit-chip" readonly>
                     </div>
                     <div class="step-input-group">
-                        <label>Цена</label>
+                        <label>${t('amount', 'Цена')}</label>
                         <input type="number" step="any" min="0" required>
                     </div>
                     <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
-                        <i class="bi bi-trash"></i> Удалить
+                        <i class="bi bi-trash"></i> ${t('action_delete', 'Удалить')}
                     </button>
                 `;
         } else {
             // Для остальных - числовые поля
             newStep.innerHTML = `
                 <div class="step-input-group">
-                    <label>ОТ (вкл.)</label>
+                    <label>${t('tariffs_step_from', 'ОТ (вкл.)')}</label>
                     <input type="number" value="${defaultFrom}" min="0" step="0.01">
                 </div>
                 <div class="step-input-group">
-                    <label>ДО (искл.)</label>
-                        <input type="text" value="" placeholder="∞ для бесконечности">
+                    <label>${t('tariffs_step_to', 'ДО (искл.)')}</label>
+                        <input type="text" value="" placeholder="${t('tariffs_step_infinity_placeholder', '∞ для бесконечности')}">
                 </div>
                 <div class="step-input-group">
-                    <label>Ед. изм.</label>
+                    <label>${t('tariffs_step_unit', 'Ед. изм.')}</label>
                         <input type="text" value="${unit}" class="unit-chip" readonly>
                 </div>
                 <div class="step-input-group">
-                    <label>Цена</label>
+                    <label>${t('amount', 'Цена')}</label>
                     <input type="number" step="any" min="0" required>
                 </div>
                 <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
-                    <i class="bi bi-trash"></i> Удалить
+                    <i class="bi bi-trash"></i> ${t('action_delete', 'Удалить')}
                 </button>
             `;
         }
@@ -1244,7 +1265,7 @@
         if (steps.length > 1) {
             button.closest('.step-row').remove();
         } else {
-            showWarning('Должна быть хотя бы одна ступень!');
+            showWarning(t('tariffs_min_one_step', 'Должна быть хотя бы одна ступень!'));
         }
     }
 
@@ -1264,9 +1285,9 @@
 
         if (!name) {
             if (typeof showWarning === 'function') {
-                showWarning('Введите название тарифа');
+                showWarning(t('tariffs_enter_name', 'Введите название тарифа'));
             } else {
-                alert('Введите название тарифа');
+                alert(t('tariffs_enter_name', 'Введите название тарифа'));
             }
             return;
         }
@@ -1306,7 +1327,7 @@
                     const toDate = inputs[1].value;   // Дата до
 
                     if (!fromDate || !toDate) {
-                        throw new Error(`Заполните обе даты для ступени ${index + 1}`);
+                        throw new Error(tr('tariffs_fill_dates_for_step', 'Заполните обе даты для ступени {step}', { step: index + 1 }));
                     }
 
                     steps.push({
@@ -1346,9 +1367,9 @@
 
         if (steps.length === 0) {
             if (typeof showWarning === 'function') {
-                showWarning('Добавьте хотя бы одну ступень тарифа');
+                showWarning(t('tariffs_add_at_least_one_step', 'Добавьте хотя бы одну ступень тарифа'));
             } else {
-                alert('Добавьте хотя бы одну ступень тарифа');
+                alert(t('tariffs_add_at_least_one_step', 'Добавьте хотя бы одну ступень тарифа'));
             }
             return;
         }
@@ -1384,7 +1405,7 @@
             }
 
             if (!resp.ok) {
-                const errorData = await resp.json().catch(() => ({ detail: 'Ошибка сохранения тарифа' }));
+                const errorData = await resp.json().catch(() => ({ detail: t('tariffs_save_error', 'Ошибка сохранения тарифа') }));
                 throw new Error(errorData.detail || 'Failed to save tariff');
             }
 
@@ -1396,16 +1417,20 @@
 
             // Показываем сообщение об успехе
             if (typeof showSuccess === 'function') {
-                showSuccess(`Тариф "${name}" успешно ${editingTariffId ? 'обновлён' : 'создан'}!`);
+                showSuccess(editingTariffId
+                    ? tr('tariffs_updated_success', 'Тариф "{name}" успешно обновлён!', { name })
+                    : tr('tariffs_created_success', 'Тариф "{name}" успешно создан!', { name }));
             } else {
-                alert(`Тариф "${name}" успешно ${editingTariffId ? 'обновлён' : 'создан'}!`);
+                alert(editingTariffId
+                    ? tr('tariffs_updated_success', 'Тариф "{name}" успешно обновлён!', { name })
+                    : tr('tariffs_created_success', 'Тариф "{name}" успешно создан!', { name }));
             }
         } catch (e) {
             console.error('Save tariff error:', e);
             if (typeof showError === 'function') {
-                showError(`❌ Не удалось сохранить тариф: ${e.message}`);
+                showError(tr('tariffs_save_failed', 'Не удалось сохранить тариф: {message}', { message: e.message }));
             } else {
-                alert(`Не удалось сохранить тариф: ${e.message}`);
+                alert(tr('tariffs_save_failed', 'Не удалось сохранить тариф: {message}', { message: e.message }));
             }
         }
     }
@@ -1420,7 +1445,7 @@
         // Используем модальное окно приложения вместо браузерного confirm
         if (typeof showConfirm === 'function') {
             showConfirm(
-                `Вы уверены, что хотите удалить тариф "${tariff.name}"?`,
+                tr('tariffs_delete_confirm', 'Вы уверены, что хотите удалить тариф "{name}"?', { name: tariff.name }),
                 async (confirmed) => {
                     // Удаление происходит ТОЛЬКО если confirmed === true (нажата кнопка OK)
                     if (confirmed === true) {
@@ -1435,7 +1460,7 @@
             );
         } else {
             // Fallback на браузерный confirm, если showConfirm недоступен
-            if (confirm(`Вы уверены, что хотите удалить тариф "${tariff.name}"?`)) {
+            if (confirm(tr('tariffs_delete_confirm', 'Вы уверены, что хотите удалить тариф "{name}"?', { name: tariff.name }))) {
                 await performDeleteTariff(tariffId, wasEditing);
             }
         }
@@ -1465,16 +1490,16 @@
             await loadTariffs();
 
             if (typeof showSuccess === 'function') {
-                showSuccess('Тариф успешно удален!');
+                showSuccess(t('tariffs_deleted_success', 'Тариф успешно удален!'));
             } else {
-                alert('Тариф успешно удален!');
+                alert(t('tariffs_deleted_success', 'Тариф успешно удален!'));
             }
         } catch (e) {
             console.error('Delete tariff error:', e);
             if (typeof showError === 'function') {
-                showError('❌ Не удалось удалить тариф');
+                showError(t('tariffs_delete_failed', 'Не удалось удалить тариф'));
             } else {
-                alert('Не удалось удалить тариф');
+                alert(t('tariffs_delete_failed', 'Не удалось удалить тариф'));
             }
         }
     }
@@ -1487,7 +1512,7 @@
         // Загружаем полные данные тарифа из API
         try {
             let resp = await fetch(`${API_BASE}/api/tariffs/${tariffId}`, { credentials: 'include' });
-            if (!resp.ok) throw new Error('Failed to load tariff');
+            if (!resp.ok) throw new Error(t('tariffs_load_single_failed', 'Не удалось загрузить тариф'));
             const fullTariff = await resp.json();
 
             // Заполняем форму данными тарифа
@@ -1544,23 +1569,23 @@
                     stepRow.classList.add('rent-row');
                     stepRow.innerHTML = `
                             <div class="step-input-group" style="display: none;">
-                                <label>ОТ (вкл.)</label>
+                                <label>${t('tariffs_step_from', 'ОТ (вкл.)')}</label>
                                 <input type="number" value="${step.from_value || 0}" min="0" step="0.01">
                             </div>
                             <div class="step-input-group" style="display: none;">
-                                <label>ДО (искл.)</label>
-                                <input type="text" value="${step.to_value === null ? '∞' : step.to_value}" placeholder="∞ для бесконечности">
+                                <label>${t('tariffs_step_to', 'ДО (искл.)')}</label>
+                                <input type="text" value="${step.to_value === null ? '∞' : step.to_value}" placeholder="${t('tariffs_step_infinity_placeholder', '∞ для бесконечности')}">
                             </div>
                             <div class="step-input-group">
-                                <label>Ед. изм.</label>
+                                <label>${t('tariffs_step_unit', 'Ед. изм.')}</label>
                                 <input type="text" value="${unit}" class="unit-chip" readonly>
                             </div>
                             <div class="step-input-group">
-                                <label>Цена</label>
+                                <label>${t('amount', 'Цена')}</label>
                                 <input type="number" value="${step.price || 0}" step="any" min="0" required>
                             </div>
                             <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
-                                <i class="bi bi-trash"></i> Удалить
+                                <i class="bi bi-trash"></i> ${t('action_delete', 'Удалить')}
                             </button>
                         `;
                 } else if (isConstruction) {
@@ -1569,46 +1594,46 @@
                     const toDate = step.to_date ? step.to_date.split('T')[0] : '';
                     stepRow.innerHTML = `
                             <div class="step-input-group">
-                                <label>Дата от</label>
+                                <label>${t('tariffs_date_from', 'Дата от')}</label>
                                 <input type="date" value="${fromDate}" required>
                             </div>
                             <div class="step-input-group">
-                                <label>Дата до</label>
+                                <label>${t('tariffs_date_to', 'Дата до')}</label>
                                 <input type="date" value="${toDate}" required>
                             </div>
                             <div class="step-input-group">
-                                <label>Ед. изм.</label>
+                                <label>${t('tariffs_step_unit', 'Ед. изм.')}</label>
                                 <input type="text" value="${unit}" class="unit-chip" readonly>
                             </div>
                             <div class="step-input-group">
-                                <label>Цена</label>
+                                <label>${t('amount', 'Цена')}</label>
                                 <input type="number" value="${step.price || 0}" step="any" min="0" required>
                             </div>
                             <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
-                                <i class="bi bi-trash"></i> Удалить
+                                <i class="bi bi-trash"></i> ${t('action_delete', 'Удалить')}
                             </button>
                         `;
                 } else {
                     // Для остальных - числа
                     stepRow.innerHTML = `
                             <div class="step-input-group">
-                                <label>ОТ (вкл.)</label>
+                                <label>${t('tariffs_step_from', 'ОТ (вкл.)')}</label>
                                 <input type="number" value="${step.from_value || 0}" min="0" step="0.01">
                             </div>
                             <div class="step-input-group">
-                                <label>ДО (искл.)</label>
-                                <input type="text" value="${step.to_value === null ? '∞' : step.to_value}" placeholder="∞ для бесконечности">
+                                <label>${t('tariffs_step_to', 'ДО (искл.)')}</label>
+                                <input type="text" value="${step.to_value === null ? '∞' : step.to_value}" placeholder="${t('tariffs_step_infinity_placeholder', '∞ для бесконечности')}">
                             </div>
                             <div class="step-input-group">
-                                <label>Ед. изм.</label>
+                                <label>${t('tariffs_step_unit', 'Ед. изм.')}</label>
                                 <input type="text" value="${unit}" class="unit-chip" readonly>
                             </div>
                             <div class="step-input-group">
-                                <label>Цена</label>
+                                <label>${t('amount', 'Цена')}</label>
                                 <input type="number" value="${step.price || 0}" step="any" min="0" required>
                             </div>
                             <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
-                                <i class="bi bi-trash"></i> Удалить
+                                <i class="bi bi-trash"></i> ${t('action_delete', 'Удалить')}
                             </button>
                         `;
                 }
@@ -1625,13 +1650,13 @@
             // Меняем заголовок модального окна
             const modalTitle = document.querySelector('#createTariffModal .modal-header h2');
             if (modalTitle) {
-                modalTitle.textContent = 'Редактировать тариф';
+                modalTitle.textContent = t('tariffs_modal_edit_title', 'Редактировать тариф');
             }
 
             // Меняем текст кнопки
             const submitBtn = document.querySelector('#createTariffForm button[type="submit"]');
             if (submitBtn) {
-                submitBtn.textContent = 'Сохранить';
+                submitBtn.textContent = t('save', 'Сохранить');
             }
 
             // Открываем модальное окно
@@ -1639,9 +1664,9 @@
         } catch (e) {
             console.error('Load tariff error:', e);
             if (typeof showError === 'function') {
-                showError('❌ Не удалось загрузить тариф');
+                showError(t('tariffs_load_single_failed', 'Не удалось загрузить тариф'));
             } else {
-                alert('Не удалось загрузить тариф');
+                alert(t('tariffs_load_single_failed', 'Не удалось загрузить тариф'));
             }
         }
     };
@@ -1766,4 +1791,20 @@
             }, 200);
         };
     }
+
+    window.refreshPageTranslations = function () {
+        if (!window.location.hash.includes('/tariffs')) return;
+        updateTariffPurposeSummary();
+        renderTariffsTable(tariffsData || []);
+        const modalTitle = document.querySelector('#createTariffModal .modal-header h2');
+        const submitBtn = document.querySelector('#createTariffForm button[type="submit"]');
+        if (modalTitle) {
+            modalTitle.textContent = editingTariffId
+                ? t('tariffs_modal_edit_title', 'Редактировать тариф')
+                : t('tariffs_modal_create_title', 'Создать тариф');
+        }
+        if (submitBtn) {
+            submitBtn.textContent = editingTariffId ? t('save', 'Сохранить') : t('tariffs_create_button', 'Создать');
+        }
+    };
 </script>

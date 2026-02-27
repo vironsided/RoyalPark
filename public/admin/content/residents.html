@@ -1,73 +1,73 @@
 <link rel="stylesheet" href="/admin/content_css/residents.css">
 <div class="content-wrapper">
-                <h2 class="mb-4">Список резидентов (владельцы квартир)</h2>
+                <h2 class="mb-4" data-i18n="residents_page_title">Список резидентов (владельцы квартир)</h2>
                 
                 <!-- Filters -->
                 <div class="filters-container">
                     <div class="filters-row">
                         <div class="filter-group">
-                            <label>Блок</label>
+                            <label data-i18n="residents_filter_block">Блок</label>
                             <select id="filterBlock">
-                                <option value="all">Все</option>
+                                <option value="all" data-i18n="all">Все</option>
                             </select>
                         </div>
                         
                         <div class="filter-group">
-                            <label>Номер дома</label>
-                            <input type="text" id="filterHouse" placeholder="Например, 205 или 101-105">
+                            <label data-i18n="residents_filter_house">Номер дома</label>
+                            <input type="text" id="filterHouse" placeholder="Например, 205 или 101-105" data-i18n-placeholder="residents_filter_house_placeholder">
                         </div>
                     </div>
 
                     <div class="filters-row">
                         <div class="filter-group">
-                            <label>Статус</label>
+                            <label data-i18n="residents_filter_status">Статус</label>
                             <select id="filterStatus">
-                                <option value="all">Все</option>
-                                <option value="ACTIVE">Активен</option>
-                                <option value="INACTIVE">Не активен</option>
+                                <option value="all" data-i18n="all">Все</option>
+                                <option value="ACTIVE" data-i18n="status_active">Активен</option>
+                                <option value="INACTIVE" data-i18n="status_inactive">Не активен</option>
                             </select>
                         </div>
                         
                         <div class="filter-group">
-                            <label>Тип</label>
+                            <label data-i18n="residents_filter_type">Тип</label>
                             <select id="filterType">
-                                <option value="all">Все</option>
-                                <option value="OWNER">Частный дом</option>
-                                <option value="TENANT">Арендатор</option>
-                                <option value="SUBTENANT">Субарендатор</option>
-                                <option value="OFFICE">Офис</option>
+                                <option value="all" data-i18n="all">Все</option>
+                                <option value="OWNER" data-i18n="residents_type_owner">Частный дом</option>
+                                <option value="TENANT" data-i18n="residents_type_tenant">Арендатор</option>
+                                <option value="SUBTENANT" data-i18n="residents_type_subtenant">Субарендатор</option>
+                                <option value="OFFICE" data-i18n="residents_type_office">Офис</option>
                             </select>
                         </div>
                     </div>
                     
                     <div class="filters-actions">
                         <button class="btn btn-outline-secondary" onclick="applyFilters()">
-                            <i class="bi bi-funnel"></i> Фильтр
+                            <i class="bi bi-funnel"></i> <span data-i18n="user_resident_filter_btn">Фильтр</span>
                         </button>
                         <button class="btn btn-outline-warning" onclick="clearFilters()">
-                            <i class="bi bi-x-circle"></i> Очистить
+                            <i class="bi bi-x-circle"></i> <span data-i18n="reset">Очистить</span>
                         </button>
                         <select id="residentExportFormat" class="form-select form-select-sm" style="max-width: 170px;">
-                            <option value="xls">Excel (Styled)</option>
-                            <option value="pdf">PDF (печать)</option>
+                            <option value="xls" data-i18n="residents_export_excel_styled">Excel (Styled)</option>
+                            <option value="pdf" data-i18n="residents_export_pdf_print">PDF (печать)</option>
                         </select>
                         <select id="exportCustomerType" class="form-select form-select-sm" style="max-width: 190px;">
-                            <option value="all">Клиент: все</option>
-                            <option value="INDIVIDUAL">Клиент: физ. лицо</option>
-                            <option value="LEGAL">Клиент: юр. лицо</option>
+                            <option value="all" data-i18n="residents_export_customer_all">Клиент: все</option>
+                            <option value="INDIVIDUAL" data-i18n="residents_export_customer_individual">Клиент: физ. лицо</option>
+                            <option value="LEGAL" data-i18n="residents_export_customer_legal">Клиент: юр. лицо</option>
                         </select>
                         <select id="exportContactsFilter" class="form-select form-select-sm" style="max-width: 210px;">
-                            <option value="all">Контакты: все</option>
-                            <option value="has_phone">Только с телефоном</option>
-                            <option value="has_email">Только с email</option>
-                            <option value="has_any">Только с контактами</option>
-                            <option value="no_contacts">Без контактов</option>
+                            <option value="all" data-i18n="residents_export_contacts_all">Контакты: все</option>
+                            <option value="has_phone" data-i18n="residents_export_contacts_phone">Только с телефоном</option>
+                            <option value="has_email" data-i18n="residents_export_contacts_email">Только с email</option>
+                            <option value="has_any" data-i18n="residents_export_contacts_any">Только с контактами</option>
+                            <option value="no_contacts" data-i18n="residents_export_contacts_none">Без контактов</option>
                         </select>
                         <button class="btn btn-success" type="button" onclick="exportResidents()">
-                            <i class="bi bi-box-arrow-down"></i> Экспорт
+                            <i class="bi bi-box-arrow-down"></i> <span data-i18n="export">Экспорт</span>
                         </button>
                         <button class="btn btn-primary" onclick="openCreateModal()">
-                            <i class="bi bi-plus-lg"></i> Создать
+                            <i class="bi bi-plus-lg"></i> <span data-i18n="create">Создать</span>
                         </button>
                     </div>
                 </div>
@@ -75,7 +75,7 @@
                 <div>
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h3>Резиденты</h3>
+                            <h3 data-i18n="nav_residents">Резиденты</h3>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -83,15 +83,15 @@
                                     <thead>
                                         <tr>
                                             <th>ID</th>
-                                            <th>Блок</th>
-                                            <th>Дом/№</th>
-                                            <th>Тип</th>
-                                            <th>Клиент</th>
-                                            <th>ФИО</th>
-                                            <th>Статус</th>
-                                            <th>Контакты</th>
-                                            <th>Счётчики</th>
-                                            <th class="text-center">Действия</th>
+                                            <th data-i18n="residents_col_block">Блок</th>
+                                            <th data-i18n="residents_col_house">Дом/№</th>
+                                            <th data-i18n="residents_col_type">Тип</th>
+                                            <th data-i18n="residents_col_customer">Клиент</th>
+                                            <th data-i18n="residents_col_name">ФИО</th>
+                                            <th data-i18n="residents_filter_status">Статус</th>
+                                            <th data-i18n="residents_col_contacts">Контакты</th>
+                                            <th data-i18n="residents_col_meters">Счётчики</th>
+                                            <th class="text-center" data-i18n="tariffs_col_actions">Действия</th>
                                         </tr>
                                     </thead>
                                     <tbody id="residentsTableBody">
@@ -112,11 +112,11 @@
                                                                             </button>
                                                                         </div>
                                                                         <div class="pagination-info">
-                                                                            <span>Стр. <span id="residentCurrentPage">1</span> из <span id="residentTotalPages">1</span> · всего <span id="residentTotalItems">0</span></span>
+                                                                            <span><span data-i18n="residents_pagination_page_short">Стр.</span> <span id="residentCurrentPage">1</span> <span data-i18n="residents_pagination_of">из</span> <span id="residentTotalPages">1</span> · <span data-i18n="residents_pagination_total">всего</span> <span id="residentTotalItems">0</span></span>
                                                                         </div>
                                                                         <div class="pagination-per-page">
-                                                                            <span>На</span>
-                                                                            <span>странице:</span>
+                                                                            <span data-i18n="residents_pagination_on">На</span>
+                                                                            <span data-i18n="residents_pagination_per_page">странице:</span>
                                                                             <div class="custom-pag-select" id="customResidentItemsPerPage">
                                                                                 <select id="residentItemsPerPage" onchange="changeResidentItemsPerPage()" style="display: none;">
                                                                                     <option value="10">10</option>
@@ -147,7 +147,7 @@
     <div class="modal-overlay" id="createResidentModal">
         <div class="modal-content">
                 <div class="modal-header">
-                    <h2 id="residentModalTitle">Создать резидента</h2>
+                    <h2 id="residentModalTitle" data-i18n="residents_modal_create_title">Создать резидента</h2>
                 <button class="modal-close" onclick="closeCreateModal()">
                     <i class="bi bi-x-lg"></i>
                 </button>
@@ -158,7 +158,7 @@
                 <div class="form-section">
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Блок</label>
+                            <label data-i18n="residents_filter_block">Блок</label>
                             <select id="residentBlock" required>
                                 <option value="A">A</option>
                                 <option value="B">B</option>
@@ -169,35 +169,35 @@
                         </div>
                         
                         <div class="form-group">
-                            <label>№ резидента/дома в блоке</label>
+                            <label data-i18n="residents_modal_unit_label">№ резидента/дома в блоке</label>
                             <input type="text" id="residentNumber" required>
                         </div>
                     </div>
                     
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Статус</label>
+                            <label data-i18n="residents_filter_status">Статус</label>
                             <select id="residentStatus" required>
-                                <option value="ACTIVE" selected>Активен</option>
-                                <option value="INACTIVE">Не активен</option>
+                                <option value="ACTIVE" selected data-i18n="status_active">Активен</option>
+                                <option value="INACTIVE" data-i18n="status_inactive">Не активен</option>
                             </select>
                         </div>
                         
                         <div class="form-group">
-                            <label>Тип</label>
+                            <label data-i18n="residents_filter_type">Тип</label>
                             <select id="residentType" required>
-                                <option value="OWNER" selected>Частный дом</option>
-                                <option value="TENANT">Арендатор</option>
-                                <option value="SUBTENANT">Субарендатор</option>
-                                <option value="OFFICE">Офис</option>
+                                <option value="OWNER" selected data-i18n="residents_type_owner">Частный дом</option>
+                                <option value="TENANT" data-i18n="residents_type_tenant">Арендатор</option>
+                                <option value="SUBTENANT" data-i18n="residents_type_subtenant">Субарендатор</option>
+                                <option value="OFFICE" data-i18n="residents_type_office">Офис</option>
                             </select>
                         </div>
                         
                         <div class="form-group">
-                            <label>Оформлено</label>
+                            <label data-i18n="residents_modal_customer_label">Оформлено</label>
                             <select id="residentRegistration" required>
-                                <option value="INDIVIDUAL" selected>Индивидуальный</option>
-                                <option value="LEGAL">Юр. лицо</option>
+                                <option value="INDIVIDUAL" selected data-i18n="tariffs_client_individual">Индивидуальный</option>
+                                <option value="LEGAL" data-i18n="tariffs_client_legal">Юр. лицо</option>
                             </select>
                         </div>
                     </div>
@@ -205,20 +205,20 @@
                 
                 <!-- Personal Information -->
                 <div class="form-section">
-                    <h4>Личная информация</h4>
+                    <h4 data-i18n="residents_personal_info">Личная информация</h4>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>И.Ф.О.</label>
+                            <label data-i18n="residents_col_name">И.Ф.О.</label>
                             <input type="text" id="residentName" required>
                         </div>
                         
                         <div class="form-group">
-                            <label>Телефон</label>
+                            <label data-i18n="phone">Телефон</label>
                             <input type="tel" id="residentPhone" placeholder="+994">
                         </div>
                         
                         <div class="form-group">
-                            <label>E-mail</label>
+                            <label data-i18n="email">E-mail</label>
                             <input type="email" id="residentEmail">
                         </div>
                     </div>
@@ -226,12 +226,12 @@
 
                 <!-- Opening Debt (only on create) -->
                 <div class="form-section" id="residentDebtSection">
-                    <h4>Начальные данные</h4>
+                    <h4 data-i18n="residents_initial_data">Начальные данные</h4>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Долг (на момент запуска системы), ₼</label>
-                            <input type="number" id="residentDebt" min="0" step="0.01" value="0" placeholder="0.00">
-                            <small class="text-muted">Если у резидента уже был долг до внедрения системы — укажите его здесь.</small>
+                            <label data-i18n="residents_debt_label">Долг (на момент запуска системы), ₼</label>
+                            <input type="number" id="residentDebt" min="0" step="0.01" value="0" placeholder="0.00" data-i18n-placeholder="residents_debt_placeholder">
+                            <small class="text-muted" data-i18n="residents_debt_help">Если у резидента уже был долг до внедрения системы — укажите его здесь.</small>
                         </div>
                     </div>
                 </div>
@@ -240,9 +240,9 @@
                 <div class="form-section">
                     <div class="services-section">
                         <div class="services-header">
-                            <h4 style="margin: 0;">Услуги</h4>
+                            <h4 style="margin: 0;" data-i18n="services">Услуги</h4>
                             <button type="button" class="btn btn-sm btn-primary" onclick="addService()">
-                                <i class="bi bi-plus-lg"></i> Добавить услугу
+                                <i class="bi bi-plus-lg"></i> <span data-i18n="residents_add_service">Добавить услугу</span>
                             </button>
                         </div>
                         
@@ -254,10 +254,10 @@
                 
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">
-                        Отмена
+                        <span data-i18n="cancel">Отмена</span>
                     </button>
                     <button type="submit" class="btn btn-primary" id="residentSubmitBtn">
-                        Создать
+                        <span data-i18n="create">Создать</span>
                     </button>
                 </div>
             </form>
@@ -268,23 +268,28 @@
     <div class="modal-overlay" id="deleteResidentModal">
         <div class="modal-content confirmation-modal">
             <div class="modal-header">
-                <h2>Удалить резидента</h2>
+                <h2 data-i18n="residents_delete_title">Удалить резидента</h2>
                 <button class="modal-close" onclick="closeDeleteModal()">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
             <div class="modal-body">
-                <p>Вы уверены, что хотите удалить <strong id="deleteResidentName">этого резидента</strong>? Это действие нельзя отменить.</p>
+                <p><span data-i18n="residents_delete_prompt_prefix">Вы уверены, что хотите удалить</span> <strong id="deleteResidentName">этого резидента</strong>? <span data-i18n="residents_delete_prompt_suffix">Это действие нельзя отменить.</span></p>
             </div>
             <div class="modal-actions">
-                <button class="btn btn-secondary" type="button" onclick="closeDeleteModal()">Отмена</button>
-                <button class="btn btn-danger" type="button" onclick="confirmDeleteResident()">Удалить</button>
+                <button class="btn btn-secondary" type="button" onclick="closeDeleteModal()" data-i18n="cancel">Отмена</button>
+                <button class="btn btn-danger" type="button" onclick="confirmDeleteResident()" data-i18n="action_delete">Удалить</button>
             </div>
         </div>
     </div>
 
 <script>
         const API_BASE = 'http://localhost:8000';
+        const t = (key, fallback = '') => window.i18n?.translate?.(key) || fallback || key;
+        const tr = (key, params = {}, fallback = '') => {
+            const base = t(key, fallback);
+            return Object.entries(params).reduce((txt, [p, v]) => txt.replace(new RegExp(`\\{${p}\\}`, 'g'), String(v)), base);
+        };
         let residents = [];
         let blocks = [];
         let tariffs = [];
@@ -318,7 +323,7 @@
                     // Обновляем фильтр блоков
                     const filterBlock = document.getElementById('filterBlock');
                     if (filterBlock) {
-                        filterBlock.innerHTML = '<option value="all">Все</option>';
+                        filterBlock.innerHTML = `<option value="all">${t('all', 'Все')}</option>`;
                         blocks.forEach(block => {
                             const option = document.createElement('option');
                             option.value = block.id;
@@ -354,7 +359,7 @@
         async function loadResidents() {
             const tbody = document.getElementById('residentsTableBody');
             if (tbody) {
-                tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">Загрузка...</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted">${t('loading', 'Загрузка...')}</td></tr>`;
             }
             
             try {
@@ -412,10 +417,10 @@
             } catch (e) {
                 console.error('Error loading residents:', e);
                 if (tbody) {
-                    tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Ошибка загрузки данных</td></tr>';
+                    tbody.innerHTML = `<tr><td colspan="10" class="text-center text-danger">${t('residents_error_load_data', 'Ошибка загрузки данных')}</td></tr>`;
                 }
                 if (typeof showError === 'function') {
-                    showError('Ошибка загрузки резидентов: ' + e.message);
+                    showError(`${t('residents_error_load', 'Ошибка загрузки резидентов')}: ${e.message}`);
                 }
             }
         }
@@ -431,7 +436,7 @@
             do {
                 params.set('page', String(page));
                 const resp = await fetch(`${API_BASE}/api/residents?${params.toString()}`, { credentials: 'include' });
-                if (!resp.ok) throw new Error(`Ошибка загрузки резидентов: ${resp.status}`);
+                if (!resp.ok) throw new Error(`${t('residents_error_load', 'Ошибка загрузки резидентов')}: ${resp.status}`);
                 const data = await resp.json();
                 const items = Array.isArray(data?.items) ? data.items : [];
                 out.push(...items);
@@ -523,13 +528,13 @@
 
         function meterTypeLabel(meterType) {
             const map = {
-                ELECTRIC: 'Электричество',
-                GAS: 'Газ',
-                WATER: 'Вода',
-                SEWERAGE: 'Канализация',
-                SERVICE: 'Сервис',
-                RENT: 'Аренда',
-                CONSTRUCTION: 'Строительство',
+                ELECTRIC: t('meter_electricity', 'Электричество'),
+                GAS: t('meter_gas', 'Газ'),
+                WATER: t('meter_cold_water', 'Вода'),
+                SEWERAGE: t('residents_meter_sewerage', 'Канализация'),
+                SERVICE: t('tariffs_purpose_service', 'Сервис'),
+                RENT: t('tariffs_purpose_rent', 'Аренда'),
+                CONSTRUCTION: t('tariffs_purpose_construction', 'Строительство'),
             };
             return map[String(meterType || '').toUpperCase()] || String(meterType || '—');
         }
@@ -558,17 +563,27 @@
         }
 
         function toResidentTypeText(v) {
-            const map = { OWNER: 'Собственник', TENANT: 'Арендатор', SUBTENANT: 'Субарендатор', OFFICE: 'Офис' };
+            const map = {
+                OWNER: t('residents_type_owner_full', 'Собственник'),
+                TENANT: t('residents_type_tenant', 'Арендатор'),
+                SUBTENANT: t('residents_type_subtenant', 'Субарендатор'),
+                OFFICE: t('residents_type_office', 'Офис')
+            };
             return map[String(v || '').toUpperCase()] || (v || '—');
         }
 
         function toCustomerTypeText(v) {
-            const map = { INDIVIDUAL: 'Физ. лицо', LEGAL: 'Юр. лицо' };
+            const map = {
+                INDIVIDUAL: t('residents_customer_individual_short', 'Физ. лицо'),
+                LEGAL: t('residents_customer_legal_short', 'Юр. лицо')
+            };
             return map[String(v || '').toUpperCase()] || (v || '—');
         }
 
         function toStatusText(v) {
-            return String(v || '').toUpperCase() === 'ACTIVE' ? 'Активен' : 'Не активен';
+            return String(v || '').toUpperCase() === 'ACTIVE'
+                ? t('status_active', 'Активен')
+                : t('status_inactive', 'Не активен');
         }
 
         function buildResidentFiltersText(filters) {
@@ -577,16 +592,16 @@
             const status = document.getElementById('filterStatus');
             const type = document.getElementById('filterType');
             const house = document.getElementById('filterHouse')?.value?.trim();
-            if (block?.value && block.value !== 'all') chunks.push(`Блок: ${block.options[block.selectedIndex]?.text || block.value}`);
-            if (status?.value && status.value !== 'all') chunks.push(`Статус: ${status.options[status.selectedIndex]?.text || status.value}`);
-            if (type?.value && type.value !== 'all') chunks.push(`Тип: ${type.options[type.selectedIndex]?.text || type.value}`);
-            if (house) chunks.push(`Дом/№: ${house}`);
+            if (block?.value && block.value !== 'all') chunks.push(`${t('residents_filter_block', 'Блок')}: ${block.options[block.selectedIndex]?.text || block.value}`);
+            if (status?.value && status.value !== 'all') chunks.push(`${t('residents_filter_status', 'Статус')}: ${status.options[status.selectedIndex]?.text || status.value}`);
+            if (type?.value && type.value !== 'all') chunks.push(`${t('residents_filter_type', 'Тип')}: ${type.options[type.selectedIndex]?.text || type.value}`);
+            if (house) chunks.push(`${t('residents_col_house', 'Дом/№')}: ${house}`);
 
             const customerSelect = document.getElementById('exportCustomerType');
             const contactsSelect = document.getElementById('exportContactsFilter');
             if (filters.customerType !== 'all') chunks.push(customerSelect?.options[customerSelect.selectedIndex]?.text || filters.customerType);
             if (filters.contacts !== 'all') chunks.push(contactsSelect?.options[contactsSelect.selectedIndex]?.text || filters.contacts);
-            return chunks.length ? chunks.join(' | ') : 'Без фильтров';
+            return chunks.length ? chunks.join(' | ') : t('residents_filters_none', 'Без фильтров');
         }
 
         function exportResidentsToStyledExcel(rows, filtersText) {
@@ -636,29 +651,29 @@
                 </head>
                 <body>
                     <table class="title-table">
-                        <tr><td class="title-cell"><div class="title-main">Отчет по резидентам</div><div class="title-sub">Royal Park - Экспорт для учета</div></td></tr>
+                        <tr><td class="title-cell"><div class="title-main">${t('residents_export_report_title', 'Отчет по резидентам')}</div><div class="title-sub">${t('residents_export_report_subtitle', 'Royal Park - Экспорт для учета')}</div></td></tr>
                     </table>
                     <table class="meta">
-                        <tr><td>Сформировано</td><td>${esc(new Date().toLocaleString())}</td></tr>
-                        <tr><td>Фильтры</td><td>${esc(filtersText)}</td></tr>
-                        <tr><td>Количество резидентов</td><td>${esc(rows.length)}</td></tr>
+                        <tr><td>${t('tariffs_export_generated', 'Сформировано')}</td><td>${esc(new Date().toLocaleString())}</td></tr>
+                        <tr><td>${t('tariffs_export_filters', 'Фильтры')}</td><td>${esc(filtersText)}</td></tr>
+                        <tr><td>${t('residents_export_count', 'Количество резидентов')}</td><td>${esc(rows.length)}</td></tr>
                     </table>
                     <table class="data">
                         <thead>
                             <tr>
-                                <th>Блок</th>
-                                <th>Дом/№</th>
-                                <th>Тип</th>
-                                <th>Клиент</th>
-                                <th>ФИО</th>
-                                <th>Статус</th>
-                                <th>Телефон</th>
+                                <th>${t('residents_col_block', 'Блок')}</th>
+                                <th>${t('residents_col_house', 'Дом/№')}</th>
+                                <th>${t('residents_col_type', 'Тип')}</th>
+                                <th>${t('residents_col_customer', 'Клиент')}</th>
+                                <th>${t('residents_col_name', 'ФИО')}</th>
+                                <th>${t('residents_filter_status', 'Статус')}</th>
+                                <th>${t('phone', 'Телефон')}</th>
                                 <th>Email</th>
-                                <th>Счётчики (активные)</th>
+                                <th>${t('residents_col_meters_active', 'Счётчики (активные)')}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${bodyRows || '<tr><td colspan="9">Нет данных</td></tr>'}
+                            ${bodyRows || `<tr><td colspan="9">${t('tariffs_no_data', 'Нет данных')}</td></tr>`}
                         </tbody>
                     </table>
                 </body>
@@ -693,7 +708,7 @@
                 </tr>
             `).join('');
             const html = `
-                <html><head><title>Экспорт резидентов</title>
+                <html><head><title>${t('residents_export_title', 'Экспорт резидентов')}</title>
                 <style>
                     body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
                     h2 { margin: 0 0 8px; }
@@ -703,15 +718,15 @@
                     th { background: #f3f4f6; }
                 </style></head>
                 <body>
-                    <h2>Отчет по резидентам</h2>
-                    <p><strong>Сформировано:</strong> ${esc(new Date().toLocaleString())}</p>
-                    <p><strong>Фильтры:</strong> ${esc(filtersText)}</p>
-                    <p><strong>Количество:</strong> ${rows.length}</p>
+                    <h2>${t('residents_export_report_title', 'Отчет по резидентам')}</h2>
+                    <p><strong>${t('tariffs_export_generated', 'Сформировано')}:</strong> ${esc(new Date().toLocaleString())}</p>
+                    <p><strong>${t('tariffs_export_filters', 'Фильтры')}:</strong> ${esc(filtersText)}</p>
+                    <p><strong>${t('tariffs_export_count', 'Количество')}:</strong> ${rows.length}</p>
                     <table>
                         <thead>
-                            <tr><th>Блок</th><th>Дом/№</th><th>Тип</th><th>Клиент</th><th>ФИО</th><th>Статус</th><th>Телефон</th><th>Email</th><th>Счётчики</th></tr>
+                            <tr><th>${t('residents_col_block', 'Блок')}</th><th>${t('residents_col_house', 'Дом/№')}</th><th>${t('residents_col_type', 'Тип')}</th><th>${t('residents_col_customer', 'Клиент')}</th><th>${t('residents_col_name', 'ФИО')}</th><th>${t('residents_filter_status', 'Статус')}</th><th>${t('phone', 'Телефон')}</th><th>Email</th><th>${t('residents_col_meters', 'Счётчики')}</th></tr>
                         </thead>
-                        <tbody>${tableRows || '<tr><td colspan="9">Нет данных</td></tr>'}</tbody>
+                        <tbody>${tableRows || `<tr><td colspan="9">${t('tariffs_no_data', 'Нет данных')}</td></tr>`}</tbody>
                     </table>
                 </body></html>
             `;
@@ -728,7 +743,7 @@
             const doc = iframe.contentWindow?.document;
             if (!doc || !iframe.contentWindow) {
                 iframe.remove();
-                throw new Error('Не удалось подготовить печать.');
+                throw new Error(t('residents_export_print_prepare_error', 'Не удалось подготовить печать.'));
             }
             doc.open();
             doc.write(html);
@@ -743,7 +758,7 @@
             const format = document.getElementById('residentExportFormat')?.value || 'xls';
             if (exportBtn) {
                 exportBtn.disabled = true;
-                exportBtn.textContent = 'Экспорт...';
+                exportBtn.textContent = t('tariffs_export_in_progress', 'Экспорт...');
             }
             try {
                 const allItems = await fetchAllResidentsForExport();
@@ -753,7 +768,7 @@
                     .filter((r) => residentMatchesMainFilters(r, mainFilters))
                     .filter((r) => residentMatchesExportFilters(r, exportFilters));
                 if (!filtered.length) {
-                    if (typeof showWarning === 'function') showWarning('Нет данных для экспорта по выбранным фильтрам.');
+                    if (typeof showWarning === 'function') showWarning(t('tariffs_export_no_data', 'Нет данных для экспорта по выбранным фильтрам.'));
                     return;
                 }
                 const rows = buildResidentExportRows(filtered);
@@ -763,14 +778,14 @@
                 } else {
                     exportResidentsToStyledExcel(rows, filtersText);
                 }
-                if (typeof showSuccess === 'function') showSuccess('Экспорт выполнен.');
+                if (typeof showSuccess === 'function') showSuccess(t('export_completed', 'Экспорт выполнен.'));
             } catch (e) {
                 console.error('Residents export error:', e);
-                if (typeof showError === 'function') showError('Ошибка экспорта: ' + e.message);
+                if (typeof showError === 'function') showError(`${t('residents_export_error', 'Ошибка экспорта')}: ${e.message}`);
             } finally {
                 if (exportBtn) {
                     exportBtn.disabled = false;
-                    exportBtn.innerHTML = '<i class="bi bi-box-arrow-down"></i> Экспорт';
+                    exportBtn.innerHTML = `<i class="bi bi-box-arrow-down"></i> ${t('export', 'Экспорт')}`;
                 }
             }
         };
@@ -783,7 +798,7 @@
             tbody.innerHTML = '';
             
             if (residents.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">Нет резидентов</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted">${t('residents_empty', 'Нет резидентов')}</td></tr>`;
                 return;
             }
             
@@ -792,40 +807,40 @@
                 
                 // Маппинг типов резидента
                 const residentTypeMap = {
-                    'OWNER': { text: 'Собственник', class: 'bg-success' },
-                    'TENANT': { text: 'Арендатор', class: 'bg-warning' },
-                    'SUBTENANT': { text: 'Субарендатор', class: 'bg-info' },
-                    'OFFICE': { text: 'Офис', class: 'bg-primary' }
+                    'OWNER': { text: t('residents_type_owner_full', 'Собственник'), class: 'bg-success' },
+                    'TENANT': { text: t('residents_type_tenant', 'Арендатор'), class: 'bg-warning' },
+                    'SUBTENANT': { text: t('residents_type_subtenant', 'Субарендатор'), class: 'bg-info' },
+                    'OFFICE': { text: t('residents_type_office', 'Офис'), class: 'bg-primary' }
                 };
                 const residentTypeInfo = residentTypeMap[resident.resident_type] || { text: resident.resident_type, class: 'bg-secondary' };
                 const residentTypeBadge = `<span class="badge ${residentTypeInfo.class}">${residentTypeInfo.text}</span>`;
                 
                 // Маппинг типа клиента
                 const customerTypeBadge = resident.customer_type === 'INDIVIDUAL' 
-                    ? '<span class="badge bg-success">Физ. лицо</span>'
-                    : '<span class="badge bg-primary">Юр. лицо</span>';
+                    ? `<span class="badge bg-success">${t('residents_customer_individual_short', 'Физ. лицо')}</span>`
+                    : `<span class="badge bg-primary">${t('residents_customer_legal_short', 'Юр. лицо')}</span>`;
                 
                 const statusBadge = resident.status === 'ACTIVE'
-                    ? '<span class="badge bg-success">Активен</span>'
-                    : '<span class="badge bg-secondary">Не активен</span>';
+                    ? `<span class="badge bg-success">${t('status_active', 'Активен')}</span>`
+                    : `<span class="badge bg-secondary">${t('status_inactive', 'Не активен')}</span>`;
                 
                 // Счётчики
                 // Показываем только активные счётчики в таблице
                 const activeMeters = resident.meters.filter(m => m.is_active !== false);
                 const metersHtml = activeMeters.map(m => {
                     const meterTypeMap = {
-                        'ELECTRIC': 'Эл',
-                        'GAS': 'Газ',
-                        'WATER': 'Вод',
-                        'SEWERAGE': 'Кан',
-                        'SERVICE': 'SERVICE',
-                        'RENT': 'RENT',
-                        'CONSTRUCTION': 'CONSTRUCTION'
+                        'ELECTRIC': t('residents_meter_short_electricity', 'Эл'),
+                        'GAS': t('residents_meter_short_gas', 'Газ'),
+                        'WATER': t('residents_meter_short_water', 'Вод'),
+                        'SEWERAGE': t('residents_meter_short_sewerage', 'Кан'),
+                        'SERVICE': t('tariffs_purpose_service', 'Сервис'),
+                        'RENT': t('tariffs_purpose_rent', 'Аренда'),
+                        'CONSTRUCTION': t('tariffs_purpose_construction', 'Строительство')
                     };
                     const meterTypeLabel = meterTypeMap[m.meter_type] || m.meter_type;
-                    const tariffName = m.tariff_name ? ` тариф: ${m.tariff_name}` : '';
+                    const tariffName = m.tariff_name ? ` ${t('residents_meter_tariff_prefix', 'тариф')}: ${m.tariff_name}` : '';
                     return `<span class="badge bg-info">${meterTypeLabel}:${tariffName}</span>`;
-                }).join(' ') || '<span class="text-muted">Нет</span>';
+                }).join(' ') || `<span class="text-muted">${t('residents_no', 'Нет')}</span>`;
                 
                 row.innerHTML = `
                     <td>${resident.id}</td>
@@ -843,11 +858,11 @@
                     <td class="text-center actions-column">
                         <button class="btn btn-sm btn-outline-primary"
                             onclick="openEditResident(${resident.id})">
-                            Редактировать
+                            ${t('action_edit', 'Редактировать')}
                         </button>
                         <button class="btn btn-sm btn-outline-danger"
-                            onclick="openDeleteModal(${resident.id}, '${(resident.owner_full_name || 'Резидент').replace(/'/g, "\\'")}')">
-                            Удалить
+                            onclick="openDeleteModal(${resident.id}, '${(resident.owner_full_name || t('resident', 'Резидент')).replace(/'/g, "\\'")}')">
+                            ${t('action_delete', 'Удалить')}
                         </button>
                     </td>
                 `;
@@ -968,7 +983,7 @@
             paginationState.currentPage = 1;
             await loadResidents();
             if (typeof showSuccess === 'function') {
-            showSuccess('Фильтры применены!');
+            showSuccess(t('filters_applied', 'Фильтры применены!'));
             }
         }
         
@@ -980,7 +995,7 @@
             paginationState.currentPage = 1;
             await loadResidents();
             if (typeof showSuccess === 'function') {
-                showSuccess('Фильтры очищены!');
+                showSuccess(t('filters_reset', 'Фильтры очищены!'));
             }
         };
         
@@ -996,13 +1011,13 @@
             }
             
             if (mode === 'edit') {
-                titleEl.textContent = 'Редактировать резидента';
-                submitBtn.textContent = 'Сохранить';
+                titleEl.textContent = t('residents_modal_edit_title', 'Редактировать резидента');
+                submitBtn.textContent = t('save', 'Сохранить');
                 // Долг можно редактировать тоже
                 if (debtSection) debtSection.style.display = '';
             } else {
-                titleEl.textContent = 'Создать резидента';
-                submitBtn.textContent = 'Создать';
+                titleEl.textContent = t('residents_modal_create_title', 'Создать резидента');
+                submitBtn.textContent = t('create', 'Создать');
                 if (debtSection) debtSection.style.display = '';
             }
         }
@@ -1105,7 +1120,7 @@
                 // Загружаем данные резидента из API
                 let resp = await fetch(`${API_BASE}/api/residents/${residentId}`, { credentials: 'include' });
                 if (!resp.ok) {
-                    throw new Error('Failed to load resident');
+                    throw new Error(t('residents_error_load_single', 'Не удалось загрузить резидента'));
                 }
                 const resident = await resp.json();
                 console.log('Loaded resident data:', resident);
@@ -1253,7 +1268,7 @@
             } catch (e) {
                 console.error('Error loading resident:', e);
                 if (typeof showError === 'function') {
-                    showError('Ошибка загрузки резидента: ' + e.message);
+                    showError(`${t('residents_error_load_single', 'Ошибка загрузки резидента')}: ${e.message}`);
                 }
             } finally {
                 isLoadingResident = false;
@@ -1295,7 +1310,7 @@
         function openDeleteModal(residentId, residentName) {
             pendingDelete = {
                 id: residentId,
-                name: residentName || 'резидента'
+                name: residentName || t('residents_delete_target_fallback', 'резидента')
             };
             
             document.getElementById('deleteResidentName').textContent = pendingDelete.name;
@@ -1417,12 +1432,12 @@
             const availableTariffs = tariffs.filter(t => t.meter_type === apiMeterType && t.is_active);
             const selectedTariffObj = tariffs.find(t => t.id === tariffId);
             
-            let tariffSelectHtml = '<option value="">Выберите тариф</option>';
+            let tariffSelectHtml = `<option value="">${t('tariffs_form_tariff_placeholder', 'Выберите тариф')}</option>`;
             
             // Если у редактируемого счётчика выбран архивный тариф — покажем его как выбранный вариант,
             // но не будем предлагать архивные тарифы для выбора.
             if (tariffId && selectedTariffObj && !selectedTariffObj.is_active) {
-                tariffSelectHtml += `<option value="${selectedTariffObj.id}" selected>${selectedTariffObj.name} (архив)</option>`;
+                tariffSelectHtml += `<option value="${selectedTariffObj.id}" selected>${selectedTariffObj.name} (${t('residents_tariff_archived', 'архив')})</option>`;
             }
             
             availableTariffs.forEach(tariff => {
@@ -1431,7 +1446,7 @@
             
             // Получаем единицу измерения для типа счётчика
             const unitMap = {
-                'electricity': 'кВт-ч',
+                'electricity': t('unit_kwh', 'кВт-ч'),
                 'gas': 'м³',
                 'water': 'м³',
                 'service': '', // Фикс цена
@@ -1445,40 +1460,40 @@
             
             newService.innerHTML = `
                 <div class="service-input-group">
-                    <label>Тип</label>
+                    <label>${t('residents_filter_type', 'Тип')}</label>
                     <select onchange="handleServiceTypeChange(this)">
-                        <option value="electricity" ${meterType === 'electricity' ? 'selected' : ''}>Электричество</option>
-                        <option value="gas" ${meterType === 'gas' ? 'selected' : ''}>Газ</option>
-                        <option value="water" ${meterType === 'water' ? 'selected' : ''}>Вода</option>
-                        <option value="service" ${meterType === 'service' ? 'selected' : ''}>Сервис</option>
-                        <option value="rent" ${meterType === 'rent' ? 'selected' : ''}>Аренда</option>
-                        <option value="construction" ${meterType === 'construction' ? 'selected' : ''}>Строительство</option>
+                        <option value="electricity" ${meterType === 'electricity' ? 'selected' : ''}>${t('meter_electricity', 'Электричество')}</option>
+                        <option value="gas" ${meterType === 'gas' ? 'selected' : ''}>${t('meter_gas', 'Газ')}</option>
+                        <option value="water" ${meterType === 'water' ? 'selected' : ''}>${t('meter_cold_water', 'Вода')}</option>
+                        <option value="service" ${meterType === 'service' ? 'selected' : ''}>${t('tariffs_purpose_service', 'Сервис')}</option>
+                        <option value="rent" ${meterType === 'rent' ? 'selected' : ''}>${t('tariffs_purpose_rent', 'Аренда')}</option>
+                        <option value="construction" ${meterType === 'construction' ? 'selected' : ''}>${t('tariffs_purpose_construction', 'Строительство')}</option>
                     </select>
                 </div>
                 <div class="service-input-group" ${isFixedPrice ? 'style="display: none;"' : ''}>
-                    <label>Серийный № <span style="color: #ff6b6b;">*</span></label>
-                    <input type="text" class="serial-number-input" placeholder="например, АВ123" value="${serial}" ${isFixedPrice ? '' : 'required'}>
+                    <label>${t('residents_serial_number', 'Серийный №')} <span style="color: #ff6b6b;">*</span></label>
+                    <input type="text" class="serial-number-input" placeholder="${t('residents_serial_placeholder', 'например, АВ123')}" value="${serial}" ${isFixedPrice ? '' : 'required'}>
                 </div>
                 <div class="service-input-group" ${isFixedPrice ? 'style="display: none;"' : ''}>
-                    <label>Б/У?</label>
+                    <label>${t('residents_used_meter', 'Б/У?')}</label>
                     <input type="checkbox" class="used-checkbox" ${used ? 'checked' : ''} onchange="toggleInitialReading(this)">
                 </div>
                 <div class="service-input-group" ${isFixedPrice ? 'style="display: none;"' : ''}>
-                    <label>Опорное</label>
+                    <label>${t('residents_initial_reading', 'Опорное')}</label>
                     <input type="number" class="initial-reading" value="${initial}" step="0.0001" ${!used ? 'disabled' : ''}>
                 </div>
                 <div class="service-input-group" ${isFixedPrice ? 'style="display: none;"' : ''}>
-                    <label>Ед.</label>
+                    <label>${t('unit', 'Ед.')}</label>
                     <input type="text" class="unit-label" value="${unit}" readonly style="background-color: #2a2a2a; color: #ccc; cursor: not-allowed;">
                 </div>
                 <div class="service-input-group">
-                    <label>Тариф</label>
+                    <label>${t('tariff', 'Тариф')}</label>
                     <select class="tariff-select">
                         ${tariffSelectHtml}
                     </select>
                 </div>
                 <button type="button" class="btn btn-sm btn-danger" onclick="removeService(this)" style="height: 38px; white-space: nowrap; min-width: 120px; padding: 10px 16px;">
-                    <i class="bi bi-trash"></i> Удалить
+                    <i class="bi bi-trash"></i> ${t('action_delete', 'Удалить')}
                 </button>
             `;
             container.appendChild(newService);
@@ -1519,12 +1534,12 @@
             const currentSelectedId = parseInt(tariffSelect.value || 0);
             const selectedTariffObj = tariffs.find(t => t.id === currentSelectedId);
             
-            tariffSelect.innerHTML = '<option value="">Выберите тариф</option>';
+            tariffSelect.innerHTML = `<option value="">${t('tariffs_form_tariff_placeholder', 'Выберите тариф')}</option>`;
             
             if (currentSelectedId && selectedTariffObj && !selectedTariffObj.is_active) {
                 const opt = document.createElement('option');
                 opt.value = String(selectedTariffObj.id);
-                opt.textContent = `${selectedTariffObj.name} (архив)`;
+                opt.textContent = `${selectedTariffObj.name} (${t('residents_tariff_archived', 'архив')})`;
                 opt.selected = true;
                 tariffSelect.appendChild(opt);
             }
@@ -1576,7 +1591,7 @@
                 const unitLabel = row.querySelector('.unit-label');
                 if (unitLabel) {
                     const unitMap = {
-                        'electricity': 'кВт-ч',
+                        'electricity': t('unit_kwh', 'кВт-ч'),
                         'gas': 'м³',
                         'water': 'м³'
                     };
@@ -1606,7 +1621,7 @@
             if (services.length > 1) {
                 button.closest('.service-row').remove();
             } else {
-                showWarning('Должна быть хотя бы одна услуга!');
+                showWarning(t('residents_min_one_service', 'Должна быть хотя бы одна услуга!'));
             }
         }
         
@@ -1639,7 +1654,7 @@
                 const openingDebt = parseFloat(String(debtRaw).replace(',', '.')) || 0;
 
                 if (openingDebt < 0) {
-                    if (typeof showError === 'function') showError('Долг не может быть отрицательным');
+                    if (typeof showError === 'function') showError(t('residents_debt_negative_error', 'Долг не может быть отрицательным'));
                     document.getElementById('residentDebt')?.focus();
                     return;
                 }
@@ -1684,12 +1699,12 @@
                         if (!serial) {
                             if (typeof showError === 'function') {
                                 const meterTypeNames = {
-                                    'electricity': 'Электричество',
-                                    'gas': 'Газ',
-                                    'water': 'Вода'
+                                    'electricity': t('meter_electricity', 'Электричество'),
+                                    'gas': t('meter_gas', 'Газ'),
+                                    'water': t('meter_cold_water', 'Вода')
                                 };
                                 const meterTypeName = meterTypeNames[meterType] || meterType;
-                                showError(`Заполните серийный номер для счётчика "${meterTypeName}"`);
+                                showError(tr('residents_serial_required_for_meter', { meter: meterTypeName }, 'Заполните серийный номер для счётчика "{meter}"'));
                             }
                             // Подсвечиваем поле
                             if (serialInput) {
@@ -1726,7 +1741,7 @@
                 
                 if (meters.length === 0) {
                     if (typeof showWarning === 'function') {
-                        showWarning('Добавьте хотя бы один счётчик');
+                        showWarning(t('residents_add_one_meter', 'Добавьте хотя бы один счётчик'));
                     }
                     return;
                 }
@@ -1757,7 +1772,7 @@
                     if (isEditMode && !editingResidentId) {
                         console.error('ERROR: isEditMode is true but editingResidentId is null/undefined!');
                         if (typeof showError === 'function') {
-                            showError('Ошибка: ID резидента не установлен. Закройте модальное окно и попробуйте снова.');
+                            showError(t('residents_error_missing_id', 'Ошибка: ID резидента не установлен. Закройте модальное окно и попробуйте снова.'));
                         }
                         return;
                     }
@@ -1775,14 +1790,14 @@
                 });
                 
                 if (!resp.ok) {
-                    const errorData = await resp.json().catch(() => ({ detail: 'Ошибка сохранения' }));
+                    const errorData = await resp.json().catch(() => ({ detail: t('residents_error_save', 'Ошибка сохранения') }));
                     throw new Error(errorData.detail || 'Failed to save resident');
                 }
                 
                 if (typeof showSuccess === 'function') {
-                    showSuccess(isEditMode 
-                        ? `Резидент "${ownerFullName}" успешно обновлён!`
-                        : `Резидент "${ownerFullName}" успешно создан!`);
+                    showSuccess(isEditMode
+                        ? tr('residents_update_success', { name: ownerFullName }, 'Резидент "{name}" успешно обновлён!')
+                        : tr('residents_create_success', { name: ownerFullName }, 'Резидент "{name}" успешно создан!'));
                 }
                 
                 // Закрываем модальное окно и очищаем форму
@@ -1794,7 +1809,7 @@
             } catch (e) {
                 console.error('Error saving resident:', e);
                 if (typeof showError === 'function') {
-                    showError('Ошибка сохранения резидента: ' + e.message);
+                    showError(`${t('residents_error_save', 'Ошибка сохранения резидента')}: ${e.message}`);
                 }
             } finally {
                 // Восстанавливаем required у скрытых полей после валидации
@@ -1821,11 +1836,11 @@
                 });
                 
                 if (!resp.ok) {
-                    throw new Error('Failed to delete resident');
+                    throw new Error(t('residents_error_delete_failed', 'Не удалось удалить резидента'));
                 }
                 
                 if (typeof showSuccess === 'function') {
-            showSuccess(`Резидент "${pendingDelete.name}" удалён`);
+            showSuccess(tr('residents_delete_success', { name: pendingDelete.name }, 'Резидент "{name}" удалён'));
                 }
                 
             closeDeleteModal();
@@ -1833,7 +1848,7 @@
             } catch (e) {
                 console.error('Error deleting resident:', e);
                 if (typeof showError === 'function') {
-                    showError('Ошибка удаления резидента: ' + e.message);
+                    showError(`${t('residents_error_delete', 'Ошибка удаления резидента')}: ${e.message}`);
                 }
             }
         }
@@ -1964,6 +1979,15 @@
                 }, 200);
             }, 100);
         }
+
+        window.refreshPageTranslations = function () {
+            const route = window.location.hash.split('?')[0].slice(1);
+            if (!route || route === '/residents' || route.startsWith('/residents')) {
+                renderResidentsTable();
+                updatePaginationUI();
+                setResidentModalMode(isEditMode ? 'edit' : 'create');
+            }
+        };
         
         // Слушаем событие от роутера
         // Удаляем старый обработчик, если он существует

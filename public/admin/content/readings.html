@@ -1,32 +1,32 @@
 <link rel="stylesheet" href="/admin/content_css/readings.css">
 <div class="content-wrapper">
-    <h2 class="mb-4">Показатели по квартирам</h2>
+    <h2 class="mb-4" data-i18n="readings_page_title">Показатели по квартирам</h2>
 
     <!-- Filters -->
     <div class="filters-container">
         <div class="filters-grid">
             <div class="filter-group">
-                <label>Блок</label>
+                <label data-i18n="residents_filter_block">Блок</label>
                 <select id="filterBlock">
-                    <option value="all">Все</option>
+                    <option value="all" data-i18n="all">Все</option>
                 </select>
             </div>
 
             <div class="filter-group">
-                <label>Резидент</label>
+                <label data-i18n="resident">Резидент</label>
                 <select id="filterResident">
-                    <option value="all">Все</option>
+                    <option value="all" data-i18n="all">Все</option>
                 </select>
             </div>
 
             <div class="filter-group">
-                <label>Тип счётчика</label>
+                <label data-i18n="readings_meter_type">Тип счётчика</label>
                 <details class="multi-filter" id="filterMeterTypeDetails">
-                    <summary class="multi-filter-summary" id="filterMeterTypeSummary">Все</summary>
+                    <summary class="multi-filter-summary" id="filterMeterTypeSummary" data-i18n="all">Все</summary>
                     <div class="multi-filter-panel">
                         <label class="multi-filter-item">
                             <input type="checkbox" id="meterTypeAll" checked>
-                            <span>Все</span>
+                            <span data-i18n="all">Все</span>
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="meter-type-checkbox" value="utility" checked>
@@ -34,38 +34,38 @@
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="meter-type-checkbox" value="ELECTRIC" checked>
-                            <span>Электричество</span>
+                            <span data-i18n="meter_electricity">Электричество</span>
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="meter-type-checkbox" value="GAS" checked>
-                            <span>Газ</span>
+                            <span data-i18n="meter_gas">Газ</span>
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="meter-type-checkbox" value="WATER" checked>
-                            <span>Вода</span>
+                            <span data-i18n="meter_cold_water">Вода</span>
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="meter-type-checkbox" value="SEWERAGE" checked>
-                            <span>Канализация</span>
+                            <span data-i18n="readings_meter_sewerage">Канализация</span>
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="meter-type-checkbox" value="SERVICE" checked>
-                            <span>Сервис</span>
+                            <span data-i18n="tariffs_purpose_service">Сервис</span>
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="meter-type-checkbox" value="RENT" checked>
-                            <span>Аренда</span>
+                            <span data-i18n="tariffs_purpose_rent">Аренда</span>
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="meter-type-checkbox" value="CONSTRUCTION" checked>
-                            <span>Строительство</span>
+                            <span data-i18n="tariffs_purpose_construction">Строительство</span>
                         </label>
                     </div>
                 </details>
             </div>
 
             <div class="filter-group">
-                <label>Год</label>
+                <label data-i18n="year">Год</label>
                 <select id="filterYear">
                     <option value="2028">2028</option>
                     <option value="2027">2027</option>
@@ -77,7 +77,7 @@
             </div>
 
             <div class="filter-group">
-                <label>Месяц</label>
+                <label data-i18n="month">Месяц</label>
                 <select id="filterMonth">
                     <option value="1">Январь</option>
                     <option value="2">Февраль</option>
@@ -95,52 +95,52 @@
             </div>
 
             <div class="filter-group">
-                <label>Поиск</label>
-                <input type="text" id="filterSearch" placeholder="№ дома, ФИО, телефон, email">
+                <label data-i18n="tenants_filter_search">Поиск</label>
+                <input type="text" id="filterSearch" placeholder="№ дома, ФИО, телефон, email" data-i18n-placeholder="readings_search_placeholder">
             </div>
         </div>
 
         <div class="filters-actions">
             <button class="btn btn-outline-secondary" onclick="applyFilters()">
-                <i class="bi bi-funnel"></i> Фильтр
+                <i class="bi bi-funnel"></i> <span data-i18n="user_resident_filter_btn">Фильтр</span>
             </button>
             <button class="btn btn-primary" onclick="openRecordModal()">
-                <i class="bi bi-plus-lg"></i> Запись показателя
+                <i class="bi bi-plus-lg"></i> <span data-i18n="readings_record_button">Запись показателя</span>
             </button>
         </div>
     </div>
 
     <div class="readings-export-toolbar">
         <button class="btn btn-outline-success" id="readingsExportToggleBtn" type="button">
-            <i class="bi bi-box-arrow-down"></i> Экспорт
+            <i class="bi bi-box-arrow-down"></i> <span data-i18n="export">Экспорт</span>
         </button>
     </div>
 
     <div class="readings-export-panel" id="readingsExportPanel" style="display: none;">
         <div class="readings-export-grid">
             <div class="filter-group">
-                <label>Блок</label>
+                <label data-i18n="residents_filter_block">Блок</label>
                 <select id="exportFilterBlock">
-                    <option value="all">Все</option>
+                    <option value="all" data-i18n="all">Все</option>
                 </select>
             </div>
 
             <div class="filter-group">
-                <label>Резидент</label>
+                <label data-i18n="resident">Резидент</label>
                 <select id="exportFilterResident">
-                    <option value="all">Все</option>
+                    <option value="all" data-i18n="all">Все</option>
                 </select>
             </div>
 
             <div class="filter-group">
-                <label>Тип счётчика</label>
+                <label data-i18n="readings_meter_type">Тип счётчика</label>
                 <details class="multi-filter service-filter-details" id="exportFilterMeterTypeDetails">
-                    <summary class="multi-filter-summary" id="exportFilterMeterTypeSummary">Все типы</summary>
+                    <summary class="multi-filter-summary" id="exportFilterMeterTypeSummary" data-i18n="readings_all_types">Все типы</summary>
                     <div class="multi-filter-panel service-filter-dropdown">
                         <div class="service-filter-options" id="exportMeterTypeOptions">
                         <label class="multi-filter-item">
                             <input type="checkbox" id="exportMeterTypeAll" checked>
-                            <span>Все</span>
+                            <span data-i18n="all">Все</span>
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="export-meter-type-checkbox" value="utility" checked>
@@ -148,62 +148,62 @@
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="export-meter-type-checkbox" value="ELECTRIC" checked>
-                            <span>Электричество</span>
+                            <span data-i18n="meter_electricity">Электричество</span>
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="export-meter-type-checkbox" value="GAS" checked>
-                            <span>Газ</span>
+                            <span data-i18n="meter_gas">Газ</span>
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="export-meter-type-checkbox" value="WATER" checked>
-                            <span>Вода</span>
+                            <span data-i18n="meter_cold_water">Вода</span>
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="export-meter-type-checkbox" value="SEWERAGE" checked>
-                            <span>Канализация</span>
+                            <span data-i18n="readings_meter_sewerage">Канализация</span>
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="export-meter-type-checkbox" value="SERVICE" checked>
-                            <span>Сервис</span>
+                            <span data-i18n="tariffs_purpose_service">Сервис</span>
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="export-meter-type-checkbox" value="RENT" checked>
-                            <span>Аренда</span>
+                            <span data-i18n="tariffs_purpose_rent">Аренда</span>
                         </label>
                         <label class="multi-filter-item">
                             <input type="checkbox" class="export-meter-type-checkbox" value="CONSTRUCTION" checked>
-                            <span>Строительство</span>
+                            <span data-i18n="tariffs_purpose_construction">Строительство</span>
                         </label>
                         </div>
                         <div class="service-filter-actions">
-                            <button type="button" class="btn-filter-mini" id="exportMeterSelectAllBtn">Выбрать все</button>
-                            <button type="button" class="btn-filter-mini" id="exportMeterClearBtn">Очистить</button>
+                            <button type="button" class="btn-filter-mini" id="exportMeterSelectAllBtn" data-i18n="readings_select_all">Выбрать все</button>
+                            <button type="button" class="btn-filter-mini" id="exportMeterClearBtn" data-i18n="user_resident_reset_btn">Очистить</button>
                         </div>
                     </div>
                 </details>
             </div>
 
             <div class="filter-group">
-                <label>Месяц от</label>
+                <label data-i18n="readings_month_from">Месяц от</label>
                 <input type="month" id="exportFilterDateFrom">
             </div>
 
             <div class="filter-group">
-                <label>Месяц до</label>
+                <label data-i18n="readings_month_to">Месяц до</label>
                 <input type="month" id="exportFilterDateTo">
             </div>
         </div>
 
         <div class="readings-export-actions">
             <select id="readingsExportFormat" class="form-select form-select-sm" style="max-width: 170px;">
-                <option value="xls">Excel (Styled)</option>
-                <option value="pdf">PDF (печать)</option>
+                <option value="xls" data-i18n="residents_export_excel_styled">Excel (Styled)</option>
+                <option value="pdf" data-i18n="residents_export_pdf_print">PDF (печать)</option>
             </select>
             <button class="btn btn-outline-warning" type="button" onclick="resetReadingsExportFilters()">
-                <i class="bi bi-x-circle"></i> Сброс
+                <i class="bi bi-x-circle"></i> <span data-i18n="reset">Сброс</span>
             </button>
             <button class="btn btn-success" type="button" onclick="exportReadings()">
-                <i class="bi bi-box-arrow-down"></i> Экспорт
+                <i class="bi bi-box-arrow-down"></i> <span data-i18n="export">Экспорт</span>
             </button>
         </div>
     </div>
@@ -212,15 +212,15 @@
         <!-- Readings Table -->
         <div class="card readings-card">
             <div class="readings-head">
-                <div>Резидент</div>
-                <div>Расход по счётчикам</div>
-                <div>Сумма по счётчикам</div>
-                <div>Действия</div>
+                <div data-i18n="resident">Резидент</div>
+                <div data-i18n="readings_consumption_by_meters">Расход по счётчикам</div>
+                <div data-i18n="readings_amount_by_meters">Сумма по счётчикам</div>
+                <div data-i18n="tariffs_col_actions">Действия</div>
             </div>
 
             <div class="readings-list" id="readingsTableBody">
                 <div class="text-muted text-center" style="padding: 40px;">
-                    Загрузка данных...
+                    <span data-i18n="loading">Загрузка данных...</span>
                 </div>
             </div>
 
@@ -236,12 +236,12 @@
                     </button>
                 </div>
                 <div class="pagination-info">
-                    <span>Стр. <span id="readingCurrentPage">1</span> из <span id="readingTotalPages">1</span> · всего
+                    <span><span data-i18n="residents_pagination_page_short">Стр.</span> <span id="readingCurrentPage">1</span> <span data-i18n="residents_pagination_of">из</span> <span id="readingTotalPages">1</span> · <span data-i18n="residents_pagination_total">всего</span>
                         <span id="readingTotalItems">0</span></span>
                 </div>
                 <div class="pagination-per-page">
-                    <span>На</span>
-                    <span>странице:</span>
+                    <span data-i18n="residents_pagination_on">На</span>
+                    <span data-i18n="residents_pagination_per_page">странице:</span>
                     <div class="custom-pag-select" id="customReadingItemsPerPage">
                         <select id="readingItemsPerPage" onchange="changeReadingItemsPerPage()" style="display: none;">
                             <option value="10">10</option>
@@ -272,7 +272,7 @@
 <div class="modal-overlay" id="recordReadingModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2 id="recordReadingTitle">Запись показателя</h2>
+            <h2 id="recordReadingTitle" data-i18n="readings_modal_record_title">Запись показателя</h2>
             <button class="modal-close" onclick="closeRecordModal()">
                 <i class="bi bi-x-lg"></i>
             </button>
@@ -281,21 +281,21 @@
         <form id="recordReadingForm" onsubmit="recordReading(event)">
             <div class="record-form-grid">
                 <div class="form-group">
-                    <label>Блок</label>
+                    <label data-i18n="residents_filter_block">Блок</label>
                     <select id="modalBlock" required onchange="window.loadResidents()">
-                        <option value="">— выберите —</option>
+                        <option value="" data-i18n="readings_select_placeholder">— выберите —</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>Резидент</label>
+                    <label data-i18n="resident">Резидент</label>
                     <select id="modalResident" required disabled>
-                        <option value="">— выберите блок —</option>
+                        <option value="" data-i18n="readings_select_block_first">— выберите блок —</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>Дата показаний</label>
+                    <label data-i18n="readings_date_label">Дата показаний</label>
                     <input type="date" id="modalDate" required>
                 </div>
             </div>
@@ -305,19 +305,19 @@
                     <table class="meter-table">
                         <thead>
                             <tr>
-                                <th>Тип</th>
-                                <th>Тариф</th>
-                                <th>Предыдущее</th>
-                                <th>Новое / Отметить</th>
-                                <th>Расход</th>
-                                <th>Сумма</th>
-                                <th>Фото</th>
-                                <th>Удалить последнее</th>
+                                <th data-i18n="residents_col_type">Тип</th>
+                                <th data-i18n="tariff">Тариф</th>
+                                <th data-i18n="meter_previous">Предыдущее</th>
+                                <th data-i18n="readings_new_or_mark">Новое / Отметить</th>
+                                <th data-i18n="user_resident_table_usage">Расход</th>
+                                <th data-i18n="amount">Сумма</th>
+                                <th data-i18n="readings_photo">Фото</th>
+                                <th data-i18n="readings_delete_last">Удалить последнее</th>
                             </tr>
                         </thead>
                         <tbody id="meterTableBody">
                             <tr>
-                                <td colspan="8" class="text-muted text-center">Выберите резидента, чтобы увидеть тарифы
+                                <td colspan="8" class="text-muted text-center" data-i18n="readings_select_resident_to_see_tariffs">Выберите резидента, чтобы увидеть тарифы
                                 </td>
                             </tr>
                         </tbody>
@@ -325,21 +325,21 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Комментарий</label>
-                    <textarea id="modalComment" rows="2" placeholder="Например, показания снял охранник..."></textarea>
+                    <label data-i18n="user_resident_table_comment">Комментарий</label>
+                    <textarea id="modalComment" rows="2" placeholder="Например, показания снял охранник..." data-i18n-placeholder="readings_comment_placeholder"></textarea>
                 </div>
             </div>
 
             <div class="photo-picker-modal" id="photoPickerModal">
                 <div class="photo-picker-sheet">
-                    <div class="photo-picker-title">Добавить фото</div>
+                    <div class="photo-picker-title" data-i18n="readings_add_photo">Добавить фото</div>
                     <button type="button" class="photo-picker-btn" data-source="camera">
-                        <i class="bi bi-camera"></i> Сфотографировать
+                        <i class="bi bi-camera"></i> <span data-i18n="readings_take_photo">Сфотографировать</span>
                     </button>
                     <button type="button" class="photo-picker-btn" data-source="gallery">
-                        <i class="bi bi-image"></i> Загрузить из галереи
+                        <i class="bi bi-image"></i> <span data-i18n="readings_upload_from_gallery">Загрузить из галереи</span>
                     </button>
-                    <button type="button" class="photo-picker-cancel">Отмена</button>
+                    <button type="button" class="photo-picker-cancel" data-i18n="cancel">Отмена</button>
                 </div>
             </div>
             <input type="file" id="meterPhotoInputCamera" accept="image/*" capture="environment" class="hidden-file-input">
@@ -347,10 +347,10 @@
 
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeRecordModal()">
-                    Отмена
+                    <span data-i18n="cancel">Отмена</span>
                 </button>
                 <button type="submit" class="btn btn-primary">
-                    Записать
+                    <span data-i18n="readings_record_submit">Записать</span>
                 </button>
             </div>
         </form>
@@ -361,29 +361,34 @@
 <div class="modal-overlay" id="readingDetailsModal">
     <div class="modal-content readings-detail-modal">
         <div class="modal-header">
-            <h2 id="readingDetailsTitle">Резидент</h2>
+            <h2 id="readingDetailsTitle" data-i18n="resident">Резидент</h2>
             <button class="modal-close" onclick="closeReadingDetails()">
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
         <div class="reading-details-filter" style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);">
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <label style="color: #fff; font-size: 14px;">Фильтр по месяцам:</label>
-                <input type="month" id="readingDetailsFromMonth" style="padding: 6px 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 14px;" placeholder="С месяца">
+                <label style="color: #fff; font-size: 14px;" data-i18n="readings_filter_by_months">Фильтр по месяцам:</label>
+                <input type="month" id="readingDetailsFromMonth" style="padding: 6px 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 14px;" placeholder="С месяца" data-i18n-placeholder="readings_from_month_placeholder">
                 <span style="color: #fff;">—</span>
-                <input type="month" id="readingDetailsToMonth" style="padding: 6px 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 14px;" placeholder="По месяц">
-                <button onclick="applyReadingDetailsFilter()" style="padding: 6px 15px; border-radius: 4px; border: none; background: #667eea; color: #fff; cursor: pointer; font-size: 14px;">Применить</button>
-                <button onclick="resetReadingDetailsFilter()" style="padding: 6px 15px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: #fff; cursor: pointer; font-size: 14px;">Сбросить</button>
+                <input type="month" id="readingDetailsToMonth" style="padding: 6px 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 14px;" placeholder="По месяц" data-i18n-placeholder="readings_to_month_placeholder">
+                <button onclick="applyReadingDetailsFilter()" style="padding: 6px 15px; border-radius: 4px; border: none; background: #667eea; color: #fff; cursor: pointer; font-size: 14px;" data-i18n="apply">Применить</button>
+                <button onclick="resetReadingDetailsFilter()" style="padding: 6px 15px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: #fff; cursor: pointer; font-size: 14px;" data-i18n="reset">Сбросить</button>
             </div>
         </div>
         <div class="reading-details-body" id="readingDetailsBody">
-            <div class="text-muted">Выберите запись, чтобы увидеть детали</div>
+            <div class="text-muted" data-i18n="readings_select_record_for_details">Выберите запись, чтобы увидеть детали</div>
         </div>
     </div>
 </div>
 
 <script>
     const API_BASE = 'http://localhost:8000';
+    const t = (key, fallback = '') => window.i18n?.translate?.(key) || fallback || key;
+    const tr = (key, params = {}, fallback = '') => {
+        const base = t(key, fallback);
+        return Object.entries(params).reduce((txt, [p, v]) => txt.replace(new RegExp(`\\{${p}\\}`, 'g'), String(v)), base);
+    };
     let readingsData = null;
     let blocks = [];
     let residents = [];
@@ -539,7 +544,7 @@
         } catch (error) {
             console.error('Error loading readings:', error);
             if (typeof showError === 'function') {
-                showError('Ошибка загрузки показаний: ' + error.message);
+                showError(`${t('readings_error_load', 'Ошибка загрузки показаний')}: ${error.message}`);
             }
         }
     }
@@ -572,19 +577,19 @@
 
         if (!readingsData) {
             console.warn('No readings data');
-            tbody.innerHTML = '<div class="text-muted text-center" style="padding: 40px;">Нет данных</div>';
+            tbody.innerHTML = `<div class="text-muted text-center" style="padding: 40px;">${t('tariffs_no_data', 'Нет данных')}</div>`;
             return;
         }
 
         if (!readingsData.rows) {
             console.warn('No rows in readings data:', readingsData);
-            tbody.innerHTML = '<div class="text-muted text-center" style="padding: 40px;">Нет данных</div>';
+            tbody.innerHTML = `<div class="text-muted text-center" style="padding: 40px;">${t('tariffs_no_data', 'Нет данных')}</div>`;
             return;
         }
 
         if (readingsData.rows.length === 0) {
             console.log('Empty rows array');
-            tbody.innerHTML = '<div class="text-muted text-center" style="padding: 40px;">Нет показаний за выбранный период</div>';
+            tbody.innerHTML = `<div class="text-muted text-center" style="padding: 40px;">${t('readings_no_data_period', 'Нет показаний за выбранный период')}</div>`;
             return;
         }
 
@@ -601,12 +606,36 @@
             }
 
             const metersHtml = row.meters.map(m => {
-                const chipClass = m.type === 'Строительство' || m.type === 'Сервис' || m.type === 'Аренда'
-                    ? 'meter-chip chip-warning'
-                    : 'meter-chip';
+                const rawType = String(m.type || '');
+                const typeUpper = rawType.toUpperCase();
+                const typeLower = rawType.toLowerCase();
+
+                let meterTypeLabel = rawType;
+                let isFixedType = false;
+
+                if (typeUpper === 'ELECTRIC' || typeLower.includes('электр')) {
+                    meterTypeLabel = t('meter_electricity', 'Электричество');
+                } else if (typeUpper === 'GAS' || typeLower.includes('газ')) {
+                    meterTypeLabel = t('meter_gas', 'Газ');
+                } else if (typeUpper === 'WATER' || typeLower.includes('вода')) {
+                    meterTypeLabel = t('meter_cold_water', 'Вода');
+                } else if (typeUpper === 'SEWERAGE' || typeLower.includes('канал')) {
+                    meterTypeLabel = t('readings_meter_sewerage', 'Канализация');
+                } else if (typeUpper === 'SERVICE' || typeLower.includes('сервис')) {
+                    meterTypeLabel = t('tariffs_purpose_service', 'Сервис');
+                    isFixedType = true;
+                } else if (typeUpper === 'RENT' || typeLower.includes('аренд')) {
+                    meterTypeLabel = t('tariffs_purpose_rent', 'Аренда');
+                    isFixedType = true;
+                } else if (typeUpper === 'CONSTRUCTION' || typeLower.includes('строит')) {
+                    meterTypeLabel = t('tariffs_purpose_construction', 'Строительство');
+                    isFixedType = true;
+                }
+
+                const chipClass = isFixedType ? 'meter-chip chip-warning' : 'meter-chip';
                 return `
                         <div class="meter-item">
-                            <span class="${chipClass}">${m.type}</span>
+                            <span class="${chipClass}">${meterTypeLabel}</span>
                             <span class="meter-value">${m.consumption.toFixed(3)} ${m.unit}</span>
                         </div>
                     `;
@@ -617,7 +646,13 @@
                 const isPartial = !!m.is_partial;
                 const statusClass = isPaid ? 'status-paid' : (isPartial ? 'status-partial' : 'status-due');
                 const amountClass = isPaid || isPartial ? '' : 'amount-value-alert';
-                const statusText = m.payment_status || (isPaid ? 'Оплачено' : (isPartial ? 'Частично' : 'Не оплачено'));
+            const rawStatus = String(m.payment_status || '').trim().toLowerCase();
+            const statusText = rawStatus
+                ? ((rawStatus.includes('не') && rawStatus.includes('оплач')) ? t('readings_status_unpaid', 'Не оплачено')
+                    : rawStatus.includes('частич') ? t('readings_status_partial', 'Частично')
+                    : rawStatus.includes('оплач') ? t('status_paid', 'Оплачено')
+                    : m.payment_status)
+                : (isPaid ? t('status_paid', 'Оплачено') : (isPartial ? t('readings_status_partial', 'Частично') : t('readings_status_unpaid', 'Не оплачено')));
                 return `
                         <div class="amount-item">
                             <span class="status-pill ${statusClass}">${statusText}</span>
@@ -639,7 +674,7 @@
                         </div>
                         <div class="reading-col">
                             <div class="meter-stack">
-                                ${metersHtml || '<div class="text-muted">Нет счётчиков</div>'}
+                                ${metersHtml || `<div class="text-muted">${t('readings_no_meters', 'Нет счётчиков')}</div>`}
                             </div>
                         </div>
                         <div class="reading-col">
@@ -647,7 +682,7 @@
                                 ${amountsHtml || '<div class="text-muted">0.00 ₼</div>'}
                             </div>
                             <div class="reading-total reading-total-resident">
-                                <span>Итого:</span>
+                                <span>${t('readings_total', 'Итого')}:</span>
                                 <span class="reading-total-value">${residentTotal.toFixed(2)} ₼</span>
                             </div>
                         </div>
@@ -656,12 +691,12 @@
                                 ${row.has_editable_meters ? `
                                     <button class="table-btn table-btn-primary" type="button" onclick="openReadingEditor(${row.resident_id})">
                                         <i class="bi bi-pencil"></i>
-                                        Редактировать
+                                        ${t('action_edit', 'Редактировать')}
                                     </button>
                                 ` : ''}
                                 <button class="table-btn table-btn-secondary" type="button" onclick="openReadingDetails(${row.resident_id})">
                                     <i class="bi bi-info-circle"></i>
-                                    Подробнее
+                                    ${t('readings_details_button', 'Подробнее')}
                                 </button>
                             </div>
                         </div>
@@ -677,13 +712,13 @@
         console.log('Total amount:', totalAmount);
 
         if (filteredRowsHtml.length === 0) {
-            tbody.innerHTML = '<div class="text-muted text-center" style="padding: 40px;">Нет данных для отображения</div>';
+            tbody.innerHTML = `<div class="text-muted text-center" style="padding: 40px;">${t('readings_no_data_display', 'Нет данных для отображения')}</div>`;
             return;
         }
 
         tbody.innerHTML = filteredRowsHtml.join('') + `
                 <div class="reading-total">
-                    <span>Итого:</span>
+                    <span>${t('readings_total', 'Итого')}:</span>
                     <span class="reading-total-value">${totalAmount.toFixed(2)} ₼</span>
                 </div>
             `;
@@ -696,7 +731,7 @@
         const blockSelect = document.getElementById('filterBlock');
         if (blockSelect && blocks.length > 0) {
             const currentValue = blockSelect.value;
-            blockSelect.innerHTML = '<option value="all">Все</option>';
+            blockSelect.innerHTML = `<option value="all">${t('all', 'Все')}</option>`;
             blocks.forEach(block => {
                 const option = document.createElement('option');
                 option.value = block.name;
@@ -710,7 +745,7 @@
         const modalBlockSelect = document.getElementById('modalBlock');
         if (modalBlockSelect && blocks.length > 0) {
             const currentValue = modalBlockSelect.value;
-            modalBlockSelect.innerHTML = '<option value="">— выберите —</option>';
+            modalBlockSelect.innerHTML = `<option value="">${t('readings_select_placeholder', '— выберите —')}</option>`;
             blocks.forEach(block => {
                 const option = document.createElement('option');
                 option.value = block.name;
@@ -738,7 +773,7 @@
             ? list.filter((r) => norm(r?.block_name) === selectedBlockNorm)
             : list;
 
-        residentSelect.innerHTML = '<option value="all">Все</option>';
+        residentSelect.innerHTML = `<option value="all">${t('all', 'Все')}</option>`;
         filtered.forEach((resident) => {
             const unit = norm(resident?.unit_number) || '—';
             const option = document.createElement('option');
@@ -757,16 +792,18 @@
 
     const ALL_METER_TYPES = ['ELECTRIC', 'GAS', 'WATER', 'SEWERAGE', 'SERVICE', 'RENT', 'CONSTRUCTION'];
     const UTILITY_METER_TYPES = ['ELECTRIC', 'GAS', 'WATER', 'SEWERAGE'];
-    const meterTypeLabels = {
-        utility: 'Utility',
-        ELECTRIC: 'Электричество',
-        GAS: 'Газ',
-        WATER: 'Вода',
-        SEWERAGE: 'Канализация',
-        SERVICE: 'Сервис',
-        RENT: 'Аренда',
-        CONSTRUCTION: 'Строительство',
-    };
+    function meterTypeLabels() {
+        return {
+            utility: 'Utility',
+            ELECTRIC: t('meter_electricity', 'Электричество'),
+            GAS: t('meter_gas', 'Газ'),
+            WATER: t('meter_cold_water', 'Вода'),
+            SEWERAGE: t('readings_meter_sewerage', 'Канализация'),
+            SERVICE: t('tariffs_purpose_service', 'Сервис'),
+            RENT: t('tariffs_purpose_rent', 'Аренда'),
+            CONSTRUCTION: t('tariffs_purpose_construction', 'Строительство'),
+        };
+    }
 
     function getSelectedMeterTypes() {
         const boxes = Array.from(document.querySelectorAll('#filterMeterTypeDetails .meter-type-checkbox:checked'));
@@ -827,7 +864,7 @@
 
         const selectedResolved = getSelectedMeterTypes();
         if (selectedResolved.length === 0 || selectedResolved.length === ALL_METER_TYPES.length) {
-            summary.textContent = 'Все';
+            summary.textContent = t('all', 'Все');
             return;
         }
 
@@ -842,12 +879,12 @@
         }
 
         if (selectedResolved.length <= 2) {
-            const labels = selectedResolved.map((v) => meterTypeLabels[v] || v);
+            const labels = selectedResolved.map((v) => meterTypeLabels()[v] || v);
             summary.textContent = labels.join(', ');
             return;
         }
 
-        summary.textContent = `${selectedResolved.length} выбрано`;
+        summary.textContent = tr('tariffs_selected_count', { count: selectedResolved.length }, '{count} выбрано');
     }
 
     function bindMeterTypeMultiSelect() {
@@ -930,7 +967,7 @@
         const blockSelect = document.getElementById('exportFilterBlock');
         if (!blockSelect) return;
         const currentValue = blockSelect.value || 'all';
-        blockSelect.innerHTML = '<option value="all">Все</option>';
+        blockSelect.innerHTML = `<option value="all">${t('all', 'Все')}</option>`;
         (Array.isArray(blocks) ? blocks : []).forEach((block) => {
             const option = document.createElement('option');
             option.value = block.name;
@@ -972,7 +1009,7 @@
                 page += 1;
             } while (page <= lastPage);
 
-            residentSelect.innerHTML = '<option value="all">Все</option>';
+            residentSelect.innerHTML = `<option value="all">${t('all', 'Все')}</option>`;
             allResidents.forEach((resident) => {
                 const option = document.createElement('option');
                 option.value = resident.id;
@@ -986,7 +1023,7 @@
             }
         } catch (error) {
             console.error('Export residents load error:', error);
-            residentSelect.innerHTML = '<option value="all">Все</option>';
+            residentSelect.innerHTML = `<option value="all">${t('all', 'Все')}</option>`;
         }
     }
 
@@ -1022,7 +1059,7 @@
         await loadExportResidentsByBlock();
 
         if (typeof showSuccess === 'function') {
-            showSuccess('Фильтры экспорта сброшены!');
+            showSuccess(t('readings_export_filters_reset', 'Фильтры экспорта сброшены!'));
         }
     };
 
@@ -1079,7 +1116,7 @@
 
         const selectedResolved = getSelectedExportMeterTypes();
         if (selectedResolved.length === 0 || selectedResolved.length === ALL_METER_TYPES.length) {
-            summary.textContent = 'Все типы';
+            summary.textContent = t('readings_all_types', 'Все типы');
             return;
         }
 
@@ -1091,7 +1128,7 @@
             return;
         }
 
-        const labels = selectedResolved.map((v) => meterTypeLabels[v] || v);
+        const labels = selectedResolved.map((v) => meterTypeLabels()[v] || v);
         const preview = labels.slice(0, 2).join(', ');
         summary.textContent = labels.length > 2 ? `${preview} +${labels.length - 2}` : preview;
     }
@@ -1307,17 +1344,17 @@
         const block = document.getElementById('exportFilterBlock');
         const resident = document.getElementById('exportFilterResident');
         if (filters.blockName && filters.blockName !== 'all') {
-            chunks.push(`Блок: ${block?.options[block.selectedIndex]?.text || filters.blockName}`);
+            chunks.push(`${t('residents_filter_block', 'Блок')}: ${block?.options[block.selectedIndex]?.text || filters.blockName}`);
         }
         if (filters.residentId && filters.residentId !== 'all') {
-            chunks.push(`Резидент: ${resident?.options[resident.selectedIndex]?.text || filters.residentId}`);
+            chunks.push(`${t('resident', 'Резидент')}: ${resident?.options[resident.selectedIndex]?.text || filters.residentId}`);
         }
         if (filters.meterTypes.length > 0 && filters.meterTypes.length < ALL_METER_TYPES.length) {
-            chunks.push(`Типы: ${filters.meterTypes.map((t) => meterTypeLabels[t] || t).join(', ')}`);
+            chunks.push(`${t('readings_filter_types', 'Типы')}: ${filters.meterTypes.map((x) => meterTypeLabels()[x] || x).join(', ')}`);
         } else {
-            chunks.push('Типы: Все');
+            chunks.push(`${t('readings_filter_types', 'Типы')}: ${t('all', 'Все')}`);
         }
-        chunks.push(`Период: ${filters.dateFrom || '...'} — ${filters.dateTo || '...'}`);
+        chunks.push(`${t('filter_period', 'Период')}: ${filters.dateFrom || '...'} — ${filters.dateTo || '...'}`);
         return chunks.join(' | ');
     }
 
@@ -1358,16 +1395,16 @@
                 .meter-line:last-child { border-bottom: none; }
             </style></head><body>
                 <table class="title-table">
-                    <tr><td class="title-cell"><div class="title-main">Отчет по показаниям</div><div class="title-sub">Royal Park - Экспорт для учета</div></td></tr>
+                    <tr><td class="title-cell"><div class="title-main">${t('readings_report_title', 'Отчет по показаниям')}</div><div class="title-sub">${t('readings_report_subtitle', 'Royal Park - Экспорт для учета')}</div></td></tr>
                 </table>
                 <table class="meta">
-                    <tr><td>Сформировано</td><td>${esc(new Date().toLocaleString())}</td></tr>
-                    <tr><td>Фильтры</td><td>${esc(filtersText)}</td></tr>
-                    <tr><td>Количество строк</td><td>${esc(rows.length)}</td></tr>
+                    <tr><td>${t('tariffs_export_generated', 'Сформировано')}</td><td>${esc(new Date().toLocaleString())}</td></tr>
+                    <tr><td>${t('tariffs_export_filters', 'Фильтры')}</td><td>${esc(filtersText)}</td></tr>
+                    <tr><td>${t('readings_rows_count', 'Количество строк')}</td><td>${esc(rows.length)}</td></tr>
                 </table>
                 <table class="data">
-                    <thead><tr><th>Период</th><th>Резидент</th><th>ФИО жителя</th><th>Номер телефона</th><th>Блок</th><th>№ дома</th><th>Расход по счетчикам</th><th>Итоговая сумма</th></tr></thead>
-                    <tbody>${bodyRows || '<tr><td colspan="8">Нет данных</td></tr>'}</tbody>
+                    <thead><tr><th>${t('filter_period', 'Период')}</th><th>${t('resident', 'Резидент')}</th><th>${t('residents_col_name', 'ФИО жителя')}</th><th>${t('phone', 'Номер телефона')}</th><th>${t('residents_filter_block', 'Блок')}</th><th>${t('residents_col_house', '№ дома')}</th><th>${t('readings_consumption_by_meters', 'Расход по счетчикам')}</th><th>${t('readings_total_amount', 'Итоговая сумма')}</th></tr></thead>
+                    <tbody>${bodyRows || `<tr><td colspan="8">${t('tariffs_no_data', 'Нет данных')}</td></tr>`}</tbody>
                 </table>
             </body></html>
         `;
@@ -1392,20 +1429,20 @@
                 <td>${esc(r.unit)}</td><td>${(Array.isArray(r.metersList) ? r.metersList : ['—']).map((meter, idx) => `<div>${esc(String(idx + 1) + ') ' + meter)}</div>`).join('')}</td><td>${esc(r.total.toFixed(2))}</td>
             </tr>`).join('');
         const html = `
-            <html><head><title>Экспорт показаний</title>
+            <html><head><title>${t('readings_export_title', 'Экспорт показаний')}</title>
             <style>
                 body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
                 table { width: 100%; border-collapse: collapse; font-size: 11px; }
                 th, td { border: 1px solid #ccc; padding: 6px; text-align: left; vertical-align: top; }
                 th { background: #f3f4f6; }
             </style></head><body>
-                <h2>Отчет по показаниям</h2>
-                <p><strong>Сформировано:</strong> ${esc(new Date().toLocaleString())}</p>
-                <p><strong>Фильтры:</strong> ${esc(filtersText)}</p>
-                <p><strong>Количество:</strong> ${rows.length}</p>
+                <h2>${t('readings_report_title', 'Отчет по показаниям')}</h2>
+                <p><strong>${t('tariffs_export_generated', 'Сформировано')}:</strong> ${esc(new Date().toLocaleString())}</p>
+                <p><strong>${t('tariffs_export_filters', 'Фильтры')}:</strong> ${esc(filtersText)}</p>
+                <p><strong>${t('tariffs_export_count', 'Количество')}:</strong> ${rows.length}</p>
                 <table>
-                    <thead><tr><th>Период</th><th>Резидент</th><th>ФИО жителя</th><th>Номер телефона</th><th>Блок</th><th>№ дома</th><th>Расход по счетчикам</th><th>Итоговая сумма</th></tr></thead>
-                    <tbody>${tableRows || '<tr><td colspan="8">Нет данных</td></tr>'}</tbody>
+                    <thead><tr><th>${t('filter_period', 'Период')}</th><th>${t('resident', 'Резидент')}</th><th>${t('residents_col_name', 'ФИО жителя')}</th><th>${t('phone', 'Номер телефона')}</th><th>${t('residents_filter_block', 'Блок')}</th><th>${t('residents_col_house', '№ дома')}</th><th>${t('readings_consumption_by_meters', 'Расход по счетчикам')}</th><th>${t('readings_total_amount', 'Итоговая сумма')}</th></tr></thead>
+                    <tbody>${tableRows || `<tr><td colspan="8">${t('tariffs_no_data', 'Нет данных')}</td></tr>`}</tbody>
                 </table>
             </body></html>
         `;
@@ -1422,7 +1459,7 @@
         const doc = iframe.contentWindow?.document;
         if (!doc || !iframe.contentWindow) {
             iframe.remove();
-            throw new Error('Не удалось подготовить печать.');
+            throw new Error(t('readings_print_prepare_error', 'Не удалось подготовить печать.'));
         }
         doc.open();
         doc.write(html);
@@ -1446,7 +1483,7 @@
 
         if (exportBtn) {
             exportBtn.disabled = true;
-            exportBtn.textContent = 'Экспорт...';
+            exportBtn.textContent = t('tariffs_export_in_progress', 'Экспорт...');
         }
 
         try {
@@ -1469,27 +1506,27 @@
             const tenantInfoMap = await fetchTenantInfoMapForExport(filters);
             const rows = buildReadingsExportRows(buckets, tenantInfoMap);
             if (!rows.length) {
-                if (typeof showWarning === 'function') showWarning('Нет данных для экспорта по выбранным фильтрам.');
+                if (typeof showWarning === 'function') showWarning(t('tariffs_export_no_data', 'Нет данных для экспорта по выбранным фильтрам.'));
                 return;
             }
 
             const filtersText = buildReadingsExportFiltersText(filters);
             if (format === 'pdf') {
                 if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches && typeof showInfo === 'function') {
-                    showInfo('На мобильных PDF открывается через системный диалог печати/сохранения.');
+                    showInfo(t('readings_mobile_pdf_info', 'На мобильных PDF открывается через системный диалог печати/сохранения.'));
                 }
                 exportReadingsToPdf(rows, filtersText);
             } else {
                 exportReadingsToStyledExcel(rows, filtersText);
             }
-            if (typeof showSuccess === 'function') showSuccess('Экспорт выполнен.');
+            if (typeof showSuccess === 'function') showSuccess(t('export_completed', 'Экспорт выполнен.'));
         } catch (error) {
             console.error('Readings export error:', error);
-            if (typeof showError === 'function') showError('Ошибка экспорта: ' + error.message);
+            if (typeof showError === 'function') showError(`${t('residents_export_error', 'Ошибка экспорта')}: ${error.message}`);
         } finally {
             if (exportBtn) {
                 exportBtn.disabled = false;
-                exportBtn.innerHTML = '<i class="bi bi-box-arrow-down"></i> Экспорт';
+                exportBtn.innerHTML = `<i class="bi bi-box-arrow-down"></i> ${t('export', 'Экспорт')}`;
             }
         }
     };
@@ -1680,7 +1717,7 @@
         paginationState.currentPage = 1; // Reset to first page on filter apply
         await loadReadings();
         if (typeof showSuccess === 'function') {
-            showSuccess('Фильтры применены!');
+            showSuccess(t('filters_applied', 'Фильтры применены!'));
         }
     }
 
@@ -1693,7 +1730,7 @@
         isReadingEditMode = false;
         const title = document.getElementById('recordReadingTitle');
         if (title) {
-            title.textContent = 'Запись показателя';
+            title.textContent = t('readings_modal_record_title', 'Запись показателя');
         }
         
         // Устанавливаем сегодняшнюю дату по умолчанию
@@ -1709,14 +1746,14 @@
         document.body.style.overflow = 'auto';
         document.getElementById('recordReadingForm').reset();
         document.getElementById('modalResident').disabled = true;
-        document.getElementById('modalResident').innerHTML = '<option value="">— выберите блок —</option>';
+        document.getElementById('modalResident').innerHTML = `<option value="">${t('readings_select_block_first', '— выберите блок —')}</option>`;
         hideMeterDetails();
         resetMeterPhotoState();
         resetDeleteLastReadingGuards();
         isReadingEditMode = false;
         const title = document.getElementById('recordReadingTitle');
         if (title) {
-            title.textContent = 'Запись показателя';
+            title.textContent = t('readings_modal_record_title', 'Запись показателя');
         }
     }
 
@@ -1887,7 +1924,7 @@
 
         if (blockName) {
             residentSelect.disabled = false;
-            residentSelect.innerHTML = '<option value="">— загрузка... —</option>';
+            residentSelect.innerHTML = `<option value="">${t('readings_loading_placeholder', '— загрузка... —')}</option>`;
 
             try {
                 console.log('Loading residents for block:', blockName);
@@ -1916,7 +1953,7 @@
 
                 if (!block) {
                     console.error('Block not found:', blockName);
-                    residentSelect.innerHTML = '<option value="">— блок не найден —</option>';
+                    residentSelect.innerHTML = `<option value="">${t('readings_block_not_found_placeholder', '— блок не найден —')}</option>`;
                     return;
                 }
 
@@ -2053,20 +2090,20 @@
                 populateResidentsSelect(filteredResidents, selectResidentId);
             } catch (error) {
                 console.error('Error loading residents:', error);
-                residentSelect.innerHTML = '<option value="">— ошибка загрузки —</option>';
+                residentSelect.innerHTML = `<option value="">${t('readings_load_error_placeholder', '— ошибка загрузки —')}</option>`;
             }
         } else {
             residentSelect.disabled = true;
-            residentSelect.innerHTML = '<option value="">— выберите блок —</option>';
+            residentSelect.innerHTML = `<option value="">${t('readings_select_block_first', '— выберите блок —')}</option>`;
         }
     }
 
     function populateResidentsSelect(residentsList, selectResidentId = null) {
         const residentSelect = document.getElementById('modalResident');
         console.log('Populating residents select with', residentsList.length, 'residents');
-        residentSelect.innerHTML = '<option value="">— выберите —</option>';
+        residentSelect.innerHTML = `<option value="">${t('readings_select_placeholder', '— выберите —')}</option>`;
         if (residentsList.length === 0) {
-            residentSelect.innerHTML = '<option value="">— нет резидентов —</option>';
+            residentSelect.innerHTML = `<option value="">${t('readings_no_residents_placeholder', '— нет резидентов —')}</option>`;
             return;
         }
         residentsList.forEach(resident => {
@@ -2088,9 +2125,9 @@
         const resident = readingsData?.rows?.find(r => r.resident_id === residentId);
         if (resident && resident.has_editable_meters === false) {
             if (typeof showWarning === 'function') {
-                showWarning('Редактирование отключено: все строки уже оплачены или частично оплачены');
+                showWarning(t('readings_edit_disabled_paid', 'Редактирование отключено: все строки уже оплачены или частично оплачены'));
             } else if (typeof showError === 'function') {
-                showError('Редактирование отключено: все строки уже оплачены или частично оплачены');
+                showError(t('readings_edit_disabled_paid', 'Редактирование отключено: все строки уже оплачены или частично оплачены'));
             }
             return;
         }
@@ -2098,13 +2135,13 @@
         isReadingEditMode = true;
         const title = document.getElementById('recordReadingTitle');
         if (title) {
-            title.textContent = 'Редактирование показателя';
+            title.textContent = t('readings_modal_edit_title', 'Редактирование показателя');
         }
 
         // Find resident in readingsData
         if (!resident) {
             if (typeof showError === 'function') {
-                showError('Резидент не найден');
+                showError(t('readings_resident_not_found', 'Резидент не найден'));
             }
             return;
         }
@@ -2157,7 +2194,7 @@
         const body = document.getElementById('readingDetailsBody');
         if (!body) return;
 
-        body.innerHTML = '<div class="text-muted text-center" style="padding: 20px;">Загрузка...</div>';
+        body.innerHTML = `<div class="text-muted text-center" style="padding: 20px;">${t('loading', 'Загрузка...')}</div>`;
 
         // Формируем URL с параметрами фильтрации
         let url = `${API_BASE}/api/readings/resident/${residentId}/history`;
@@ -2182,7 +2219,7 @@
             );
 
             if (metersWithReadings.length === 0) {
-                body.innerHTML = '<div class="detail-empty">Нет данных о показаниях</div>';
+                body.innerHTML = `<div class="detail-empty">${t('readings_no_readings_details', 'Нет данных о показаниях')}</div>`;
                 return;
             }
 
@@ -2241,31 +2278,31 @@
                             <div class="detail-meter-head">
                                 <span class="detail-meter-badge">${meter.type}${serialInfo}</span>
                                 <div class="detail-meter-info">
-                                    <span>тариф: ${meter.tariff_name || '—'}</span>
+                                    <span>${t('tariff', 'тариф')}: ${meter.tariff_name || '—'}</span>
                                 </div>
                                 <span class="detail-unit-chip">${meter.unit}</span>
                             </div>
                             <div class="detail-grid detail-grid-head">
-                                <div>Дата</div>
-                                <div>Показание, ${meter.unit}</div>
-                                <div>Расход, ${meter.unit}</div>
-                                <div>Начислено</div>
-                                <div>НДС, %</div>
-                                <div>Комментарий</div>
-                                <div>Фото</div>
+                                <div>${t('date', 'Дата')}</div>
+                                <div>${t('user_resident_table_reading', 'Показание')}, ${meter.unit}</div>
+                                <div>${t('user_resident_table_usage', 'Расход')}, ${meter.unit}</div>
+                                <div>${t('user_resident_table_charge', 'Начислено')}</div>
+                                <div>${t('user_resident_table_vat', 'НДС, %')}</div>
+                                <div>${t('user_resident_table_comment', 'Комментарий')}</div>
+                                <div>${t('readings_photo', 'Фото')}</div>
                             </div>
                             <div class="detail-grid-body">
-                                ${rowsHtml || '<div class="detail-empty-row">Нет записей</div>'}
+                                ${rowsHtml || `<div class="detail-empty-row">${t('readings_no_records', 'Нет записей')}</div>`}
                             </div>
                         </div>
                     `;
             }).join('');
 
-            body.innerHTML = metersHtml || '<div class="detail-empty">Нет данных</div>';
+            body.innerHTML = metersHtml || `<div class="detail-empty">${t('tariffs_no_data', 'Нет данных')}</div>`;
             return data;
         } catch (error) {
             console.error('Error loading reading history:', error);
-            body.innerHTML = '<div class="detail-empty">Ошибка загрузки данных: ' + error.message + '</div>';
+            body.innerHTML = `<div class="detail-empty">${t('error_loading_data', 'Ошибка загрузки данных')}: ${error.message}</div>`;
             throw error;
         }
     }
@@ -2278,8 +2315,8 @@
 
         const resident = readingsData?.rows?.find(r => r.resident_id === residentId);
         if (!resident) {
-            title.textContent = 'Детали показаний';
-            body.innerHTML = '<div class="detail-empty">Резидент не найден</div>';
+            title.textContent = t('readings_details_title', 'Детали показаний');
+            body.innerHTML = `<div class="detail-empty">${t('readings_resident_not_found', 'Резидент не найден')}</div>`;
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
             return;
@@ -2288,7 +2325,7 @@
         // Сохраняем residentId для фильтрации
         currentReadingDetailsResidentId = residentId;
 
-        title.textContent = `Резидент: ${resident.resident_code}`;
+        title.textContent = `${t('resident', 'Резидент')}: ${resident.resident_code}`;
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
 
@@ -2312,7 +2349,7 @@
             await loadReadingDetailsData(residentId, defaultMonthValue, defaultMonthValue);
         } catch (error) {
             console.error('Error loading reading history:', error);
-            body.innerHTML = '<div class="detail-empty">Ошибка загрузки данных: ' + error.message + '</div>';
+            body.innerHTML = `<div class="detail-empty">${t('error_loading_data', 'Ошибка загрузки данных')}: ${error.message}</div>`;
         }
     }
 
@@ -2328,7 +2365,7 @@
 
         // Валидация: начальный месяц не должен быть позже конечного
         if (fromMonth && toMonth && fromMonth > toMonth) {
-            alert('Начальный месяц не может быть позже конечного месяца');
+            alert(t('readings_date_range_invalid', 'Начальный месяц не может быть позже конечного месяца'));
             return;
         }
 
@@ -2336,7 +2373,7 @@
             await loadReadingDetailsData(currentReadingDetailsResidentId, fromMonth, toMonth);
         } catch (error) {
             console.error('Error loading filtered reading history:', error);
-            body.innerHTML = '<div class="detail-empty">Ошибка загрузки данных: ' + error.message + '</div>';
+            body.innerHTML = `<div class="detail-empty">${t('error_loading_data', 'Ошибка загрузки данных')}: ${error.message}</div>`;
         }
     }
 
@@ -2373,17 +2410,17 @@
                         <span class="detail-meter-badge">${meter.type}</span>
                         <div class="detail-meter-info">
                             <span>${meter.meter}</span>
-                            <span>тариф: ${meter.tariff}</span>
+                            <span>${t('tariff', 'тариф')}: ${meter.tariff}</span>
                         </div>
                         <span class="detail-unit-chip">${meter.unit || ''}</span>
                     </div>
                     <div class="detail-grid detail-grid-head">
-                        <div>Дата</div>
-                        <div>Показание</div>
-                        <div>Расход</div>
-                        <div>Начислено</div>
-                        <div>НДС, %</div>
-                        <div>Комментарий</div>
+                        <div>${t('date', 'Дата')}</div>
+                        <div>${t('user_resident_table_reading', 'Показание')}</div>
+                        <div>${t('user_resident_table_usage', 'Расход')}</div>
+                        <div>${t('user_resident_table_charge', 'Начислено')}</div>
+                        <div>${t('user_resident_table_vat', 'НДС, %')}</div>
+                        <div>${t('user_resident_table_comment', 'Комментарий')}</div>
                     </div>
                     <div class="detail-grid-body">
                         ${rows}
@@ -2426,11 +2463,11 @@
                 const fileName = parts[parts.length - 1] || 'Фото загружено';
                 preview.innerHTML = `
                     <div class="meter-photo-actions">
-                        <button type="button" class="meter-photo-link" onclick="openMeterPhotoPicker(${row.dataset.meterId}, event)" title="Заменить фото">
+                        <button type="button" class="meter-photo-link" onclick="openMeterPhotoPicker(${row.dataset.meterId}, event)" title="${t('readings_replace_photo', 'Заменить фото')}">
                             <img src="${existingUrl}" alt="Фото счётчика">
                             <span class="meter-photo-overlay"><i class="bi bi-camera"></i></span>
                         </button>
-                        <button type="button" class="meter-photo-view" onclick="viewMeterPhoto(${row.dataset.meterId}, event)" title="Просмотреть фото">
+                        <button type="button" class="meter-photo-view" onclick="viewMeterPhoto(${row.dataset.meterId}, event)" title="${t('readings_view_photo', 'Просмотреть фото')}">
                             <i class="bi bi-eye"></i>
                         </button>
                     </div>
@@ -2442,7 +2479,7 @@
                             onclick="openMeterPhotoPicker(${row.dataset.meterId}, event)">
                         <i class="bi bi-camera"></i>
                     </button>
-                    <span class="meter-photo-placeholder">Нет фото</span>
+                    <span class="meter-photo-placeholder">${t('readings_no_photo', 'Нет фото')}</span>
                 `;
             }
         });
@@ -2464,11 +2501,11 @@
         meterPhotoObjectUrls.set(meterId, objectUrl);
         preview.innerHTML = `
             <div class="meter-photo-actions">
-                <button type="button" class="meter-photo-link" onclick="openMeterPhotoPicker(${meterId}, event)" title="Заменить фото">
+                <button type="button" class="meter-photo-link" onclick="openMeterPhotoPicker(${meterId}, event)" title="${t('readings_replace_photo', 'Заменить фото')}">
                     <img src="${objectUrl}" alt="Фото счётчика">
                     <span class="meter-photo-overlay"><i class="bi bi-camera"></i></span>
                 </button>
-                <button type="button" class="meter-photo-view" onclick="viewMeterPhoto(${meterId}, event)" title="Просмотреть фото">
+                <button type="button" class="meter-photo-view" onclick="viewMeterPhoto(${meterId}, event)" title="${t('readings_view_photo', 'Просмотреть фото')}">
                     <i class="bi bi-eye"></i>
                 </button>
             </div>
@@ -2524,9 +2561,9 @@
             return;
         }
         if (typeof showWarning === 'function') {
-            showWarning('Нет фото для просмотра');
+            showWarning(t('readings_no_photo_preview', 'Нет фото для просмотра'));
         } else {
-            alert('Нет фото для просмотра');
+            alert(t('readings_no_photo_preview', 'Нет фото для просмотра'));
         }
     }
 
@@ -2619,7 +2656,7 @@
 
             if (!residentId) {
                 if (typeof showError === 'function') {
-                    showError('Выберите резидента');
+                    showError(t('readings_select_resident_error', 'Выберите резидента'));
                 }
                 isSubmitting = false;
                 if (submitButton) {
@@ -2631,7 +2668,7 @@
 
             if (!dateStr) {
                 if (typeof showError === 'function') {
-                    showError('Выберите дату показаний');
+                    showError(t('readings_select_date_error', 'Выберите дату показаний'));
                 }
                 isSubmitting = false;
                 if (submitButton) {
@@ -2667,7 +2704,7 @@
 
             if (items.length === 0) {
                 if (typeof showWarning === 'function') {
-                    showWarning('Нет данных для сохранения');
+                    showWarning(t('readings_no_data_save', 'Нет данных для сохранения'));
                 }
                 isSubmitting = false;
                 if (submitButton) {
@@ -2709,7 +2746,7 @@
                 const result = await response.json();
                 console.log('Reading saved successfully:', result);
                 if (typeof showSuccess === 'function') {
-                    showSuccess('Показания успешно записаны!');
+                    showSuccess(t('readings_saved_success', 'Показания успешно записаны!'));
                 }
 
                 try {
@@ -2717,7 +2754,7 @@
                 } catch (photoError) {
                     console.error('Photo upload error:', photoError);
                     if (typeof showWarning === 'function') {
-                        showWarning('Показания сохранены, но фото не загрузились.');
+                        showWarning(t('readings_saved_photo_failed', 'Показания сохранены, но фото не загрузились.'));
                     }
                 }
 
@@ -2741,7 +2778,7 @@
             } catch (error) {
                 console.error('Error recording reading:', error);
                 if (typeof showError === 'function') {
-                    showError('Ошибка сохранения: ' + error.message);
+                    showError(`${t('readings_save_error', 'Ошибка сохранения')}: ${error.message}`);
                 }
             }
         } finally {
@@ -3027,7 +3064,7 @@
             sewerRow.className = 'auto-sewer-row';
             sewerRow.setAttribute('data-linked-water-meter-id', meterId);
             sewerRow.innerHTML = `
-                <td><span class="meter-type-pill">Канализация (авто)</span></td>
+                <td><span class="meter-type-pill">${t('readings_sewerage_auto', 'Канализация (авто)')}</span></td>
                 <td class="auto-sewer-tariff">—</td>
                 <td>—</td>
                 <td>от воды</td>
@@ -3075,10 +3112,10 @@
             stableRow.className = 'auto-stable-row';
             stableRow.setAttribute('data-linked-meter-id', meterId);
             stableRow.innerHTML = `
-                <td><span class="meter-type-pill">Стабильный тариф</span></td>
+                <td><span class="meter-type-pill">${t('stable_tariff', 'Стабильный тариф')}</span></td>
                 <td class="auto-stable-tariff">—</td>
                 <td>—</td>
-                <td>авто</td>
+                <td>${t('readings_auto', 'авто')}</td>
                 <td><span class="meter-consumption">—</span></td>
                 <td><span class="meter-amount">0.00</span></td>
                 <td><div class="meter-photo-cell"><span class="meter-photo-placeholder">—</span></div></td>
@@ -3114,7 +3151,7 @@
         const metersToRender = meters;
         const deleteHeader = document.querySelector('.meter-table thead th:last-child');
         if (deleteHeader) {
-            deleteHeader.textContent = showDelete ? 'Удалить последнее' : '';
+            deleteHeader.textContent = showDelete ? t('readings_delete_last', 'Удалить последнее') : '';
         }
 
         if (metersToRender.length === 0) {
@@ -3136,7 +3173,7 @@
                 ? 'Строка уже оплачена и недоступна для редактирования'
                 : (deleteLocked
                     ? 'Можно удалить только одно последнее показание'
-                    : 'Удалить последнее показание');
+                    : t('readings_delete_last_reading_title', 'Удалить последнее показание'));
             const inputDisabledAttr = paymentLocked ? 'disabled' : '';
 
             // prev_value - это последнее показание ДО начала месяца (или initial_reading)
@@ -3219,7 +3256,7 @@
                                        ${meter.existing ? 'checked' : ''}
                                        ${inputDisabledAttr}
                                        onchange="handleFixedMeterChange(this, ${meter.meter_id})">
-                                <label>Отметить${dateRangeText}</label>
+                                <label>${t('readings_mark', 'Отметить')}${dateRangeText}</label>
                             </td>
                             <td><span class="meter-consumption">${consumption.toFixed(3)}</span></td>
                             <td><span class="meter-amount">${initialAmount.toFixed(2)}</span></td>
@@ -3309,7 +3346,7 @@
                                                     onclick="openMeterPhotoPicker(${meter.meter_id}, event)">
                                                 <i class="bi bi-camera"></i>
                                             </button>
-                                            <span class="meter-photo-placeholder">Нет фото</span>
+                                            <span class="meter-photo-placeholder">${t('readings_no_photo', 'Нет фото')}</span>
                                         `}
                                     </div>
                                 ` : '<span class="meter-photo-placeholder">—</span>'}
@@ -3390,7 +3427,7 @@
         const row = button.closest('tr');
         if (row?.dataset?.paymentLocked === '1') {
             if (typeof showWarning === 'function') {
-                showWarning('Строка уже оплачена и недоступна для изменений');
+                showWarning(t('readings_row_paid_locked', 'Строка уже оплачена и недоступна для изменений'));
             }
             return;
         }
@@ -3439,7 +3476,7 @@
         if (row?.dataset?.paymentLocked === '1') {
             button.disabled = true;
             if (typeof showWarning === 'function') {
-                showWarning('Строка уже оплачена и недоступна для изменений');
+                showWarning(t('readings_row_paid_locked', 'Строка уже оплачена и недоступна для изменений'));
             }
             return;
         }
@@ -3448,7 +3485,7 @@
         if (!expectedReadingId) {
             button.disabled = true;
             if (typeof showWarning === 'function') {
-                showWarning('Удаление недоступно: последнее показание не найдено');
+                showWarning(t('readings_delete_last_not_found', 'Удаление недоступно: последнее показание не найдено'));
             }
             return;
         }
@@ -3474,7 +3511,7 @@
             const data = await response.json();
 
             if (typeof showSuccess === 'function') {
-                showSuccess('Последнее показание успешно удалено');
+                showSuccess(t('readings_delete_last_success', 'Последнее показание успешно удалено'));
             }
             deletedLastReadingMeters.add(meterId);
             if (row) {
@@ -3492,7 +3529,7 @@
         } catch (error) {
             console.error('Error deleting last reading:', error);
             if (typeof showError === 'function') {
-                showError('Ошибка удаления: ' + error.message);
+                showError(`${t('readings_delete_error', 'Ошибка удаления')}: ${error.message}`);
             }
         } finally {
             const isConsumed = deletedLastReadingMeters.has(meterId);
@@ -3562,6 +3599,17 @@
     };
 
     window.addEventListener('spa:contentLoaded', window._readingsContentLoadedHandler);
+
+    window.refreshPageTranslations = function () {
+        const route = window.location.hash.split('?')[0].slice(1);
+        if (!route || route === '/readings' || route.startsWith('/readings')) {
+            updateMeterTypeSummary();
+            updateExportMeterTypeSummary();
+            if (typeof window.renderReadingsTable === 'function') {
+                window.renderReadingsTable();
+            }
+        }
+    };
 
     // Also try to load immediately if page is already loaded
     if (document.readyState === 'loading') {

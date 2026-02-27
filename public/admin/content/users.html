@@ -1,12 +1,12 @@
 <link rel="stylesheet" href="/admin/content_css/users.css">
 <div class="content-wrapper">
     <div class="users-header">
-        <h2>Пользователи</h2>
+        <h2 data-i18n="nav_users">Пользователи</h2>
     </div>
 
     <!-- Create User Form -->
     <div class="user-create-form">
-        <input type="text" id="newUserLogin" placeholder="Логин нового пользователя" autocomplete="off" />
+        <input type="text" id="newUserLogin" placeholder="Логин нового пользователя" autocomplete="off" data-i18n-placeholder="users_new_login_placeholder" />
         <select id="newUserRole">
             <option value="ADMIN">ADMIN</option>
             <option value="OPERATOR">OPERATOR</option>
@@ -14,7 +14,7 @@
             <option value="ROOT">ROOT</option>
         </select>
         <button class="btn-create-user" onclick="createUser()">
-            Создать
+            <span data-i18n="create">Создать</span>
         </button>
     </div>
 
@@ -24,7 +24,7 @@
     <div style="position: relative;">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h3>Список пользователей</h3>
+                <h3 data-i18n="users_list_title">Список пользователей</h3>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -32,11 +32,11 @@
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Логин</th>
-                                <th>Роль</th>
-                                <th>Последний вход</th>
-                                <th>Пароль</th>
-                                <th>Действия</th>
+                                <th data-i18n="tenants_col_login">Логин</th>
+                                <th data-i18n="users_col_role">Роль</th>
+                                <th data-i18n="tenants_col_last_login">Последний вход</th>
+                                <th data-i18n="tenants_col_password">Пароль</th>
+                                <th data-i18n="tariffs_col_actions">Действия</th>
                             </tr>
                         </thead>
                         <tbody id="usersTableBody">
@@ -57,12 +57,12 @@
                     </button>
                 </div>
                 <div class="pagination-info">
-                    <span>Стр. <span id="userCurrentPage">1</span> из <span id="userTotalPages">1</span> · всего <span
+                    <span><span data-i18n="residents_pagination_page_short">Стр.</span> <span id="userCurrentPage">1</span> <span data-i18n="residents_pagination_of">из</span> <span id="userTotalPages">1</span> · <span data-i18n="residents_pagination_total">всего</span> <span
                             id="userTotalItems">0</span></span>
                 </div>
                 <div class="pagination-per-page">
-                    <span>На</span>
-                    <span>странице:</span>
+                    <span data-i18n="residents_pagination_on">На</span>
+                    <span data-i18n="residents_pagination_per_page">странице:</span>
                     <div class="custom-pag-select" id="customUserItemsPerPage">
                         <select id="userItemsPerPage" onchange="changeUserItemsPerPage()" style="display: none;">
                             <option value="10">10</option>
@@ -91,7 +91,7 @@
 <div class="modal-overlay" id="qrModal">
     <div class="modal-content qr-modal-content">
         <div class="modal-header">
-            <h2>QR-код для пользователя</h2>
+            <h2 data-i18n="users_qr_title">QR-код для пользователя</h2>
             <button class="modal-close" onclick="closeQRModal()">
                 <i class="bi bi-x-lg"></i>
             </button>
@@ -101,18 +101,23 @@
                 <canvas id="qrCanvas" style="max-width: 100%; height: auto;"></canvas>
             </div>
             <p style="text-align: center; color: #666; margin-top: 15px;">
-                Пользователь должен отсканировать этот QR-код для установки пароля
+                <span data-i18n="users_qr_hint">Пользователь должен отсканировать этот QR-код для установки пароля</span>
             </p>
         </div>
         <div class="modal-actions">
-            <button class="btn btn-primary" onclick="printQRCode()">Print</button>
-            <button class="btn btn-secondary" onclick="closeQRModal()">Закрыть</button>
+            <button class="btn btn-primary" onclick="printQRCode()" data-i18n="print">Print</button>
+            <button class="btn btn-secondary" onclick="closeQRModal()" data-i18n="close">Закрыть</button>
         </div>
     </div>
 </div>
 
 <script>
     (function () {
+        const t = (key, fallback = '') => window.i18n?.translate?.(key) || fallback || key;
+        const tr = (key, params = {}, fallback = '') => {
+            const base = t(key, fallback);
+            return Object.entries(params).reduce((txt, [p, v]) => txt.replace(new RegExp(`\\{${p}\\}`, 'g'), String(v)), base);
+        };
         // Текущий список пользователей из backend
         let users = [];
         let usersData = {
@@ -209,7 +214,7 @@
         async function loadUsers() {
             const tbody = document.getElementById('usersTableBody');
             if (tbody) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Загрузка...</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">${t('loading', 'Загрузка...')}</td></tr>`;
             }
 
             await fetchUsers();
@@ -218,7 +223,7 @@
             tbody.innerHTML = '';
 
             if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Пока нет пользователей</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">${t('users_empty', 'Пока нет пользователей')}</td></tr>`;
                 updatePaginationUI();
                 return;
             }
@@ -228,6 +233,12 @@
 
                 // Get role badge class
                 const roleClass = `role-${String(user.role).toLowerCase()}`;
+                const roleLabelMap = {
+                    ROOT: t('system_admin', 'Системный администратор'),
+                    ADMIN: t('role_admin', 'Администратор'),
+                    OPERATOR: t('role_operator', 'Оператор'),
+                    RESIDENT: t('role_user', 'Жилец')
+                };
 
                 // Password badge
                 let passwordBadge = '';
@@ -235,9 +246,9 @@
                 const tempPassword = user.temp_password_plain;
 
                 if (passwordStatus === 'set') {
-                    passwordBadge = '<span class="password-badge password-set">установлен</span>';
+                    passwordBadge = `<span class="password-badge password-set">${t('tenants_password_set', 'установлен')}</span>`;
                 } else if (passwordStatus === 'temp' && tempPassword) {
-                    passwordBadge = `<span class="password-badge password-temp">временный: ${tempPassword}</span>`;
+                    passwordBadge = `<span class="password-badge password-temp">${tr('tenants_password_temporary', { password: tempPassword }, 'временный: {password}')}</span>`;
                 }
 
                 // Actions (only for non-root users)
@@ -246,20 +257,20 @@
                     actions = `
                     <div class="user-actions">
                         <button class="btn-user-action btn-reset-password" onclick="resetPassword(${user.id})">
-                            Сброс пароля
+                            ${t('tenants_action_reset_password', 'Сброс пароля')}
                         </button>
                         <input 
                             type="text" 
                             class="input-new-name" 
                             id="newName${user.id}" 
-                            placeholder="Новое имя"
+                            placeholder="${t('users_new_name_placeholder', 'Новое имя')}"
                             autocomplete="off"
                         />
                         <button class="btn-user-action btn-rename-user" onclick="renameUser(${user.id})">
-                            Переимен.
+                            ${t('users_action_rename', 'Переимен.')}
                         </button>
                         <button class="btn-user-action btn-delete-user" onclick="deleteUser(${user.id})">
-                            Удалить
+                            ${t('action_delete', 'Удалить')}
                         </button>
                         ${user.require_password_change && user.temp_password_plain ? `
                         <button class="btn-user-action btn-qr-user" onclick="showQRCode(${user.id}, '${user.username}', '${user.temp_password_plain}')">
@@ -273,7 +284,7 @@
                 row.innerHTML = `
                 <td>${user.id}</td>
                 <td>${user.username}</td>
-                <td><span class="role-badge ${roleClass}">RoleEnum.${user.role}</span></td>
+                <td><span class="role-badge ${roleClass}">${roleLabelMap[user.role] || user.role}</span></td>
                 <td>${formatUserDate(user.last_login_at)}</td>
                 <td>${passwordBadge}</td>
                 <td>${actions}</td>
@@ -451,9 +462,9 @@
 
             if (!login) {
                 if (window.showWarning) {
-                    showWarning('⚠️ Введите логин пользователя');
+                    showWarning(t('users_enter_login_warning', 'Введите логин пользователя'));
                 } else {
-                    alert('Введите логин пользователя');
+                    alert(t('users_enter_login_warning', 'Введите логин пользователя'));
                 }
                 return;
             }
@@ -485,18 +496,18 @@
                 loginInput.value = '';
                 roleSelect.value = 'ADMIN';
 
-                const tempPassword = created.temp_password_plain || 'установлен';
+                const tempPassword = created.temp_password_plain || t('tenants_password_set', 'установлен');
                 if (window.showSuccess) {
-                    showSuccess(`✅ Пользователь "${login}" создан! Временный пароль: ${tempPassword}`);
+                    showSuccess(tr('users_create_success', { login, password: tempPassword }, 'Пользователь "{login}" создан! Временный пароль: {password}'));
                 } else {
-                    alert(`Пользователь создан!\nЛогин: ${login}\nВременный пароль: ${tempPassword}`);
+                    alert(tr('users_create_success_alert', { login, password: tempPassword }, 'Пользователь создан!\nЛогин: {login}\nВременный пароль: {password}'));
                 }
             } catch (e) {
                 console.error('Create user error:', e);
                 if (window.showError) {
-                    showError('❌ Не удалось создать пользователя');
+                    showError(t('users_create_error', 'Не удалось создать пользователя'));
                 } else {
-                    alert('Не удалось создать пользователя');
+                    alert(t('users_create_error', 'Не удалось создать пользователя'));
                 }
             }
         };
@@ -508,7 +519,7 @@
 
             if (user.username === 'root') {
                 if (window.showWarning) {
-                    showWarning('⚠️ Невозможно сбросить пароль для root');
+                    showWarning(t('users_root_reset_forbidden', 'Невозможно сбросить пароль для root'));
                 }
                 return;
             }
@@ -524,18 +535,18 @@
                 // Reload current page to see updated password
                 await loadUsers();
 
-                const tempPassword = updated.temp_password_plain || 'временный пароль обновлён';
+                const tempPassword = updated.temp_password_plain || t('users_temp_password_updated', 'временный пароль обновлён');
                 if (window.showSuccess) {
-                    showSuccess(`✅ Пароль сброшен! Новый временный пароль: ${tempPassword}`);
+                    showSuccess(tr('users_reset_success', { password: tempPassword }, 'Пароль сброшен! Новый временный пароль: {password}'));
                 } else {
-                    alert(`Пароль сброшен!\nНовый временный пароль: ${tempPassword}`);
+                    alert(tr('users_reset_success_alert', { password: tempPassword }, 'Пароль сброшен!\nНовый временный пароль: {password}'));
                 }
             } catch (e) {
                 console.error('Reset password error:', e);
                 if (window.showError) {
-                    showError('❌ Не удалось сбросить пароль');
+                    showError(t('users_reset_error', 'Не удалось сбросить пароль'));
                 } else {
-                    alert('Не удалось сбросить пароль');
+                    alert(t('users_reset_error', 'Не удалось сбросить пароль'));
                 }
             }
         };
@@ -552,9 +563,9 @@
 
             if (!newName) {
                 if (window.showWarning) {
-                    showWarning('⚠️ Введите новое имя');
+                    showWarning(t('users_enter_new_name_warning', 'Введите новое имя'));
                 } else {
-                    alert('Введите новое имя');
+                    alert(t('users_enter_new_name_warning', 'Введите новое имя'));
                 }
                 return;
             }
@@ -571,16 +582,16 @@
                 await loadUsers();
 
                 if (window.showSuccess) {
-                    showSuccess(`✅ Пользователь "${user.username}" переименован в "${newName}"`);
+                    showSuccess(tr('users_rename_success', { old: user.username, name: newName }, 'Пользователь "{old}" переименован в "{name}"'));
                 } else {
-                    alert(`Пользователь переименован: ${user.username} → ${newName}`);
+                    alert(tr('users_rename_success_alert', { old: user.username, name: newName }, 'Пользователь переименован: {old} → {name}'));
                 }
             } catch (e) {
                 console.error('Rename user error:', e);
                 if (window.showError) {
-                    showError('❌ Не удалось переименовать пользователя');
+                    showError(t('users_rename_error', 'Не удалось переименовать пользователя'));
                 } else {
-                    alert('Не удалось переименовать пользователя');
+                    alert(t('users_rename_error', 'Не удалось переименовать пользователя'));
                 }
             }
         };
@@ -617,7 +628,7 @@
                 ctx.fillStyle = '#000000';
                 ctx.font = '14px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText('QR Code URL:', 150, 140);
+                ctx.fillText(t('tenants_qr_code_url', 'QR Code URL:'), 150, 140);
                 ctx.fillText(qrUrl, 150, 160, 280);
 
                 const modal = document.getElementById('qrModal');
@@ -662,9 +673,9 @@
                 if (!canvas) {
                     console.error('QR canvas not found');
                     if (window.showError) {
-                        showError('❌ Элемент для QR-кода не найден');
+                        showError(t('tenants_qr_element_missing', 'Элемент для QR-кода не найден'));
                     } else {
-                        alert('Элемент для QR-кода не найден');
+                        alert(t('tenants_qr_element_missing', 'Элемент для QR-кода не найден'));
                     }
                     return;
                 }
@@ -674,9 +685,9 @@
             } catch (e) {
                 console.error('Show QR error:', e);
                 if (window.showError) {
-                    showError('❌ Не удалось создать QR-код');
+                    showError(t('tenants_qr_generate_error', 'Не удалось создать QR-код'));
                 } else {
-                    alert('Не удалось создать QR-код');
+                    alert(t('tenants_qr_generate_error', 'Не удалось создать QR-код'));
                 }
             }
         };
@@ -685,9 +696,9 @@
         window.printQRCode = function () {
             if (!currentQRUserData || !currentQRUserData.qrUrl) {
                 if (window.showError) {
-                    showError('❌ Нет данных для печати QR');
+                    showError(t('tenants_qr_no_data_print', 'Нет данных для печати QR'));
                 } else {
-                    alert('Нет данных для печати QR');
+                    alert(t('tenants_qr_no_data_print', 'Нет данных для печати QR'));
                 }
                 return;
             }
@@ -739,7 +750,7 @@
 
             if (user.username === 'root') {
                 if (window.showWarning) {
-                    showWarning('⚠️ Невозможно удалить root пользователя');
+                    showWarning(t('users_root_delete_forbidden', 'Невозможно удалить root пользователя'));
                 }
                 return;
             }
@@ -747,7 +758,7 @@
             // Используем модальное окно приложения вместо браузерного confirm
             if (typeof showConfirm === 'function') {
                 showConfirm(
-                    `Вы уверены, что хотите удалить пользователя "${user.username}"?`,
+                    tr('users_delete_confirm', { username: user.username }, 'Вы уверены, что хотите удалить пользователя "{username}"?'),
                     async (confirmed) => {
                         // Удаление происходит ТОЛЬКО если confirmed === true (нажата кнопка OK)
                         if (confirmed === true) {
@@ -762,7 +773,7 @@
                 );
             } else {
                 // Fallback на браузерный confirm, если showConfirm недоступен
-                if (confirm(`Вы уверены, что хотите удалить пользователя "${user.username}"?`)) {
+                if (confirm(tr('users_delete_confirm', { username: user.username }, 'Вы уверены, что хотите удалить пользователя "{username}"?'))) {
                     await performDeleteUser(userId, user.username);
                 }
             }
@@ -786,16 +797,16 @@
                 }
 
                 if (window.showSuccess) {
-                    showSuccess(`✅ Пользователь "${username}" удалён`);
+                    showSuccess(tr('users_delete_success', { username }, 'Пользователь "{username}" удалён'));
                 } else {
-                    alert(`Пользователь "${username}" удалён`);
+                    alert(tr('users_delete_success', { username }, 'Пользователь "{username}" удалён'));
                 }
             } catch (e) {
                 console.error('Delete user error:', e);
                 if (window.showError) {
-                    showError('❌ Не удалось удалить пользователя');
+                    showError(t('users_delete_error', 'Не удалось удалить пользователя'));
                 } else {
-                    alert('Не удалось удалить пользователя');
+                    alert(t('users_delete_error', 'Не удалось удалить пользователя'));
                 }
             }
         }
@@ -827,5 +838,12 @@
         };
 
         document.addEventListener('spa:contentLoaded', window._usersContentLoadedHandler);
+
+        window.refreshPageTranslations = function () {
+            const route = window.location.hash.split('?')[0].slice(1);
+            if (!route || route === '/users' || route.startsWith('/users')) {
+                loadUsers();
+            }
+        };
     })();
 </script>

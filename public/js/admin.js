@@ -924,6 +924,12 @@ function checkMonthlyActivation() {
     const timerBadge = document.getElementById('monthlyCountdown');
     const timerValue = document.getElementById('timerValue');
     if (!btn || !timerBadge) return;
+    const t = (key, fallback) => {
+        if (window.i18n && typeof window.i18n.translate === 'function') {
+            return window.i18n.translate(key);
+        }
+        return fallback;
+    };
 
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -953,7 +959,7 @@ function checkMonthlyActivation() {
         btn.style.setProperty('display', 'flex', 'important');
         btn.disabled = false;
         timerBadge.style.setProperty('display', 'none', 'important');
-        btn.title = "Готово к рассылке уведомлений за текущий месяц";
+        btn.title = t('monthly_issue_ready_title', 'Активируется за 1 день до конца месяца');
     } else {
         // Показываем таймер
         btn.style.setProperty('display', 'none', 'important');
@@ -970,7 +976,9 @@ function checkMonthlyActivation() {
         timeStr += `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         
         if (timerValue) timerValue.innerText = timeStr;
-        timerBadge.title = alreadyDoneThisMonth ? "Рассылка за этот месяц уже выполнена" : `Активация через ${timeStr}`;
+        timerBadge.title = alreadyDoneThisMonth
+            ? t('monthly_issue_done_title', 'Рассылка за этот месяц уже выполнена')
+            : t('monthly_issue_activates_in', 'Активация через {time}').replace('{time}', timeStr);
     }
 
     // Для дебага (форсированная активация через URL)

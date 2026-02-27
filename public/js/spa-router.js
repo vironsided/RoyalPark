@@ -528,11 +528,53 @@ class SPARouter {
         const titleContainer = document.getElementById('page-title-container');
         
         if (!titleContainer) return;
+
+        const t = (key, fallback) => {
+            if (window.i18n && typeof window.i18n.translate === 'function') {
+                return window.i18n.translate(key);
+            }
+            return fallback;
+        };
+
+        const textToKey = {
+            'Главная': 'home',
+            'Панель управления': 'nav_dashboard',
+            'Аналитика': 'nav_analytics',
+            'Отчеты': 'nav_reports',
+            'Блоки': 'nav_blocks',
+            'Тарифы': 'nav_tariffs',
+            'Резиденты': 'nav_residents',
+            'Жители': 'nav_tenants',
+            'Показатели': 'nav_readings',
+            'Пользователи': 'nav_users',
+            'Финансы': 'nav_finance',
+            'Платежи': 'nav_payments',
+            'Счета': 'nav_accounts',
+            'Обращения': 'nav_appeals',
+            'Обслуживание': 'nav_maintenance',
+            'Заявки на ремонт': 'nav_repair_requests',
+            'Проверки': 'nav_checks',
+            'Персонал': 'nav_personnel',
+            'Система': 'nav_system',
+            'Новости': 'nav_news',
+            'Настройки': 'settings',
+            'Логи': 'nav_logs',
+            'Резервное копирование': 'nav_backup',
+            'Invoice view': 'invoice_view_title',
+            'Обращения 11': 'nav_appeals'
+        };
+
+        const translatePageText = (text) => {
+            const key = textToKey[text];
+            return key ? t(key, text) : text;
+        };
+
+        const translatedTitle = translatePageText(pageInfo.title);
         
         // Обновляем заголовок
         const h1 = titleContainer.querySelector('h1');
         if (h1) {
-            h1.textContent = pageInfo.title;
+            h1.textContent = translatedTitle;
             // Удаляем любые inline стили, которые могут перезаписать CSS стили
             h1.removeAttribute('style');
             // Принудительно перерисовываем элемент для применения CSS стилей
@@ -544,6 +586,7 @@ class SPARouter {
         if (breadcrumbContainer) {
             let breadcrumbHtml = '';
             pageInfo.breadcrumb.forEach((crumb, index) => {
+                const translatedCrumb = translatePageText(crumb);
                 if (index > 0) {
                     breadcrumbHtml += '<span>›</span>';
                 }
@@ -557,7 +600,7 @@ class SPARouter {
                 breadcrumbHtml += `
                     <span class="breadcrumb-item">
                         ${iconHtml}
-                        ${crumb}
+                        ${translatedCrumb}
                     </span>
                 `;
             });
@@ -566,7 +609,7 @@ class SPARouter {
         }
         
         // Обновляем title страницы
-        document.title = `${pageInfo.title} - RoyalPark Admin`;
+        document.title = `${translatedTitle} - RoyalPark Admin`;
     }
     
     initializePageScripts() {

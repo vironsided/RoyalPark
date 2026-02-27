@@ -9,6 +9,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
     const alertBox = document.getElementById('alert');
     const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+    const t = (key, fallback) => (window.i18n && typeof window.i18n.translate === 'function')
+        ? window.i18n.translate(key)
+        : fallback;
+
+    function translateLoginError(detail, status) {
+        const normalized = String(detail || '').trim().toLowerCase();
+        const invalidHints = [
+            'неверное имя пользователя',
+            'неверный пароль',
+            'invalid',
+            'incorrect',
+            'wrong credentials',
+            'username or password'
+        ];
+
+        if (status === 401 || invalidHints.some(h => normalized.includes(h))) {
+            return t('login_error_invalid_credentials', 'Неверное имя пользователя или пароль');
+        }
+        if (status === 429) {
+            return t('login_error_too_many_requests', 'Слишком много попыток входа. Попробуйте позже');
+        }
+        if (status >= 500) {
+            return t('login_error_server', 'Ошибка сервера. Попробуйте позже');
+        }
+        return t('login_error_generic', 'Ошибка входа в систему');
+    }
 
     // Handle form submission
     loginForm.addEventListener('submit', async function(e) {
@@ -21,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Validation
         if (!username || !password) {
-            showAlert('Пожалуйста, заполните все поля', 'error');
+            showAlert(t('login_error_fill_all_fields', 'Пожалуйста, заполните все поля'), 'error');
             return;
         }
 
@@ -45,8 +71,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ detail: 'Ошибка входа в систему' }));
-                throw new Error(errorData.detail || 'Неверное имя пользователя или пароль');
+                const errorData = await response.json().catch(() => ({ detail: '' }));
+                const localizedError = translateLoginError(errorData.detail, response.status);
+                throw new Error(localizedError);
             }
 
             const data = await response.json();
@@ -56,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('userRole', data.role);
             localStorage.setItem('username', data.username);
 
-            showAlert('Вход выполнен успешно! Перенаправление...', 'success');
+            showAlert(t('login_success_redirect', 'Вход выполнен успешно! Перенаправление...'), 'success');
             
             // Add success animation
             celebrateSuccess();
@@ -79,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 1500);
         } catch (error) {
             console.error('Login error:', error);
-            showAlert(error.message || 'Ошибка входа в систему', 'error');
+            showAlert(error.message || t('login_error_generic', 'Ошибка входа в систему'), 'error');
             shakeElement(loginSubmitBtn);
         } finally {
             loginSubmitBtn.classList.remove('loading');
