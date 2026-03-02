@@ -31,7 +31,7 @@
                     <table class="table table-hover tenants-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th data-i18n="id">ID</th>
                                 <th data-i18n="tenants_col_login">Логин</th>
                                 <th data-i18n="users_col_role">Роль</th>
                                 <th data-i18n="tenants_col_last_login">Последний вход</th>
@@ -709,6 +709,8 @@
                 password: currentQRUserData.tempPassword || '',
                 qrUrl: currentQRUserData.qrUrl
             });
+            const currentLang = (window.i18n && window.i18n.currentLanguage) || localStorage.getItem('language') || 'az';
+            params.set('lang', currentLang);
 
             const base = window.location.origin || '';
             const printUrl = `${base}/admin/content/qr-print.html?${params.toString()}`;

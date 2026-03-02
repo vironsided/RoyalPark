@@ -179,13 +179,20 @@ function initCharts() {
             this.classList.add('active');
             
             // Update chart data based on selected period
-            console.log('Chart period changed to:', this.textContent);
-            updateChartData(this.textContent);
+            const selectedPeriod = this.dataset.period || this.textContent;
+            console.log('Chart period changed to:', selectedPeriod);
+            updateChartData(selectedPeriod);
         });
     });
 
     // Initialize Chart.js
     initPaymentChart();
+
+    // Re-localize chart labels on interface language switch
+    window.addEventListener('languageChanged', refreshChartLabelsByActivePeriod);
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'language') refreshChartLabelsByActivePeriod();
+    });
 }
 
 // Create a beautiful gradient chart
@@ -211,9 +218,17 @@ function initPaymentChart() {
     
     // Sample data
     const data = {
-        labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+        labels: [
+            tr('monday', 'Mon'),
+            tr('tuesday', 'Tue'),
+            tr('wednesday', 'Wed'),
+            tr('thursday', 'Thu'),
+            tr('friday', 'Fri'),
+            tr('saturday', 'Sat'),
+            tr('sunday', 'Sun')
+        ],
         datasets: [{
-            label: 'Платежи',
+            label: tr('chart_payments_series', 'Payments'),
             data: [12000, 19000, 15000, 25000, 22000, 18000, 24000],
             backgroundColor: gradient,
             borderColor: 'rgba(102, 126, 234, 1)',
@@ -295,21 +310,75 @@ function updateChartData(period) {
     if (!window.paymentChart) return;
     
     let newData, newLabels;
+    const periodKey = normalizeChartPeriod(period);
     
-    if (period === 'Неделя') {
-        newLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    if (periodKey === 'week') {
+        newLabels = [
+            tr('monday', 'Mon'),
+            tr('tuesday', 'Tue'),
+            tr('wednesday', 'Wed'),
+            tr('thursday', 'Thu'),
+            tr('friday', 'Fri'),
+            tr('saturday', 'Sat'),
+            tr('sunday', 'Sun')
+        ];
         newData = [12000, 19000, 15000, 25000, 22000, 18000, 24000];
-    } else if (period === 'Месяц') {
-        newLabels = ['Нед 1', 'Нед 2', 'Нед 3', 'Нед 4'];
+    } else if (periodKey === 'month') {
+        newLabels = [
+            tr('chart_week_1', 'Week 1'),
+            tr('chart_week_2', 'Week 2'),
+            tr('chart_week_3', 'Week 3'),
+            tr('chart_week_4', 'Week 4')
+        ];
         newData = [85000, 92000, 88000, 95000];
-    } else if (period === 'Год') {
-        newLabels = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+    } else if (periodKey === 'year') {
+        newLabels = [
+            tr('month_january', 'January'),
+            tr('month_february', 'February'),
+            tr('month_march', 'March'),
+            tr('month_april', 'April'),
+            tr('month_may', 'May'),
+            tr('month_june', 'June'),
+            tr('month_july', 'July'),
+            tr('month_august', 'August'),
+            tr('month_september', 'September'),
+            tr('month_october', 'October'),
+            tr('month_november', 'November'),
+            tr('month_december', 'December')
+        ];
         newData = [320000, 340000, 330000, 360000, 350000, 380000, 390000, 370000, 385000, 395000, 400000, 420000];
+    } else {
+        return;
     }
     
     window.paymentChart.data.labels = newLabels;
+    window.paymentChart.data.datasets[0].label = tr('chart_payments_series', 'Payments');
     window.paymentChart.data.datasets[0].data = newData;
     window.paymentChart.update('active');
+}
+
+function tr(key, fallback = '') {
+    const lang = localStorage.getItem('language') || window.i18n?.currentLanguage || 'az';
+    return window.i18n?.translate?.(key, lang) || fallback || key;
+}
+
+function normalizeChartPeriod(periodRaw) {
+    const period = String(periodRaw || '').trim().toLowerCase();
+
+    if (['day', 'week', 'month', 'year'].includes(period)) return period;
+    if (['день', 'gün'].includes(period)) return 'day';
+    if (['неделя', 'həftə'].includes(period)) return 'week';
+    if (['месяц', 'ay'].includes(period)) return 'month';
+    if (['год', 'il'].includes(period)) return 'year';
+
+    return period;
+}
+
+function refreshChartLabelsByActivePeriod() {
+    if (!window.paymentChart) return;
+    const activeBtn = document.querySelector('.chart-btn.active');
+    const selectedPeriod = activeBtn?.dataset?.period || activeBtn?.textContent || 'week';
+    updateChartData(selectedPeriod);
 }
 
 // Load dashboard data
@@ -813,11 +882,15 @@ function getAdminModalRoot() {
 
 // Internal function to show confirm modal (dark theme)
 function showAdminConfirmModal(options) {
+    const tr = (key, fallback) => {
+        const lang = localStorage.getItem('language') || window.i18n?.currentLanguage || 'az';
+        return window.i18n?.translate?.(key, lang) || fallback || key;
+    };
     const {
-        title = 'Подтвердите действие',
+        title = tr('confirm_action_title', 'Confirm action'),
         message = '',
         confirmText = 'OK',
-        cancelText = 'Отмена'
+        cancelText = tr('cancel', 'Cancel')
     } = options || {};
 
     return new Promise((resolve) => {
@@ -889,10 +962,10 @@ window.showConfirm = function showConfirm(message, titleOrCallback, onCancel) {
     if (typeof titleOrCallback === 'function') {
         const onConfirm = titleOrCallback;
         const promise = showAdminConfirmModal({
-            title: 'Подтвердите действие',
+            title: (window.i18n?.translate?.('confirm_action_title') || 'Confirm action'),
             message: message,
             confirmText: 'OK',
-            cancelText: 'Отмена'
+            cancelText: (window.i18n?.translate?.('cancel') || 'Cancel')
         });
         promise.then((confirmed) => {
             if (confirmed && typeof onConfirm === 'function') {
@@ -909,12 +982,14 @@ window.showConfirm = function showConfirm(message, titleOrCallback, onCancel) {
     }
     
     // Promise style: showConfirm(message, title)
-    const title = typeof titleOrCallback === 'string' ? titleOrCallback : 'Подтвердите действие';
+    const title = typeof titleOrCallback === 'string'
+        ? titleOrCallback
+        : (window.i18n?.translate?.('confirm_action_title') || 'Confirm action');
     return showAdminConfirmModal({
         title: title,
         message: message,
         confirmText: 'OK',
-        cancelText: 'Отмена'
+        cancelText: (window.i18n?.translate?.('cancel') || 'Cancel')
     });
 };
 
@@ -971,8 +1046,9 @@ function checkMonthlyActivation() {
         const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         const secs = Math.floor((diff % (1000 * 60)) / 1000);
 
+        const dayShort = t('payment_timer_day_short', 'д');
         let timeStr = "";
-        if (days > 0) timeStr += `${days}д `;
+        if (days > 0) timeStr += `${days}${dayShort} `;
         timeStr += `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         
         if (timerValue) timerValue.innerText = timeStr;

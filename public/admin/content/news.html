@@ -14,7 +14,7 @@
                 <tr>
                     <th style="width: 60px;" data-i18n="admin_news_th_icon">Иконка</th>
                     <th data-i18n="admin_news_th_title">Заголовок</th>
-                    <th style="width: 140px;">Блоки</th>
+                    <th style="width: 140px;" data-i18n="admin_news_th_blocks">Блоки</th>
                     <th style="width: 120px;" data-i18n="admin_news_th_priority">Приоритет</th>
                     <th style="width: 150px;" data-i18n="admin_news_th_published">Опубликовано</th>
                     <th style="width: 100px;" data-i18n="admin_news_th_status">Статус</th>
@@ -39,12 +39,12 @@
                                 </button>
                             </div>
                             <div class="pagination-info">
-                        <span>Стр. <span id="newsCurrentPage">1</span> из <span id="newsTotalPages">1</span> · всего
+                        <span><span data-i18n="residents_pagination_page_short">Стр.</span> <span id="newsCurrentPage">1</span> <span data-i18n="residents_pagination_of">из</span> <span id="newsTotalPages">1</span> · <span data-i18n="residents_pagination_total">всего</span>
                             <span id="newsTotalItems">0</span></span>
                             </div>
                             <div class="pagination-per-page">
-                                <span>На</span>
-                                <span>странице:</span>
+                                <span data-i18n="residents_pagination_on">На</span>
+                                <span data-i18n="residents_pagination_per_page">странице:</span>
                                 <div class="custom-pag-select" id="customNewsItemsPerPage">
                                     <select id="newsItemsPerPage" onchange="changeNewsItemsPerPage()" style="display: none;">
                                         <option value="10">10</option>
@@ -179,21 +179,21 @@
                         <small class="text-muted" data-i18n="admin_news_label_priority_hint">Чем выше, тем важнее</small>
                     </div>
                     <div class="col-md-8">
-                        <label class="form-label">Кому отправить</label>
+                        <label class="form-label" data-i18n="admin_news_target_label">Кому отправить</label>
                         <div class="news-targets">
                             <label class="form-check">
                                 <input class="form-check-input" type="checkbox" id="newsTargetAll" checked>
-                                <span class="form-check-label">Всем</span>
+                                <span class="form-check-label" data-i18n="all">Всем</span>
                             </label>
                             <div class="block-checkbox-grid" id="newsTargetBlocks"></div>
-                            <small class="text-muted">Если выбран “Всем”, блоки игнорируются</small>
+                            <small class="text-muted" data-i18n="admin_news_target_hint">Если выбран “Всем”, блоки игнорируются</small>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label" data-i18n="admin_news_label_published_at">Дата публикации</label>
                         <div class="date-input-wrapper">
                             <input type="datetime-local" class="form-control" id="newsPublishedAt">
-                            <button type="button" class="btn-calendar" onclick="document.getElementById('newsPublishedAt').showPicker()" title="Открыть календарь">
+                            <button type="button" class="btn-calendar" onclick="document.getElementById('newsPublishedAt').showPicker()" title="Открыть календарь" data-i18n-title="open_calendar">
                                 <i class="bi bi-calendar"></i>
                             </button>
                         </div>
@@ -202,7 +202,7 @@
                         <label class="form-label" data-i18n="admin_news_label_expires_at">Срок действия</label>
                         <div class="date-input-wrapper">
                             <input type="datetime-local" class="form-control" id="newsExpiresAt">
-                            <button type="button" class="btn-calendar" onclick="document.getElementById('newsExpiresAt').showPicker()" title="Открыть календарь">
+                            <button type="button" class="btn-calendar" onclick="document.getElementById('newsExpiresAt').showPicker()" title="Открыть календарь" data-i18n-title="open_calendar">
                                 <i class="bi bi-calendar"></i>
                             </button>
                         </div>
@@ -1116,8 +1116,9 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
 
     // Get current language
     const getCurrentLanguage = () => {
-        return localStorage.getItem('language') || 'ru';
+        return localStorage.getItem('language') || 'az';
     };
+    const t = (key, fallback = '') => window.i18n?.translate?.(key) || fallback || key;
 
     // Pagination Functions
     function buildNewsPageList(current, total) {
@@ -1366,7 +1367,7 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
             console.error('Error loading news:', error);
             const tbody = document.getElementById('newsTableBody');
             if (tbody) {
-                const errorMsg = window.i18n ? window.i18n.translate('error_loading_data') : 'Ошибка загрузки данных';
+                const errorMsg = t('error_loading_data', 'Ошибка загрузки данных');
                 tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger" data-i18n="error_loading_data">${errorMsg}</td></tr>`;
             }
             newsList = [];
@@ -1383,7 +1384,7 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
         if (!tbody) return;
         
         if (!newsList.length) {
-            const noNewsText = window.i18n ? window.i18n.translate('user_no_news') : 'Нет новостей';
+            const noNewsText = t('user_no_news', 'Нет новостей');
             tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" data-i18n="user_no_news">${noNewsText}</td></tr>`;
             return;
         }
@@ -1398,7 +1399,7 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
                 title = typeof news.title === 'string' ? JSON.parse(news.title) : news.title;
             } catch (e) {
                 console.error('Error parsing news title:', e, news);
-                title = { ru: 'Ошибка загрузки', az: 'Yükləmə xətası', en: 'Loading error' };
+                title = { ru: t('error_loading_data', 'Ошибка загрузки'), az: t('error_loading_data', 'Yükləmə xətası'), en: t('error_loading_data', 'Loading error') };
             }
             
             // Выбираем язык с правильным fallback
@@ -1425,11 +1426,11 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
                 return div.innerHTML;
             };
             
-            const activeText = window.i18n ? window.i18n.translate('admin_news_status_active') : 'Активна';
-            const inactiveText = window.i18n ? window.i18n.translate('admin_news_status_inactive') : 'Неактивна';
+            const activeText = t('admin_news_status_active', 'Активна');
+            const inactiveText = t('admin_news_status_inactive', 'Неактивна');
             
             const targetBlocks = Array.isArray(news.target_blocks) ? news.target_blocks : [];
-            const blockLabel = targetBlocks.length ? targetBlocks.join(', ') : 'Всем';
+            const blockLabel = targetBlocks.length ? targetBlocks.join(', ') : t('all', 'Всем');
 
             return `
                 <tr>
@@ -1448,10 +1449,10 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
                         </span>
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="window.editNews(${news.id})" title="Редактировать">
+                        <button class="btn btn-sm btn-outline-primary" onclick="window.editNews(${news.id})" title="${escapeHtml(t('edit', 'Редактировать'))}">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="window.deleteNews(${news.id})" title="Удалить">
+                        <button class="btn btn-sm btn-outline-danger" onclick="window.deleteNews(${news.id})" title="${escapeHtml(t('delete', 'Удалить'))}">
                             <i class="bi bi-trash"></i>
                         </button>
                     </td>
@@ -1529,7 +1530,7 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
         editingNewsId = null;
         const modalTitle = document.getElementById('newsModalTitle');
         if (modalTitle) {
-            modalTitle.textContent = window.i18n ? window.i18n.translate('admin_news_modal_create') : 'Создать новость';
+            modalTitle.textContent = t('admin_news_modal_create', 'Создать новость');
             modalTitle.setAttribute('data-i18n', 'admin_news_modal_create');
         }
         
@@ -1585,7 +1586,7 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
         editingNewsId = newsId;
         const modalTitle = document.getElementById('newsModalTitle');
         if (modalTitle) {
-            modalTitle.textContent = window.i18n ? window.i18n.translate('admin_news_modal_edit') : 'Редактировать новость';
+            modalTitle.textContent = t('admin_news_modal_edit', 'Редактировать новость');
             modalTitle.setAttribute('data-i18n', 'admin_news_modal_edit');
         }
         
@@ -1668,9 +1669,9 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
         } catch (error) {
             console.error('Error loading news:', error);
             if (window.showError) {
-                window.showError('Ошибка загрузки новости');
+                window.showError(t('admin_news_error_load', 'Ошибка загрузки новости'));
             } else {
-                alert('Ошибка загрузки новости');
+                alert(t('admin_news_error_load', 'Ошибка загрузки новости'));
             }
         }
     };
@@ -1689,7 +1690,7 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
         const hasEn = titleEn !== '' && contentEn.length >= 10;
 
         if (!hasRu && !hasAz && !hasEn) {
-            let errorMsg = 'Заполните заголовок и описание (минимум 10 символов) хотя бы на одном языке';
+            let errorMsg = t('admin_news_validation_one_language', 'Заполните заголовок и описание (минимум 10 символов) хотя бы на одном языке');
             if (window.showWarning) {
                 window.showWarning(errorMsg);
             } else {
@@ -1749,7 +1750,7 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
             });
             
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ detail: 'Ошибка сохранения' }));
+                const errorData = await response.json().catch(() => ({ detail: t('admin_news_error_save', 'Ошибка сохранения') }));
                 throw new Error(errorData.detail || 'Failed to save news');
             }
             
@@ -1765,18 +1766,18 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
             
             // Show success message
             if (window.showSuccess) {
-                window.showSuccess(editingNewsId ? 'Новость обновлена!' : 'Новость создана!');
+                window.showSuccess(editingNewsId ? t('admin_news_updated', 'Новость обновлена!') : t('admin_news_created', 'Новость создана!'));
             } else if (window.showInfo) {
-                window.showInfo(editingNewsId ? 'Новость обновлена!' : 'Новость создана!');
+                window.showInfo(editingNewsId ? t('admin_news_updated', 'Новость обновлена!') : t('admin_news_created', 'Новость создана!'));
             } else {
-                alert(editingNewsId ? 'Новость обновлена!' : 'Новость создана!');
+                alert(editingNewsId ? t('admin_news_updated', 'Новость обновлена!') : t('admin_news_created', 'Новость создана!'));
             }
         } catch (error) {
             console.error('Error saving news:', error);
             if (window.showError) {
-                window.showError('Ошибка сохранения: ' + error.message);
+                window.showError(`${t('admin_news_error_save', 'Ошибка сохранения')}: ${error.message}`);
             } else {
-                alert('Ошибка сохранения: ' + error.message);
+                alert(`${t('admin_news_error_save', 'Ошибка сохранения')}: ${error.message}`);
             }
         }
     };
@@ -1784,11 +1785,11 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
     window.deleteNews = async function deleteNews(newsId) {
         let confirmed = false;
         if (typeof showConfirm === 'function') {
-            confirmed = await showConfirm('Вы уверены, что хотите удалить эту новость?', 'Подтверждение удаления');
+            confirmed = await showConfirm(t('admin_news_delete_confirm', 'Вы уверены, что хотите удалить эту новость?'), t('confirm_action_title', 'Подтвердите действие'));
         } else if (window.showConfirm) {
-            confirmed = await window.showConfirm('Вы уверены, что хотите удалить эту новость?', 'Подтверждение удаления');
+            confirmed = await window.showConfirm(t('admin_news_delete_confirm', 'Вы уверены, что хотите удалить эту новость?'), t('confirm_action_title', 'Подтвердите действие'));
         } else {
-            confirmed = confirm('Вы уверены, что хотите удалить эту новость?');
+            confirmed = confirm(t('admin_news_delete_confirm', 'Вы уверены, что хотите удалить эту новость?'));
         }
         if (!confirmed) return;
         
@@ -1812,20 +1813,20 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
             
             // Show success message
             if (window.showSuccess) {
-                window.showSuccess('Новость удалена!');
+                window.showSuccess(t('admin_news_deleted', 'Новость удалена!'));
             } else if (window.showInfo) {
-                window.showInfo('Новость удалена!');
+                window.showInfo(t('admin_news_deleted', 'Новость удалена!'));
             } else {
-                alert('Новость удалена!');
+                alert(t('admin_news_deleted', 'Новость удалена!'));
             }
         } catch (error) {
             console.error('Error deleting news:', error);
             if (window.showError) {
-                window.showError('Ошибка удаления новости');
+                window.showError(t('admin_news_error_delete', 'Ошибка удаления новости'));
             } else if (window.showInfo) {
-                window.showInfo('Ошибка удаления новости');
+                window.showInfo(t('admin_news_error_delete', 'Ошибка удаления новости'));
             } else {
-                alert('Ошибка удаления новости');
+                alert(t('admin_news_error_delete', 'Ошибка удаления новости'));
             }
         }
     };

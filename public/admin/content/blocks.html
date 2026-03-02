@@ -192,10 +192,10 @@
 
 <script>
     const API_BASE = 'http://localhost:8000';
+    const getCurrentLang = () => (window.i18n?.currentLanguage || localStorage.getItem('language') || 'az');
     const t = (key, fallback) => (window.i18n && typeof window.i18n.translate === 'function')
-        ? window.i18n.translate(key)
-        : fallback;
-    const getCurrentLang = () => (window.i18n?.currentLanguage || localStorage.getItem('language') || 'ru');
+        ? (window.i18n.translate(key, getCurrentLang()) || fallback || key)
+        : (fallback || key);
     const formatText = (key, fallback, vars = {}) => {
         let text = t(key, fallback);
         Object.keys(vars).forEach((k) => {

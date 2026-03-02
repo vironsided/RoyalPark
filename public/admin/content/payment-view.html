@@ -3,42 +3,42 @@
     <div class="payment-header">
         <div class="payment-header-left">
             <button class="btn-back" onclick="goBackToPayments()">
-                <i class="bi bi-arrow-left"></i> Назад
+                <i class="bi bi-arrow-left"></i> <span data-i18n="user_invoice_back_to_list">Назад</span>
             </button>
-            <h1 id="paymentTitle">Платеж #1</h1>
+            <h1 id="paymentTitle" data-i18n="payments_title">Платеж #1</h1>
         </div>
     </div>
 
     <!-- Payment Summary -->
     <div class="payment-summary" id="paymentSummary">
         <div class="payment-summary-item">
-            <label>Резидент</label>
+            <label data-i18n="resident">Резидент</label>
             <div class="value" id="paymentResident">X / 2</div>
         </div>
         <div class="payment-summary-item">
-            <label>Житель</label>
+            <label data-i18n="nav_tenants">Житель</label>
             <div class="value" id="paymentResidentUser">—</div>
         </div>
         <div class="payment-summary-item">
-            <label>Ссылка / Комментарий</label>
+            <label data-i18n="payment_link_comment">Ссылка / Комментарий</label>
             <div class="value" id="paymentLink">123456</div>
         </div>
         <div class="payment-summary-item">
-            <label>Дата</label>
+            <label data-i18n="date">Дата</label>
             <div class="value" id="paymentDate">2025-11-21</div>
         </div>
         <div class="payment-summary-item">
-            <label>Метод</label>
+            <label data-i18n="filter_method">Метод</label>
             <div class="value" id="paymentMethod">CARD</div>
         </div>
         <div class="payment-summary-item">
-            <label>Сумма</label>
+            <label data-i18n="amount">Сумма</label>
             <div class="value amount" id="paymentAmount">30.00</div>
         </div>
         <div class="payment-summary-item">
-            <label>Остаток</label>
+            <label data-i18n="payments_leftover">Остаток</label>
             <div class="value balance">
-                <span class="badge-advance" id="paymentBalance">Аванс 20.00</span>
+                <span class="badge-advance" id="paymentBalance" data-i18n="payment_advance_badge">Аванс 20.00</span>
             </div>
         </div>
     </div>
@@ -46,7 +46,7 @@
     <!-- Distribution Section -->
     <div class="distribution-section">
         <div class="distribution-header">
-            <h3>Распределение по счетам</h3>
+            <h3 data-i18n="payment_distribution_title">Распределение по счетам</h3>
             <div class="auto-distribute-info">
                 <span id="autoDistributeBalance" class="auto-distribute-balance"></span>
                 <span id="autoDistributeTimer" class="auto-distribute-timer">
@@ -62,10 +62,10 @@
             <table class="distribution-table">
                 <thead>
                     <tr>
-                        <th>Счёт (период)</th>
-                        <th>Сумма</th>
-                        <th>Осталось оплатить</th>
-                        <th>Применить</th>
+                        <th data-i18n="payment_distribution_invoice_period">Счёт (период)</th>
+                        <th data-i18n="amount">Сумма</th>
+                        <th data-i18n="payment_distribution_remaining">Осталось оплатить</th>
+                        <th data-i18n="apply">Применить</th>
                     </tr>
                 </thead>
                 <tbody id="distributionTableBody">
@@ -79,12 +79,12 @@
 
     <!-- Applications Section -->
     <div class="applications-section">
-        <h3>Применения</h3>
+        <h3 data-i18n="payment_applications_title">Применения</h3>
         <table class="applications-table">
             <thead>
                 <tr>
-                    <th>Счёт</th>
-                    <th>Сумма</th>
+                    <th data-i18n="nav_accounts">Счёт</th>
+                    <th data-i18n="amount">Сумма</th>
                 </tr>
             </thead>
             <tbody id="applicationsTable">
@@ -103,12 +103,14 @@
 <script>
     (function () {
         const API_BASE = 'http://localhost:8000';
-        const methodLabels = {
-            'CASH': 'Наличные',
-            'CARD': 'CARD',
-            'TRANSFER': 'Банк',
-            'ONLINE': 'Онлайн'
-        };
+        const t = (key, fallback = '') => window.i18n?.translate?.(key) || fallback || key;
+        function getMethodLabel(method) {
+            if (method === 'CASH') return t('payments_method_cash', 'Наличные');
+            if (method === 'TRANSFER') return t('payments_method_transfer', 'Банк');
+            if (method === 'ONLINE') return t('payments_method_online', 'Онлайн');
+            if (method === 'CARD') return 'CARD';
+            return method || '-';
+        }
 
         function setResidentUserName(value) {
             const el = document.getElementById('paymentResidentUser');
@@ -126,6 +128,10 @@
         let openInvoices = [];
         let currentAdvanceBalance = 0;
         let currentDueDate = null;
+        function isPaymentViewRoute() {
+            const route = String(window.spaRouter?.currentRoute || window.location.hash.replace('#', '') || '');
+            return route.includes('payment-view');
+        }
 
         // Load payment data
         async function loadPayment(id) {
@@ -155,7 +161,7 @@
             } catch (error) {
                 console.error('Error loading payment:', error);
                 if (typeof showError === 'function') {
-                    showError('Ошибка загрузки платежа: ' + error.message);
+                    showError(t('payments_load_error_prefix', 'Ошибка загрузки платежа') + ': ' + error.message);
                 }
             }
         }
@@ -228,7 +234,7 @@
                         documentReady: document.readyState
                     });
                     if (typeof showError === 'function') {
-                        showError('Ошибка: элементы страницы не найдены. Попробуйте обновить страницу.');
+                        showError(t('payment_page_elements_error', 'Ошибка: элементы страницы не найдены. Попробуйте обновить страницу.'));
                     }
                     return;
                 }
@@ -242,7 +248,7 @@
             renderPaymentAttempts = 0;
 
             // Update title
-            if (titleEl) titleEl.textContent = `Платеж #${payment.id}`;
+            if (titleEl) titleEl.textContent = `${t('payments_title', 'Платеж')} #${payment.id}`;
 
             // Update summary
             const residentEl = document.getElementById('paymentResident');
@@ -277,7 +283,7 @@
             }
 
             const methodEl = document.getElementById('paymentMethod');
-            if (methodEl) methodEl.textContent = methodLabels[payment.method] || payment.method || '-';
+            if (methodEl) methodEl.textContent = getMethodLabel(payment.method);
 
             const amountEl = document.getElementById('paymentAmount');
             if (amountEl) amountEl.textContent = parseFloat(payment.amount_total || 0).toFixed(2);
@@ -287,7 +293,7 @@
             if (balanceEl) {
                 const leftover = parseFloat(payment.leftover || 0);
                 if (leftover > 0) {
-                    balanceEl.textContent = `Аванс ${leftover.toFixed(2)}`;
+                    balanceEl.textContent = `${t('payment_advance_badge', 'Аванс')} ${leftover.toFixed(2)}`;
                     balanceEl.className = 'badge-advance';
                 } else {
                     balanceEl.textContent = '0.00';
@@ -314,7 +320,7 @@
             `;
                 }).join('');
             } else {
-                tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">Нет применений</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">${t('payment_applications_empty', 'Нет применений')}</td></tr>`;
                 }
             }
 
@@ -388,9 +394,9 @@
             const deadline = dueStart.getTime() + (3 * 24 * 60 * 60 * 1000);
             timerEl.style.display = 'inline-flex';
             balanceEl.style.display = 'inline-flex';
-            balanceEl.textContent = `Аванс для авто‑списания: ${currentAdvanceBalance.toFixed(2)}`;
+            balanceEl.textContent = `${t('payment_advance_auto_label', 'Аванс для авто‑списания')}: ${currentAdvanceBalance.toFixed(2)}`;
             helpEl.style.display = 'block';
-            helpEl.textContent = 'Если оплата не будет внесена в течение 3 дней после срока, аванс автоматически распределится по неоплаченным счетам.';
+            helpEl.textContent = t('payment_advance_auto_hint', 'Если оплата не будет внесена в течение 3 дней после срока, аванс автоматически распределится по неоплаченным счетам.');
 
             const storageKey = currentPayment && currentPayment.id && dueDate
                 ? `autoAdvanceApplied:${currentPayment.id}:${dueDate.toISOString().slice(0, 10)}`
@@ -412,7 +418,8 @@
                 const hours = Math.floor((totalSeconds % 86400) / 3600);
                 const minutes = Math.floor((totalSeconds % 3600) / 60);
                 const seconds = totalSeconds % 60;
-                timerTextEl.textContent = `${days}д ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                const dayShort = t('payment_timer_day_short', 'д');
+                timerTextEl.textContent = `${days}${dayShort} ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
             };
 
             tick();
@@ -443,12 +450,12 @@
                 }
                 await loadPayment(currentPayment.id);
                 if (typeof showSuccess === 'function') {
-                    showSuccess('Аванс автоматически распределён по счетам');
+                    showSuccess(t('payment_advance_auto_done', 'Аванс автоматически распределён по счетам'));
                 }
             } catch (error) {
                 console.error('Auto advance apply failed:', error);
                 if (typeof showError === 'function') {
-                    showError('Ошибка авто-распределения аванса: ' + error.message);
+                    showError(t('payment_advance_auto_error', 'Ошибка авто-распределения аванса') + ': ' + error.message);
                 }
             } finally {
                 window.autoAdvanceInFlight = false;
@@ -523,7 +530,7 @@
             if (!tbody) return;
 
             if (!currentDistributionRows.length) {
-                tbody.innerHTML = '<tr><td colspan="4" style="padding: 14px; text-align: center; color: rgba(255,255,255,0.6);">Нет открытых счетов</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="padding: 14px; text-align: center; color: rgba(255,255,255,0.6);">' + t('payment_no_open_invoices', 'Нет открытых счетов') + '</td></tr>';
                 return;
             }
 
@@ -581,7 +588,7 @@
         window.saveDistribution = async function () {
             if (!currentPayment || !currentPayment.id) {
                 if (typeof showError === 'function') {
-                    showError('Платеж не загружен');
+                    showError(t('payment_not_loaded', 'Платеж не загружен'));
                 }
                 return;
             }
@@ -590,7 +597,7 @@
 
             if (totalApplied <= 0) {
                 if (typeof showWarning === 'function') {
-                    showWarning('Сумма применения должна быть больше нуля!');
+                    showWarning(t('payments_amount_positive', 'Сумма применения должна быть больше нуля!'));
                 }
                 return;
             }
@@ -624,12 +631,12 @@
                 await loadPayment(currentPayment.id);
 
                 if (typeof showSuccess === 'function') {
-                    showSuccess('Распределение успешно сохранено!');
+                    showSuccess(t('payment_distribution_saved', 'Распределение успешно сохранено!'));
                 }
             } catch (error) {
                 console.error('Error saving distribution:', error);
                 if (typeof showError === 'function') {
-                    showError('Ошибка сохранения распределения: ' + error.message);
+                    showError(t('payment_distribution_save_error', 'Ошибка сохранения распределения') + ': ' + error.message);
                 }
             }
         };
@@ -637,14 +644,14 @@
         window.autoDistribute = async function () {
             if (!currentPayment || !currentPayment.id) {
                 if (typeof showError === 'function') {
-                    showError('Платеж не загружен');
+                    showError(t('payment_not_loaded', 'Платеж не загружен'));
                 }
                 return;
             }
 
             if (!currentDistributionRows.length) {
                 if (typeof showWarning === 'function') {
-                    showWarning('Нет счетов для распределения!');
+                    showWarning(t('payment_no_invoices_for_distribution', 'Нет счетов для распределения!'));
                 }
                 return;
             }
@@ -685,12 +692,12 @@
                 updateDistributionTotals();
 
                 if (typeof showSuccess === 'function') {
-                    showSuccess('Автораспределение выполнено!');
+                    showSuccess(t('payment_advance_auto_done', 'Автораспределение выполнено!'));
                 }
             } catch (error) {
                 console.error('Error auto-distributing:', error);
                 if (typeof showError === 'function') {
-                    showError('Ошибка автораспределения: ' + error.message);
+                    showError(t('payment_advance_auto_error', 'Ошибка автораспределения') + ': ' + error.message);
                 }
             }
         };
@@ -736,7 +743,7 @@
             if (!paymentId) {
                 console.error('Payment ID not found');
                 if (typeof showError === 'function') {
-                    showError('ID платежа не найден');
+                    showError(t('payment_id_not_found', 'ID платежа не найден'));
                 }
                 return;
             }
@@ -781,5 +788,16 @@
         } else {
             setTimeout(() => initPaymentView(), 100);
         }
+
+        if (window._paymentViewLanguageChangedHandler) {
+            window.removeEventListener('languageChanged', window._paymentViewLanguageChangedHandler);
+        }
+        window._paymentViewLanguageChangedHandler = function() {
+            if (currentPayment && isPaymentViewRoute()) {
+                renderPayment(currentPayment);
+                renderDistributionTable();
+            }
+        };
+        window.addEventListener('languageChanged', window._paymentViewLanguageChangedHandler);
     })();
 </script>

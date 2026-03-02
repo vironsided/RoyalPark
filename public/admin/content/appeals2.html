@@ -19,13 +19,13 @@
         <div class="card">
             <div class="card-body">
                 <div class="appeals-header">
-                    <h4 class="card-title mb-0">Обращения жителей</h4>
+                    <h4 class="card-title mb-0" data-i18n="nav_appeals">Обращения жителей</h4>
                     <div class="appeals-filter-group">
-                        <span>Статус:</span>
+                        <span data-i18n="status">Статус:</span>
                         <select id="appealsStatusFilter" class="appeals-filter-select">
-                            <option value="all">Все</option>
-                            <option value="UNREAD">Не прочитано</option>
-                            <option value="READ">Прочитано</option>
+                            <option value="all" data-i18n="all">Все</option>
+                            <option value="UNREAD" data-i18n="user_appeal_status_unread">Не прочитано</option>
+                            <option value="READ" data-i18n="user_appeal_status_read">Прочитано</option>
                         </select>
                     </div>
                 </div>
@@ -34,19 +34,19 @@
                     <table class="table align-middle">
                         <thead>
                             <tr>
-                                <th>Создано</th>
-                                <th>Блок</th>
-                                <th>Дом</th>
-                                <th>Житель</th>
-                                <th>Телефон</th>
-                                <th>E-mail</th>
-                                <th>Статус</th>
-                                <th class="text-end">Действия</th>
+                                <th data-i18n="date">Создано</th>
+                                <th data-i18n="residents_filter_block">Блок</th>
+                                <th data-i18n="residents_col_house">Дом</th>
+                                <th data-i18n="resident">Житель</th>
+                                <th data-i18n="phone">Телефон</th>
+                                <th data-i18n="email">E-mail</th>
+                                <th data-i18n="status">Статус</th>
+                                <th class="text-end" data-i18n="actions">Действия</th>
                             </tr>
                         </thead>
                         <tbody id="appealsTableBody">
                             <tr>
-                                <td colspan="8" class="text-center">Загрузка данных...</td>
+                                <td colspan="8" class="text-center" data-i18n="loading">Загрузка данных...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -71,12 +71,12 @@
                     </button>
                 </div>
                 <div class="pagination-info">
-                    <span>Стр. <span id="appealCurrentPage">1</span> из <span id="appealTotalPages">1</span> · всего
+                    <span><span data-i18n="pagination_page">Стр.</span> <span id="appealCurrentPage">1</span> <span data-i18n="pagination_of">из</span> <span id="appealTotalPages">1</span> · <span data-i18n="pagination_total">всего</span>
                         <span id="appealTotalItems">0</span></span>
                 </div>
                 <div class="pagination-per-page">
-                    <span>На</span>
-                    <span>странице:</span>
+                    <span data-i18n="pagination_on">На</span>
+                    <span data-i18n="pagination_per_page">странице:</span>
                     <div class="custom-pag-select" id="customAppealItemsPerPage">
                         <select id="appealItemsPerPage" onchange="changeAppealItemsPerPage()" style="display: none;">
                             <option value="10">10</option>
@@ -104,29 +104,29 @@
 <div class="appeal-modal-overlay" id="appealModal">
     <div class="appeal-modal">
         <div class="appeal-modal-header">
-            <h5 class="mb-0">Обращение</h5>
+            <h5 class="mb-0" data-i18n="user_appeal_modal_title">Обращение</h5>
             <button type="button" class="btn-close btn-close-white" id="appealModalClose"></button>
         </div>
         <div class="appeal-modal-body">
             <div class="appeal-info-row">
-                <span>Дом</span>
+                <span data-i18n="user_appeals_house">Дом</span>
                 <strong id="modalApartment">—</strong>
             </div>
             <div class="appeal-info-row">
-                <span>Житель</span>
+                <span data-i18n="resident">Житель</span>
                 <strong id="modalResident">—</strong>
             </div>
             <div class="appeal-info-row">
-                <span>Контакты</span>
+                <span data-i18n="residents_col_contacts">Контакты</span>
                 <strong id="modalContacts">— / —</strong>
             </div>
             <div>
-                <small class="text-muted text-uppercase">Описание</small>
+                <small class="text-muted text-uppercase" data-i18n="invoices_description">Описание</small>
                 <p class="mb-0 mt-1" id="modalDescription">—</p>
             </div>
         </div>
         <div class="appeal-modal-footer">
-            <button class="btn btn-outline-light" id="appealModalDismiss">Закрыть</button>
+            <button class="btn btn-outline-light" id="appealModalDismiss" data-i18n="close">Закрыть</button>
         </div>
     </div>
 </div>
@@ -135,14 +135,14 @@
 <div class="appeal-modal-overlay" id="deleteConfirmModal" style="display: none;">
     <div class="appeal-modal" style="width: min(400px, 90vw);">
         <div class="appeal-modal-header">
-            <h5 class="mb-0">Подтвердите действие</h5>
+            <h5 class="mb-0" data-i18n="confirm_action_title">Подтвердите действие</h5>
             <button type="button" class="btn-close btn-close-white" id="deleteConfirmModalClose"></button>
         </div>
         <div class="appeal-modal-body">
-            <p class="mb-0" id="deleteConfirmMessage">Вы уверены, что хотите удалить это обращение?</p>
+            <p class="mb-0" id="deleteConfirmMessage" data-i18n="appeals_delete_confirm">Вы уверены, что хотите удалить это обращение?</p>
         </div>
         <div class="appeal-modal-footer" style="justify-content: flex-end; gap: 0.75rem;">
-            <button class="btn btn-outline-light" id="deleteConfirmCancel">Отмена</button>
+            <button class="btn btn-outline-light" id="deleteConfirmCancel" data-i18n="cancel">Отмена</button>
             <button class="btn btn-primary" id="deleteConfirmOk">OK</button>
         </div>
     </div>
@@ -168,8 +168,8 @@
         };
 
         const statusStyles = {
-            READ: { text: 'прочитано', className: 'bg-success' },
-            UNREAD: { text: 'не прочитано', className: 'bg-warning text-dark' }
+            READ: { textKey: 'user_appeal_status_read', className: 'bg-success' },
+            UNREAD: { textKey: 'user_appeal_status_unread', className: 'bg-warning text-dark' }
         };
 
         let tableBody, emptyState, statusSelect, modalOverlay;
@@ -263,8 +263,10 @@
 
             if (emptyState) emptyState.style.display = 'none';
 
+            const t = (key, fallback) => (window.i18n && window.i18n.translate ? window.i18n.translate(key) : fallback || key);
             tableBody.innerHTML = items.map(notif => {
                 const status = statusStyles[notif.status] || statusStyles.UNREAD;
+                const statusText = t(status.textKey, status.textKey === 'user_appeal_status_read' ? 'Прочитано' : 'Не прочитано');
                 const block = notif.block_name || '—';
                 const home = notif.unit_number || '—';
                 const resident = notif.user_full_name || '—';
@@ -287,14 +289,14 @@
                     <td>${phone}</td>
                     <td>${email}</td>
                     <td style="text-align: center;">
-                        <span class="appeals-status-badge ${status.className}">${status.text}</span>
+                        <span class="appeals-status-badge ${status.className}" data-i18n="${status.textKey}">${statusText}</span>
                     </td>
                     <td style="text-align: right; white-space: nowrap;">
-                        <button class="btn btn-outline-primary btn-sm" data-action="view" data-id="${notif.id}" style="margin-right: 0.5rem;">
-                            Просмотр
+                        <button class="btn btn-outline-primary btn-sm" data-action="view" data-id="${notif.id}" data-i18n="action_view" style="margin-right: 0.5rem;">
+                            ${t('action_view', 'Просмотр')}
                         </button>
-                        <button class="btn btn-outline-danger btn-sm" data-action="delete" data-id="${notif.id}">
-                            Удалить
+                        <button class="btn btn-outline-danger btn-sm" data-action="delete" data-id="${notif.id}" data-i18n="action_delete">
+                            ${t('action_delete', 'Удалить')}
                         </button>
                     </td>
                 </tr>
@@ -895,6 +897,14 @@
         };
 
         window.addEventListener('spa:contentLoaded', window._appeals2ContentLoadedHandler);
+
+        if (window._appeals2LanguageChangedHandler) {
+            window.removeEventListener('languageChanged', window._appeals2LanguageChangedHandler);
+        }
+        window._appeals2LanguageChangedHandler = function () {
+            if (state.notifications && state.notifications.length) renderTable();
+        };
+        window.addEventListener('languageChanged', window._appeals2LanguageChangedHandler);
 
         // Загрузка при первой загрузке (если не через SPA)
         if (document.readyState === 'loading') {

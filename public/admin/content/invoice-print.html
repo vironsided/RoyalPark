@@ -4,16 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Счёт на оплату</title>
+    <title data-i18n="user_invoice_print_title">Счёт на оплату</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="/admin/content_css/invoice-print.css">
-
+    <script src="/js/i18n.js"></script>
 </head>
 
 <body>
     <div class="print-actions">
         <button class="btn-print" onclick="window.print()">
-            <i class="bi bi-printer"></i> Печать
+            <i class="bi bi-printer"></i> <span data-i18n="print">Печать</span>
         </button>
     </div>
 
@@ -29,20 +29,20 @@
                 <div class="party-line" id="invoiceResidentUser">—</div>
             </div>
             <div class="party-block">
-                <div class="party-line">Период: <span id="invoicePeriod">—</span></div>
-                <div class="party-line">Срок оплаты: <span id="invoiceDueDate">—</span></div>
-                <div class="party-line">Статус: <span id="invoiceStatus">—</span></div>
+                <div class="party-line"><span data-i18n="user_invoice_period_label">Период</span>: <span id="invoicePeriod">—</span></div>
+                <div class="party-line"><span data-i18n="user_invoice_due_date_label">Срок оплаты</span>: <span id="invoiceDueDate">—</span></div>
+                <div class="party-line"><span data-i18n="status">Статус</span>: <span id="invoiceStatus">—</span></div>
             </div>
         </div>
 
         <table class="invoice-table invoice-lines">
             <thead>
                 <tr>
-                    <th>Описание</th>
-                    <th>Израсходовано</th>
-                    <th>Начислено</th>
-                    <th>НДС</th>
-                    <th>Итого</th>
+                    <th data-i18n="invoices_description">Описание</th>
+                    <th data-i18n="user_invoice_items_th_consumed">Израсходовано</th>
+                    <th data-i18n="invoices_charged">Начислено</th>
+                    <th data-i18n="invoices_vat">НДС</th>
+                    <th data-i18n="user_invoice_total_label">Итого</th>
                 </tr>
             </thead>
             <tbody id="lineItemsTable">
@@ -66,14 +66,15 @@
         </div>
 
         <div class="invoice-footer">
-            <p>Квитанция сгенерирована: <span id="generatedDate"></span></p>
-            <p>Для печати нажмите кнопку сверху или используйте «Печать в PDF».</p>
+            <p><span data-i18n="user_invoice_print_generated_prefix">Квитанция сгенерирована:</span> <span id="generatedDate"></span></p>
+            <p data-i18n="user_invoice_print_footer_note">Для печати нажмите кнопку сверху или используйте «Печать в PDF».</p>
         </div>
     </div>
 
     <script>
         (function () {
             const API_BASE = 'http://localhost:8000';
+            const t = (key, fallback = '') => (window.i18n && window.i18n.translate && window.i18n.translate(key)) || fallback || key;
 
             // Get invoice ID from URL
             const urlParams = new URLSearchParams(window.location.search);
@@ -111,7 +112,7 @@
                 set('invoiceTotalNet', '0.00');
                 set('invoiceTotalVat', '0.00');
                 const tbody = document.getElementById('lineItemsTable');
-                if (tbody) tbody.innerHTML = '<tr><td colspan="5">Загрузка...</td></tr>';
+                if (tbody) tbody.innerHTML = '<tr><td colspan="5">' + t('loading', 'Загрузка...') + '</td></tr>';
             }
 
             // Load invoice data
@@ -119,7 +120,7 @@
                 resetPrintPlaceholders();
                 if (!id) {
                     console.error('No invoice ID provided for print');
-                    document.body.innerHTML = '<div style="padding: 40px; text-align: center;"><h2>Ошибка</h2><p>Не указан ID счета</p></div>';
+                    document.body.innerHTML = '<div style="padding: 40px; text-align: center;"><h2>' + t('error_prefix', 'Ошибка') + '</h2><p>' + t('invoices_no_id', 'Не указан ID счета') + '</p></div>';
                     return;
                 }
 
@@ -171,7 +172,7 @@
                     renderInvoice(invoice);
                 } catch (error) {
                     console.error('Error loading invoice for print:', error);
-                    document.body.innerHTML = `<div style="padding: 40px; text-align: center;"><h2>Ошибка</h2><p>Не удалось загрузить данные счета: ${error.message}</p></div>`;
+                    document.body.innerHTML = '<div style="padding: 40px; text-align: center;"><h2>' + t('error_prefix', 'Ошибка') + '</h2><p>' + t('invoices_load_error', 'Не удалось загрузить данные счета') + ': ' + (error.message || '') + '</p></div>';
                 }
             }
 
@@ -193,7 +194,7 @@
                     const map = {
                         meter_electricity: 'Электричество',
                         meter_cold_water: 'Вода',
-                        meter_hot_water: 'Горячая вода',
+                        meter_hot_water: 'Вода',
                         meter_gas: 'Газ',
                         meter_sewerage: 'Канализация',
                     };
@@ -207,7 +208,7 @@
                     { regex: /^Вода\s+([\d.]+)\s*м³$/i, label: 'Вода', unit: 'м³' },
                     { regex: /^Канализация(?:\s*\(авто\))?\s+([\d.]+)\s*м³$/i, label: 'Канализация', unit: 'м³' },
                     { regex: /^Газ\s+([\d.]+)\s*м³$/i, label: 'Газ', unit: 'м³' },
-                    { regex: /^Горячая\s+вода\s+([\d.]+)\s*м³$/i, label: 'Горячая вода', unit: 'м³' },
+                    { regex: /^Горячая\s+вода\s+([\d.]+)\s*м³$/i, label: 'Вода', unit: 'м³' },
                 ];
                 for (const p of patterns) {
                     const m = String(description).match(p.regex);
@@ -229,7 +230,7 @@
                 const userEl = document.getElementById('invoiceResidentUser');
                 if (userEl) userEl.textContent = invoice.residentUser || '—';
                 document.getElementById('invoicePeriod').textContent = invoice.period;
-                const statusMap = { DRAFT: 'Черновик', ISSUED: 'Выставлен', PARTIAL: 'Частично оплачен', PAID: 'Оплачен', CANCELED: 'Отменен' };
+                const statusMap = { DRAFT: t('invoices_status_draft', 'Черновик'), ISSUED: t('invoices_status_issued', 'Выставлен'), PARTIAL: t('invoices_status_partial', 'Частично оплачен'), PAID: t('invoices_status_paid', 'Оплачен'), CANCELED: t('invoices_status_canceled', 'Отменён') };
                 document.getElementById('invoiceStatus').textContent = statusMap[invoice.status] || invoice.status;
 
                 // Format due date for display
@@ -270,7 +271,7 @@
 
                     tbody.innerHTML = html;
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="5">Нет данных</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5">' + t('readings_no_records', 'Нет данных') + '</td></tr>';
                 }
 
                 // Set generated date

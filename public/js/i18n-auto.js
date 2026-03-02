@@ -162,7 +162,7 @@
         'Проверка счетчиков': 'meters_title',
         'Электричество': 'meter_electricity',
         'Вода': 'meter_cold_water',
-        'Горячая вода': 'meter_hot_water',
+        'Горячая вода': 'meter_cold_water',
         'Предыдущее': 'meter_previous',
         'Текущее': 'meter_current',
         'Потребление': 'meter_consumption',

@@ -306,7 +306,7 @@
                     },
                     {
                         regex: /^Горячая\s+вода\s+([\d.]+)\s*м³$/i,
-                        serviceKey: 'meter_hot_water',
+                        serviceKey: 'meter_cold_water',
                         unitKey: 'user_unit_m3',
                         format: (amount, service, unit) => `${service} ${amount} ${unit}`
                     }
@@ -491,7 +491,7 @@
                     },
                     {
                         regex: /^Горячая\s+вода\s+([\d.]+)\s*м³$/i,
-                        serviceKey: 'meter_hot_water',
+                        serviceKey: 'meter_cold_water',
                         unitKey: 'user_unit_m3'
                     }
                 ];

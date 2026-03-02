@@ -105,7 +105,7 @@
                 <table class="table table-hover tariffs-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th data-i18n="id">ID</th>
                             <th data-i18n="tariffs_col_name">Название</th>
                             <th data-i18n="tariffs_filter_purpose">Назначение</th>
                             <th data-i18n="tariffs_filter_client_type">Тип клиента</th>
@@ -169,12 +169,12 @@
 
             <div class="form-group">
                 <label data-i18n="tariffs_col_vat">НДС, %</label>
-                <input type="number" id="tariffVAT" value="0" min="0" max="100">
+                <input type="number" id="tariffVAT" value="" placeholder="0" min="0" max="100" data-numeric-only data-allow-empty="1">
             </div>
 
             <div class="form-group" id="stableTariffGroup" style="display:none;">
                 <label data-i18n="stable_tariff">Стабильный тариф</label>
-                <input type="number" id="tariffStableTariff" value="0" min="0" step="0.01">
+                <input type="number" id="tariffStableTariff" value="" placeholder="0" min="0" step="0.01" data-numeric-only data-allow-empty="1">
                 <small style="display:block; opacity:0.75; margin-top:6px;">
                     Фиксированная сумма в месяц (только Электричество/Газ). Добавляется независимо от расхода.
                 </small>
@@ -182,7 +182,7 @@
 
             <div class="form-group" id="seweragePercentGroup" style="display:none;">
                 <label data-i18n="tariffs_sewerage_percent_label">Канализация, % от воды</label>
-                <input type="number" id="tariffSeweragePercent" value="0" min="0" max="100" step="0.01">
+                <input type="number" id="tariffSeweragePercent" value="" placeholder="0" min="0" max="100" step="0.01" data-numeric-only data-allow-empty="1">
                 <small style="display:block; opacity:0.75; margin-top:6px;">
                     Будет добавлена отдельной строкой в счёт как процент от суммы воды.
                 </small>
@@ -200,11 +200,11 @@
                     <div class="step-row">
                         <div class="step-input-group">
                             <label data-i18n="tariffs_step_from">ОТ (вкл.)</label>
-                            <input type="number" value="0" min="0" step="0.01">
+                            <input type="number" value="0" min="0" step="0.01" data-numeric-only>
                         </div>
                         <div class="step-input-group">
                             <label data-i18n="tariffs_step_to">ДО (искл.)</label>
-                            <input type="text" value="" data-i18n-placeholder="tariffs_step_infinity_placeholder" placeholder="∞ для бесконечности">
+                            <input type="number" value="" min="0" step="0.01" data-numeric-only data-allow-empty="1" data-i18n-placeholder="tariffs_step_infinity_placeholder" placeholder="∞ для бесконечности">
                         </div>
                         <div class="step-input-group">
                             <label data-i18n="tariffs_step_unit">Ед. изм.</label>
@@ -212,7 +212,7 @@
                         </div>
                         <div class="step-input-group">
                             <label data-i18n="amount">Цена</label>
-                            <input type="number" step="any" min="0" required>
+                            <input type="number" step="any" min="0" required data-numeric-only>
                         </div>
                         <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)"
                             style="height: 38px; white-space: nowrap;">
@@ -246,6 +246,40 @@
         });
         return text;
     };
+
+    function sanitizeDecimalInput(rawValue, allowEmpty = false) {
+        let value = String(rawValue ?? '').replace(/,/g, '.');
+        value = value.replace(/[^0-9.]/g, '');
+        const firstDot = value.indexOf('.');
+        if (firstDot !== -1) {
+            value = value.slice(0, firstDot + 1) + value.slice(firstDot + 1).replace(/\./g, '');
+        }
+        if (value.startsWith('.')) value = `0${value}`;
+        if (!allowEmpty && value === '') return '0';
+        return value;
+    }
+
+    function bindNumericOnly(input, allowEmpty = false) {
+        if (!input || input._numericOnlyBound) return;
+        input._numericOnlyBound = true;
+        input.setAttribute('inputmode', 'decimal');
+
+        const apply = () => {
+            const sanitized = sanitizeDecimalInput(input.value, allowEmpty);
+            if (input.value !== sanitized) input.value = sanitized;
+        };
+
+        input.addEventListener('input', apply);
+        input.addEventListener('blur', apply);
+        input.addEventListener('paste', () => setTimeout(apply, 0));
+    }
+
+    function applyNumericOnlyBindings(root = document) {
+        root.querySelectorAll('input[data-numeric-only]').forEach((input) => {
+            bindNumericOnly(input, input.dataset.allowEmpty === '1');
+        });
+    }
+
     let tariffsData = [];
     let seweragePercentDirty = false;
     let editingTariffId = null;
@@ -884,11 +918,13 @@
                 // Обновляем единицы измерения и тип полей для первой ступени
                 updateUnitsForPurpose();
                 updateStepFieldsType();
+                applyNumericOnlyBindings(document.getElementById('createTariffModal'));
             }, 50);
         } else {
             // При редактировании обновляем тип полей
             setTimeout(() => {
                 updateStepFieldsType();
+                applyNumericOnlyBindings(document.getElementById('createTariffModal'));
             }, 50);
         }
     }
@@ -1099,11 +1135,14 @@
 
                     fromGroup.querySelector('label').textContent = t('tariffs_date_from', 'Дата от');
                     fromInput.type = 'date';
+                    fromInput.removeAttribute('data-numeric-only');
                     fromInput.value = fromValue;
                     fromInput.placeholder = '';
 
                     toGroup.querySelector('label').textContent = t('tariffs_date_to', 'Дата до');
                     toInput.type = 'date';
+                    toInput.removeAttribute('data-numeric-only');
+                    toInput.removeAttribute('data-allow-empty');
                     toInput.value = toValue;
                     toInput.placeholder = '';
 
@@ -1116,16 +1155,22 @@
                     const toInput = toGroup.querySelector('input');
 
                     const fromValue = fromInput.value || '0';
-                    const toValue = toInput.value || '';
+                    const toValue = toInput.value === '∞' ? '' : (toInput.value || '');
 
                     fromGroup.querySelector('label').textContent = t('tariffs_step_from', 'ОТ (вкл.)');
                     fromInput.type = 'number';
                     fromInput.min = '0';
                     fromInput.step = '0.01';
+                    fromInput.setAttribute('data-numeric-only', '');
+                    fromInput.removeAttribute('data-allow-empty');
                     fromInput.value = fromValue;
 
                     toGroup.querySelector('label').textContent = t('tariffs_step_to', 'ДО (искл.)');
-                    toInput.type = 'text';
+                    toInput.type = 'number';
+                    toInput.min = '0';
+                    toInput.step = '0.01';
+                    toInput.setAttribute('data-numeric-only', '');
+                    toInput.setAttribute('data-allow-empty', '1');
                     toInput.value = toValue;
                     toInput.placeholder = t('tariffs_step_infinity_placeholder', '∞ для бесконечности');
 
@@ -1134,6 +1179,7 @@
                     }
                 }
             }
+            applyNumericOnlyBindings(row);
         });
     }
 
@@ -1159,7 +1205,7 @@
             const lastStepInputs = steps[steps.length - 1].querySelectorAll('input');
             const lastToValue = lastStepInputs[1].value.trim();
 
-            if (!lastToValue || lastToValue === '∞') {
+            if (!lastToValue) {
                 if (typeof showWarning === 'function') {
                 showWarning(t('tariffs_step_to_required', 'Укажите граничное значение "ДО (искл.)" для предыдущей ступени.'));
                 } else {
@@ -1184,11 +1230,11 @@
             newStep.innerHTML = `
                 <div class="step-input-group" style="display: none;">
                     <label>${t('tariffs_step_from', 'ОТ (вкл.)')}</label>
-                    <input type="number" value="0" min="0" step="0.01">
+                    <input type="number" value="0" min="0" step="0.01" data-numeric-only>
                 </div>
                 <div class="step-input-group" style="display: none;">
                     <label>${t('tariffs_step_to', 'ДО (искл.)')}</label>
-                    <input type="text" value="" placeholder="${t('tariffs_step_infinity_placeholder', '∞ для бесконечности')}">
+                    <input type="number" value="" min="0" step="0.01" data-numeric-only data-allow-empty="1" placeholder="${t('tariffs_step_infinity_placeholder', '∞ для бесконечности')}">
                 </div>
                 <div class="step-input-group">
                     <label>${t('tariffs_step_unit', 'Ед. изм.')}</label>
@@ -1196,7 +1242,7 @@
                 </div>
                 <div class="step-input-group">
                     <label>${t('amount', 'Цена')}</label>
-                    <input type="number" step="any" min="0" required>
+                    <input type="number" step="any" min="0" required data-numeric-only>
                 </div>
                 <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
                     <i class="bi bi-trash"></i> ${t('action_delete', 'Удалить')}
@@ -1219,7 +1265,7 @@
                     </div>
                     <div class="step-input-group">
                         <label>${t('amount', 'Цена')}</label>
-                        <input type="number" step="any" min="0" required>
+                        <input type="number" step="any" min="0" required data-numeric-only>
                     </div>
                     <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
                         <i class="bi bi-trash"></i> ${t('action_delete', 'Удалить')}
@@ -1230,11 +1276,11 @@
             newStep.innerHTML = `
                 <div class="step-input-group">
                     <label>${t('tariffs_step_from', 'ОТ (вкл.)')}</label>
-                    <input type="number" value="${defaultFrom}" min="0" step="0.01">
+                    <input type="number" value="${defaultFrom}" min="0" step="0.01" data-numeric-only>
                 </div>
                 <div class="step-input-group">
                     <label>${t('tariffs_step_to', 'ДО (искл.)')}</label>
-                        <input type="text" value="" placeholder="${t('tariffs_step_infinity_placeholder', '∞ для бесконечности')}">
+                        <input type="number" value="" min="0" step="0.01" data-numeric-only data-allow-empty="1" placeholder="${t('tariffs_step_infinity_placeholder', '∞ для бесконечности')}">
                 </div>
                 <div class="step-input-group">
                     <label>${t('tariffs_step_unit', 'Ед. изм.')}</label>
@@ -1242,7 +1288,7 @@
                 </div>
                 <div class="step-input-group">
                     <label>${t('amount', 'Цена')}</label>
-                    <input type="number" step="any" min="0" required>
+                    <input type="number" step="any" min="0" required data-numeric-only>
                 </div>
                 <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
                     <i class="bi bi-trash"></i> ${t('action_delete', 'Удалить')}
@@ -1251,6 +1297,7 @@
         }
 
         container.appendChild(newStep);
+        applyNumericOnlyBindings(newStep);
 
         // после добавления/изменения ступеней попробуем авторасчитать % канализации (если нужно)
         setTimeout(() => {
@@ -1342,8 +1389,6 @@
 
                     // Если поле "ДО (искл.)" пустое, автоматически подставляем null (бесконечность)
                     if (toValue === '') {
-                        toValue = null;
-                    } else if (toValue === '∞') {
                         toValue = null;
                     } else {
                         toValue = parseFloat(toValue);
@@ -1570,11 +1615,11 @@
                     stepRow.innerHTML = `
                             <div class="step-input-group" style="display: none;">
                                 <label>${t('tariffs_step_from', 'ОТ (вкл.)')}</label>
-                                <input type="number" value="${step.from_value || 0}" min="0" step="0.01">
+                                <input type="number" value="${step.from_value || 0}" min="0" step="0.01" data-numeric-only>
                             </div>
                             <div class="step-input-group" style="display: none;">
                                 <label>${t('tariffs_step_to', 'ДО (искл.)')}</label>
-                                <input type="text" value="${step.to_value === null ? '∞' : step.to_value}" placeholder="${t('tariffs_step_infinity_placeholder', '∞ для бесконечности')}">
+                                <input type="number" value="${step.to_value === null ? '' : step.to_value}" min="0" step="0.01" data-numeric-only data-allow-empty="1" placeholder="${t('tariffs_step_infinity_placeholder', '∞ для бесконечности')}">
                             </div>
                             <div class="step-input-group">
                                 <label>${t('tariffs_step_unit', 'Ед. изм.')}</label>
@@ -1582,7 +1627,7 @@
                             </div>
                             <div class="step-input-group">
                                 <label>${t('amount', 'Цена')}</label>
-                                <input type="number" value="${step.price || 0}" step="any" min="0" required>
+                                <input type="number" value="${step.price || 0}" step="any" min="0" required data-numeric-only>
                             </div>
                             <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
                                 <i class="bi bi-trash"></i> ${t('action_delete', 'Удалить')}
@@ -1607,7 +1652,7 @@
                             </div>
                             <div class="step-input-group">
                                 <label>${t('amount', 'Цена')}</label>
-                                <input type="number" value="${step.price || 0}" step="any" min="0" required>
+                                <input type="number" value="${step.price || 0}" step="any" min="0" required data-numeric-only>
                             </div>
                             <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
                                 <i class="bi bi-trash"></i> ${t('action_delete', 'Удалить')}
@@ -1618,11 +1663,11 @@
                     stepRow.innerHTML = `
                             <div class="step-input-group">
                                 <label>${t('tariffs_step_from', 'ОТ (вкл.)')}</label>
-                                <input type="number" value="${step.from_value || 0}" min="0" step="0.01">
+                                <input type="number" value="${step.from_value || 0}" min="0" step="0.01" data-numeric-only>
                             </div>
                             <div class="step-input-group">
                                 <label>${t('tariffs_step_to', 'ДО (искл.)')}</label>
-                                <input type="text" value="${step.to_value === null ? '∞' : step.to_value}" placeholder="${t('tariffs_step_infinity_placeholder', '∞ для бесконечности')}">
+                                <input type="number" value="${step.to_value === null ? '' : step.to_value}" min="0" step="0.01" data-numeric-only data-allow-empty="1" placeholder="${t('tariffs_step_infinity_placeholder', '∞ для бесконечности')}">
                             </div>
                             <div class="step-input-group">
                                 <label>${t('tariffs_step_unit', 'Ед. изм.')}</label>
@@ -1630,7 +1675,7 @@
                             </div>
                             <div class="step-input-group">
                                 <label>${t('amount', 'Цена')}</label>
-                                <input type="number" value="${step.price || 0}" step="any" min="0" required>
+                                <input type="number" value="${step.price || 0}" step="any" min="0" required data-numeric-only>
                             </div>
                             <button type="button" class="btn btn-sm btn-danger" onclick="removeStep(this)" style="height: 38px; white-space: nowrap;">
                                 <i class="bi bi-trash"></i> ${t('action_delete', 'Удалить')}
@@ -1638,6 +1683,7 @@
                         `;
                 }
                 stepsContainer.appendChild(stepRow);
+                applyNumericOnlyBindings(stepRow);
             });
 
             // Обновляем единицы измерения и тип полей ПОСЛЕ добавления всех ступеней
@@ -1697,6 +1743,7 @@
         // Небольшая задержка, чтобы убедиться, что DOM готов
         await new Promise(resolve => setTimeout(resolve, 100));
         console.log('Initializing tariffs page...');
+        applyNumericOnlyBindings(document.getElementById('createTariffModal') || document);
         bindTariffPurposeMultiSelect();
         if (typeof window.loadTariffs === 'function') {
             await window.loadTariffs();

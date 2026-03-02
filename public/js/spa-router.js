@@ -538,7 +538,9 @@ class SPARouter {
 
         const textToKey = {
             'Главная': 'home',
+            'Главное': 'nav_main',
             'Панель управления': 'nav_dashboard',
+            'Управление': 'nav_management',
             'Аналитика': 'nav_analytics',
             'Отчеты': 'nav_reports',
             'Блоки': 'nav_blocks',
@@ -574,6 +576,9 @@ class SPARouter {
         // Обновляем заголовок
         const h1 = titleContainer.querySelector('h1');
         if (h1) {
+            // Prevent global i18n pass from forcing static "nav_dashboard"
+            // on every route after we set the route-specific title.
+            h1.removeAttribute('data-i18n');
             h1.textContent = translatedTitle;
             // Удаляем любые inline стили, которые могут перезаписать CSS стили
             h1.removeAttribute('style');

@@ -4,27 +4,27 @@
     <div class="payments-filters">
         <div class="payments-filters-row">
             <div class="payments-filters-group">
-                <label>Резидент</label>
+                <label data-i18n="resident">Резидент</label>
                 <select id="filterResident">
-                    <option value="all">Все</option>
+                    <option value="all" data-i18n="all">Все</option>
                     <option value="1">Резидент 1</option>
                     <option value="2">Резидент 2</option>
                 </select>
         </div>
 
             <div class="payments-filters-group">
-                <label>Метод</label>
+                <label data-i18n="filter_method">Метод</label>
                 <select id="filterMethod">
-                    <option value="all">Все</option>
-                    <option value="CASH">Наличные</option>
+                    <option value="all" data-i18n="all">Все</option>
+                    <option value="CASH" data-i18n="payments_method_cash">Наличные</option>
                     <option value="CARD">CARD</option>
-                    <option value="TRANSFER">Банк</option>
-                    <option value="ONLINE">Онлайн</option>
+                    <option value="TRANSFER" data-i18n="payments_method_transfer">Банк</option>
+                    <option value="ONLINE" data-i18n="payments_method_online">Онлайн</option>
                 </select>
             </div>
             
             <div class="payments-filters-group">
-                <label>От</label>
+                <label data-i18n="payments_date_from_short">От</label>
                 <div class="date-input-wrapper">
                     <input type="date" style="border-radius: 8px !important;" id="filterDateFrom">
                     <button type="button" class="btn-calendar" onclick="openDatePicker('filterDateFrom')" title="Открыть календарь">
@@ -34,7 +34,7 @@
             </div>
             
             <div class="payments-filters-group">
-                <label>До</label>
+                <label data-i18n="payments_date_to_short">До</label>
                 <div class="date-input-wrapper">
                     <input type="date" style="border-radius: 8px !important;" id="filterDateTo">
                     <button type="button" class="btn-calendar" onclick="openDatePicker('filterDateTo')" title="Открыть календарь">
@@ -44,29 +44,29 @@
             </div>
             
             <div class="payments-filters-group">
-                <label>Поиск</label>
-                <input type="text" id="filterSearch" placeholder="№ чека / комментарий">
+                <label data-i18n="filter">Поиск</label>
+                <input type="text" id="filterSearch" placeholder="№ чека / комментарий" data-i18n-placeholder="payments_search_placeholder">
             </div>
 
             <div class="payments-filters-group payments-filters-group-wide">
-                <label>Услуги для экспорта</label>
+                <label data-i18n="payments_services_export">Услуги для экспорта</label>
                 <details class="service-filter-details" id="serviceExportDetails">
-                    <summary id="serviceExportSummary">Все категории</summary>
+                    <summary id="serviceExportSummary" data-i18n="payments_services_all_categories">Все категории</summary>
                     <div class="service-filter-dropdown">
                         <div class="service-filter-options" id="serviceExportOptions">
-                            <label><input type="checkbox" value="utility" checked> Utility</label>
-                            <label><input type="checkbox" value="electric" checked> Электричество</label>
-                            <label><input type="checkbox" value="gas" checked> Газ</label>
-                            <label><input type="checkbox" value="water" checked> Вода</label>
-                            <label><input type="checkbox" value="sewerage" checked> Канализация</label>
-                            <label><input type="checkbox" value="service" checked> Сервис</label>
-                            <label><input type="checkbox" value="rent" checked> Аренда</label>
-                            <label><input type="checkbox" value="construction" checked> Строительство</label>
-                            <label><input type="checkbox" value="unallocated" checked> Без распределения</label>
+                            <label><input type="checkbox" value="utility" checked> <span data-i18n="payments_service_utility">Utility</span></label>
+                            <label><input type="checkbox" value="electric" checked> <span data-i18n="meter_electricity">Электричество</span></label>
+                            <label><input type="checkbox" value="gas" checked> <span data-i18n="meter_gas">Газ</span></label>
+                            <label><input type="checkbox" value="water" checked> <span data-i18n="meter_cold_water">Вода</span></label>
+                            <label><input type="checkbox" value="sewerage" checked> <span data-i18n="readings_meter_sewerage">Канализация</span></label>
+                            <label><input type="checkbox" value="service" checked> <span data-i18n="tariffs_purpose_service">Сервис</span></label>
+                            <label><input type="checkbox" value="rent" checked> <span data-i18n="tariffs_purpose_rent">Аренда</span></label>
+                            <label><input type="checkbox" value="construction" checked> <span data-i18n="tariffs_purpose_construction">Строительство</span></label>
+                            <label><input type="checkbox" value="unallocated" checked> <span data-i18n="payments_service_unallocated">Без распределения</span></label>
                         </div>
                         <div class="service-filter-actions">
-                            <button type="button" class="btn-filter-mini" id="serviceSelectAllBtn">Выбрать все</button>
-                            <button type="button" class="btn-filter-mini" id="serviceClearBtn">Очистить</button>
+                            <button type="button" class="btn-filter-mini" id="serviceSelectAllBtn" data-i18n="select_all">Выбрать все</button>
+                            <button type="button" class="btn-filter-mini" id="serviceClearBtn" data-i18n="clear">Очистить</button>
                         </div>
                     </div>
                 </details>
@@ -75,26 +75,26 @@
         
         <div class="payments-filters-actions">
             <div class="payments-filters-actions-left">
-                <input type="number" id="filterAmountMin" placeholder="Сумма от" step="0.01" min="0" aria-label="Минимальная сумма для экспорта">
-                <input type="number" id="filterAmountMax" placeholder="Сумма до" step="0.01" min="0" aria-label="Максимальная сумма для экспорта">
+                <input type="number" id="filterAmountMin" placeholder="Сумма от" step="0.01" min="0" aria-label="Минимальная сумма для экспорта" data-i18n-placeholder="payments_amount_from">
+                <input type="number" id="filterAmountMax" placeholder="Сумма до" step="0.01" min="0" aria-label="Максимальная сумма для экспорта" data-i18n-placeholder="payments_amount_to">
                 <label class="export-only-checkbox">
                     <input type="checkbox" id="filterAllocatedOnly">
-                    Только распределенные
+                    <span data-i18n="payments_only_distributed">Только распределенные</span>
                 </label>
             </div>
             <div class="payments-filters-actions-right">
                 <select id="paymentExportFormat" aria-label="Формат экспорта">
                     <option value="csv">Excel (CSV)</option>
-                    <option value="pdf">PDF (печать)</option>
+                    <option value="pdf" data-i18n="residents_export_pdf_print">PDF (печать)</option>
                 </select>
                 <button class="btn-filter" onclick="applyPaymentFilters()">
-                    <i class="bi bi-funnel"></i> Фильтр
+                    <i class="bi bi-funnel"></i> <span data-i18n="filter">Фильтр</span>
                 </button>
                 <button class="btn btn-success" type="button" onclick="exportPayments()">
-                    <i class="bi bi-box-arrow-down"></i> Экспорт
+                    <i class="bi bi-box-arrow-down"></i> <span data-i18n="export">Экспорт</span>
                 </button>
                 <button class="btn-accept-payment" onclick="acceptPayment()">
-                    Принять платеж
+                    <span data-i18n="payments_accept_payment">Принять платеж</span>
                 </button>
             </div>
         </div>
@@ -108,14 +108,14 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>Дата</th>
-                            <th>Резидент</th>
-                            <th>Житель</th>
-                            <th>Сумма</th>
-                            <th>Метод</th>
-                            <th>Остаток</th>
-                            <th>Ссылка</th>
-                            <th>Действия</th>
+                            <th data-i18n="date">Дата</th>
+                            <th data-i18n="resident">Резидент</th>
+                            <th data-i18n="nav_tenants">Житель</th>
+                            <th data-i18n="amount">Сумма</th>
+                            <th data-i18n="filter_method">Метод</th>
+                            <th data-i18n="payments_leftover">Остаток</th>
+                            <th data-i18n="payments_link">Ссылка</th>
+                            <th data-i18n="actions">Действия</th>
                         </tr>
                     </thead>
                     <tbody id="paymentsTable"></tbody>
@@ -136,11 +136,11 @@
             </button>
         </div>
         <div class="pagination-info">
-            <span>Стр. <span id="paymentCurrentPage">1</span> из <span id="paymentTotalPages">1</span> · всего <span id="paymentTotalItems">0</span></span>
+            <span><span data-i18n="residents_pagination_page_short">Стр.</span> <span id="paymentCurrentPage">1</span> <span data-i18n="residents_pagination_of">из</span> <span id="paymentTotalPages">1</span> · <span data-i18n="residents_pagination_total">всего</span> <span id="paymentTotalItems">0</span></span>
         </div>
         <div class="pagination-per-page">
-            <span>На</span>
-            <span>странице:</span>
+            <span data-i18n="residents_pagination_on">На</span>
+            <span data-i18n="residents_pagination_per_page">странице:</span>
             <div class="custom-pag-select" id="customPaymentItemsPerPage">
                 <select id="paymentItemsPerPage" onchange="changePaymentItemsPerPage()" style="display: none;">
                     <option value="10">10</option>
@@ -169,7 +169,7 @@
 <div class="accept-payment-modal-overlay" id="acceptPaymentModal">
     <div class="accept-payment-modal">
         <div class="accept-payment-modal-header">
-            <h3>Принять платеж</h3>
+            <h3 data-i18n="payments_accept_payment">Принять платеж</h3>
             <button class="accept-payment-modal-close" onclick="closeAcceptPaymentModal()" type="button">
                 <i class="bi bi-x-lg"></i>
             </button>
@@ -178,7 +178,7 @@
             <form id="acceptPaymentForm" onsubmit="savePayment(event)">
                 <div class="accept-payment-form-row">
                     <div class="accept-payment-form-group">
-                        <label for="paymentResident">Резидент</label>
+                        <label for="paymentResident" data-i18n="resident">Резидент</label>
                         <select id="paymentResident" required>
                             <option value="1">X / 2</option>
                             <option value="2">Резидент 2</option>
@@ -186,7 +186,7 @@
                         </select>
                     </div>
                     <div class="accept-payment-form-group">
-                        <label for="paymentDate">Дата поступления</label>
+                        <label for="paymentDate" data-i18n="payments_income_date">Дата поступления</label>
                         <div class="accept-payment-date-wrapper">
                             <input type="date" id="paymentDate" required>
                             <button type="button" class="btn-calendar" onclick="openDatePicker('paymentDate')" title="Открыть календарь">
@@ -195,11 +195,11 @@
                         </div>
                     </div>
                     <div class="accept-payment-form-group">
-                        <label for="paymentAmount">Сумма</label>
+                        <label for="paymentAmount" data-i18n="amount">Сумма</label>
                         <input type="number" id="paymentAmount" step="0.01" min="0" placeholder="0.00" required>
                     </div>
                     <div class="accept-payment-form-group">
-                        <label for="paymentMethod">Метод</label>
+                        <label for="paymentMethod" data-i18n="filter_method">Метод</label>
                         <select id="paymentMethod" required>
                             <option value="CASH" selected>CASH</option>
                             <option value="CARD">CARD</option>
@@ -210,25 +210,25 @@
                 </div>
                 <div class="accept-payment-form-row">
                     <div class="accept-payment-form-group">
-                        <label for="paymentReference">№/Референс</label>
+                        <label for="paymentReference" data-i18n="payments_reference_number">№/Референс</label>
                         <input type="text" id="paymentReference" placeholder="">
                     </div>
                     <div class="accept-payment-form-group">
-                        <label for="paymentComment">Комментарий</label>
+                        <label for="paymentComment" data-i18n="comment">Комментарий</label>
                         <input type="text" id="paymentComment" placeholder="">
                     </div>
                 </div>
                 <div class="accept-payment-form-row">
                     <div class="accept-payment-form-group full-width">
-                        <label for="paymentCheckNumber">номер чека/платёжки</label>
+                        <label for="paymentCheckNumber" data-i18n="payments_check_number">номер чека/платёжки</label>
                         <input type="text" id="paymentCheckNumber" placeholder="">
                     </div>
                 </div>
             </form>
         </div>
         <div class="accept-payment-modal-footer">
-            <button type="button" class="btn-modal-cancel" onclick="closeAcceptPaymentModal()">Отмена</button>
-            <button type="button" class="btn-modal-save" onclick="savePayment(event)">Сохранить</button>
+            <button type="button" class="btn-modal-cancel" onclick="closeAcceptPaymentModal()" data-i18n="cancel">Отмена</button>
+            <button type="button" class="btn-modal-save" onclick="savePayment(event)" data-i18n="save">Сохранить</button>
         </div>
     </div>
 </div>
@@ -236,24 +236,41 @@
 <script>
 (function(){
     const API_BASE = 'http://localhost:8000';
-    const methodLabels = {
-        'CASH': 'Наличные',
-        'CARD': 'CARD',
-        'TRANSFER': 'Банк',
-        'ONLINE': 'Онлайн'
-    };
-    const serviceLabels = {
-        utility: 'Utility',
-        electric: 'Электричество',
-        gas: 'Газ',
-        water: 'Вода',
-        sewerage: 'Канализация',
-        service: 'Сервис',
-        rent: 'Аренда',
-        construction: 'Строительство',
-        unallocated: 'Без распределения'
+    const t = (key, fallback = '') => window.i18n?.translate?.(key) || fallback || key;
+    function isPaymentsRoute() {
+        const route = String(window.spaRouter?.currentRoute || window.location.hash.replace('#', '') || '');
+        return route === '/payments' || route.startsWith('/payments');
+    }
+    function hasPaymentsDom() {
+        return !!document.querySelector('.payments-page');
+    }
+    const serviceKeys = ['utility', 'electric', 'gas', 'water', 'sewerage', 'service', 'rent', 'construction', 'unallocated'];
+    const serviceLabelKeyMap = {
+        utility: 'payments_service_utility',
+        electric: 'meter_electricity',
+        gas: 'meter_gas',
+        water: 'meter_cold_water',
+        sewerage: 'readings_meter_sewerage',
+        service: 'tariffs_purpose_service',
+        rent: 'tariffs_purpose_rent',
+        construction: 'tariffs_purpose_construction',
+        unallocated: 'payments_service_unallocated'
     };
     const utilityServiceKeys = ['electric', 'gas', 'water', 'sewerage'];
+
+    function getMethodLabel(method) {
+        if (method === 'CASH') return t('payments_method_cash', 'Наличные');
+        if (method === 'TRANSFER') return t('payments_method_transfer', 'Банк');
+        if (method === 'ONLINE') return t('payments_method_online', 'Онлайн');
+        if (method === 'CARD') return 'CARD';
+        return method || '—';
+    }
+
+    function getServiceLabel(key) {
+        const i18nKey = serviceLabelKeyMap[key];
+        if (!i18nKey) return key;
+        return t(i18nKey, key);
+    }
 
     function escapeHtml(str) {
         if (str === null || str === undefined) return '';
@@ -332,7 +349,7 @@
 
         const tbody = document.getElementById('paymentsTable');
         if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Загрузка...</td></tr>';
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">${t('loading', 'Загрузка...')}</td></tr>`;
         }
         
         const params = buildPaymentFilterParams();
@@ -356,10 +373,10 @@
         } catch (error) {
             console.error('Error loading payments:', error);
             if (tbody) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Ошибка загрузки данных</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">${t('error_loading_data', 'Ошибка загрузки данных')}</td></tr>`;
             }
             if (typeof showError === 'function') {
-                showError('Ошибка загрузки платежей: ' + error.message);
+                showError(`${t('payments_load_error_prefix', 'Ошибка загрузки платежей')}: ${error.message}`);
             }
         }
     }
@@ -437,14 +454,14 @@
 
     function getServiceDisplayLabel(key) {
         if (key === 'utility') {
-            const includes = utilityServiceKeys.map((k) => serviceLabels[k]).join(', ');
-            return `Utility (${includes})`;
+            const includes = utilityServiceKeys.map((k) => getServiceLabel(k)).join(', ');
+            return `${getServiceLabel('utility')} (${includes})`;
         }
-        return serviceLabels[key] || key;
+        return getServiceLabel(key);
     }
 
     function getServiceRowLabel(key) {
-        return key === 'utility' ? 'Utility' : (serviceLabels[key] || key);
+        return getServiceLabel(key);
     }
 
     function getUtilityAmount(serviceBreakdown) {
@@ -471,7 +488,7 @@
 
         // Если все сняты, считаем как "все", чтобы не получить пустой отчёт случайно.
         if (checked.length === 0) {
-            return Object.keys(serviceLabels);
+            return serviceKeys.slice();
         }
         return checked;
     }
@@ -508,11 +525,11 @@
         const summaryEl = document.getElementById('serviceExportSummary');
         if (!summaryEl) return;
         const selected = getSelectedExportServices();
-        if (selected.length === Object.keys(serviceLabels).length) {
-            summaryEl.textContent = 'Все категории';
+        if (selected.length === serviceKeys.length) {
+            summaryEl.textContent = t('payments_services_all_categories', 'Все категории');
             return;
         }
-        const preview = selected.slice(0, 2).map((k) => serviceLabels[k]).join(', ');
+        const preview = selected.slice(0, 2).map((k) => getServiceLabel(k)).join(', ');
         summaryEl.textContent = selected.length > 2 ? `${preview} +${selected.length - 2}` : preview;
     }
 
@@ -936,7 +953,7 @@
     async function buildExportDataset(items, selectedServices, extraFilters) {
         const rows = [];
         const serviceStats = {};
-        Object.keys(serviceLabels).forEach((key) => {
+        serviceKeys.forEach((key) => {
             serviceStats[key] = { count: 0, amount: 0 };
         });
 
@@ -986,7 +1003,7 @@
                 resident: payment.resident_code || '—',
                 resident_user_full_name: payment.resident_user_full_name || '—',
                 amount: toMoney(payment.amount_total),
-                method: methodLabels[payment.method] || payment.method || '—',
+                method: getMethodLabel(payment.method),
                 leftover: toMoney(payment.leftover),
                 reference: payment.reference || '—',
                 invoice: invoiceCell,
@@ -1290,7 +1307,7 @@
 
         if (exportBtn) {
             exportBtn.disabled = true;
-            exportBtn.textContent = 'Экспорт...';
+            exportBtn.textContent = `${t('export', 'Экспорт')}...`;
         }
 
         try {
@@ -1303,7 +1320,7 @@
 
             if (rows.length === 0) {
                 if (typeof showNotification === 'function') {
-                    showNotification('info', 'Нет данных для экспорта по текущим фильтрам и услугам.');
+                    showNotification('info', t('payments_export_no_data', 'Нет данных для экспорта по текущим фильтрам и услугам.'));
                 }
                 return;
             }
@@ -1315,12 +1332,12 @@
             }
 
             if (typeof showNotification === 'function') {
-                showNotification('success', 'Экспорт выполнен.');
+                showNotification('success', t('export_completed', 'Экспорт выполнен.'));
             }
         } catch (error) {
             console.error('Export payments error:', error);
             if (typeof showError === 'function') {
-                showError('Ошибка экспорта: ' + error.message);
+                showError(`${t('payments_export_error_prefix', 'Ошибка экспорта')}: ${error.message}`);
             }
         } finally {
             if (exportBtn) {
@@ -1338,14 +1355,14 @@
         const payments = paymentsData.items || [];
         
         if (payments.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Нет данных по текущим фильтрам</td></tr>';
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">${t('payments_no_data_for_filters', 'Нет данных по текущим фильтрам')}</td></tr>`;
         } else {
             tbody.innerHTML = payments.map(p => {
                 const date = formatPaymentDate(p.received_at);
                 const resident = p.resident_code || '—';
                 const residentUserFullName = p.resident_user_full_name || '—';
                 const amount = typeof p.amount_total === 'number' ? p.amount_total.toFixed(2) : (p.amount_total || '0.00');
-                const method = methodLabels[p.method] || p.method || '—';
+                const method = getMethodLabel(p.method);
                 const leftover = typeof p.leftover === 'number' ? p.leftover.toFixed(2) : '0.00';
                 const reference = p.reference || '—';
                 
@@ -1356,11 +1373,11 @@
                     <td class="amount-red">${amount} ₼</td>
                     <td>${method}</td>
                     <td>
-                        ${parseFloat(leftover) > 0 ? `<span class="badge-advance">Аванс ${leftover}</span>` : '0.00'}
+                        ${parseFloat(leftover) > 0 ? `<span class="badge-advance">${t('payment_advance_badge', 'Аванс')} ${leftover}</span>` : '0.00'}
                     </td>
                     <td>${reference}</td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewPayment(${p.id})">Открыть</button>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewPayment(${p.id})">${t('open', 'Открыть')}</button>
                     </td>
                 </tr>`;
             }).join('');
@@ -1475,7 +1492,7 @@
         paginationState.currentPage = 1;
         const tbody = document.getElementById('paymentsTable');
         if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Применение фильтров...</td></tr>';
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">${t('payments_applying_filters', 'Применение фильтров...')}</td></tr>`;
         }
 
         try {
@@ -1505,6 +1522,7 @@
     
     // Load residents for filters and modal (учитываем пагинацию API)
     async function loadResidents() {
+        if (!isPaymentsRoute() && !hasPaymentsDom()) return;
         try {
             const perPage = 100;
             let page = 1;
@@ -1533,15 +1551,15 @@
 
             // Populate filter dropdown
             const filterResident = document.getElementById('filterResident');
-            if (filterResident) {
-                filterResident.innerHTML = '<option value="all">Все</option>' +
+            if (filterResident && filterResident.tagName === 'SELECT') {
+                filterResident.innerHTML = `<option value="all" data-i18n="all">${t('all', 'Все')}</option>` +
                     residents.map(r => `<option value="${r.id}">${r.block_name} / ${r.unit_number}</option>`).join('');
             }
 
             // Populate modal dropdown
             const paymentResident = document.getElementById('paymentResident');
-            if (paymentResident) {
-                paymentResident.innerHTML = '<option value="">Выберите резидента</option>' +
+            if (paymentResident && paymentResident.tagName === 'SELECT') {
+                paymentResident.innerHTML = `<option value="">${t('payments_select_resident', 'Выберите резидента')}</option>` +
                     residents.map(r => `<option value="${r.id}">${r.block_name} / ${r.unit_number}</option>`).join('');
             }
         } catch (error) {
@@ -1610,14 +1628,14 @@
         // Validate required fields
         if (!residentId || !date || !amount || !method) {
             if (typeof showWarning === 'function') {
-                showWarning('Пожалуйста, заполните все обязательные поля!');
+                showWarning(t('payments_fill_required_fields', 'Пожалуйста, заполните все обязательные поля!'));
             }
             return;
         }
         
         if (amount <= 0) {
             if (typeof showWarning === 'function') {
-                showWarning('Сумма должна быть больше нуля!');
+                showWarning(t('payments_amount_positive', 'Сумма должна быть больше нуля!'));
             }
             return;
         }
@@ -1657,7 +1675,7 @@
             
             // Show success message
             if (typeof showSuccess === 'function') {
-                showSuccess('Платеж успешно принят!');
+                showSuccess(t('payments_accept_success', 'Платеж успешно принят!'));
             }
             
             // Open payment view
@@ -1669,7 +1687,7 @@
         } catch (error) {
             console.error('Error saving payment:', error);
             if (typeof showError === 'function') {
-                showError('Ошибка сохранения платежа: ' + error.message);
+                showError(`${t('payments_save_error_prefix', 'Ошибка сохранения платежа')}: ${error.message}`);
             }
         }
     };
@@ -1955,6 +1973,7 @@
     
     // Initialize on page load
     function initPaymentsPage() {
+        if (!isPaymentsRoute() && !hasPaymentsDom()) return;
         loadResidents().then(() => {
             loadPayments();
             initFilters();
@@ -1968,8 +1987,20 @@
     }
     
     window._paymentsContentLoadedHandler = function() {
+        if (!isPaymentsRoute()) return;
         initPaymentsPage();
     };
+    
+    if (window._paymentsLanguageChangedHandler) {
+        window.removeEventListener('languageChanged', window._paymentsLanguageChangedHandler);
+    }
+    window._paymentsLanguageChangedHandler = function() {
+        if (!isPaymentsRoute()) return;
+        updateServiceSummaryLabel();
+        renderTable();
+        loadResidents();
+    };
+    window.addEventListener('languageChanged', window._paymentsLanguageChangedHandler);
     
     document.addEventListener('spa:contentLoaded', window._paymentsContentLoadedHandler);
     

@@ -61,11 +61,11 @@
                     <table class="table table-hover tenants-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th data-i18n="id">ID</th>
                                 <th data-i18n="tenants_col_login">Логин</th>
                                 <th data-i18n="residents_col_name">ФИО</th>
                                 <th data-i18n="phone">Телефон</th>
-                                <th>E-mail</th>
+                                <th data-i18n="email">E-mail</th>
                                 <th data-i18n="tenants_col_last_login">Последний вход</th>
                                 <th data-i18n="tenants_col_password">Пароль</th>
                                 <th data-i18n="tenants_col_homes">Дома</th>
@@ -204,7 +204,7 @@
                         <table>
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th data-i18n="id">ID</th>
                                     <th data-i18n="residents_col_block">Блок</th>
                                     <th>№</th>
                                     <th data-i18n="select">Выбрать</th>
@@ -904,11 +904,11 @@
                     <table class="data">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th>${t('id', 'ID')}</th>
                                 <th>${t('tenants_col_login', 'Логин')}</th>
                                 <th>${t('residents_col_name', 'ФИО')}</th>
                                 <th>${t('phone', 'Телефон')}</th>
-                                <th>Email</th>
+                                <th>${t('email', 'E-mail')}</th>
                                 <th>${t('tenants_col_last_login', 'Последний вход')}</th>
                                 <th>${t('tenants_col_password', 'Пароль')}</th>
                                 <th>${t('tenants_col_homes', 'Дома')}</th>
@@ -967,7 +967,7 @@
                     <p><strong>${t('tariffs_export_count', 'Количество')}:</strong> ${rows.length}</p>
                     <table>
                         <thead>
-                            <tr><th>ID</th><th>${t('tenants_col_login', 'Логин')}</th><th>${t('residents_col_name', 'ФИО')}</th><th>${t('phone', 'Телефон')}</th><th>Email</th><th>${t('tenants_col_last_login', 'Последний вход')}</th><th>${t('tenants_col_password', 'Пароль')}</th><th>${t('tenants_col_homes', 'Дома')}</th></tr>
+                            <tr><th>${t('id', 'ID')}</th><th>${t('tenants_col_login', 'Логин')}</th><th>${t('residents_col_name', 'ФИО')}</th><th>${t('phone', 'Телефон')}</th><th>${t('email', 'E-mail')}</th><th>${t('tenants_col_last_login', 'Последний вход')}</th><th>${t('tenants_col_password', 'Пароль')}</th><th>${t('tenants_col_homes', 'Дома')}</th></tr>
                         </thead>
                         <tbody>${tableRows || `<tr><td colspan="8">${t('tariffs_no_data', 'Нет данных')}</td></tr>`}</tbody>
                     </table>
@@ -1602,6 +1602,8 @@
             if (currentQRUserData.homes && currentQRUserData.homes.length > 0) {
                 params.set('homes', JSON.stringify(currentQRUserData.homes));
             }
+            const currentLang = (window.i18n && window.i18n.currentLanguage) || localStorage.getItem('language') || 'az';
+            params.set('lang', currentLang);
 
             const base = window.location.origin || '';
             const printUrl = `${base}/admin/content/qr-print.html?${params.toString()}`;

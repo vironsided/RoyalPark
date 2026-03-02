@@ -4,21 +4,21 @@
             <div class="stat-icon blue"><i class="bi bi-house-door-fill"></i></div>
             <div class="stat-details">
                 <div class="stat-value">180</div>
-                <div class="stat-label">Всего квартир</div>
+                <div class="stat-label" data-i18n="apartments_total">Всего квартир</div>
             </div>
         </div>
         <div class="stat-card solid-green">
             <div class="stat-icon green"><i class="bi bi-people-fill"></i></div>
             <div class="stat-details">
                 <div class="stat-value">165</div>
-                <div class="stat-label">Занято</div>
+                <div class="stat-label" data-i18n="apartments_occupied">Занято</div>
             </div>
         </div>
         <div class="stat-card solid-orange">
             <div class="stat-icon orange"><i class="bi bi-key-fill"></i></div>
             <div class="stat-details">
                 <div class="stat-value">15</div>
-                <div class="stat-label">Свободно</div>
+                <div class="stat-label" data-i18n="apartments_vacant">Свободно</div>
             </div>
         </div>
         <div class="stat-card solid-purple">
@@ -26,7 +26,7 @@
                     class="bi bi-rulers"></i></div>
             <div class="stat-details">
                 <div class="stat-value">85.5м²</div>
-                <div class="stat-label">Средняя площадь</div>
+                <div class="stat-label" data-i18n="apartments_avg_area">Средняя площадь</div>
             </div>
         </div>
     </div>
@@ -36,15 +36,15 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>Квартира</th>
-                            <th>Здание</th>
-                            <th>Этаж</th>
-                            <th>Комнаты</th>
-                            <th>Площадь</th>
-                            <th>Владелец</th>
-                            <th>Жильцов</th>
-                            <th>Статус</th>
-                            <th>Долг</th>
+                            <th data-i18n="apartment">Квартира</th>
+                            <th data-i18n="building">Здание</th>
+                            <th data-i18n="floor">Этаж</th>
+                            <th data-i18n="rooms">Комнаты</th>
+                            <th data-i18n="area">Площадь</th>
+                            <th data-i18n="owner">Владелец</th>
+                            <th data-i18n="residents_count">Жильцов</th>
+                            <th data-i18n="status">Статус</th>
+                            <th data-i18n="debt">Долг</th>
                         </tr>
                     </thead>
                     <tbody id="apartmentsTable"></tbody>
@@ -56,6 +56,7 @@
 
 <script>
     (function () {
+        const t = (key, fallback = '') => window.i18n?.translate?.(key) || fallback || key;
         const tbody = document.getElementById('apartmentsTable');
         if (tbody) {
             tbody.innerHTML = TestData.apartments.map(a => `
@@ -67,7 +68,7 @@
                 <td>${a.area}м²</td>
                 <td><strong>${a.owner}</strong></td>
                 <td><i class="bi bi-people"></i> ${a.residents}</td>
-                <td><span class="badge ${a.status === 'occupied' ? 'bg-success' : 'bg-secondary'}">${a.status === 'occupied' ? 'Занята' : 'Свободна'}</span></td>
+                <td><span class="badge ${a.status === 'occupied' ? 'bg-success' : 'bg-secondary'}">${a.status === 'occupied' ? t('apartments_status_occupied', 'Занята') : t('apartments_status_vacant', 'Свободна')}</span></td>
                 <td>${a.debt > 0 ? '<span class="text-danger fw-bold">' + a.debt.toFixed(2) + ' ₼</span>' : '<span class="text-success"><i class="bi bi-check-circle"></i></span>'}</td>
             </tr>
         `).join('');
