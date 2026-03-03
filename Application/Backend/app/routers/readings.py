@@ -50,7 +50,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 # ====== расчёт по ступеням тарифа (вынесено в API-роутер) ======
 # Бизнес-логика расчёта (включая stable_tariff) находится в `api_readings.py`.
-from .api_readings import money, compute_amount, compute_amount_components, get_gas_annual_prev  # noqa: E402
+from .api_readings import money, compute_amount, compute_amount_components, get_gas_annual_prev, _apply_consumption_multiplier  # noqa: E402
 
 
 def _upsert_auto_sewerage_line_for_invoice(
@@ -558,6 +558,11 @@ def create_readings(
         
         new_value = Decimal(str(new_value_raw))
         
+        t = db.get(Tariff, m.tariff_id)
+        if not t:
+            db.rollback()
+            return RedirectResponse(url="/readings?error=tariff_notfound", status_code=302)
+
         if is_fixed:
             # Для фикс-услуг: consumption = 1, prev_val = последнее значение до месяца (или 0)
             prev_rd = (
@@ -582,9 +587,9 @@ def create_readings(
                 db.rollback()
                 return RedirectResponse(url="/readings?error=value_less_prev", status_code=302)
 
-            consumption = new_value - prev_val
+            raw_consumption = new_value - prev_val
+            consumption = _apply_consumption_multiplier(raw_consumption, t, m.meter_type)
 
-        t = db.get(Tariff, m.tariff_id)
         annual_prev = get_gas_annual_prev(db, m.id, period_start) if m.meter_type == MeterType.GAS else None
         amount_comp = compute_amount_components(consumption, t, annual_prev=annual_prev)
         net = amount_comp["amount_net"]

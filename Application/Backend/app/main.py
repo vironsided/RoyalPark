@@ -66,6 +66,8 @@ def run_bootstrap_schema():
         "ALTER TABLE payment_applications ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();",
         # Tariffs: фиксированная часть для ELECTRIC/GAS
         "ALTER TABLE tariffs ADD COLUMN IF NOT EXISTS stable_tariff NUMERIC(18,2) NOT NULL DEFAULT 0;",
+        "ALTER TABLE tariffs ADD COLUMN IF NOT EXISTS use_multiplier BOOLEAN NOT NULL DEFAULT FALSE;",
+        "ALTER TABLE tariffs ADD COLUMN IF NOT EXISTS consumption_multiplier NUMERIC(12,4) NOT NULL DEFAULT 1;",
         # Meter readings: исторический snapshot stable_tariff (чтобы старые инвойсы не менялись при правке тарифа)
         "ALTER TABLE meter_readings ADD COLUMN IF NOT EXISTS stable_fee_net NUMERIC(18,2);",
         "ALTER TABLE meter_readings ADD COLUMN IF NOT EXISTS stable_fee_vat NUMERIC(18,2);",

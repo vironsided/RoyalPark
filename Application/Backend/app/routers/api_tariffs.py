@@ -43,6 +43,8 @@ class TariffOut(BaseModel):
     meter_type: str
     customer_type: str
     vat_percent: int
+    use_multiplier: bool = False
+    consumption_multiplier: float = 1.0
     stable_tariff: float = 0.0
     sewerage_percent: float = 0.0
     is_active: bool
@@ -60,6 +62,8 @@ class TariffCreate(BaseModel):
     meter_type: str
     customer_type: str
     vat_percent: int
+    use_multiplier: Optional[bool] = False
+    consumption_multiplier: Optional[float] = 1.0
     stable_tariff: Optional[float] = 0.0
     sewerage_percent: Optional[float] = 0.0
     steps: List[TariffStepCreate]
@@ -70,6 +74,8 @@ class TariffUpdate(BaseModel):
     meter_type: Optional[str] = None
     customer_type: Optional[str] = None
     vat_percent: Optional[int] = None
+    use_multiplier: Optional[bool] = None
+    consumption_multiplier: Optional[float] = None
     stable_tariff: Optional[float] = None
     sewerage_percent: Optional[float] = None
     is_active: Optional[bool] = None
@@ -339,6 +345,15 @@ def create_tariff_public(
     if payload.meter_type not in {MeterType.ELECTRIC.value, MeterType.GAS.value}:
         stable_tariff = 0.0
     stable_tariff_dec = _to_decimal(stable_tariff)
+    use_multiplier = bool(payload.use_multiplier or False)
+    if payload.meter_type != MeterType.ELECTRIC.value:
+        use_multiplier = False
+    multiplier_raw = float(payload.consumption_multiplier or 1)
+    if multiplier_raw <= 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Коэффициент должен быть больше 0")
+    if not use_multiplier:
+        multiplier_raw = 1.0
+    consumption_multiplier_dec = _to_decimal(multiplier_raw)
 
     sewerage_percent = float(payload.sewerage_percent or 0)
     if sewerage_percent < 0 or sewerage_percent > 100:
@@ -367,6 +382,8 @@ def create_tariff_public(
             meter_type=MeterType(payload.meter_type),
             customer_type=CustomerType(payload.customer_type),
             vat_percent=payload.vat_percent,
+            use_multiplier=use_multiplier,
+            consumption_multiplier=consumption_multiplier_dec,
             stable_tariff=stable_tariff_dec,
             sewerage_percent=sewerage_percent,
             created_by_id=None,
@@ -428,6 +445,15 @@ def create_tariff_api(
     if payload.meter_type not in {MeterType.ELECTRIC.value, MeterType.GAS.value}:
         stable_tariff = 0.0
     stable_tariff_dec = _to_decimal(stable_tariff)
+    use_multiplier = bool(payload.use_multiplier or False)
+    if payload.meter_type != MeterType.ELECTRIC.value:
+        use_multiplier = False
+    multiplier_raw = float(payload.consumption_multiplier or 1)
+    if multiplier_raw <= 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Коэффициент должен быть больше 0")
+    if not use_multiplier:
+        multiplier_raw = 1.0
+    consumption_multiplier_dec = _to_decimal(multiplier_raw)
 
     sewerage_percent = float(payload.sewerage_percent or 0)
     if sewerage_percent < 0 or sewerage_percent > 100:
@@ -457,6 +483,8 @@ def create_tariff_api(
             meter_type=MeterType(payload.meter_type),
             customer_type=CustomerType(payload.customer_type),
             vat_percent=payload.vat_percent,
+            use_multiplier=use_multiplier,
+            consumption_multiplier=consumption_multiplier_dec,
             stable_tariff=stable_tariff_dec,
             sewerage_percent=sewerage_percent,
             created_by_id=actor.id,
@@ -537,8 +565,25 @@ def update_tariff_api(
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="НДС должен быть от 0 до 100")
         tariff.vat_percent = payload.vat_percent
 
-    # ELECTRIC/GAS-only: фиксированная часть
     effective_meter_type = payload.meter_type or tariff.meter_type.value
+
+    if payload.use_multiplier is not None:
+        tariff.use_multiplier = bool(payload.use_multiplier)
+    if effective_meter_type != MeterType.ELECTRIC.value:
+        tariff.use_multiplier = False
+        tariff.consumption_multiplier = _to_decimal(1)
+    if payload.use_multiplier is not None:
+        if not tariff.use_multiplier:
+            tariff.consumption_multiplier = _to_decimal(1)
+    if payload.consumption_multiplier is not None:
+        cm = float(payload.consumption_multiplier)
+        if cm <= 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Коэффициент должен быть больше 0")
+        tariff.consumption_multiplier = _to_decimal(cm)
+    if bool(getattr(tariff, "use_multiplier", False)) and (getattr(tariff, "consumption_multiplier", _to_decimal(1)) or _to_decimal(1)) <= 0:
+        tariff.consumption_multiplier = _to_decimal(1)
+
+    # ELECTRIC/GAS-only: фиксированная часть
     if payload.stable_tariff is not None:
         st = float(payload.stable_tariff or 0)
         if st < 0:
@@ -640,8 +685,25 @@ def update_tariff_public(
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="НДС должен быть от 0 до 100")
         tariff.vat_percent = payload.vat_percent
 
-    # ELECTRIC/GAS-only: фиксированная часть
     effective_meter_type = payload.meter_type or tariff.meter_type.value
+
+    if payload.use_multiplier is not None:
+        tariff.use_multiplier = bool(payload.use_multiplier)
+    if effective_meter_type != MeterType.ELECTRIC.value:
+        tariff.use_multiplier = False
+        tariff.consumption_multiplier = _to_decimal(1)
+    if payload.use_multiplier is not None:
+        if not tariff.use_multiplier:
+            tariff.consumption_multiplier = _to_decimal(1)
+    if payload.consumption_multiplier is not None:
+        cm = float(payload.consumption_multiplier)
+        if cm <= 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Коэффициент должен быть больше 0")
+        tariff.consumption_multiplier = _to_decimal(cm)
+    if bool(getattr(tariff, "use_multiplier", False)) and (getattr(tariff, "consumption_multiplier", _to_decimal(1)) or _to_decimal(1)) <= 0:
+        tariff.consumption_multiplier = _to_decimal(1)
+
+    # ELECTRIC/GAS-only: фиксированная часть
     if payload.stable_tariff is not None:
         st = float(payload.stable_tariff or 0)
         if st < 0:

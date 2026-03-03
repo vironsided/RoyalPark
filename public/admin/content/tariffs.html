@@ -159,6 +159,17 @@
                 </select>
             </div>
 
+            <div class="form-group" id="consumptionMultiplierGroup" style="display:none;">
+                <label class="consumption-multiplier-toggle">
+                    <input type="checkbox" id="tariffUseConsumptionMultiplier" class="invoice-master-checkbox">
+                    <span data-i18n="tariffs_use_consumption_multiplier_label">Применять коэффициент к расходу</span>
+                </label>
+                <input type="number" id="tariffConsumptionMultiplier" value="1" placeholder="1" min="0.0001" step="0.0001" data-numeric-only data-allow-empty="1" style="display:none; margin-top:8px;">
+                <small style="display:block; opacity:0.75; margin-top:6px;" data-i18n="tariffs_consumption_multiplier_help">
+                    Если включено, расход будет умножаться на коэффициент перед расчётом суммы.
+                </small>
+            </div>
+
             <div class="form-group">
                 <label data-i18n="tariffs_type_label">Тип тарифа</label>
                 <select id="tariffType" required>
@@ -952,6 +963,8 @@
         document.getElementById('createTariffModal').classList.remove('active');
         document.body.style.overflow = 'auto';
         document.getElementById('createTariffForm').reset();
+        const multiplierInput = document.getElementById('tariffConsumptionMultiplier');
+        if (multiplierInput) multiplierInput.value = '1';
         seweragePercentDirty = false;
 
         // Очищаем контейнер ступеней
@@ -972,6 +985,7 @@
         if (submitBtn) {
             submitBtn.textContent = t('tariffs_create_button', 'Создать');
         }
+        updateConsumptionMultiplierVisibility();
     }
 
     // Экспортируем функцию в глобальную область видимости
@@ -1011,7 +1025,27 @@
         });
         updateSeweragePercentVisibility();
         updateStableTariffVisibility();
+        updateConsumptionMultiplierVisibility();
     };
+
+    function updateConsumptionMultiplierVisibility() {
+        const purpose = document.getElementById('tariffPurpose')?.value;
+        const group = document.getElementById('consumptionMultiplierGroup');
+        const useCb = document.getElementById('tariffUseConsumptionMultiplier');
+        const input = document.getElementById('tariffConsumptionMultiplier');
+        if (!group || !useCb || !input) return;
+
+        const supported = (purpose === 'electricity');
+        group.style.display = supported ? '' : 'none';
+        if (!supported) {
+            useCb.checked = false;
+            input.value = '1';
+            input.style.display = 'none';
+            return;
+        }
+        input.style.display = useCb.checked ? '' : 'none';
+        if (!String(input.value || '').trim()) input.value = '1';
+    }
 
     function updateStableTariffVisibility() {
         const purpose = document.getElementById('tariffPurpose')?.value;
@@ -1342,6 +1376,11 @@
         const type = document.getElementById('tariffType').value;
         const vat = parseInt(document.getElementById('tariffVAT').value) || 0;
         const seweragePercent = parseFloat(document.getElementById('tariffSeweragePercent')?.value) || 0;
+        const useConsumptionMultiplier = !!document.getElementById('tariffUseConsumptionMultiplier')?.checked;
+        const consumptionMultiplierRaw = parseFloat(document.getElementById('tariffConsumptionMultiplier')?.value);
+        const consumptionMultiplier = (useConsumptionMultiplier && isFinite(consumptionMultiplierRaw) && consumptionMultiplierRaw > 0)
+            ? consumptionMultiplierRaw
+            : 1;
         const stableTariffRaw = parseFloat(document.getElementById('tariffStableTariff')?.value);
         const stableTariff = (purpose === 'electricity' || purpose === 'gas')
             ? (isFinite(stableTariffRaw) ? stableTariffRaw : 0)
@@ -1441,6 +1480,8 @@
             meter_type: meterTypeMap[purpose] || purpose.toUpperCase(),
             customer_type: customerTypeMap[type] || type.toUpperCase(),
             vat_percent: vat,
+            use_multiplier: useConsumptionMultiplier,
+            consumption_multiplier: consumptionMultiplier,
             stable_tariff: stableTariff,
             sewerage_percent: (purpose === 'water') ? seweragePercent : 0,
             steps: steps
@@ -1610,9 +1651,19 @@
             if (sewerageInput) {
                 sewerageInput.value = (fullTariff.sewerage_percent ?? 0);
             }
+            const useMultiplierInput = document.getElementById('tariffUseConsumptionMultiplier');
+            const multiplierInput = document.getElementById('tariffConsumptionMultiplier');
+            if (useMultiplierInput) {
+                useMultiplierInput.checked = !!fullTariff.use_multiplier;
+            }
+            if (multiplierInput) {
+                const m = Number(fullTariff.consumption_multiplier || 1);
+                multiplierInput.value = (Number.isFinite(m) && m > 0) ? String(m) : '1';
+            }
             seweragePercentDirty = false;
             updateSeweragePercentVisibility();
             updateStableTariffVisibility();
+            updateConsumptionMultiplierVisibility();
 
             // Очищаем контейнер ступеней
             const stepsContainer = document.getElementById('tariffStepsContainer');
@@ -1750,6 +1801,16 @@
             typeSelect.addEventListener('change', () => {
                 seweragePercentDirty = false;
                 updateSeweragePercentVisibility();
+            });
+        }
+    })();
+
+    (function initConsumptionMultiplierHandlers() {
+        const useCb = document.getElementById('tariffUseConsumptionMultiplier');
+        if (useCb && !useCb._initialized) {
+            useCb._initialized = true;
+            useCb.addEventListener('change', () => {
+                updateConsumptionMultiplierVisibility();
             });
         }
     })();

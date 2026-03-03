@@ -3041,12 +3041,13 @@
         }
     }
 
-    function calculateAmount(consumption, tariffSteps, vatPercent) {
+    function calculateAmount(consumption, tariffSteps, vatPercent, useMultiplier = false, multiplier = 1) {
         if (!tariffSteps || tariffSteps.length === 0) {
             return 0;
         }
 
-        let left = consumption;
+        const coeff = (useMultiplier && Number(multiplier) > 0) ? Number(multiplier) : 1;
+        let left = Number(consumption || 0) * coeff;
         let totalNet = 0;
 
         // Для CONSTRUCTION тарифов используем первую ступень
@@ -3095,7 +3096,9 @@
         const consumption = Math.max(0, value - prev);
         const tariffSteps = JSON.parse(row.dataset.tariffSteps || '[]');
         const vatPercent = parseFloat(row.dataset.vatPercent || '0');
-        const amount = calculateAmount(consumption, tariffSteps, vatPercent);
+        const useMultiplier = row.dataset.useMultiplier === '1';
+        const multiplier = parseFloat(row.dataset.consumptionMultiplier || '1');
+        const amount = calculateAmount(consumption, tariffSteps, vatPercent, useMultiplier, multiplier);
         return { consumption, amount };
     }
 
@@ -3277,6 +3280,8 @@
             if (isFixed) {
                 const tariffStepsJson = JSON.stringify(meter.tariff_steps || []);
                 const vatPercent = meter.vat_percent || 0;
+                const useMultiplier = !!meter.use_multiplier;
+                const consumptionMultiplier = parseFloat(meter.consumption_multiplier || 1) || 1;
                 // Для фикс-услуг consumption всегда = 1, если отмечено
                 const consumption = meter.existing ? 1 : 0;
                 // Рассчитываем сумму на основе consumption
@@ -3285,10 +3290,10 @@
                 if (meter.existing && meter.existing_value !== null && meter.existing_value !== undefined) {
                     // Если есть существующее показание, используем его сумму (будет загружена из backend)
                     // Но для фикс-услуг нужно рассчитать на основе consumption = 1
-                    initialAmount = calculateAmount(1, meter.tariff_steps || [], vatPercent);
+                    initialAmount = calculateAmount(1, meter.tariff_steps || [], vatPercent, useMultiplier, consumptionMultiplier);
                 } else if (consumption > 0) {
                     // Если отмечено, но нет existing показания, рассчитываем
-                    initialAmount = calculateAmount(consumption, meter.tariff_steps || [], vatPercent);
+                    initialAmount = calculateAmount(consumption, meter.tariff_steps || [], vatPercent, useMultiplier, consumptionMultiplier);
                 } else {
                     // Если не отмечено, сумма = 0.00
                     initialAmount = 0;
@@ -3316,6 +3321,8 @@
                             data-is-fixed="true"
                             data-tariff-steps='${tariffStepsJson}'
                             data-vat-percent="${vatPercent}"
+                            data-use-multiplier="${useMultiplier ? '1' : '0'}"
+                            data-consumption-multiplier="${consumptionMultiplier}"
                             data-expected-last-reading-id="${expectedLastReadingId || ''}"
                             data-payment-locked="${paymentLocked ? '1' : '0'}">
                             <td><span class="meter-type-pill">${meterDisplayType}</span></td>
@@ -3354,6 +3361,8 @@
 
             const tariffStepsJson = JSON.stringify(meter.tariff_steps || []);
             const vatPercent = meter.vat_percent || 0;
+            const useMultiplier = !!meter.use_multiplier;
+            const consumptionMultiplier = parseFloat(meter.consumption_multiplier || 1) || 1;
             const seweragePercent = (!hasRealSewerMeter && meter.type === 'WATER')
                 ? (parseFloat(meter.sewerage_percent || 0) || 0)
                 : 0;
@@ -3370,7 +3379,7 @@
             if (existing !== null && existing !== undefined) {
                 initialConsumption = existing - prev;
                 if (initialConsumption > 0) {
-                    initialAmount = calculateAmount(initialConsumption, meter.tariff_steps || [], vatPercent);
+                    initialAmount = calculateAmount(initialConsumption, meter.tariff_steps || [], vatPercent, useMultiplier, consumptionMultiplier);
                 }
             }
 
@@ -3380,6 +3389,8 @@
                         data-tariff-id="${meter.tariff_id}"
                         data-tariff-steps='${tariffStepsJson}'
                         data-vat-percent="${vatPercent}"
+                        data-use-multiplier="${useMultiplier ? '1' : '0'}"
+                        data-consumption-multiplier="${consumptionMultiplier}"
                         data-meter-type="${meter.type}"
                         data-existing-photo-url="${existingPhotoUrl}"
                         data-sewerage-percent="${seweragePercent}"
@@ -3457,7 +3468,9 @@
         const consumption = Math.max(0, value - prev);
         const tariffSteps = JSON.parse(row.dataset.tariffSteps || '[]');
         const vatPercent = parseFloat(row.dataset.vatPercent || '0');
-        const amount = calculateAmount(consumption, tariffSteps, vatPercent);
+        const useMultiplier = row.dataset.useMultiplier === '1';
+        const multiplier = parseFloat(row.dataset.consumptionMultiplier || '1');
+        const amount = calculateAmount(consumption, tariffSteps, vatPercent, useMultiplier, multiplier);
 
         const meterType = (row.dataset.meterType || '').toUpperCase();
         const seweragePercent = parseFloat(row.dataset.seweragePercent || '0');
@@ -3481,7 +3494,9 @@
         // Calculate amount for fixed services
         const tariffSteps = JSON.parse(row.dataset.tariffSteps || '[]');
         const vatPercent = parseFloat(row.dataset.vatPercent || '0');
-        const amount = calculateAmount(consumption, tariffSteps, vatPercent);
+        const useMultiplier = row.dataset.useMultiplier === '1';
+        const multiplier = parseFloat(row.dataset.consumptionMultiplier || '1');
+        const amount = calculateAmount(consumption, tariffSteps, vatPercent, useMultiplier, multiplier);
         // Всегда показываем сумму, даже если 0.00
         row.querySelector('.meter-amount').textContent = amount.toFixed(2);
     }

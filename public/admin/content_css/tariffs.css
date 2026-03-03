@@ -637,6 +637,36 @@
             color: rgba(255, 255, 255, 0.35);
         }
 
+        /* Use same checkbox look as invoice master checkbox */
+        .consumption-multiplier-toggle {
+            display: inline-flex !important;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+
+        .form-group input.invoice-master-checkbox {
+            width: 18px;
+            height: 18px;
+            min-width: 18px;
+            padding: 0;
+            margin: 0;
+            border: none;
+            border-radius: 4px;
+            appearance: auto;
+            -webkit-appearance: auto;
+            -moz-appearance: auto;
+            accent-color: #6d9bff;
+            cursor: pointer;
+            box-shadow: none;
+            background: transparent;
+        }
+
+        .form-group input.invoice-master-checkbox:focus {
+            box-shadow: none;
+        }
+
         .tariff-steps {
             margin-top: 25px;
             padding: 20px;

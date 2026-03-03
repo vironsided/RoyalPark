@@ -42,6 +42,25 @@ def _effective_sewerage_percent(tariff: Tariff | None) -> Decimal:
     return percent if percent > 0 else Decimal("0")
 
 
+def _apply_consumption_multiplier(consumption: Decimal, tariff: Tariff | None, meter_type: MeterType | None) -> Decimal:
+    """
+    Умножает расход на коэффициент тарифа (если включено).
+    Применяем только к счётчикам с показаниями (не SERVICE/RENT/CONSTRUCTION).
+    """
+    base = Decimal(str(consumption or 0))
+    if not tariff or meter_type != MeterType.ELECTRIC:
+        return base
+    if not bool(getattr(tariff, "use_multiplier", False)):
+        return base
+    try:
+        coeff = Decimal(str(getattr(tariff, "consumption_multiplier", 1) or 1))
+    except Exception:
+        coeff = Decimal("1")
+    if coeff <= 0:
+        coeff = Decimal("1")
+    return base * coeff
+
+
 def _is_period_paid(db: Session, resident_id: int, year: int, month: int) -> bool:
     inv = (
         db.query(Invoice.id)
@@ -1173,6 +1192,8 @@ def get_resident_meters(
             "line_total_amount": float(payment_meta.get("line_total", 0)) if payment_meta else 0.0,
             "sewerage_percent": float(_effective_sewerage_percent(tariff_obj)),
             "stable_tariff": float(Decimal(str(getattr(tariff_obj, "stable_tariff", 0) or 0))) if tariff_obj else 0.0,
+            "use_multiplier": bool(getattr(tariff_obj, "use_multiplier", False)) if tariff_obj else False,
+            "consumption_multiplier": float(Decimal(str(getattr(tariff_obj, "consumption_multiplier", 1) or 1))) if tariff_obj else 1.0,
             "tariff_customer_type": (tariff_obj.customer_type.value if getattr(tariff_obj, "customer_type", None) else None),
         })
 
@@ -1426,6 +1447,10 @@ def create_readings_internal(
             continue
         
         new_value = Decimal(str(new_value_raw))
+        tariff = db.get(Tariff, m.tariff_id)
+        if not tariff:
+            db.rollback()
+            raise HTTPException(status_code=404, detail=f"Tariff {m.tariff_id} not found")
         
         if is_fixed:
             prev_rd = (
@@ -1452,7 +1477,8 @@ def create_readings_internal(
                 db.rollback()
                 raise HTTPException(status_code=400, detail=f"New value {new_value} is less than previous {prev_val}")
 
-            consumption = new_value - prev_val
+            raw_consumption = new_value - prev_val
+            consumption = _apply_consumption_multiplier(raw_consumption, tariff, m.meter_type)
 
         # Ищем существующую запись за месяц
         existing = (
@@ -1464,11 +1490,6 @@ def create_readings_internal(
             )
             .first()
         )
-
-        tariff = db.get(Tariff, m.tariff_id)
-        if not tariff:
-            db.rollback()
-            raise HTTPException(status_code=404, detail=f"Tariff {m.tariff_id} not found")
 
         # Расчёт суммы по тарифу
         annual_prev = get_gas_annual_prev(db, m.id, period_start) if m.meter_type == MeterType.GAS else None

@@ -187,6 +187,9 @@ class Tariff(Base):
     meter_type: Mapped[MeterType] = mapped_column(Enum(MeterType), nullable=False)
     customer_type: Mapped[CustomerType] = mapped_column(Enum(CustomerType), nullable=False)
     vat_percent: Mapped[int] = mapped_column(Integer, nullable=False, default=0)  # 0..100
+    # Для некоторых счётчиков расход нужно умножать на коэффициент (например, трансформаторные).
+    use_multiplier: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    consumption_multiplier: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False, default=Decimal("1"))
     # Для ELECTRIC/GAS: фиксированная сумма, добавляется к начислению независимо от расхода.
     stable_tariff: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False, default=Decimal("0"))
     # Для WATER: процент канализации, который рассчитывается как % от суммы воды (доп. строка в счёте)
