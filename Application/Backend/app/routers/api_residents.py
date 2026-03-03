@@ -40,6 +40,9 @@ class ResidentOut(BaseModel):
     customer_type: str
     status: str
     debt: Optional[float] = 0.0  # начальный долг (если задан)
+    debt_utility: Optional[float] = 0.0
+    debt_service: Optional[float] = 0.0
+    debt_rent: Optional[float] = 0.0
     owner_full_name: Optional[str] = None
     owner_phone: Optional[str] = None
     owner_email: Optional[str] = None
@@ -62,6 +65,9 @@ class ResidentCreate(BaseModel):
     owner_email: Optional[EmailStr] = None
     comment: Optional[str] = None
     debt: Optional[float] = 0.0  # начальный долг (до внедрения системы)
+    debt_utility: Optional[float] = None
+    debt_service: Optional[float] = None
+    debt_rent: Optional[float] = None
     meters: List[MeterIn] = []
 
 
@@ -76,6 +82,9 @@ class ResidentUpdate(BaseModel):
     owner_email: Optional[EmailStr] = None
     comment: Optional[str] = None
     debt: Optional[float] = None  # обновление начального долга (opening invoice)
+    debt_utility: Optional[float] = None
+    debt_service: Optional[float] = None
+    debt_rent: Optional[float] = None
     meters: Optional[List[MeterIn]] = None
 
 
@@ -105,6 +114,184 @@ def _get_opening_debt(db: Session, resident_id: int) -> Decimal:
     if not inv or inv.status == InvoiceStatus.CANCELED:
         return Decimal("0")
     return Decimal(str(inv.amount_total or 0))
+
+
+OPENING_DEBT_DESCRIPTIONS = {
+    "utility": "Начальный долг (Utility)",
+    "service": "Начальный долг (Service)",
+    "rent": "Начальный долг (Rent)",
+}
+
+
+def _opening_debt_zero_breakdown() -> dict[str, Decimal]:
+    return {
+        "utility": Decimal("0"),
+        "service": Decimal("0"),
+        "rent": Decimal("0"),
+    }
+
+
+def _extract_opening_debt_breakdown(payload: object) -> dict[str, Decimal]:
+    utility_raw = getattr(payload, "debt_utility", None)
+    service_raw = getattr(payload, "debt_service", None)
+    rent_raw = getattr(payload, "debt_rent", None)
+    total_raw = getattr(payload, "debt", None)
+
+    has_split = utility_raw is not None or service_raw is not None or rent_raw is not None
+    if has_split:
+        breakdown = {
+            "utility": Decimal(str(utility_raw or 0)),
+            "service": Decimal(str(service_raw or 0)),
+            "rent": Decimal(str(rent_raw or 0)),
+        }
+    else:
+        breakdown = _opening_debt_zero_breakdown()
+        breakdown["utility"] = Decimal(str(total_raw or 0))
+
+    for value in breakdown.values():
+        if value < 0:
+            raise HTTPException(status_code=400, detail="Debt cannot be negative")
+    return breakdown
+
+
+def _has_opening_debt_payload(payload: object) -> bool:
+    return any(
+        getattr(payload, field, None) is not None
+        for field in ("debt", "debt_utility", "debt_service", "debt_rent")
+    )
+
+
+def _opening_debt_total(breakdown: dict[str, Decimal]) -> Decimal:
+    return breakdown["utility"] + breakdown["service"] + breakdown["rent"]
+
+
+def _next_opening_invoice_period(db: Session, resident_id: int) -> tuple[int, int]:
+    y, m = 1900, 1
+    while True:
+        exists_id = db.execute(
+            select(Invoice.id).where(
+                Invoice.resident_id == resident_id,
+                Invoice.period_year == y,
+                Invoice.period_month == m,
+            )
+        ).scalar_one_or_none()
+        if not exists_id:
+            return y, m
+        m += 1
+        if m > 12:
+            y += 1
+            m = 1
+
+
+def _write_opening_invoice_lines(db: Session, invoice_id: int, breakdown: dict[str, Decimal]) -> None:
+    existing = db.execute(
+        select(InvoiceLine).where(InvoiceLine.invoice_id == invoice_id)
+    ).scalars().all()
+    for line in existing:
+        db.delete(line)
+
+    for category in ("utility", "service", "rent"):
+        amount = breakdown[category]
+        if amount <= 0:
+            continue
+        db.add(InvoiceLine(
+            invoice_id=invoice_id,
+            meter_reading_id=None,
+            description=OPENING_DEBT_DESCRIPTIONS[category],
+            amount_net=amount,
+            amount_vat=Decimal("0"),
+            amount_total=amount,
+        ))
+
+
+def _upsert_opening_invoice(
+    db: Session,
+    resident_id: int,
+    breakdown: dict[str, Decimal],
+    created_by_id: Optional[int],
+) -> None:
+    total = _opening_debt_total(breakdown)
+    opening_inv = _get_opening_invoice(db, resident_id)
+
+    if opening_inv is None:
+        if total <= 0:
+            return
+        period_year, period_month = _next_opening_invoice_period(db, resident_id)
+        opening_inv = Invoice(
+            resident_id=resident_id,
+            number=_opening_invoice_number(resident_id),
+            status=InvoiceStatus.ISSUED,
+            due_date=None,
+            notes="Начальный долг (до внедрения системы)",
+            period_year=period_year,
+            period_month=period_month,
+            amount_net=total,
+            amount_vat=Decimal("0"),
+            amount_total=total,
+            created_by_id=created_by_id,
+        )
+        db.add(opening_inv)
+        db.flush()
+        _write_opening_invoice_lines(db, opening_inv.id, breakdown)
+        return
+
+    applied = (
+        db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+        .filter(PaymentApplication.invoice_id == opening_inv.id)
+        .scalar()
+        or 0
+    )
+    applied_dec = Decimal(str(applied))
+    if total < applied_dec:
+        raise HTTPException(status_code=400, detail="Debt cannot be less than already paid amount")
+
+    if total == 0 and applied_dec == 0:
+        opening_inv.status = InvoiceStatus.CANCELED
+        opening_inv.amount_net = Decimal("0")
+        opening_inv.amount_vat = Decimal("0")
+        opening_inv.amount_total = Decimal("0")
+    else:
+        opening_inv.status = (
+            InvoiceStatus.PAID if (total == applied_dec and total > 0)
+            else (InvoiceStatus.ISSUED if applied_dec == 0 else InvoiceStatus.PARTIAL)
+        )
+        opening_inv.notes = "Начальный долг (до внедрения системы)"
+        opening_inv.amount_net = total
+        opening_inv.amount_vat = Decimal("0")
+        opening_inv.amount_total = total
+
+    _write_opening_invoice_lines(db, opening_inv.id, breakdown if total > 0 else _opening_debt_zero_breakdown())
+
+
+def _get_opening_debt_breakdown(db: Session, resident_id: int) -> dict[str, Decimal]:
+    inv = _get_opening_invoice(db, resident_id)
+    breakdown = _opening_debt_zero_breakdown()
+    if not inv or inv.status == InvoiceStatus.CANCELED:
+        return breakdown
+
+    lines = db.execute(
+        select(InvoiceLine).where(InvoiceLine.invoice_id == inv.id)
+    ).scalars().all()
+    if not lines:
+        breakdown["utility"] = Decimal(str(inv.amount_total or 0))
+        return breakdown
+
+    unclassified = Decimal("0")
+    for ln in lines:
+        amount = Decimal(str(ln.amount_total or 0))
+        desc = str(ln.description or "").lower()
+        if "(utility)" in desc:
+            breakdown["utility"] += amount
+        elif "(service)" in desc:
+            breakdown["service"] += amount
+        elif "(rent)" in desc:
+            breakdown["rent"] += amount
+        else:
+            unclassified += amount
+
+    if unclassified:
+        breakdown["utility"] += unclassified
+    return breakdown
 
 
 # ---------------------------------------------------------------------------
@@ -464,58 +651,14 @@ def create_resident_api(
     db.add(resident)
     db.flush()
 
-    # Начальный долг: создаём отдельный инвойс "opening balance",
-    # чтобы он учитывался во всех расчётах долга (через суммы счетов).
-    opening_debt = payload.debt or 0.0
-    if opening_debt:
-        try:
-            opening_debt_dec = Decimal(str(opening_debt))
-        except (InvalidOperation, Exception):
-            raise HTTPException(status_code=400, detail="Invalid debt value")
-        if opening_debt_dec < 0:
-            raise HTTPException(status_code=400, detail="Debt cannot be negative")
-        if opening_debt_dec > 0:
-            # Подбираем период, чтобы не конфликтовать с uq_invoice_resident_period
-            y, m = 1900, 1
-            while True:
-                exists_id = db.execute(
-                    select(Invoice.id).where(
-                        Invoice.resident_id == resident.id,
-                        Invoice.period_year == y,
-                        Invoice.period_month == m,
-                    )
-                ).scalar_one_or_none()
-                if not exists_id:
-                    break
-                m += 1
-                if m > 12:
-                    y += 1
-                    m = 1
-
-            inv = Invoice(
-                resident_id=resident.id,
-                number=f"OPEN/{resident.id:06d}",
-                status=InvoiceStatus.ISSUED,
-                due_date=None,
-                notes="Начальный долг (до внедрения системы)",
-                period_year=y,
-                period_month=m,
-                amount_net=opening_debt_dec,
-                amount_vat=Decimal("0"),
-                amount_total=opening_debt_dec,
-                created_by_id=actor.id,
-            )
-            db.add(inv)
-            db.flush()
-
-            db.add(InvoiceLine(
-                invoice_id=inv.id,
-                meter_reading_id=None,
-                description="Начальный долг",
-                amount_net=opening_debt_dec,
-                amount_vat=Decimal("0"),
-                amount_total=opening_debt_dec,
-            ))
+    # Начальный долг: создаём/обновляем opening invoice c разбивкой по категориям.
+    opening_breakdown = _extract_opening_debt_breakdown(payload)
+    _upsert_opening_invoice(
+        db=db,
+        resident_id=resident.id,
+        breakdown=opening_breakdown,
+        created_by_id=actor.id,
+    )
     
     # Создание счётчиков
     for m_data in meters_data:
@@ -554,7 +697,8 @@ def create_resident_api(
             "is_active": m.is_active,
         })
     
-    opening_debt = _get_opening_debt(db, resident.id)
+    opening_breakdown = _get_opening_debt_breakdown(db, resident.id)
+    opening_debt = _opening_debt_total(opening_breakdown)
 
     return {
         "id": resident.id,
@@ -565,6 +709,9 @@ def create_resident_api(
         "customer_type": resident.customer_type.value,
         "status": resident.status.value,
         "debt": float(opening_debt),
+        "debt_utility": float(opening_breakdown["utility"]),
+        "debt_service": float(opening_breakdown["service"]),
+        "debt_rent": float(opening_breakdown["rent"]),
         "owner_full_name": resident.owner_full_name,
         "owner_phone": resident.owner_phone,
         "owner_email": resident.owner_email,
@@ -640,56 +787,13 @@ def create_resident_public(
     db.add(resident)
     db.flush()
 
-    # Начальный долг (public endpoint): создаём "opening invoice"
-    opening_debt = payload.debt or 0.0
-    if opening_debt:
-        try:
-            opening_debt_dec = Decimal(str(opening_debt))
-        except (InvalidOperation, Exception):
-            raise HTTPException(status_code=400, detail="Invalid debt value")
-        if opening_debt_dec < 0:
-            raise HTTPException(status_code=400, detail="Debt cannot be negative")
-        if opening_debt_dec > 0:
-            y, m = 1900, 1
-            while True:
-                exists_id = db.execute(
-                    select(Invoice.id).where(
-                        Invoice.resident_id == resident.id,
-                        Invoice.period_year == y,
-                        Invoice.period_month == m,
-                    )
-                ).scalar_one_or_none()
-                if not exists_id:
-                    break
-                m += 1
-                if m > 12:
-                    y += 1
-                    m = 1
-
-            inv = Invoice(
-                resident_id=resident.id,
-                number=f"OPEN/{resident.id:06d}",
-                status=InvoiceStatus.ISSUED,
-                due_date=None,
-                notes="Начальный долг (до внедрения системы)",
-                period_year=y,
-                period_month=m,
-                amount_net=opening_debt_dec,
-                amount_vat=Decimal("0"),
-                amount_total=opening_debt_dec,
-                created_by_id=None,
-            )
-            db.add(inv)
-            db.flush()
-
-            db.add(InvoiceLine(
-                invoice_id=inv.id,
-                meter_reading_id=None,
-                description="Начальный долг",
-                amount_net=opening_debt_dec,
-                amount_vat=Decimal("0"),
-                amount_total=opening_debt_dec,
-            ))
+    opening_breakdown = _extract_opening_debt_breakdown(payload)
+    _upsert_opening_invoice(
+        db=db,
+        resident_id=resident.id,
+        breakdown=opening_breakdown,
+        created_by_id=None,
+    )
     
     # Создание счётчиков
     for m_data in meters_data:
@@ -727,7 +831,8 @@ def create_resident_public(
             "tariff_name": m.tariff.name if m.tariff else None,
             "is_active": m.is_active,
         })
-    opening_debt = _get_opening_debt(db, resident.id)
+    opening_breakdown = _get_opening_debt_breakdown(db, resident.id)
+    opening_debt = _opening_debt_total(opening_breakdown)
 
     return {
         "id": resident.id,
@@ -738,6 +843,9 @@ def create_resident_public(
         "customer_type": resident.customer_type.value,
         "status": resident.status.value,
         "debt": float(opening_debt),
+        "debt_utility": float(opening_breakdown["utility"]),
+        "debt_service": float(opening_breakdown["service"]),
+        "debt_rent": float(opening_breakdown["rent"]),
         "owner_full_name": resident.owner_full_name,
         "owner_phone": resident.owner_phone,
         "owner_email": resident.owner_email,
@@ -787,7 +895,8 @@ def get_resident_api(
             "is_active": m.is_active,
         })
 
-    opening_debt = _get_opening_debt(db, resident.id)
+    opening_breakdown = _get_opening_debt_breakdown(db, resident.id)
+    opening_debt = _opening_debt_total(opening_breakdown)
 
     return {
         "id": resident.id,
@@ -798,6 +907,9 @@ def get_resident_api(
         "customer_type": resident.customer_type.value,
         "status": resident.status.value,
         "debt": float(opening_debt),
+        "debt_utility": float(opening_breakdown["utility"]),
+        "debt_service": float(opening_breakdown["service"]),
+        "debt_rent": float(opening_breakdown["rent"]),
         "owner_full_name": resident.owner_full_name,
         "owner_phone": resident.owner_phone,
         "owner_email": resident.owner_email,
@@ -848,7 +960,8 @@ def get_resident_public(
             "is_active": m.is_active,
         })
 
-    opening_debt = _get_opening_debt(db, resident.id)
+    opening_breakdown = _get_opening_debt_breakdown(db, resident.id)
+    opening_debt = _opening_debt_total(opening_breakdown)
 
     return {
         "id": resident.id,
@@ -859,6 +972,9 @@ def get_resident_public(
         "customer_type": resident.customer_type.value,
         "status": resident.status.value,
         "debt": float(opening_debt),
+        "debt_utility": float(opening_breakdown["utility"]),
+        "debt_service": float(opening_breakdown["service"]),
+        "debt_rent": float(opening_breakdown["rent"]),
         "owner_full_name": resident.owner_full_name,
         "owner_phone": resident.owner_phone,
         "owner_email": resident.owner_email,
@@ -930,104 +1046,14 @@ def update_resident_api(
         resident.comment = payload.comment.strip() if payload.comment else None
 
     # ---- Начальный долг (opening invoice) ----
-    if payload.debt is not None:
-        try:
-            new_debt = Decimal(str(payload.debt or 0))
-        except (InvalidOperation, Exception):
-            raise HTTPException(status_code=400, detail="Invalid debt value")
-        if new_debt < 0:
-            raise HTTPException(status_code=400, detail="Debt cannot be negative")
-
-        opening_inv = _get_opening_invoice(db, resident.id)
-
-        if opening_inv is None:
-            # Если долга нет/0 — ничего не создаём
-            if new_debt > 0:
-                # Подбираем период, чтобы не конфликтовать с uq_invoice_resident_period
-                y, m = 1900, 1
-                while True:
-                    exists_id = db.execute(
-                        select(Invoice.id).where(
-                            Invoice.resident_id == resident.id,
-                            Invoice.period_year == y,
-                            Invoice.period_month == m,
-                        )
-                    ).scalar_one_or_none()
-                    if not exists_id:
-                        break
-                    m += 1
-                    if m > 12:
-                        y += 1
-                        m = 1
-
-                opening_inv = Invoice(
-                    resident_id=resident.id,
-                    number=_opening_invoice_number(resident.id),
-                    status=InvoiceStatus.ISSUED,
-                    due_date=None,
-                    notes="Начальный долг (до внедрения системы)",
-                    period_year=y,
-                    period_month=m,
-                    amount_net=new_debt,
-                    amount_vat=Decimal("0"),
-                    amount_total=new_debt,
-                    created_by_id=actor.id,
-                )
-                db.add(opening_inv)
-                db.flush()
-                db.add(InvoiceLine(
-                    invoice_id=opening_inv.id,
-                    meter_reading_id=None,
-                    description="Начальный долг",
-                    amount_net=new_debt,
-                    amount_vat=Decimal("0"),
-                    amount_total=new_debt,
-                ))
-        else:
-            applied = (
-                db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
-                .filter(PaymentApplication.invoice_id == opening_inv.id)
-                .scalar()
-                or 0
-            )
-            applied_dec = Decimal(str(applied))
-            if new_debt < applied_dec:
-                raise HTTPException(status_code=400, detail="Debt cannot be less than already paid amount")
-
-            # Если ставим 0 и ничего не оплачено — отменяем инвойс, чтобы он не участвовал в расчёте долга
-            if new_debt == 0 and applied_dec == 0:
-                opening_inv.status = InvoiceStatus.CANCELED
-                opening_inv.amount_net = Decimal("0")
-                opening_inv.amount_vat = Decimal("0")
-                opening_inv.amount_total = Decimal("0")
-            else:
-                opening_inv.status = (
-                    InvoiceStatus.PAID if (new_debt == applied_dec and new_debt > 0)
-                    else (InvoiceStatus.ISSUED if applied_dec == 0 else InvoiceStatus.PARTIAL)
-                )
-                opening_inv.notes = "Начальный долг (до внедрения системы)"
-                opening_inv.amount_net = new_debt
-                opening_inv.amount_vat = Decimal("0")
-                opening_inv.amount_total = new_debt
-
-            # Синхронизируем строки (если их несколько — делаем одинаковыми)
-            lines = db.execute(
-                select(InvoiceLine).where(InvoiceLine.invoice_id == opening_inv.id)
-            ).scalars().all()
-            if not lines:
-                db.add(InvoiceLine(
-                    invoice_id=opening_inv.id,
-                    meter_reading_id=None,
-                    description="Начальный долг",
-                    amount_net=new_debt,
-                    amount_vat=Decimal("0"),
-                    amount_total=new_debt,
-                ))
-            else:
-                for ln in lines:
-                    ln.amount_net = new_debt
-                    ln.amount_vat = Decimal("0")
-                    ln.amount_total = new_debt
+    if _has_opening_debt_payload(payload):
+        opening_breakdown = _extract_opening_debt_breakdown(payload)
+        _upsert_opening_invoice(
+            db=db,
+            resident_id=resident.id,
+            breakdown=opening_breakdown,
+            created_by_id=actor.id,
+        )
     
     # Обновление/синхронизация счётчиков (БЕЗ физического удаления тех, у кого есть показания)
     # Это предотвращает "пропадание показаний" из-за FK resident_meter_id ON DELETE CASCADE.
@@ -1169,7 +1195,8 @@ def update_resident_api(
             "tariff_name": m.tariff.name if m.tariff else None,
             "is_active": m.is_active,
         })
-    opening_debt = _get_opening_debt(db, resident.id)
+    opening_breakdown = _get_opening_debt_breakdown(db, resident.id)
+    opening_debt = _opening_debt_total(opening_breakdown)
 
     return {
         "id": resident.id,
@@ -1180,6 +1207,9 @@ def update_resident_api(
         "customer_type": resident.customer_type.value,
         "status": resident.status.value,
         "debt": float(opening_debt),
+        "debt_utility": float(opening_breakdown["utility"]),
+        "debt_service": float(opening_breakdown["service"]),
+        "debt_rent": float(opening_breakdown["rent"]),
         "owner_full_name": resident.owner_full_name,
         "owner_phone": resident.owner_phone,
         "owner_email": resident.owner_email,
@@ -1252,100 +1282,14 @@ def update_resident_public(
         resident.comment = payload.comment.strip() if payload.comment else None
 
     # ---- Начальный долг (opening invoice) ----
-    if payload.debt is not None:
-        try:
-            new_debt = Decimal(str(payload.debt or 0))
-        except (InvalidOperation, Exception):
-            raise HTTPException(status_code=400, detail="Invalid debt value")
-        if new_debt < 0:
-            raise HTTPException(status_code=400, detail="Debt cannot be negative")
-
-        opening_inv = _get_opening_invoice(db, resident.id)
-
-        if opening_inv is None:
-            if new_debt > 0:
-                y, m = 1900, 1
-                while True:
-                    exists_id = db.execute(
-                        select(Invoice.id).where(
-                            Invoice.resident_id == resident.id,
-                            Invoice.period_year == y,
-                            Invoice.period_month == m,
-                        )
-                    ).scalar_one_or_none()
-                    if not exists_id:
-                        break
-                    m += 1
-                    if m > 12:
-                        y += 1
-                        m = 1
-
-                opening_inv = Invoice(
-                    resident_id=resident.id,
-                    number=_opening_invoice_number(resident.id),
-                    status=InvoiceStatus.ISSUED,
-                    due_date=None,
-                    notes="Начальный долг (до внедрения системы)",
-                    period_year=y,
-                    period_month=m,
-                    amount_net=new_debt,
-                    amount_vat=Decimal("0"),
-                    amount_total=new_debt,
-                    created_by_id=None,
-                )
-                db.add(opening_inv)
-                db.flush()
-                db.add(InvoiceLine(
-                    invoice_id=opening_inv.id,
-                    meter_reading_id=None,
-                    description="Начальный долг",
-                    amount_net=new_debt,
-                    amount_vat=Decimal("0"),
-                    amount_total=new_debt,
-                ))
-        else:
-            applied = (
-                db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
-                .filter(PaymentApplication.invoice_id == opening_inv.id)
-                .scalar()
-                or 0
-            )
-            applied_dec = Decimal(str(applied))
-            if new_debt < applied_dec:
-                raise HTTPException(status_code=400, detail="Debt cannot be less than already paid amount")
-
-            if new_debt == 0 and applied_dec == 0:
-                opening_inv.status = InvoiceStatus.CANCELED
-                opening_inv.amount_net = Decimal("0")
-                opening_inv.amount_vat = Decimal("0")
-                opening_inv.amount_total = Decimal("0")
-            else:
-                opening_inv.status = (
-                    InvoiceStatus.PAID if (new_debt == applied_dec and new_debt > 0)
-                    else (InvoiceStatus.ISSUED if applied_dec == 0 else InvoiceStatus.PARTIAL)
-                )
-                opening_inv.notes = "Начальный долг (до внедрения системы)"
-                opening_inv.amount_net = new_debt
-                opening_inv.amount_vat = Decimal("0")
-                opening_inv.amount_total = new_debt
-
-            lines = db.execute(
-                select(InvoiceLine).where(InvoiceLine.invoice_id == opening_inv.id)
-            ).scalars().all()
-            if not lines:
-                db.add(InvoiceLine(
-                    invoice_id=opening_inv.id,
-                    meter_reading_id=None,
-                    description="Начальный долг",
-                    amount_net=new_debt,
-                    amount_vat=Decimal("0"),
-                    amount_total=new_debt,
-                ))
-            else:
-                for ln in lines:
-                    ln.amount_net = new_debt
-                    ln.amount_vat = Decimal("0")
-                    ln.amount_total = new_debt
+    if _has_opening_debt_payload(payload):
+        opening_breakdown = _extract_opening_debt_breakdown(payload)
+        _upsert_opening_invoice(
+            db=db,
+            resident_id=resident.id,
+            breakdown=opening_breakdown,
+            created_by_id=None,
+        )
     
     # Обновление/синхронизация счётчиков (БЕЗ физического удаления тех, у кого есть показания)
     if payload.meters is not None:
@@ -1477,6 +1421,9 @@ def update_resident_public(
             "is_active": m.is_active,
         })
     
+    opening_breakdown = _get_opening_debt_breakdown(db, resident.id)
+    opening_debt = _opening_debt_total(opening_breakdown)
+
     return {
         "id": resident.id,
         "block_id": resident.block_id,
@@ -1485,6 +1432,10 @@ def update_resident_public(
         "resident_type": resident.resident_type.value,
         "customer_type": resident.customer_type.value,
         "status": resident.status.value,
+        "debt": float(opening_debt),
+        "debt_utility": float(opening_breakdown["utility"]),
+        "debt_service": float(opening_breakdown["service"]),
+        "debt_rent": float(opening_breakdown["rent"]),
         "owner_full_name": resident.owner_full_name,
         "owner_phone": resident.owner_phone,
         "owner_email": resident.owner_email,

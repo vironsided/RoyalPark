@@ -16,6 +16,7 @@ from ..deps import get_current_user
 
 
 router = APIRouter(prefix="/api/notifications", tags=["notifications-api"])
+ADMIN_NOTIFICATION_TYPES = {"APPEAL", "TARIFF_EXPIRED"}
 
 
 # Pydantic models
@@ -62,7 +63,7 @@ def _list_notifications_internal(
     # исключая счета (INVOICE) и новости (NEWS).
     query = db.query(Notification).join(User, User.id == Notification.user_id).filter(
         or_(
-            Notification.notification_type == "APPEAL",
+            Notification.notification_type.in_(list(ADMIN_NOTIFICATION_TYPES)),
             Notification.notification_type == None
         )
     )
@@ -252,12 +253,11 @@ def list_notifications_public(
 def get_unread_count_public(db: Session = Depends(get_db)):
     """Получить количество непрочитанных уведомлений (публичный endpoint)."""
     from sqlalchemy import func, or_
-    # Считаем только обращения (APPEAL), так как в админке нужны только они.
-    # Счета (INVOICE) и новости (NEWS) — только для жителей.
+    # Считаем административные уведомления: обращения + системные (например, истекшие тарифы).
     count = db.query(func.count(Notification.id)).filter(
         Notification.status == NotificationStatus.UNREAD,
         or_(
-            Notification.notification_type == "APPEAL",
+            Notification.notification_type.in_(list(ADMIN_NOTIFICATION_TYPES)),
             Notification.notification_type == None
         )
     ).scalar()

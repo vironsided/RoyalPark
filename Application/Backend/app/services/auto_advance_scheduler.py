@@ -18,6 +18,9 @@ from ..models import (
     RoleEnum,
     Resident,
     user_residents,
+    Tariff,
+    TariffStep,
+    MeterType,
 )
 from ..routers.payments import auto_apply_advance
 from ..utils import now_baku, to_baku_datetime
@@ -28,6 +31,7 @@ AUTO_ADVANCE_GRACE_SECONDS = 3 * 24 * 60 * 60
 
 _scheduler_thread: threading.Thread | None = None
 _stop_event = threading.Event()
+TARIFF_EXPIRED_NOTIFICATION_TYPE = "TARIFF_EXPIRED"
 
 
 def _is_due_for_auto(due_date, now_dt) -> bool:
@@ -113,6 +117,56 @@ def _run_once() -> None:
     db = SessionLocal()
     try:
         now_dt = now_baku()
+        today = now_dt.date()
+
+        # Notify admins when construction tariff step end date has expired.
+        expired_steps = (
+            db.query(TariffStep, Tariff)
+            .join(Tariff, Tariff.id == TariffStep.tariff_id)
+            .filter(
+                Tariff.is_active.is_(True),
+                Tariff.meter_type == MeterType.CONSTRUCTION,
+                TariffStep.to_date.isnot(None),
+                TariffStep.to_date < today,
+            )
+            .all()
+        )
+        if expired_steps:
+            admin_users = (
+                db.query(User)
+                .filter(
+                    User.is_active.is_(True),
+                    User.role.in_([RoleEnum.ROOT, RoleEnum.ADMIN]),
+                )
+                .all()
+            )
+            for step, tariff in expired_steps:
+                expired_at = step.to_date.strftime("%d.%m.%Y") if step.to_date else "—"
+                message = (
+                    f"Срок тарифа \"{tariff.name}\" (Строительство) истёк "
+                    f"{expired_at}. Проверьте и обновите период действия."
+                )
+                for admin in admin_users:
+                    exists = (
+                        db.query(Notification.id)
+                        .filter(
+                            Notification.user_id == admin.id,
+                            Notification.notification_type == TARIFF_EXPIRED_NOTIFICATION_TYPE,
+                            Notification.related_id == step.id,
+                        )
+                        .first()
+                    )
+                    if exists:
+                        continue
+                    db.add(Notification(
+                        user_id=admin.id,
+                        resident_id=None,
+                        message=message,
+                        status=NotificationStatus.UNREAD,
+                        notification_type=TARIFF_EXPIRED_NOTIFICATION_TYPE,
+                        related_id=step.id,
+                    ))
+
         # Find residents with open invoices and a due date
         rows = (
             db.query(

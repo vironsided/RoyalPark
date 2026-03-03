@@ -308,6 +308,11 @@ class MeterReading(Base):
     vat_percent: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     amount_vat: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False)
     amount_total: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False)
+    # Snapshot стабильного тарифа на момент записи показания.
+    # Это защищает исторические инвойсы от изменений после редактирования тарифа.
+    stable_fee_net: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
+    stable_fee_vat: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
+    stable_fee_total: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
 
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
 

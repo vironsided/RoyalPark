@@ -314,6 +314,7 @@ def apply_payment_to_invoice(
     payment_id: int,
     invoice_id: int,
     reference: Optional[str] = None,
+    max_amount: Optional[Decimal] = None,
 ) -> Decimal:
     """Apply a payment to a single invoice. Returns applied amount."""
     payment = db.get(Payment, payment_id)
@@ -342,6 +343,14 @@ def apply_payment_to_invoice(
         return Decimal("0")
 
     apply_amt = min(inv_leftover, payment_leftover)
+    if max_amount is not None:
+        try:
+            max_amount_dec = Decimal(str(max_amount))
+        except Exception:
+            max_amount_dec = Decimal("0")
+        if max_amount_dec <= 0:
+            return Decimal("0")
+        apply_amt = min(apply_amt, max_amount_dec)
     if apply_amt <= 0:
         return Decimal("0")
 

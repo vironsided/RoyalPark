@@ -54,7 +54,9 @@ const translations = {
         account_email_placeholder: "E-mail",
         account_avatar: "Аватар",
         account_file_select_btn: "Выбор файла",
+        account_avatar_remove_btn: "Удалить фото",
         account_file_no_selected: "Не выбран ни один файл",
+        account_avatar_remove_pending: "Фото будет удалено после сохранения",
         account_interface_language: "Язык интерфейса",
         account_avatar_hint: "PNG/JPG/WebP, до 4 МБ.",
         account_save_changes: "Сохранить изменения",
@@ -66,6 +68,7 @@ const translations = {
         account_confirm_password_placeholder: "Подтвердите новый пароль",
         account_change_password: "Изменить пароль",
         account_saving: "Сохранение...",
+        account_profile_saved_success: "Настройки сохранены!",
         error_loading_data: "Ошибка загрузки данных",
         show_menu: "Показать меню",
         language_changed_success: "Язык интерфейса обновлен",
@@ -81,6 +84,7 @@ const translations = {
         account_password_min_length: "Пароль должен быть не менее 6 символов!",
         account_password_change_error: "Ошибка изменения пароля",
         account_password_change_success: "Пароль успешно изменён!",
+        success: "Успешно",
         account_profile_save_error: "Ошибка сохранения профиля",
         account_cancel_confirm: "Вы уверены, что хотите отменить изменения? Все несохранённые данные будут потеряны.",
         day: "День",
@@ -202,6 +206,7 @@ const translations = {
         invoices_issue_error: "Ошибка выставления счетов",
         invoices_export_nothing_selected: "Ничего не выбрано",
         invoices_total_to_pay: "Итого к оплате",
+        invoice_opening_debt: "Начальный долг",
         invoices_status_unknown: "Неизвестно",
         user_invoice_payments_summary_paid: "Оплачено",
         user_invoice_payments_summary_of: "из",
@@ -439,6 +444,9 @@ const translations = {
         residents_personal_info: "Личная информация",
         residents_initial_data: "Начальные данные",
         residents_debt_label: "Долг (на момент запуска системы), ₼",
+        residents_debt_utility_label: "Долг Utility (на момент запуска системы), ₼",
+        residents_debt_service_label: "Долг Сервис (на момент запуска системы), ₼",
+        residents_debt_rent_label: "Долг Аренда (на момент запуска системы), ₼",
         residents_debt_placeholder: "0.00",
         residents_debt_help: "Если у резидента уже был долг до внедрения системы — укажите его здесь.",
         residents_add_service: "Добавить услугу",
@@ -829,6 +837,8 @@ const translations = {
         notifications_filter_system: "Системные",
         notifications_mark_all_read: "Отметить все прочитанными",
         notifications_resident_appeal_title: "Обращение жителя",
+        notifications_system_title: "Системное уведомление",
+        notifications_tariff_expired_template: "Срок тарифа \"{name}\" ({purpose}) истёк {date}. Проверьте и обновите период действия.",
         notifications_empty: "Нет уведомлений",
         notifications_load_error: "Не удалось загрузить уведомления",
         notifications_badge_new: "НОВАЯ",
@@ -871,6 +881,8 @@ const translations = {
         user_invoice_payments_th_comment: "Комментарий",
         user_invoice_payment_method_advance: "Аванс",
         user_invoice_payments_summary: "Оплачено: {paid} · Остаток: {remaining} из {total}",
+        user_invoice_selected_lines_summary: "Выбрано услуг: {count} · К оплате: {amount}",
+        user_invoice_selected_lines_empty: "Не выбрано ни одной услуги для оплаты",
         user_invoice_pay_btn: "Оплатить",
         user_invoice_items_title: "Описание",
         user_invoice_items_th_description: "Описание",
@@ -1019,6 +1031,7 @@ const translations = {
         user_quick_documents: "Новости",
         user_quick_view_all: "Посмотреть все",
         user_news_title: "Новости и объявления",
+        user_news_modal_close_btn: "Закрыть",
         user_no_news: "Нет новостей",
         user_news_1_title: "Плановое отключение воды",
         user_news_1_text: "20 октября с 10:00 до 16:00 будет производиться плановое отключение холодной воды.",
@@ -1131,7 +1144,7 @@ const translations = {
         save: "Yadda saxla",
         cancel: "Ləğv et",
         create: "Yarat",
-        export: "İxrac",
+        export: "Export",
         filter: "Filter",
         services: "Xidmətlər",
         actions: "Əməliyyatlar",
@@ -1169,7 +1182,9 @@ const translations = {
         account_email_placeholder: "E-mail",
         account_avatar: "Avatar",
         account_file_select_btn: "Fayl seç",
+        account_avatar_remove_btn: "Şəkli sil",
         account_file_no_selected: "Heç bir fayl seçilməyib",
+        account_avatar_remove_pending: "Şəkil yadda saxlandıqdan sonra silinəcək",
         account_interface_language: "İnterfeys dili",
         account_avatar_hint: "PNG/JPG/WebP, maksimum 4 MB.",
         account_save_changes: "Dəyişiklikləri yadda saxla",
@@ -1181,6 +1196,7 @@ const translations = {
         account_confirm_password_placeholder: "Yeni şifrəni təsdiqləyin",
         account_change_password: "Şifrəni dəyiş",
         account_saving: "Yadda saxlanılır...",
+        account_profile_saved_success: "Ayarlar yadda saxlanıldı!",
         error_loading_data: "Məlumat yüklənmədi",
         show_menu: "Menyunu göstər",
         language_changed_success: "İnterfeys dili yeniləndi",
@@ -1196,6 +1212,7 @@ const translations = {
         account_password_min_length: "Şifrə ən azı 6 simvol olmalıdır!",
         account_password_change_error: "Şifrə dəyişdirilmə xətası",
         account_password_change_success: "Şifrə uğurla dəyişdirildi!",
+        success: "Uğurlu",
         account_profile_save_error: "Profilin saxlanması xətası",
         account_cancel_confirm: "Dəyişiklikləri ləğv etmək istədiyinizə əminsiniz? Bütün yadda saxlanılmamış məlumatlar itəcək.",
         day: "Gün",
@@ -1207,7 +1224,7 @@ const translations = {
         payments_method_transfer: "Bank",
         payments_method_online: "Onlayn",
         payments_search_placeholder: "Çek № / şərh",
-        payments_services_export: "İxrac üçün xidmətlər",
+        payments_services_export: "Export üçün xidmətlər",
         payments_services_all_categories: "Bütün kateqoriyalar",
         payments_service_utility: "Kommunal xidmətlər",
         payments_service_unallocated: "Bölüşdürülməmiş",
@@ -1223,7 +1240,7 @@ const translations = {
         payments_check_number: "çek/ödəniş nömrəsi",
         payments_load_error_prefix: "Ödənişlər yüklənmədi",
         payments_export_no_data: "Cari filtrlər və xidmətlər üzrə ixrac üçün məlumat yoxdur.",
-        payments_export_error_prefix: "İxrac xətası",
+        payments_export_error_prefix: "Export xətası",
         payments_no_data_for_filters: "Cari filtrlər üzrə məlumat yoxdur",
         payments_applying_filters: "Filtrlər tətbiq olunur...",
         payments_fill_required_fields: "Zəhmət olmasa bütün vacib sahələri doldurun!",
@@ -1317,6 +1334,7 @@ const translations = {
         invoices_issue_error: "Hesabların tərtibi xətası",
         invoices_export_nothing_selected: "Heç nə seçilməyib",
         invoices_total_to_pay: "Ödəniləcək cəmi",
+        invoice_opening_debt: "İlkin borc",
         invoices_status_unknown: "Naməlum",
         user_invoice_payments_summary_paid: "Ödənilib",
         user_invoice_payments_summary_of: "/",
@@ -1464,7 +1482,7 @@ const translations = {
         tariffs_client_individual: "Fərdi",
         tariffs_client_legal: "Hüquqi şəxs",
         tariffs_export_format: "Tariflərin ixrac formatı",
-        tariffs_export_button: "İxrac",
+        tariffs_export_button: "Export",
         tariffs_create_button: "Yarat",
         tariffs_list_title: "Tarif siyahısı",
         tariffs_col_name: "Ad",
@@ -1496,7 +1514,7 @@ const translations = {
         tariffs_count_short: "Sayı",
         tariffs_no_data: "Məlumat yoxdur",
         tariffs_print_prepare_error: "Çap hazırlana bilmədi.",
-        tariffs_export_in_progress: "İxrac...",
+        tariffs_export_in_progress: "Export...",
         tariffs_export_no_data: "Seçilmiş filtrlərə görə ixrac üçün məlumat yoxdur.",
         tariffs_step_to_required: "Əvvəlki mərhələ üçün \"TO (xaric)\" sərhədini göstərin.",
         tariffs_min_one_step: "Ən azı bir mərhələ olmalıdır!",
@@ -1554,6 +1572,9 @@ const translations = {
         residents_personal_info: "Şəxsi məlumat",
         residents_initial_data: "İlkin məlumatlar",
         residents_debt_label: "Borc (sistemə keçid anında), ₼",
+        residents_debt_utility_label: "Utility borcu (sistemə keçid anında), ₼",
+        residents_debt_service_label: "Xidmət borcu (sistemə keçid anında), ₼",
+        residents_debt_rent_label: "İcarə borcu (sistemə keçid anında), ₼",
         residents_debt_placeholder: "0.00",
         residents_debt_help: "Rezidentin sistemdən əvvəl borcu olubsa, burada qeyd edin.",
         residents_add_service: "Xidmət əlavə et",
@@ -1577,7 +1598,7 @@ const translations = {
         residents_export_report_subtitle: "Royal Park - Uçot üçün ixrac",
         residents_export_count: "Rezident sayı",
         residents_export_print_prepare_error: "Çap üçün hazırlamaq mümkün olmadı.",
-        residents_export_error: "İxrac xətası",
+        residents_export_error: "Export xətası",
         residents_empty: "Rezident yoxdur",
         residents_meter_short_electricity: "El",
         residents_meter_short_gas: "Qaz",
@@ -1715,7 +1736,7 @@ const translations = {
         readings_export_title: "Göstəricilərin ixracı",
         readings_print_prepare_error: "Çapı hazırlamaq mümkün olmadı.",
         readings_mobile_pdf_info: "Mobil cihazlarda PDF sistemin çap/saxlama dialoqu ilə açılır.",
-        readings_export_filters_reset: "İxrac filtrləri sıfırlandı!",
+        readings_export_filters_reset: "Export filtrləri sıfırlandı!",
         readings_loading_placeholder: "— yüklənir... —",
         readings_block_not_found_placeholder: "— blok tapılmadı —",
         readings_load_error_placeholder: "— yükləmə xətası —",
@@ -1944,6 +1965,8 @@ const translations = {
         notifications_filter_system: "Sistem",
         notifications_mark_all_read: "Hamısını oxunmuş kimi işarələ",
         notifications_resident_appeal_title: "Sakin müraciəti",
+        notifications_system_title: "Sistem bildirişi",
+        notifications_tariff_expired_template: "\"{name}\" tarifinin ({purpose}) müddəti {date} tarixində bitib. Müddəti yoxlayın və yeniləyin.",
         notifications_empty: "Bildiriş yoxdur",
         notifications_load_error: "Bildirişləri yükləmək mümkün olmadı",
         notifications_badge_new: "YENİ",
@@ -1987,6 +2010,8 @@ const translations = {
         user_invoice_payments_th_comment: "Şərh",
         user_invoice_payment_method_advance: "Avans",
         user_invoice_payments_summary: "Ödənilib: {paid} · Qalıq: {remaining} / {total}",
+        user_invoice_selected_lines_summary: "Seçilmiş xidmətlər: {count} · Ödəniləcək: {amount}",
+        user_invoice_selected_lines_empty: "Ödəniş üçün heç bir xidmət seçilməyib",
         user_invoice_pay_btn: "Ödəmək",
         user_invoice_items_title: "Açıqlama",
         user_invoice_items_th_description: "Açıqlama",
@@ -2152,6 +2177,7 @@ const translations = {
         user_quick_documents: "Xəbərlər",
         user_quick_view_all: "Hamısına bax",
         user_news_title: "Xəbərlər və elanlar",
+        user_news_modal_close_btn: "Bağla",
         user_no_news: "Xəbər yoxdur",
         user_news_1_title: "Su təchizatının planlı dayandırılması",
         user_news_1_text: "20 oktyabr tarixində saat 10:00-dan 16:00-dək soyuq suyun verilişi planlı şəkildə dayandırılacaq.",
@@ -2285,7 +2311,9 @@ const translations = {
         account_email_placeholder: "E-mail",
         account_avatar: "Avatar",
         account_file_select_btn: "Choose file",
+        account_avatar_remove_btn: "Remove photo",
         account_file_no_selected: "No file selected",
+        account_avatar_remove_pending: "Photo will be removed after saving",
         account_interface_language: "Interface Language",
         account_avatar_hint: "PNG/JPG/WebP, up to 4 MB.",
         account_save_changes: "Save Changes",
@@ -2297,6 +2325,7 @@ const translations = {
         account_confirm_password_placeholder: "Confirm new password",
         account_change_password: "Change Password",
         account_saving: "Saving...",
+        account_profile_saved_success: "Settings saved!",
         error_loading_data: "Error loading data",
         show_menu: "Show menu",
         language_changed_success: "Interface language updated",
@@ -2312,6 +2341,7 @@ const translations = {
         account_password_min_length: "Password must be at least 6 characters!",
         account_password_change_error: "Error changing password",
         account_password_change_success: "Password changed successfully!",
+        success: "Success",
         account_profile_save_error: "Error saving profile",
         account_cancel_confirm: "Are you sure you want to discard changes? All unsaved data will be lost.",
         day: "Day",
@@ -2433,6 +2463,7 @@ const translations = {
         invoices_issue_error: "Error issuing invoices",
         invoices_export_nothing_selected: "Nothing selected",
         invoices_total_to_pay: "Total to pay",
+        invoice_opening_debt: "Opening debt",
         invoices_status_unknown: "Unknown",
         user_invoice_payments_summary_paid: "Paid",
         user_invoice_payments_summary_of: "of",
@@ -2670,6 +2701,9 @@ const translations = {
         residents_personal_info: "Personal information",
         residents_initial_data: "Initial data",
         residents_debt_label: "Debt (at system launch), ₼",
+        residents_debt_utility_label: "Utility debt (at system launch), ₼",
+        residents_debt_service_label: "Service debt (at system launch), ₼",
+        residents_debt_rent_label: "Rent debt (at system launch), ₼",
         residents_debt_placeholder: "0.00",
         residents_debt_help: "If the resident had debt before system rollout, specify it here.",
         residents_add_service: "Add service",
@@ -3060,6 +3094,8 @@ const translations = {
         notifications_filter_system: "System",
         notifications_mark_all_read: "Mark all as read",
         notifications_resident_appeal_title: "Resident appeal",
+        notifications_system_title: "System notification",
+        notifications_tariff_expired_template: "Tariff \"{name}\" ({purpose}) expired on {date}. Please review and update its period.",
         notifications_empty: "No notifications",
         notifications_load_error: "Failed to load notifications",
         notifications_badge_new: "NEW",
@@ -3103,6 +3139,8 @@ const translations = {
         user_invoice_payments_th_comment: "Comment",
         user_invoice_payment_method_advance: "Advance",
         user_invoice_payments_summary: "Paid: {paid} · Remaining: {remaining} of {total}",
+        user_invoice_selected_lines_summary: "Selected services: {count} · To pay: {amount}",
+        user_invoice_selected_lines_empty: "No services selected for payment",
         user_invoice_pay_btn: "Pay",
         user_invoice_items_title: "Description",
         user_invoice_items_th_description: "Description",
@@ -3199,6 +3237,7 @@ const translations = {
         user_quick_documents: "News",
         user_quick_view_all: "View all",
         user_news_title: "News & announcements",
+        user_news_modal_close_btn: "Close",
         user_no_news: "No news available",
         user_news_1_title: "Planned water outage",
         user_news_1_text: "On October 20 from 10:00 to 16:00 there will be a planned shutdown of cold water supply.",
@@ -3357,7 +3396,20 @@ if (typeof window !== 'undefined') {
 // Language Manager
 class LanguageManager {
     constructor() {
-        this.currentLanguage = localStorage.getItem('language') || 'az';
+        const path = (typeof window !== 'undefined' && window.location && window.location.pathname)
+            ? String(window.location.pathname).toLowerCase()
+            : '';
+        const hasLocalScopeFlag = typeof document !== 'undefined'
+            && document.documentElement
+            && document.documentElement.dataset
+            && document.documentElement.dataset.i18nScope === 'local';
+        const inferredPrintScope = /\/(?:admin\/content\/|user\/)(?:invoice-print|qr-print)\.html$/.test(path);
+        this.useLocalScope = Boolean((typeof window !== 'undefined' && window.__i18nLocalScope) || hasLocalScopeFlag || inferredPrintScope);
+        this.localScopeStorageKey = 'language_print';
+
+        const localLang = this.useLocalScope ? sessionStorage.getItem(this.localScopeStorageKey) : null;
+        const globalLang = localStorage.getItem('language');
+        this.currentLanguage = localLang || globalLang || 'az';
         this.init();
     }
     
@@ -3419,7 +3471,11 @@ class LanguageManager {
         if (!translations[lang]) return;
         
         this.currentLanguage = lang;
-        localStorage.setItem('language', lang);
+        if (this.useLocalScope) {
+            sessionStorage.setItem(this.localScopeStorageKey, lang);
+        } else {
+            localStorage.setItem('language', lang);
+        }
         
         // Update active button
         document.querySelectorAll('.language-btn').forEach(btn => {

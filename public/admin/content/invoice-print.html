@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-i18n-scope="local">
 
 <head>
     <meta charset="UTF-8">
@@ -19,7 +19,7 @@
 
     <div class="print-container invoice-template">
         <div class="invoice-title-row">
-            <div class="invoice-title">INVOICE № <span id="invoiceNumber">—</span></div>
+            <div class="invoice-title"><span data-i18n="user_invoice_print_title">Счёт на оплату</span> № <span id="invoiceNumber">—</span></div>
             <div class="invoice-date" id="invoiceDate">—</div>
         </div>
 
@@ -52,15 +52,15 @@
 
         <div class="invoice-totals">
             <div class="totals-row">
-                <span>Total:</span>
+                <span><span data-i18n="invoices_charged">Начислено</span>:</span>
                 <span id="invoiceTotalNet">0.00</span>
             </div>
             <div class="totals-row">
-                <span>VAT:</span>
+                <span><span data-i18n="invoices_vat">НДС</span>:</span>
                 <span id="invoiceTotalVat">0.00</span>
             </div>
             <div class="totals-row totals-strong">
-                <span>Total payment:</span>
+                <span><span data-i18n="invoices_total_to_pay">Итого к оплате</span>:</span>
                 <span id="invoiceTotal">0.00</span>
             </div>
         </div>
@@ -75,6 +75,9 @@
         (function () {
             const API_BASE = 'http://localhost:8000';
             const t = (key, fallback = '') => (window.i18n && window.i18n.translate && window.i18n.translate(key)) || fallback || key;
+            const resolveLang = () => String((window.i18n && window.i18n.currentLanguage) || localStorage.getItem('language') || 'az').toLowerCase();
+            const localeFromLang = (lang) => (lang === 'az' ? 'az-AZ' : (lang === 'en' ? 'en-US' : 'ru-RU'));
+            let currentInvoice = null;
 
             // Get invoice ID from URL
             const urlParams = new URLSearchParams(window.location.search);
@@ -169,6 +172,7 @@
                         lineItems: data.lines || []
                     };
 
+                    currentInvoice = invoice;
                     renderInvoice(invoice);
                 } catch (error) {
                     console.error('Error loading invoice for print:', error);
@@ -185,46 +189,78 @@
 
             function extractConsumption(description) {
                 if (!description) return { label: '—', consumed: '—' };
-                const isSewerageLine = /^(?:meter_sewerage\b|Канализация(?:\s*\(авто\))?\b)/i.test(String(description).trim());
-                const keyMatch = String(description).match(/^(meter_[a-z_]+)\s+([\d.]+)\s*(.*)$/i);
+                const source = String(description).trim();
+                const openingDebtMatch = source.match(/^(?:Начальный\s+долг|İlkin\s+borc|Opening\s+debt)\s*(?:\(([^)]+)\))?$/i);
+                if (openingDebtMatch) {
+                    const openingLabel = t('invoice_opening_debt', 'Opening debt');
+                    const rawCategory = String(openingDebtMatch[1] || '').trim().toLowerCase();
+                    let categoryKey = '';
+                    if (/(utility|коммун|kommunal)/i.test(rawCategory)) categoryKey = 'payments_service_utility';
+                    else if (/(service|сервис|xidmət|xidmet)/i.test(rawCategory)) categoryKey = 'tariffs_purpose_service';
+                    else if (/(rent|аренд|icar)/i.test(rawCategory)) categoryKey = 'tariffs_purpose_rent';
+                    const categoryLabel = categoryKey ? t(categoryKey, rawCategory) : '';
+                    return { label: categoryLabel ? `${openingLabel} (${categoryLabel})` : openingLabel, consumed: '—' };
+                }
+                const isSewerageLine = /^(?:meter_sewerage\b|канализац|kanaliz|sewerage)/i.test(source);
+                const keyMatch = source.match(/^(meter_[a-z_]+)\s+([\d.]+)\s*(.*)$/i);
                 if (keyMatch) {
                     const key = keyMatch[1];
                     const qty = keyMatch[2];
                     const unit = (keyMatch[3] || '').trim();
-                    const map = {
-                        meter_electricity: 'Электричество',
-                        meter_cold_water: 'Вода',
-                        meter_hot_water: 'Вода',
-                        meter_gas: 'Газ',
-                        meter_sewerage: 'Канализация',
-                    };
-                    if (key === 'meter_sewerage') {
-                        return { label: map[key] || key, consumed: '—' };
-                    }
-                    return { label: map[key] || key, consumed: `${qty}${unit ? ' ' + unit : ''}`.trim() };
+                    const translatedLabel = t(key, key);
+                    if (key === 'meter_sewerage') return { label: translatedLabel, consumed: '—' };
+                    return { label: translatedLabel, consumed: `${qty}${unit ? ' ' + unit : ''}`.trim() };
                 }
+
                 const patterns = [
-                    { regex: /^Электричество\s+([\d.]+)\s*кВт·ч$/i, label: 'Электричество', unit: 'кВт·ч' },
-                    { regex: /^Вода\s+([\d.]+)\s*м³$/i, label: 'Вода', unit: 'м³' },
-                    { regex: /^Канализация(?:\s*\(авто\))?\s+([\d.]+)\s*м³$/i, label: 'Канализация', unit: 'м³' },
-                    { regex: /^Газ\s+([\d.]+)\s*м³$/i, label: 'Газ', unit: 'м³' },
-                    { regex: /^Горячая\s+вода\s+([\d.]+)\s*м³$/i, label: 'Вода', unit: 'м³' },
+                    { regex: /^(?:Электричество|Elektrik|Electricity)\s+([\d.]+)\s*(?:кВт·ч|kWh)$/i, key: 'meter_electricity', unit: 'kWh' },
+                    { regex: /^(?:Вода|Su|Water)\s+([\d.]+)\s*(?:м³|m³|m3)$/i, key: 'meter_cold_water', unit: 'm³' },
+                    { regex: /^(?:Горячая\s+вода|İsti\s+su|Hot\s+water)\s+([\d.]+)\s*(?:м³|m³|m3)$/i, key: 'meter_hot_water', unit: 'm³' },
+                    { regex: /^(?:Канализация(?:\s*\(авто\))?|Kanalizasiya(?:\s*\(auto\))?|Sewerage(?:\s*\(auto\))?)\s+([\d.]+)\s*(?:м³|m³|m3)$/i, key: 'meter_sewerage', unit: 'm³' },
+                    { regex: /^(?:Газ|Qaz|Gas)\s+([\d.]+)\s*(?:м³|m³|m3)$/i, key: 'meter_gas', unit: 'm³' },
                 ];
                 for (const p of patterns) {
-                    const m = String(description).match(p.regex);
+                    const m = source.match(p.regex);
                     if (m) {
-                        if (/канализац/i.test(p.label) || isSewerageLine) {
-                            return { label: 'Канализация', consumed: '—' };
-                        }
-                        return { label: p.label, consumed: `${m[1]} ${p.unit}` };
+                        const translatedLabel = t(p.key, p.key);
+                        if (p.key === 'meter_sewerage' || isSewerageLine) return { label: translatedLabel, consumed: '—' };
+                        return { label: translatedLabel, consumed: `${m[1]} ${p.unit}` };
                     }
                 }
-                if (isSewerageLine) return { label: 'Канализация', consumed: '—' };
-                if (/стабильный тариф/i.test(String(description))) return { label: String(description), consumed: '—' };
-                return { label: String(description), consumed: '—' };
+                if (isSewerageLine) return { label: t('meter_sewerage', 'Sewerage'), consumed: '—' };
+
+                const monthlyPurposePatterns = [
+                    { regex: /^(?:Аренда|İcarə|Rent)\s+([\d.]+)\s*(?:мес\.?|ay|month)$/i, key: 'tariffs_purpose_rent' },
+                    { regex: /^(?:Сервис|Услуги|Xidmət|Xidmətlər|Service|Services)\s+([\d.]+)\s*(?:мес\.?|ay|month)$/i, key: 'tariffs_purpose_service' },
+                    { regex: /^(?:Строительство|Tikinti|Construction)\s+([\d.]+)\s*(?:мес\.?|ay|month)$/i, key: 'tariffs_purpose_construction' },
+                ];
+                for (const p of monthlyPurposePatterns) {
+                    const m = source.match(p.regex);
+                    if (m) {
+                        const qty = m[1];
+                        const unit = t('readings_unit_month_short', 'month');
+                        return { label: `${t(p.key, p.key)} ${qty} ${unit}`, consumed: '—' };
+                    }
+                }
+
+                if (/(стабильн(?:ый|ая)? тариф|sabit tarif|stable tariff)/i.test(source)) {
+                    let serviceKey = null;
+                    if (/(газ|qaz|gas)/i.test(source)) serviceKey = 'meter_gas';
+                    else if (/(горячая\s+вода|isti\s+su|hot\s+water)/i.test(source)) serviceKey = 'meter_hot_water';
+                    else if (/(вода|su|water)/i.test(source)) serviceKey = 'meter_cold_water';
+                    else if (/(электрич|elektrik|electric)/i.test(source)) serviceKey = 'meter_electricity';
+                    else if (/(канализац|kanaliz|sewerage)/i.test(source)) serviceKey = 'meter_sewerage';
+
+                    const stableTariffLabel = t('stable_tariff', 'Stable tariff');
+                    if (serviceKey) return { label: `${stableTariffLabel} (${t(serviceKey, serviceKey)})`, consumed: '—' };
+                    return { label: stableTariffLabel, consumed: '—' };
+                }
+                return { label: source, consumed: '—' };
             }
 
             function renderInvoice(invoice) {
+                const lang = resolveLang();
+                const locale = localeFromLang(lang);
                 document.getElementById('invoiceNumber').textContent = invoice.invoiceNumber;
                 document.getElementById('invoiceResident').textContent = invoice.resident;
                 const userEl = document.getElementById('invoiceResidentUser');
@@ -237,7 +273,7 @@
                 let dueDateDisplay = '—';
                 if (invoice.dueDate) {
                     const date = new Date(invoice.dueDate);
-                    dueDateDisplay = date.toLocaleDateString('ru-RU');
+                    dueDateDisplay = date.toLocaleDateString(locale);
                 }
                 document.getElementById('invoiceDueDate').textContent = dueDateDisplay;
                 document.getElementById('invoiceTotal').textContent = invoice.total.toFixed(2);
@@ -276,7 +312,7 @@
 
                 // Set generated date
                 const now = new Date();
-                document.getElementById('generatedDate').textContent = now.toLocaleString('ru-RU');
+                document.getElementById('generatedDate').textContent = now.toLocaleString(locale);
             }
 
             // Load invoice on page load
@@ -285,6 +321,13 @@
             } else {
                 loadInvoice(invoiceId);
             }
+
+            window.addEventListener('languageChanged', function () {
+                if (currentInvoice) renderInvoice(currentInvoice);
+            });
+            window.addEventListener('storage', function (e) {
+                if (e.key === 'language' && currentInvoice) renderInvoice(currentInvoice);
+            });
         })();
     </script>
 </body>

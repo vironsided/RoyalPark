@@ -152,6 +152,23 @@ def _save_avatar(file: UploadFile, user_id: int) -> str | None:
     return rel_path
 
 
+def _delete_avatar_files(user_id: int) -> None:
+    """Delete stored avatar files for a user, if they exist."""
+    try:
+        base_dir = pathlib.Path("uploads/avatars") / str(user_id)
+        if not base_dir.exists():
+            return
+        for path in base_dir.glob("avatar.*"):
+            try:
+                if path.is_file():
+                    path.unlink()
+            except Exception:
+                # Non-fatal cleanup failure must not break profile update.
+                pass
+    except Exception:
+        pass
+
+
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
@@ -173,6 +190,7 @@ async def update_current_user_profile(
     full_name: str = Form(""),
     phone: str = Form(""),
     email: str = Form(""),
+    remove_avatar: str = Form("0"),
     avatar: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -191,8 +209,14 @@ async def update_current_user_profile(
         )
     user.email = email_clean
     
+    remove_avatar_flag = str(remove_avatar or "").strip().lower() in {"1", "true", "yes", "on"}
+    if remove_avatar_flag:
+        _delete_avatar_files(user.id)
+        user.avatar_path = None
+
     # Обработка аватара
     if avatar and avatar.filename:
+        _delete_avatar_files(user.id)
         rel = _save_avatar(avatar, user.id)
         if rel:
             user.avatar_path = rel

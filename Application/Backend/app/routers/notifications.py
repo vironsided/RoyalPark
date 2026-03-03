@@ -16,6 +16,7 @@ from ..deps import get_current_user, require_any_role
 from ..models import Notification, NotificationStatus, RoleEnum, User, Resident, Block
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
+ADMIN_NOTIFICATION_TYPES = {"APPEAL", "TARIFF_EXPIRED"}
 templates = Jinja2Templates(directory="app/templates")
 
 
@@ -133,6 +134,8 @@ class NotificationOut(BaseModel):
     status: str
     created_at: str
     read_at: Optional[str] = None
+    notification_type: Optional[str] = None
+    related_id: Optional[int] = None
     user_full_name: Optional[str] = None
     user_phone: Optional[str] = None
     user_email: Optional[str] = None
@@ -161,7 +164,7 @@ def list_notifications_json(
         # так как этот список предназначен для обработки обращений (APPEAL) жителей.
         query = db.query(Notification).join(User, User.id == Notification.user_id).filter(
             or_(
-                Notification.notification_type == "APPEAL",
+                Notification.notification_type.in_(list(ADMIN_NOTIFICATION_TYPES)),
                 Notification.notification_type == None  # Старые уведомления без типа
             )
         )
@@ -226,6 +229,8 @@ def list_notifications_json(
                 "status": notif.status.value,
                 "created_at": notif.created_at.isoformat(),
                 "read_at": notif.read_at.isoformat() if notif.read_at else None,
+                "notification_type": notif.notification_type,
+                "related_id": notif.related_id,
                 "user_full_name": notif.user.full_name,
                 "user_phone": notif.user.phone,
                 "user_email": notif.user.email,
@@ -285,6 +290,8 @@ def get_notification_json_public(
         "status": notif.status.value,
         "created_at": notif.created_at.isoformat(),
         "read_at": notif.read_at.isoformat() if notif.read_at else None,
+        "notification_type": notif.notification_type,
+        "related_id": notif.related_id,
         "user_full_name": notif.user.full_name,
         "user_phone": notif.user.phone,
         "user_email": notif.user.email,

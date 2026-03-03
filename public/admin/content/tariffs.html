@@ -269,9 +269,25 @@
             if (input.value !== sanitized) input.value = sanitized;
         };
 
+        const pasteHandler = () => setTimeout(apply, 0);
+        input._numericOnlyHandlers = { apply, pasteHandler };
+
         input.addEventListener('input', apply);
         input.addEventListener('blur', apply);
-        input.addEventListener('paste', () => setTimeout(apply, 0));
+        input.addEventListener('paste', pasteHandler);
+    }
+
+    function unbindNumericOnly(input) {
+        if (!input || !input._numericOnlyBound) return;
+        const handlers = input._numericOnlyHandlers;
+        if (handlers) {
+            input.removeEventListener('input', handlers.apply);
+            input.removeEventListener('blur', handlers.apply);
+            input.removeEventListener('paste', handlers.pasteHandler);
+        }
+        delete input._numericOnlyHandlers;
+        delete input._numericOnlyBound;
+        input.removeAttribute('inputmode');
     }
 
     function applyNumericOnlyBindings(root = document) {
@@ -325,7 +341,10 @@
 
     function getSelectedTariffPurposeKeys() {
         const raw = getSelectedTariffPurposesRaw().filter((v) => v !== 'all');
-        if (!raw.length || raw.length >= ALL_TARIFF_PURPOSE_KEYS.length) {
+        if (!raw.length) {
+            return [];
+        }
+        if (raw.length >= ALL_TARIFF_PURPOSE_KEYS.length) {
             return [...ALL_TARIFF_PURPOSE_KEYS];
         }
         return raw.filter((v, idx, arr) => ALL_TARIFF_PURPOSE_KEYS.includes(v) && arr.indexOf(v) === idx);
@@ -335,6 +354,10 @@
         const summaryEl = document.getElementById('filterPurposeSummary');
         if (!summaryEl) return;
         const selected = getSelectedTariffPurposeKeys();
+        if (!selected.length) {
+            summaryEl.textContent = t('invoices_export_nothing_selected', 'Ничего не выбрано');
+            return;
+        }
         if (selected.length >= ALL_TARIFF_PURPOSE_KEYS.length) {
             summaryEl.textContent = t('all', 'Все');
             return;
@@ -356,18 +379,12 @@
         if (changedValue === 'all') {
             if (allCb.checked) {
                 purposeCbs.forEach((cb) => { cb.checked = true; });
-            } else if (!purposeCbs.some((cb) => cb.checked)) {
-                allCb.checked = true;
-                purposeCbs.forEach((cb) => { cb.checked = true; });
+            } else {
+                purposeCbs.forEach((cb) => { cb.checked = false; });
             }
         } else {
             const checkedCount = purposeCbs.filter((cb) => cb.checked).length;
-            if (checkedCount === 0) {
-                allCb.checked = true;
-                purposeCbs.forEach((cb) => { cb.checked = true; });
-            } else {
-                allCb.checked = checkedCount === purposeCbs.length;
-            }
+            allCb.checked = checkedCount === purposeCbs.length;
         }
 
         updateTariffPurposeSummary();
@@ -645,7 +662,9 @@
         const clientTypeValue = clientTypeEl?.value || 'all';
         const searchValue = String(searchEl?.value || '').trim();
 
-        if (selectedPurposes.length >= ALL_TARIFF_PURPOSE_KEYS.length) {
+        if (!selectedPurposes.length) {
+            parts.push(`${t('tariffs_filter_purpose', 'Назначение')}: ${t('invoices_export_nothing_selected', 'Ничего не выбрано')}`);
+        } else if (selectedPurposes.length >= ALL_TARIFF_PURPOSE_KEYS.length) {
             parts.push(`${t('tariffs_filter_purpose', 'Назначение')}: ${t('all', 'Все')}`);
         } else {
             const labels = selectedPurposes.map((key) => t(TARIFF_PURPOSE_LABELS[key], key));
@@ -958,12 +977,7 @@
     // Экспортируем функцию в глобальную область видимости
     window.closeCreateModal = closeCreateModal;
 
-    // Close modal on overlay click
-    document.getElementById('createTariffModal').addEventListener('click', function (e) {
-        if (e.target === this) {
-            closeCreateModal();
-        }
-    });
+    // Do not close modal on overlay click
 
     // Close modal on Escape key
     document.addEventListener('keydown', function (e) {
@@ -1129,6 +1143,9 @@
                     // Для строительства - даты
                     const fromInput = fromGroup.querySelector('input');
                     const toInput = toGroup.querySelector('input');
+
+                    unbindNumericOnly(fromInput);
+                    unbindNumericOnly(toInput);
 
                     const fromValue = fromInput.value || '';
                     const toValue = toInput.value || '';

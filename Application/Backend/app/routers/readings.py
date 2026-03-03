@@ -50,7 +50,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 # ====== расчёт по ступеням тарифа (вынесено в API-роутер) ======
 # Бизнес-логика расчёта (включая stable_tariff) находится в `api_readings.py`.
-from .api_readings import money, compute_amount, get_gas_annual_prev  # noqa: E402
+from .api_readings import money, compute_amount, compute_amount_components, get_gas_annual_prev  # noqa: E402
 
 
 def _upsert_auto_sewerage_line_for_invoice(
@@ -586,7 +586,13 @@ def create_readings(
 
         t = db.get(Tariff, m.tariff_id)
         annual_prev = get_gas_annual_prev(db, m.id, period_start) if m.meter_type == MeterType.GAS else None
-        net, vat, total, _ = compute_amount(consumption, t, annual_prev=annual_prev)
+        amount_comp = compute_amount_components(consumption, t, annual_prev=annual_prev)
+        net = amount_comp["amount_net"]
+        vat = amount_comp["amount_vat"]
+        total = amount_comp["amount_total"]
+        stable_fee_net = amount_comp["stable_net"]
+        stable_fee_vat = amount_comp["stable_vat"]
+        stable_fee_total = amount_comp["stable_total"]
 
         # запись за этот месяц (если есть)
         existing = (
@@ -610,6 +616,9 @@ def create_readings(
             existing.amount_net = net
             existing.amount_vat = vat
             existing.amount_total = total
+            existing.stable_fee_net = stable_fee_net
+            existing.stable_fee_vat = stable_fee_vat
+            existing.stable_fee_total = stable_fee_total
             existing.note = note or None
             db.flush()
 
@@ -668,6 +677,9 @@ def create_readings(
                 amount_net=net,
                 amount_vat=vat,
                 amount_total=total,
+                stable_fee_net=stable_fee_net,
+                stable_fee_vat=stable_fee_vat,
+                stable_fee_total=stable_fee_total,
                 note=note or None,
                 created_by_id=user.id,
             )

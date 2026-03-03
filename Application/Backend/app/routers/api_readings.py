@@ -401,11 +401,11 @@ def get_gas_annual_prev(db: Session, meter_id: int, period_start: datetime) -> D
     return Decimal(str(total or 0))
 
 
-def compute_amount(
+def compute_amount_components(
     consumption: Decimal,
     tariff: Tariff,
     annual_prev: Decimal | None = None,
-) -> tuple[Decimal, Decimal, Decimal, list[dict]]:
+) -> dict:
     """
     Возвращает (amount_net, amount_vat, amount_total, breakdown[])
     Для CONSTRUCTION тарифов (date-based) используем первую ступень с ценой.
@@ -489,7 +489,9 @@ def compute_amount(
                 left -= chunk
 
     # Фиксированная часть (stable_tariff):
-    # ВАЖНО: НДС на стабильный тариф НЕ начисляется. stable_tariff уже финальная сумма.
+    # stable_tariff в тарифе хранится как ИТОГОВАЯ сумма (gross).
+    # Поэтому при ненулевом НДС раскладываем её на net+vat так,
+    # чтобы total всегда оставался равным stable_tariff.
     try:
         stable_fee = Decimal(str(getattr(tariff, "stable_tariff", 0) or 0))
     except Exception:
@@ -497,10 +499,51 @@ def compute_amount(
     if stable_fee < 0:
         stable_fee = Decimal("0")
 
-    # НДС считаем только от переменной части (total_net), stable_fee добавляем без НДС
-    vat = money(total_net * Decimal(tariff.vat_percent) / Decimal(100))
-    total = money(total_net + vat + stable_fee)
-    return (money(total_net + stable_fee), vat, total, breakdown)
+    try:
+        vat_percent = Decimal(str(getattr(tariff, "vat_percent", 0) or 0))
+    except Exception:
+        vat_percent = Decimal("0")
+    if vat_percent < 0:
+        vat_percent = Decimal("0")
+
+    variable_vat = money(total_net * vat_percent / Decimal(100))
+    variable_total = money(total_net + variable_vat)
+
+    # stable_total is entered by accounting (e.g. 1.00) and must stay unchanged.
+    stable_total = money(stable_fee)
+    if stable_total > 0 and vat_percent > 0:
+        stable_net = money(stable_total * Decimal(100) / (Decimal(100) + vat_percent))
+        stable_vat = money(stable_total - stable_net)
+    else:
+        stable_net = stable_total
+        stable_vat = Decimal("0")
+
+    amount_net = money(total_net + stable_net)
+    amount_vat = money(variable_vat + stable_vat)
+    amount_total = money(variable_total + stable_total)
+    return {
+        "amount_net": amount_net,
+        "amount_vat": amount_vat,
+        "amount_total": amount_total,
+        "breakdown": breakdown,
+        "stable_net": stable_net,
+        "stable_vat": stable_vat,
+        "stable_total": stable_total,
+    }
+
+
+def compute_amount(
+    consumption: Decimal,
+    tariff: Tariff,
+    annual_prev: Decimal | None = None,
+) -> tuple[Decimal, Decimal, Decimal, list[dict]]:
+    comp = compute_amount_components(consumption, tariff, annual_prev=annual_prev)
+    return (
+        comp["amount_net"],
+        comp["amount_vat"],
+        comp["amount_total"],
+        comp["breakdown"],
+    )
 
 
 # Pydantic models
@@ -1429,7 +1472,14 @@ def create_readings_internal(
 
         # Расчёт суммы по тарифу
         annual_prev = get_gas_annual_prev(db, m.id, period_start) if m.meter_type == MeterType.GAS else None
-        amount_net, amount_vat, amount_total, steps_detail = compute_amount(consumption, tariff, annual_prev=annual_prev)
+        amount_comp = compute_amount_components(consumption, tariff, annual_prev=annual_prev)
+        amount_net = amount_comp["amount_net"]
+        amount_vat = amount_comp["amount_vat"]
+        amount_total = amount_comp["amount_total"]
+        steps_detail = amount_comp["breakdown"]
+        stable_fee_net = amount_comp["stable_net"]
+        stable_fee_vat = amount_comp["stable_vat"]
+        stable_fee_total = amount_comp["stable_total"]
 
         if existing:
             if lock_map.get(int(existing.id), {}).get("locked"):
@@ -1441,6 +1491,9 @@ def create_readings_internal(
             existing.amount_net = amount_net
             existing.amount_vat = amount_vat
             existing.amount_total = amount_total
+            existing.stable_fee_net = stable_fee_net
+            existing.stable_fee_vat = stable_fee_vat
+            existing.stable_fee_total = stable_fee_total
             existing.note = (data.note.strip() if data.note is not None else None)
             db.flush()
             
@@ -1465,6 +1518,9 @@ def create_readings_internal(
                 vat_percent=tariff.vat_percent,
                 amount_vat=amount_vat,
                 amount_total=amount_total,
+                stable_fee_net=stable_fee_net,
+                stable_fee_vat=stable_fee_vat,
+                stable_fee_total=stable_fee_total,
                 note=data.note,
                 created_by_id=user.id,
             )
@@ -1753,13 +1809,13 @@ def get_reading_history(
             base_cons = Decimal(str(rd.consumption or 0))
             base_value = Decimal(str(rd.value or 0))
 
-            # Стабильный тариф (фиксированная часть) — показываем отдельной строкой
+            # Стабильный тариф (фиксированная часть) — только из исторического snapshot чтения.
+            # Не читаем текущий tariff.stable_tariff, чтобы старые начисления не "переезжали".
             try:
-                stable_fee_net = Decimal(str(getattr(tariff, "stable_tariff", 0) or 0))
+                stable_fee_total = Decimal(str(getattr(rd, "stable_fee_total", 0) or 0))
             except Exception:
-                stable_fee_net = Decimal("0")
-            # НДС на стабильный тариф не начисляется
-            stable_fee_total = money(stable_fee_net)
+                stable_fee_total = Decimal("0")
+            stable_fee_total = money(stable_fee_total)
 
             base_amount_for_calc = base_amount_total
             if stable_fee_total > 0 and base_amount_for_calc >= stable_fee_total:

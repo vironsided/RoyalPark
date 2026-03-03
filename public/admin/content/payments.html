@@ -66,6 +66,7 @@
                         </div>
                         <div class="service-filter-actions">
                             <button type="button" class="btn-filter-mini" id="serviceSelectAllBtn" data-i18n="select_all">Выбрать все</button>
+                            <button type="button" class="btn-filter-mini" id="serviceOkBtn">OK</button>
                             <button type="button" class="btn-filter-mini" id="serviceClearBtn" data-i18n="clear">Очистить</button>
                         </div>
                     </div>
@@ -534,10 +535,21 @@
     }
 
     function initServiceExportFilters() {
+        const details = document.getElementById('serviceExportDetails');
         const optionsRoot = document.getElementById('serviceExportOptions');
         const selectAllBtn = document.getElementById('serviceSelectAllBtn');
+        const okBtn = document.getElementById('serviceOkBtn');
         const clearBtn = document.getElementById('serviceClearBtn');
         if (!optionsRoot) return;
+
+        if (okBtn) {
+            if (okBtn._clickHandler) okBtn.removeEventListener('click', okBtn._clickHandler);
+            okBtn._clickHandler = function () {
+                if (details) details.open = false;
+            };
+            okBtn.addEventListener('click', okBtn._clickHandler);
+        }
+
         if (optionsRoot.dataset.initialized === 'true') {
             applyUtilitySelectionRules(optionsRoot);
             updateServiceSummaryLabel();

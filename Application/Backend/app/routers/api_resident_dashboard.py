@@ -703,27 +703,29 @@ def get_resident_invoice_detail(
         }
 
         rd = reading_map.get(line.meter_reading_id)
-        tariff = rd.tariff if rd else None
         try:
-            stable_fee_net = Decimal(str(getattr(tariff, "stable_tariff", 0) or 0))
+            stable_fee_total = Decimal(str(getattr(rd, "stable_fee_total", 0) or 0))
         except Exception:
-            stable_fee_net = Decimal("0")
+            stable_fee_total = Decimal("0")
 
-        if stable_fee_net > 0 and line.amount_total:
-            # Стабильный тариф — отдельной строкой, НДС на него НЕ начисляется.
-            # НДС должен применяться только к переменной части (расход).
+        if stable_fee_total > 0 and line.amount_total:
+            # stable часть берём из snapshot чтения (историческое значение на момент начисления).
             line_net = Decimal(str(line.amount_net or 0))
             line_vat_total = Decimal(str(line.amount_vat or 0))
             line_total = _money2(Decimal(str(line.amount_total or 0)))
+            stable_fee_total = min(_money2(stable_fee_total), line_total)
             try:
-                vat_percent = Decimal(str(getattr(tariff, "vat_percent", 0) or 0))
+                stable_fee_net = _money2(Decimal(str(getattr(rd, "stable_fee_net", 0) or 0)))
+                stable_fee_vat = _money2(Decimal(str(getattr(rd, "stable_fee_vat", 0) or 0)))
             except Exception:
-                vat_percent = Decimal("0")
+                stable_fee_net = stable_fee_total
+                stable_fee_vat = Decimal("0")
+            if stable_fee_net <= 0 and stable_fee_total > 0:
+                stable_fee_net = stable_fee_total
+                stable_fee_vat = Decimal("0")
 
-            # Разбиваем строку так, чтобы сумма (variable + stable) всегда была равна line.amount_total.
-            stable_fee_total = min(_money2(stable_fee_net), line_total)
             variable_total = _money2(max(line_total - stable_fee_total, Decimal("0")))
-            variable_vat = min(_money2(line_vat_total), variable_total)
+            variable_vat = min(_money2(max(line_vat_total - stable_fee_vat, Decimal("0"))), variable_total)
             variable_net = _money2(max(variable_total - variable_vat, Decimal("0")))
 
             # Если линия действительно включает стабильный тариф — разделяем
@@ -775,8 +777,8 @@ def get_resident_invoice_detail(
                 lines_out.append({
                     "id": line.id,
                     "description": stable_label,
-                    "amount_net": float(stable_fee_total),
-                    "amount_vat": 0.0,
+                    "amount_net": float(stable_fee_net),
+                    "amount_vat": float(stable_fee_vat),
                     "amount_total": float(stable_fee_total),
                     "payment_status": stable_status,
                     "paid_amount": float(stable_paid),
@@ -1494,7 +1496,6 @@ def create_resident_payment(
     if data.amount <= 0:
         raise HTTPException(status_code=400, detail="Amount must be positive")
     payment_amount_dec = Decimal(str(data.amount))
-    amount_adjusted_by_selected_lines = False
     selected_remaining_total = Decimal("0")
 
     # Validate payment method
@@ -1583,11 +1584,6 @@ def create_resident_payment(
             if selected_remaining <= Decimal("0.0001"):
                 raise HTTPException(status_code=400, detail="Выбранные строки уже оплачены")
             selected_remaining_total = _money2(selected_remaining)
-            if payment_amount_dec > selected_remaining_total:
-                payment_amount_dec = selected_remaining_total
-                amount_adjusted_by_selected_lines = True
-            if payment_amount_dec <= Decimal("0.0001"):
-                raise HTTPException(status_code=400, detail="Выбранные строки уже оплачены")
             application_reference = "LINESEL:" + ",".join(str(x) for x in selected_line_ids)
 
     # Если оплата через аванс, создаем историю списания и корректируем общий баланс
@@ -1611,6 +1607,10 @@ def create_resident_payment(
                 total_advance += (Decimal(p.amount_total or 0) - Decimal(applied_p))
         
         target_amount = payment_amount_dec
+        if selected_line_ids and target_amount > selected_remaining_total:
+            # Для списания из аванса не допускаем сумму выше выбранных строк:
+            # в отличие от CARD-платежа здесь "излишек в аванс" невозможен.
+            target_amount = selected_remaining_total
         if total_advance < target_amount:
             raise HTTPException(status_code=400, detail=f"Недостаточно средств на авансе (доступно {total_advance} ₼)")
 
@@ -1695,8 +1695,8 @@ def create_resident_payment(
             
             if target_invoice:
                 if affected_count > 0:
-                    if amount_adjusted_by_selected_lines:
-                        message = f"Аванс применён к выбранным строкам. Сумма скорректирована до {float(payment_amount_dec):.2f} ₼"
+                    if selected_line_ids and payment_amount_dec > selected_remaining_total:
+                        message = f"Аванс применён к выбранным строкам. Сумма скорректирована до {float(target_amount):.2f} ₼"
                     else:
                         message = "Аванс успешно применён к выбранному счёту"
                 else:
@@ -1749,11 +1749,13 @@ def create_resident_payment(
     # scope='month' - только текущий месяц, 'all' - все счета, None - только пополнение аванса
     try:
         if target_invoice:
+            max_apply_amount = selected_remaining_total if selected_line_ids else None
             applied_amount = apply_payment_to_invoice(
                 db,
                 payment.id,
                 target_invoice.id,
                 reference=application_reference,
+                max_amount=max_apply_amount,
             )
             affected_count = 1 if applied_amount > 0 else 0
         else:
@@ -1767,8 +1769,8 @@ def create_resident_payment(
         
         if target_invoice:
             if affected_count > 0:
-                if amount_adjusted_by_selected_lines:
-                    message = f"Платёж применён к выбранным строкам. Сумма скорректирована до {float(payment_amount_dec):.2f} ₼"
+                if selected_line_ids and payment_amount_dec > selected_remaining_total:
+                    message = "Платёж применён к выбранным строкам. Излишек зачислен в аванс"
                 else:
                     message = "Платёж успешно создан и применён к выбранному счёту"
             else:

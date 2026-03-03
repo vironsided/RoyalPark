@@ -474,6 +474,7 @@
                                 <div class="account-file-input-wrapper">
                                     <input type="file" id="accountAvatarInput" accept="image/*" style="display: none;">
                                     <button type="button" class="account-file-select-btn" id="accountFileSelectBtn" data-i18n="account_file_select_btn">Выбор файла</button>
+                                    <button type="button" class="account-file-select-btn" id="accountAvatarRemoveBtn" data-i18n="account_avatar_remove_btn" style="display: none;">Удалить фото</button>
                                     <div class="account-file-status" id="accountFileStatus" data-i18n="account_file_no_selected">Не выбран ни один файл</div>
                             </div>
                         </div>
@@ -556,6 +557,8 @@
             const accountModalSave = document.getElementById('accountModalSave');
             
             let initialAccountState = null;
+            let currentProfileUser = null;
+            let removeAccountAvatarRequested = false;
             
             function getAccountState() {
                 const fullName = document.getElementById('accountFullName')?.value || '';
@@ -566,6 +569,7 @@
                 const newPassword = document.getElementById('newPassword')?.value || '';
                 const confirmPassword = document.getElementById('confirmPassword')?.value || '';
                 const avatar = document.getElementById('accountAvatarInput')?.value ? 'has-file' : '';
+                const removeAvatar = removeAccountAvatarRequested ? '1' : '0';
                 
                 return {
                     fullName,
@@ -575,7 +579,8 @@
                     currentPassword,
                     newPassword,
                     confirmPassword,
-                    avatar
+                    avatar,
+                    removeAvatar
                 };
             }
             
@@ -622,6 +627,8 @@
                     }
 
                     const user = await response.json();
+                    currentProfileUser = user;
+                    removeAccountAvatarRequested = false;
                     
                     // Fill form fields
                     const fullNameInput = document.getElementById('accountFullName');
@@ -632,6 +639,12 @@
                     if (fullNameInput) fullNameInput.value = user.full_name || '';
                     if (phoneInput) phoneInput.value = user.phone || '';
                     if (emailInput) emailInput.value = user.email || '';
+                    const fileStatusEl = document.getElementById('accountFileStatus');
+                    if (fileStatusEl) {
+                        const noFileText = window.i18n?.translate?.('account_file_no_selected', window.i18n?.currentLanguage || 'ru') || 'Не выбран ни один файл';
+                        fileStatusEl.textContent = noFileText;
+                        fileStatusEl.classList.remove('has-file');
+                    }
                     
                     // Update avatar in modal
                     if (avatarPreview) {
@@ -673,6 +686,7 @@
                     setTimeout(() => {
                         initialAccountState = getAccountState();
                     }, 100);
+                    if (typeof syncRemoveAvatarButtonState === 'function') syncRemoveAvatarButtonState();
                 } catch (error) {
                     console.error('Error loading user profile:', error);
                     // Show error using modal
@@ -715,6 +729,13 @@
                     document.body.style.overflow = '';
                     // Reset initial state
                     initialAccountState = null;
+                    removeAccountAvatarRequested = false;
+                    const fileStatusEl = document.getElementById('accountFileStatus');
+                    if (fileStatusEl) {
+                        const noFileText = window.i18n?.translate?.('account_file_no_selected', window.i18n?.currentLanguage || 'ru') || 'Не выбран ни один файл';
+                        fileStatusEl.textContent = noFileText;
+                        fileStatusEl.classList.remove('has-file');
+                    }
                     // Force remove any lingering overlay effects
                     setTimeout(() => {
                         if (accountModal && !accountModal.classList.contains('show')) {
@@ -761,6 +782,16 @@
             const avatarPreview = document.getElementById('accountModalAvatar');
             const fileSelectBtn = document.getElementById('accountFileSelectBtn');
             const fileStatus = document.getElementById('accountFileStatus');
+            const removeAvatarBtn = document.getElementById('accountAvatarRemoveBtn');
+
+            function syncRemoveAvatarButtonState() {
+                if (!removeAvatarBtn) return;
+                const hasUploadedFile = Boolean(avatarInput && avatarInput.files && avatarInput.files[0]);
+                const hasStoredAvatar = Boolean(currentProfileUser && currentProfileUser.avatar_path);
+                const shouldShow = hasUploadedFile || (hasStoredAvatar && !removeAccountAvatarRequested);
+                removeAvatarBtn.style.display = shouldShow ? '' : 'none';
+                removeAvatarBtn.disabled = !shouldShow;
+            }
             
             if (fileSelectBtn && avatarInput) {
                 fileSelectBtn.addEventListener('click', function() {
@@ -771,6 +802,7 @@
             if (avatarInput && avatarPreview) {
                 avatarInput.addEventListener('change', function () {
                     const file = this.files && this.files[0];
+                    if (file) removeAccountAvatarRequested = false;
                     if (file) {
                         // Update file status
                         if (fileStatus) {
@@ -789,6 +821,7 @@
                         avatarPreview.style.backgroundPosition = 'center';
                         avatarPreview.style.backgroundRepeat = 'no-repeat';
                         avatarPreview.textContent = '';
+                        syncRemoveAvatarButtonState();
                     };
                     reader.readAsDataURL(file);
                     } else {
@@ -798,9 +831,40 @@
                             fileStatus.textContent = noFileText;
                             fileStatus.classList.remove('has-file');
                         }
+                        syncRemoveAvatarButtonState();
                     }
                 });
             }
+
+            if (removeAvatarBtn) {
+                removeAvatarBtn.addEventListener('click', function () {
+                    const hasUploadedFile = Boolean(avatarInput && avatarInput.files && avatarInput.files[0]);
+                    const hasStoredAvatar = Boolean(currentProfileUser && currentProfileUser.avatar_path);
+                    if (!hasUploadedFile && !hasStoredAvatar) return;
+
+                    removeAccountAvatarRequested = true;
+                    if (avatarInput) avatarInput.value = '';
+
+                    if (fileStatus) {
+                        const pending = window.i18n?.translate?.('account_avatar_remove_pending', window.i18n?.currentLanguage || 'ru')
+                            || 'Фото будет удалено после сохранения';
+                        fileStatus.textContent = pending;
+                        fileStatus.classList.remove('has-file');
+                    }
+
+                    const initials = (currentProfileUser?.full_name || currentProfileUser?.username || 'ПО')
+                        .split(' ')
+                        .map(n => n[0])
+                        .join('')
+                        .toUpperCase()
+                        .substring(0, 2);
+                    avatarPreview.style.background = '';
+                    avatarPreview.style.backgroundImage = '';
+                    avatarPreview.textContent = initials;
+                    syncRemoveAvatarButtonState();
+                });
+            }
+            syncRemoveAvatarButtonState();
 
             // Change password function
             async function changePassword(currentPassword, newPassword, confirmPassword) {
@@ -887,6 +951,7 @@
                     formData.append('full_name', fullName.trim());
                     formData.append('phone', phone.trim());
                     formData.append('email', email.trim());
+                    formData.append('remove_avatar', removeAccountAvatarRequested ? '1' : '0');
                     
                     if (avatarInput && avatarInput.files && avatarInput.files[0]) {
                         // Validate file type
@@ -952,6 +1017,7 @@
                     }
 
                     const user = await response.json();
+                    removeAccountAvatarRequested = false;
                     return user;
                 } catch (error) {
                     console.error('Error saving profile:', error);
@@ -1022,6 +1088,7 @@
                     try {
                         // Save profile to backend
                         const updatedUser = await saveUserProfile();
+                        currentProfileUser = updatedUser;
                         
                         // Update header with new user data (use global function if available)
                         if (updatedUser) {
@@ -1037,10 +1104,17 @@
                             const lang = langSelect.value;
                             localStorage.setItem('language', lang);
                             if (window.i18n) {
-                                if (typeof window.i18n.changeLanguage === 'function') {
-                                    window.i18n.changeLanguage(lang);
-                                } else if (typeof window.i18n.applyLanguage === 'function') {
+                                // Use silent language apply on profile save to avoid duplicate toast.
+                                if (typeof window.i18n.applyLanguage === 'function') {
                                     window.i18n.applyLanguage(lang);
+                                    if (window.reapplyAutoTranslations) {
+                                        setTimeout(() => window.reapplyAutoTranslations(), 100);
+                                    }
+                                    window.dispatchEvent(new CustomEvent('languageChanged', {
+                                        detail: { language: lang }
+                                    }));
+                                } else if (typeof window.i18n.changeLanguage === 'function') {
+                                    window.i18n.changeLanguage(lang);
                                 }
                             }
                         }
@@ -1055,6 +1129,7 @@
                         if (avatarInput) {
                             avatarInput.value = '';
                         }
+                        removeAccountAvatarRequested = false;
                         
                         // Reset file status
                         const fileStatus = document.getElementById('accountFileStatus');
@@ -1063,6 +1138,7 @@
                             fileStatus.textContent = noFileText;
                             fileStatus.classList.remove('has-file');
                         }
+                        if (typeof syncRemoveAvatarButtonState === 'function') syncRemoveAvatarButtonState();
                         
                         // Reload profile data to update avatar preview with new path from server
                         // Do this BEFORE closing modal so avatar updates in modal
@@ -1079,10 +1155,15 @@
                         
                         // Show success message after modal is closed
                         if (typeof showAlert === 'function') {
-                            await showAlert('Настройки сохранены!', 'Успешно', 'success');
+                            const lang = window.i18n?.currentLanguage || localStorage.getItem('language') || 'ru';
+                            const successTitle = window.i18n?.translate?.('success', lang) || 'Успешно';
+                            const successText = window.i18n?.translate?.('account_profile_saved_success', lang) || 'Настройки сохранены!';
+                            await showAlert(successText, successTitle, 'success');
                         } else {
                             console.warn('showAlert function not found');
-                            alert('Настройки сохранены!');
+                            const lang = window.i18n?.currentLanguage || localStorage.getItem('language') || 'ru';
+                            const successText = window.i18n?.translate?.('account_profile_saved_success', lang) || 'Настройки сохранены!';
+                            alert(successText);
                         }
                     } catch (error) {
                         console.error('Error saving profile:', error);

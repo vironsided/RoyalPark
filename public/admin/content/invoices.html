@@ -177,17 +177,18 @@
                     <summary class="multi-filter-summary" id="exportInvoiceMeterTypeSummary" data-i18n="payments_services_all_categories">Все категории</summary>
                     <div class="multi-filter-panel service-filter-dropdown">
                         <div class="service-filter-options">
-                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="utility" checked><span>Utility</span></label>
-                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="ELECTRIC" checked><span>Электричество</span></label>
-                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="GAS" checked><span>Газ</span></label>
-                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="WATER" checked><span>Вода</span></label>
-                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="SEWERAGE" checked><span>Канализация</span></label>
-                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="SERVICE" checked><span>Сервис</span></label>
-                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="RENT" checked><span>Аренда</span></label>
-                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="CONSTRUCTION" checked><span>Строительство</span></label>
+                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="utility" checked><span data-i18n="payments_service_utility">Utility</span></label>
+                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="ELECTRIC" checked><span data-i18n="meter_electricity">Электричество</span></label>
+                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="GAS" checked><span data-i18n="meter_gas">Газ</span></label>
+                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="WATER" checked><span data-i18n="meter_cold_water">Вода</span></label>
+                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="SEWERAGE" checked><span data-i18n="readings_meter_sewerage">Канализация</span></label>
+                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="SERVICE" checked><span data-i18n="tariffs_purpose_service">Сервис</span></label>
+                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="RENT" checked><span data-i18n="tariffs_purpose_rent">Аренда</span></label>
+                            <label class="multi-filter-item"><input type="checkbox" class="export-invoice-meter-type-checkbox" value="CONSTRUCTION" checked><span data-i18n="tariffs_purpose_construction">Строительство</span></label>
                         </div>
                         <div class="service-filter-actions">
                             <button type="button" class="btn-filter-mini" id="exportInvoiceMeterSelectAllBtn" data-i18n="select_all">Выбрать все</button>
+                            <button type="button" class="btn-filter-mini" id="exportInvoiceMeterOkBtn">OK</button>
                             <button type="button" class="btn-filter-mini" id="exportInvoiceMeterClearBtn" data-i18n="clear">Очистить</button>
                         </div>
                     </div>
@@ -436,16 +437,21 @@
 
     const INVOICE_EXPORT_METER_TYPES = ['ELECTRIC', 'GAS', 'WATER', 'SEWERAGE', 'SERVICE', 'RENT', 'CONSTRUCTION'];
     const INVOICE_EXPORT_UTILITY_TYPES = ['ELECTRIC', 'GAS', 'WATER', 'SEWERAGE'];
-    const INVOICE_METER_LABELS = {
-        utility: 'Utility',
-        ELECTRIC: 'Электричество',
-        GAS: 'Газ',
-        WATER: 'Вода',
-        SEWERAGE: 'Канализация',
-        SERVICE: 'Сервис',
-        RENT: 'Аренда',
-        CONSTRUCTION: 'Строительство'
-    };
+    function getInvoiceMeterLabel(type) {
+        const key = String(type || '').trim();
+        const map = {
+            utility: ['payments_service_utility', 'Utility'],
+            ELECTRIC: ['meter_electricity', 'Электричество'],
+            GAS: ['meter_gas', 'Газ'],
+            WATER: ['meter_cold_water', 'Вода'],
+            SEWERAGE: ['readings_meter_sewerage', 'Канализация'],
+            SERVICE: ['tariffs_purpose_service', 'Сервис'],
+            RENT: ['tariffs_purpose_rent', 'Аренда'],
+            CONSTRUCTION: ['tariffs_purpose_construction', 'Строительство']
+        };
+        const pair = map[key];
+        return pair ? t(pair[0], pair[1]) : key;
+    }
     const INVOICE_PAYMENT_METHOD_LABELS = {
         CASH: 'Наличные',
         CARD: 'Карта',
@@ -768,10 +774,10 @@
         const utilitySelected = selectedRaw.includes('utility');
         const customMix = selectedRaw.some((v) => v !== 'utility' && !INVOICE_EXPORT_UTILITY_TYPES.includes(v));
         if (utilitySelected && !customMix) {
-            summary.textContent = 'Utility';
+            summary.textContent = getInvoiceMeterLabel('utility');
             return;
         }
-        const labels = selectedResolved.map((v) => INVOICE_METER_LABELS[v] || v);
+        const labels = selectedResolved.map((v) => getInvoiceMeterLabel(v));
         summary.textContent = labels.length > 2 ? `${labels.slice(0, 2).join(', ')} +${labels.length - 2}` : labels.join(', ');
     }
 
@@ -779,6 +785,7 @@
         const details = document.getElementById('exportInvoiceMeterTypeDetails');
         if (!details) return;
         const selectAllBtn = document.getElementById('exportInvoiceMeterSelectAllBtn');
+        const okBtn = document.getElementById('exportInvoiceMeterOkBtn');
         const clearBtn = document.getElementById('exportInvoiceMeterClearBtn');
         const boxes = Array.from(document.querySelectorAll('#exportInvoiceMeterTypeDetails .export-invoice-meter-type-checkbox'));
         if (boxes.length === 0) return;
@@ -816,6 +823,14 @@
                 updateInvoiceExportMeterTypeSummary();
             };
             clearBtn.addEventListener('click', clearBtn._clickHandler);
+        }
+
+        if (okBtn) {
+            if (okBtn._clickHandler) okBtn.removeEventListener('click', okBtn._clickHandler);
+            okBtn._clickHandler = function () {
+                details.open = false;
+            };
+            okBtn.addEventListener('click', okBtn._clickHandler);
         }
 
         applyInvoiceExportUtilityRules();
@@ -857,7 +872,7 @@
 
         const type = detectInvoiceLineMeterType(line);
         if (!type) return null;
-        return { key: type, label: INVOICE_METER_LABELS[type] || type };
+        return { key: type, label: getInvoiceMeterLabel(type) };
     }
 
     function collectInvoiceMeterTypes(invoice) {
@@ -905,7 +920,7 @@
         if (filters.paymentMethod !== 'all') chunks.push(`Метод: ${INVOICE_PAYMENT_METHOD_LABELS[filters.paymentMethod] || filters.paymentMethod}`);
         const meterLabels = filters.meterTypes.length >= INVOICE_EXPORT_METER_TYPES.length
             ? 'Все'
-            : filters.meterTypes.map((t) => INVOICE_METER_LABELS[t] || t).join(', ');
+            : filters.meterTypes.map((t) => getInvoiceMeterLabel(t)).join(', ');
         chunks.push(`Услуги: ${meterLabels}`);
         return chunks.join(' | ');
     }

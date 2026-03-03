@@ -992,25 +992,28 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
         }
 
         rd = reading_map.get(line.meter_reading_id)
-        tariff = db.get(Tariff, rd.tariff_id) if rd and rd.tariff_id else None
         try:
-            stable_fee_net = Decimal(str(getattr(tariff, "stable_tariff", 0) or 0))
+            stable_fee_total = _money2(Decimal(str(getattr(rd, "stable_fee_total", 0) or 0)))
         except Exception:
-            stable_fee_net = Decimal("0")
+            stable_fee_total = Decimal("0")
 
-        if stable_fee_net > 0:
+        if stable_fee_total > 0:
             line_net = Decimal(str(line.amount_net or 0))
             line_vat_total = Decimal(str(line.amount_vat or 0))
             line_total = _money2(Decimal(str(line.amount_total or 0)))
+            stable_fee_total = min(stable_fee_total, line_total)
             try:
-                vat_percent = Decimal(str(getattr(tariff, "vat_percent", 0) or 0))
+                stable_fee_net = _money2(Decimal(str(getattr(rd, "stable_fee_net", 0) or 0)))
+                stable_fee_vat = _money2(Decimal(str(getattr(rd, "stable_fee_vat", 0) or 0)))
             except Exception:
-                vat_percent = Decimal("0")
+                stable_fee_net = stable_fee_total
+                stable_fee_vat = Decimal("0")
+            if stable_fee_net <= 0 and stable_fee_total > 0:
+                stable_fee_net = stable_fee_total
+                stable_fee_vat = Decimal("0")
 
-            # Разбиваем строку так, чтобы сумма (variable + stable) всегда была равна line.amount_total.
-            stable_fee_total = min(_money2(stable_fee_net), line_total)
             variable_total = _money2(max(line_total - stable_fee_total, Decimal("0")))
-            variable_vat = min(_money2(line_vat_total), variable_total)
+            variable_vat = min(_money2(max(line_vat_total - stable_fee_vat, Decimal("0"))), variable_total)
             variable_net = _money2(max(variable_total - variable_vat, Decimal("0")))
 
             if line_net >= stable_fee_net:
@@ -1057,8 +1060,8 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
                 lines_out.append({
                     "id": line.id,
                     "description": stable_label,
-                    "amount_net": float(stable_fee_total),
-                    "amount_vat": 0.0,
+                    "amount_net": float(stable_fee_net),
+                    "amount_vat": float(stable_fee_vat),
                     "amount_total": float(stable_fee_total),
                     "payment_status": stable_status,
                     "paid_amount": float(stable_paid),

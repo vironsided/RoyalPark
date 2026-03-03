@@ -229,8 +229,20 @@
                     <h4 data-i18n="residents_initial_data">Начальные данные</h4>
                     <div class="form-row">
                         <div class="form-group">
-                            <label data-i18n="residents_debt_label">Долг (на момент запуска системы), ₼</label>
-                            <input type="number" id="residentDebt" min="0" step="0.01" value="0" placeholder="0.00" data-i18n-placeholder="residents_debt_placeholder">
+                            <label data-i18n="residents_debt_utility_label">Долг Utility (на момент запуска системы), ₼</label>
+                            <input type="number" id="residentDebtUtility" min="0" step="0.01" value="0" placeholder="0.00" data-i18n-placeholder="residents_debt_placeholder">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="residents_debt_service_label">Долг Сервис (на момент запуска системы), ₼</label>
+                            <input type="number" id="residentDebtService" min="0" step="0.01" value="0" placeholder="0.00" data-i18n-placeholder="residents_debt_placeholder">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="residents_debt_rent_label">Долг Аренда (на момент запуска системы), ₼</label>
+                            <input type="number" id="residentDebtRent" min="0" step="0.01" value="0" placeholder="0.00" data-i18n-placeholder="residents_debt_placeholder">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
                             <small class="text-muted" data-i18n="residents_debt_help">Если у резидента уже был долг до внедрения системы — укажите его здесь.</small>
                         </div>
                     </div>
@@ -1076,8 +1088,12 @@
                 const residentEmail = document.getElementById('residentEmail');
                 if (residentEmail) residentEmail.value = '';
 
-                const residentDebt = document.getElementById('residentDebt');
-                if (residentDebt) residentDebt.value = '0';
+                const residentDebtUtility = document.getElementById('residentDebtUtility');
+                if (residentDebtUtility) residentDebtUtility.value = '0';
+                const residentDebtService = document.getElementById('residentDebtService');
+                if (residentDebtService) residentDebtService.value = '0';
+                const residentDebtRent = document.getElementById('residentDebtRent');
+                if (residentDebtRent) residentDebtRent.value = '0';
                 
                 // Очищаем счётчики
                 const servicesContainer = document.getElementById('servicesContainer');
@@ -1160,7 +1176,17 @@
                 document.getElementById('residentName').value = resident.owner_full_name || '';
                 document.getElementById('residentPhone').value = resident.owner_phone || '';
                 document.getElementById('residentEmail').value = resident.owner_email || '';
-                document.getElementById('residentDebt').value = (resident.debt ?? 0);
+                let debtUtility = Number(resident.debt_utility ?? 0);
+                let debtService = Number(resident.debt_service ?? 0);
+                let debtRent = Number(resident.debt_rent ?? 0);
+                const debtTotal = Number(resident.debt ?? 0);
+                // Backward compatibility: older residents may have only total debt without split fields.
+                if (debtTotal > 0 && (debtUtility + debtService + debtRent) <= 0) {
+                    debtUtility = debtTotal;
+                }
+                document.getElementById('residentDebtUtility').value = debtUtility;
+                document.getElementById('residentDebtService').value = debtService;
+                document.getElementById('residentDebtRent').value = debtRent;
                 
                 // Загружаем счётчики - проверяем на дубликаты
                 if (resident.meters && Array.isArray(resident.meters)) {
@@ -1324,17 +1350,7 @@
             pendingDelete = null;
         }
         
-        // Close modal on overlay click
-        document.getElementById('createResidentModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeCreateModal();
-            }
-        });
-        document.getElementById('deleteResidentModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeDeleteModal();
-            }
-        });
+        // Do not close modals on overlay click
         
         // Close modal on Escape key
         document.addEventListener('keydown', function(e) {
@@ -1650,12 +1666,24 @@
                 const ownerFullName = document.getElementById('residentName').value.trim();
                 const ownerPhone = document.getElementById('residentPhone').value.trim();
                 const ownerEmail = document.getElementById('residentEmail').value.trim();
-                const debtRaw = document.getElementById('residentDebt')?.value ?? '0';
-                const openingDebt = parseFloat(String(debtRaw).replace(',', '.')) || 0;
+                const debtUtilityRaw = document.getElementById('residentDebtUtility')?.value ?? '0';
+                const debtServiceRaw = document.getElementById('residentDebtService')?.value ?? '0';
+                const debtRentRaw = document.getElementById('residentDebtRent')?.value ?? '0';
 
-                if (openingDebt < 0) {
+                const openingDebtUtility = parseFloat(String(debtUtilityRaw).replace(',', '.')) || 0;
+                const openingDebtService = parseFloat(String(debtServiceRaw).replace(',', '.')) || 0;
+                const openingDebtRent = parseFloat(String(debtRentRaw).replace(',', '.')) || 0;
+                const openingDebt = openingDebtUtility + openingDebtService + openingDebtRent;
+
+                if (openingDebtUtility < 0 || openingDebtService < 0 || openingDebtRent < 0) {
                     if (typeof showError === 'function') showError(t('residents_debt_negative_error', 'Долг не может быть отрицательным'));
-                    document.getElementById('residentDebt')?.focus();
+                    if (openingDebtUtility < 0) {
+                        document.getElementById('residentDebtUtility')?.focus();
+                    } else if (openingDebtService < 0) {
+                        document.getElementById('residentDebtService')?.focus();
+                    } else {
+                        document.getElementById('residentDebtRent')?.focus();
+                    }
                     return;
                 }
                 
@@ -1756,8 +1784,11 @@
                     owner_phone: ownerPhone || null,
                     owner_email: ownerEmail || null,
                     meters: meters,
-                    // debt поддерживаем и при создании, и при редактировании
-                    debt: openingDebt
+                    // total debt kept for backward compatibility with old API consumers
+                    debt: openingDebt,
+                    debt_utility: openingDebtUtility,
+                    debt_service: openingDebtService,
+                    debt_rent: openingDebtRent
                 };
                 
                 let url, method;

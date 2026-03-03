@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-i18n-scope="local">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="user_invoice_print_title">Счёт на оплату</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="/admin/content_css/invoice-print.css">
-    <style>
-        .language-selector { display: none !important; }
-    </style>
 </head>
 <body>
     <div class="print-actions">
@@ -19,7 +16,7 @@
 
     <div class="print-container invoice-template">
         <div class="invoice-title-row">
-            <div class="invoice-title">INVOICE № <span id="invoiceNumber">—</span></div>
+            <div class="invoice-title"><span data-i18n="user_invoice_print_title">Счёт на оплату</span> № <span id="invoiceNumber">—</span></div>
             <div class="invoice-date" id="invoiceDate">—</div>
         </div>
 
@@ -59,15 +56,15 @@
 
         <div class="invoice-totals">
             <div class="totals-row">
-                <span>Total:</span>
+                <span><span data-i18n="invoices_charged">Начислено</span>:</span>
                 <span id="invoiceTotalNet">0.00</span>
             </div>
             <div class="totals-row">
-                <span>VAT:</span>
+                <span><span data-i18n="invoices_vat">НДС</span>:</span>
                 <span id="invoiceTotalVat">0.00</span>
             </div>
             <div class="totals-row totals-strong">
-                <span>Total payment:</span>
+                <span><span data-i18n="invoices_total_to_pay">Итого к оплате</span>:</span>
                 <span id="invoiceTotal">0.00</span>
             </div>
         </div>
@@ -83,6 +80,9 @@
     <script>
         (function () {
             const API_BASE_URL = window.API_BASE_URL || window.BACKEND_API_BASE || 'http://localhost:8000';
+            const resolveLang = () => String((window.i18n && window.i18n.currentLanguage) || localStorage.getItem('language') || 'az').toLowerCase();
+            const localeFromLang = (lang) => (lang === 'az' ? 'az-AZ' : (lang === 'en' ? 'en-US' : 'ru-RU'));
+            let currentInvoice = null;
             
             // Get invoice ID from sessionStorage or URL
             let invoiceId = null;
@@ -189,12 +189,8 @@
                         }))
                     };
 
+                    currentInvoice = invoice;
                     renderInvoice(invoice);
-                    
-                    // Apply translations after rendering
-                    if (window.applyTranslations) {
-                        setTimeout(() => window.applyTranslations(), 100);
-                    }
                 } catch (error) {
                     console.error('Error loading invoice:', error);
                     const lang = localStorage.getItem('language') || 'ru';
@@ -346,6 +342,8 @@
             }
 
             function renderInvoice(invoice) {
+                const lang = resolveLang();
+                const locale = localeFromLang(lang);
                 // Хедер
                 document.getElementById('invoiceNumber').textContent  = invoice.number;
                 const residentNameEl = document.getElementById('invoiceResidentName');
@@ -360,10 +358,7 @@
                         try {
                             const date = new Date(sourceDate);
                             if (!isNaN(date.getTime())) {
-                                const d = String(date.getDate()).padStart(2, '0');
-                                const m = String(date.getMonth() + 1).padStart(2, '0');
-                                const y = date.getFullYear();
-                                dateEl.textContent = `${d}.${m}.${y}`;
+                                dateEl.textContent = date.toLocaleDateString(locale);
                             } else {
                                 dateEl.textContent = sourceDate;
                             }
@@ -377,7 +372,6 @@
                 // Статус с переводом
                 const statusEl = document.getElementById('invoiceStatus');
                 if (statusEl) {
-                    const lang = localStorage.getItem('language') || 'ru';
                     const statusKey = `status_${invoice.status.toLowerCase()}`;
                     const statusText = window.i18n?.translate?.(statusKey, lang) || invoice.status;
                     statusEl.textContent = statusText;
@@ -386,8 +380,6 @@
                 // Срок оплаты с форматированием
                 const dueDateEl = document.getElementById('invoiceDueDate');
                 if (dueDateEl) {
-                    const lang = localStorage.getItem('language') || 'ru';
-                    const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
                     if (invoice.dueDate) {
                         try {
                             const date = new Date(invoice.dueDate);
@@ -413,8 +405,6 @@
                 // Таблица позиций
                 const itemsTbody = document.getElementById('lineItemsTable');
                 if (itemsTbody && invoice.items && invoice.items.length) {
-                    const lang = (window.i18n && window.i18n.currentLanguage) || localStorage.getItem('language') || 'ru';
-
                     let html = invoice.items.map(it => {
                         const parsed = extractConsumption(it.description, lang);
                         const consumedText = parsed.qty
@@ -422,7 +412,7 @@
                             : '—';
                         return `
                             <tr>
-                                <td data-original-description="${it.description}" data-service-key="${parsed.serviceKey || ''}">${parsed.label}</td>
+                                <td>${parsed.label}</td>
                                 <td data-consumed-qty="${parsed.qty || ''}" data-consumed-unit-key="${parsed.unitKey || ''}">${consumedText}</td>
                                 <td>${it.amount.toFixed(2)}</td>
                                 <td>${it.vat.toFixed(2)}</td>
@@ -438,8 +428,6 @@
                 const now = new Date();
                 const el = document.getElementById('generatedDate');
                 if (el) {
-                    const lang = localStorage.getItem('language') || 'ru';
-                    const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
                     el.textContent = now.toLocaleString(locale);
                 }
             }
@@ -449,11 +437,26 @@
                     return { label: '—', serviceKey: '', qty: '', unit: '', unitKey: '' };
                 }
 
-                const isSewerageLine = /^(?:meter_sewerage\b|Канализация(?:\s*\(авто\))?\b)/i.test(String(description).trim());
+                const source = String(description).trim();
+                const openingDebtMatch = source.match(/^(?:Начальный\s+долг|İlkin\s+borc|Opening\s+debt)\s*(?:\(([^)]+)\))?$/i);
+                if (openingDebtMatch) {
+                    const openingLabel = window.i18n?.translate?.('invoice_opening_debt', lang) || 'Opening debt';
+                    const rawCategory = String(openingDebtMatch[1] || '').trim().toLowerCase();
+                    let categoryKey = '';
+                    if (/(utility|коммун|kommunal)/i.test(rawCategory)) categoryKey = 'payments_service_utility';
+                    else if (/(service|сервис|xidmət|xidmet)/i.test(rawCategory)) categoryKey = 'tariffs_purpose_service';
+                    else if (/(rent|аренд|icar)/i.test(rawCategory)) categoryKey = 'tariffs_purpose_rent';
+                    const categoryLabel = categoryKey
+                        ? (window.i18n?.translate?.(categoryKey, lang) || rawCategory)
+                        : '';
+                    const label = categoryLabel ? `${openingLabel} (${categoryLabel})` : openingLabel;
+                    return { label, serviceKey: categoryKey, qty: '', unit: '', unitKey: '' };
+                }
+                const isSewerageLine = /^(?:meter_sewerage\b|канализац|kanaliz|sewerage)/i.test(source);
 
                 // meter_* format (sometimes comes from DB)
                 const keyPattern = /^(meter_[a-z_]+)\s+([\d.]+)\s*(.*)$/i;
-                const keyMatch = description.match(keyPattern);
+                const keyMatch = source.match(keyPattern);
                 if (keyMatch) {
                     const key = keyMatch[1];
                     const qty = keyMatch[2];
@@ -468,30 +471,44 @@
                     return { label, serviceKey: key, qty, unit: unitRaw, unitKey };
                 }
 
+                // meter_* without quantity usually comes as fixed/stable tariff lines
+                const keyOnlyPattern = /^(meter_[a-z_]+)$/i;
+                const keyOnlyMatch = source.match(keyOnlyPattern);
+                if (keyOnlyMatch) {
+                    const key = keyOnlyMatch[1];
+                    if (key === 'meter_sewerage') {
+                        const label = window.i18n?.translate?.(key, lang) || key;
+                        return { label, serviceKey: key, qty: '', unit: '', unitKey: '' };
+                    }
+                    const stableLabel = window.i18n?.translate?.('stable_tariff', lang) || 'Stable tariff';
+                    const serviceLabel = window.i18n?.translate?.(key, lang) || key;
+                    return { label: `${stableLabel} (${serviceLabel})`, serviceKey: key, qty: '', unit: '', unitKey: '' };
+                }
+
                 const patterns = [
                     {
-                        regex: /^Электричество\s+([\d.]+)\s*кВт·ч$/i,
+                        regex: /^(?:Электричество|Elektrik|Electricity)\s+([\d.]+)\s*(?:кВт·ч|kWh)$/i,
                         serviceKey: 'meter_electricity',
                         unitKey: 'user_unit_kwh'
                     },
                     {
-                        regex: /^Вода\s+([\d.]+)\s*м³$/i,
+                        regex: /^(?:Вода|Su|Water)\s+([\d.]+)\s*(?:м³|m³|m3)$/i,
                         serviceKey: 'meter_cold_water',
                         unitKey: 'user_unit_m3'
                     },
                     {
-                        regex: /^Канализация(?:\s*\(авто\))?\s+([\d.]+)\s*м³$/i,
+                        regex: /^(?:Канализация(?:\s*\(авто\))?|Kanalizasiya(?:\s*\(auto\))?|Sewerage(?:\s*\(auto\))?)\s+([\d.]+)\s*(?:м³|m³|m3)$/i,
                         serviceKey: 'meter_sewerage',
                         unitKey: 'user_unit_m3'
                     },
                     {
-                        regex: /^Газ\s+([\d.]+)\s*м³$/i,
+                        regex: /^(?:Газ|Qaz|Gas)\s+([\d.]+)\s*(?:м³|m³|m3)$/i,
                         serviceKey: 'meter_gas',
                         unitKey: 'user_unit_m3'
                     },
                     {
-                        regex: /^Горячая\s+вода\s+([\d.]+)\s*м³$/i,
-                        serviceKey: 'meter_cold_water',
+                        regex: /^(?:Горячая\s+вода|İsti\s+su|Hot\s+water)\s+([\d.]+)\s*(?:м³|m³|m3)$/i,
+                        serviceKey: 'meter_hot_water',
                         unitKey: 'user_unit_m3'
                     }
                 ];
@@ -514,35 +531,56 @@
                     return { label, serviceKey: 'meter_sewerage', qty: '', unit: '', unitKey: '' };
                 }
 
-                // Stable tariff lines (already disambiguated by backend)
-                if (/стабильный тариф/i.test(description)) {
-                    return { label: description, serviceKey: '', qty: '', unit: '', unitKey: '' };
+                const monthlyPurposePatterns = [
+                    { regex: /^(?:Аренда|İcarə|Rent)\s+([\d.]+)\s*(?:мес\.?|ay|month)$/i, key: 'tariffs_purpose_rent' },
+                    { regex: /^(?:Сервис|Услуги|Xidmət|Xidmətlər|Service|Services)\s+([\d.]+)\s*(?:мес\.?|ay|month)$/i, key: 'tariffs_purpose_service' },
+                    { regex: /^(?:Строительство|Tikinti|Construction)\s+([\d.]+)\s*(?:мес\.?|ay|month)$/i, key: 'tariffs_purpose_construction' },
+                ];
+                for (const p of monthlyPurposePatterns) {
+                    const m = source.match(p.regex);
+                    if (m) {
+                        const qty = m[1];
+                        const label = window.i18n?.translate?.(p.key, lang) || p.key;
+                        const unit = window.i18n?.translate?.('readings_unit_month_short', lang) || 'month';
+                        return { label, serviceKey: p.key, qty, unit, unitKey: 'readings_unit_month_short' };
+                    }
                 }
 
-                return { label: description, serviceKey: '', qty: '', unit: '', unitKey: '' };
+                // Stable tariff lines (already disambiguated by backend)
+                if (/(стабильн(?:ый|ая)? тариф|sabit tarif|stable tariff)/i.test(source)) {
+                    let serviceKey = null;
+                    if (/(газ|qaz|gas)/i.test(source)) serviceKey = 'meter_gas';
+                    else if (/(горячая\s+вода|isti\s+su|hot\s+water)/i.test(source)) serviceKey = 'meter_hot_water';
+                    else if (/(вода|su|water)/i.test(source)) serviceKey = 'meter_cold_water';
+                    else if (/(электрич|elektrik|electric)/i.test(source)) serviceKey = 'meter_electricity';
+                    else if (/(канализац|kanaliz|sewerage)/i.test(source)) serviceKey = 'meter_sewerage';
+
+                    const stableLabel = window.i18n?.translate?.('stable_tariff', lang) || 'Stable tariff';
+                    const label = serviceKey
+                        ? `${stableLabel} (${window.i18n?.translate?.(serviceKey, lang) || serviceKey})`
+                        : stableLabel;
+                    return { label, serviceKey: serviceKey || '', qty: '', unit: '', unitKey: '' };
+                }
+
+                return { label: source, serviceKey: '', qty: '', unit: '', unitKey: '' };
             }
 
             // Load invoice data when page is ready
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', () => {
                     loadInvoice();
-                    // Apply translations on initial load
-                    if (window.applyTranslations) {
-                        setTimeout(() => window.applyTranslations(), 500);
-                    }
                 });
             } else {
                 loadInvoice();
-                // Apply translations on initial load
-                if (window.applyTranslations) {
-                    setTimeout(() => window.applyTranslations(), 500);
-                }
             }
             
             // Listen for language changes
             window.addEventListener('languageChanged', () => {
-                if (window.applyTranslations) {
-                    setTimeout(() => window.applyTranslations(), 100);
+                if (currentInvoice) renderInvoice(currentInvoice);
+            });
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'language' && currentInvoice) {
+                    renderInvoice(currentInvoice);
                 }
             });
         })();

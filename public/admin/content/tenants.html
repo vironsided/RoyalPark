@@ -1454,15 +1454,7 @@
 
         // Setup event listeners
         function setupEventListeners() {
-            // Close modal on overlay click
-            const modal = document.getElementById('createTenantModal');
-            if (modal) {
-                modal.addEventListener('click', function (e) {
-                    if (e.target === this) {
-                        window.closeCreateModal();
-                    }
-                });
-            }
+            // Do not close modal on overlay click
 
             // Close modal on Escape key
             document.addEventListener('keydown', function (e) {
@@ -1611,17 +1603,8 @@
             window.open(printUrl, '_blank');
         };
 
-        // Close modal on overlay click and Escape key
+        // Do not close QR modal on overlay click; keep Escape key support
         document.addEventListener('DOMContentLoaded', function () {
-            const qrModal = document.getElementById('qrModal');
-            if (qrModal) {
-                qrModal.addEventListener('click', function (e) {
-                    if (e.target === qrModal) {
-                        closeQRModal();
-                    }
-                });
-            }
-
             document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') {
                     closeQRModal();

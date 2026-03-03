@@ -450,6 +450,7 @@
                                 <div class="account-file-input-wrapper">
                                     <input type="file" id="accountAvatarInput" accept="image/*" style="display: none;">
                                     <button type="button" class="account-file-select-btn" id="accountFileSelectBtn" data-i18n="account_file_select_btn">Выбор файла</button>
+                                    <button type="button" class="account-file-select-btn" id="accountAvatarRemoveBtn" data-i18n="account_avatar_remove_btn" style="display: none;">Удалить фото</button>
                                     <div class="account-file-status" id="accountFileStatus" data-i18n="account_file_no_selected">Не выбран ни один файл</div>
                                 </div>
                             </div>
@@ -949,10 +950,32 @@
                     }
 
                     const data = await response.json();
+                    const localizeNotificationText = (item) => {
+                        const text = String(item?.message || '—');
+                        const type = String(item?.notification_type || '').toUpperCase();
+                        if (type !== 'TARIFF_EXPIRED') return text;
+
+                        const m = text.match(/["“](.+?)["”].*?(\d{2}\.\d{2}\.\d{4})/);
+                        const name = (m && m[1]) ? m[1] : (item?.related_id ? `#${item.related_id}` : '');
+                        const date = (m && m[2]) ? m[2] : '';
+                        const purpose = t('tariffs_purpose_construction', 'Строительство');
+                        const template = t(
+                            'notifications_tariff_expired_template',
+                            'Срок тарифа "{name}" ({purpose}) истёк {date}. Проверьте и обновите период действия.'
+                        );
+                        return template
+                            .replace('{name}', name || '—')
+                            .replace('{purpose}', purpose)
+                            .replace('{date}', date || '—');
+                    };
+
                     notifications = (data.notifications || []).map(n => ({
                         id: n.id,
-                        title: t('notifications_resident_appeal_title', 'Обращение жителя'),
-                        text: n.message || '—',
+                        type: String(n.notification_type || '').toUpperCase(),
+                        title: String(n.notification_type || '').toUpperCase() === 'TARIFF_EXPIRED'
+                            ? t('notifications_system_title', 'Системное уведомление')
+                            : t('notifications_resident_appeal_title', 'Обращение жителя'),
+                        text: localizeNotificationText(n),
                         time: formatTime(n.created_at),
                         unread: n.status === 'UNREAD',
                         status: n.status
@@ -1038,11 +1061,20 @@
                             // помечаем как прочитанное сразу
                             await markNotificationRead(notificationId);
                             closeNotifications();
-                            // Навигация к appeals2 с параметром id
-                            if (window.spaRouter) {
-                                window.spaRouter.navigate(`/appeals2?id=${notificationId}`);
+                            const notif = notifications.find(x => String(x.id) === String(notificationId));
+                            if (notif && notif.type === 'TARIFF_EXPIRED') {
+                                if (window.spaRouter) {
+                                    window.spaRouter.navigate('/tariffs');
+                                } else {
+                                    window.location.hash = '#/tariffs';
+                                }
                             } else {
-                                window.location.hash = `#/appeals2?id=${notificationId}`;
+                                // Навигация к appeals2 с параметром id
+                                if (window.spaRouter) {
+                                    window.spaRouter.navigate(`/appeals2?id=${notificationId}`);
+                                } else {
+                                    window.location.hash = `#/appeals2?id=${notificationId}`;
+                                }
                             }
                         });
                     });
@@ -1154,6 +1186,7 @@
 
             let currentUserData = null;
             let initialAccountState = null;
+            let removeAccountAvatarRequested = false;
 
             async function loadUserProfile() {
                 try {
@@ -1177,6 +1210,7 @@
                     
                     const user = await response.json();
                     currentUserData = user;
+                    removeAccountAvatarRequested = false;
 
                     // Заполняем поля формы
                     const fullNameInput = document.getElementById('accountFullName');
@@ -1187,6 +1221,11 @@
                     if (fullNameInput) fullNameInput.value = user.full_name || '';
                     if (phoneInput) phoneInput.value = user.phone || '';
                     if (emailInput) emailInput.value = user.email || '';
+                    const fileStatusEl = document.getElementById('accountFileStatus');
+                    if (fileStatusEl) {
+                        fileStatusEl.textContent = t('account_file_no_selected', 'Не выбран ни один файл');
+                        fileStatusEl.classList.remove('has-file');
+                    }
 
                     // Обновляем аватар
                     if (avatarPreview) {
@@ -1228,6 +1267,7 @@
 
                     // Обновляем аватар и имя в шапке
                     updateHeaderUserInfo(user);
+                    if (typeof syncRemoveAvatarButtonState === 'function') syncRemoveAvatarButtonState();
 
                     initialAccountState = getAccountState();
                 } catch (error) {
@@ -1311,6 +1351,7 @@
                 const newPassword = document.getElementById('newPassword')?.value || '';
                 const confirmPassword = document.getElementById('confirmPassword')?.value || '';
                 const avatar = document.getElementById('accountAvatarInput')?.files?.length > 0 ? 'has-file' : '';
+                const removeAvatar = removeAccountAvatarRequested ? '1' : '0';
 
                 return {
                     fullName,
@@ -1320,7 +1361,8 @@
                     currentPassword,
                     newPassword,
                     confirmPassword,
-                    avatar
+                    avatar,
+                    removeAvatar
                 };
             }
 
@@ -1349,6 +1391,12 @@
                     // Сбрасываем файл аватара
                     const avatarInput = document.getElementById('accountAvatarInput');
                     if (avatarInput) avatarInput.value = '';
+                    const fileStatusEl = document.getElementById('accountFileStatus');
+                    if (fileStatusEl) {
+                        fileStatusEl.textContent = t('account_file_no_selected', 'Не выбран ни один файл');
+                        fileStatusEl.classList.remove('has-file');
+                    }
+                    removeAccountAvatarRequested = false;
 
                     accountModal.removeEventListener('animationend', onAnimationEnd);
                 };
@@ -1423,7 +1471,17 @@
             const fileSelectBtn = document.getElementById('accountFileSelectBtn');
             const avatarInput = document.getElementById('accountAvatarInput');
             const fileStatus = document.getElementById('accountFileStatus');
+            const removeAvatarBtn = document.getElementById('accountAvatarRemoveBtn');
             const avatarPreview = document.getElementById('accountModalAvatar');
+
+            function syncRemoveAvatarButtonState() {
+                if (!removeAvatarBtn) return;
+                const hasUploadedFile = Boolean(avatarInput && avatarInput.files && avatarInput.files[0]);
+                const hasStoredAvatar = Boolean(currentUserData && currentUserData.avatar_path);
+                const shouldShow = hasUploadedFile || (hasStoredAvatar && !removeAccountAvatarRequested);
+                removeAvatarBtn.style.display = shouldShow ? '' : 'none';
+                removeAvatarBtn.disabled = !shouldShow;
+            }
             
             if (fileSelectBtn && avatarInput) {
                 fileSelectBtn.addEventListener('click', function() {
@@ -1434,6 +1492,7 @@
             if (avatarInput && avatarPreview) {
                 avatarInput.addEventListener('change', function () {
                     const file = this.files && this.files[0];
+                    if (file) removeAccountAvatarRequested = false;
                     
                     // Обновляем статус файла
                     if (fileStatus) {
@@ -1458,6 +1517,7 @@
                         avatarPreview.style.backgroundSize = '';
                         avatarPreview.style.backgroundPosition = '';
                         avatarPreview.style.backgroundRepeat = '';
+                        syncRemoveAvatarButtonState();
                         return;
                     }
                     const reader = new FileReader();
@@ -1468,6 +1528,7 @@
                         avatarPreview.style.backgroundPosition = 'center';
                         avatarPreview.style.backgroundRepeat = 'no-repeat';
                         avatarPreview.textContent = '';
+                        syncRemoveAvatarButtonState();
                     };
                     reader.onerror = function() {
                         // Если ошибка чтения файла, показываем инициалы
@@ -1481,10 +1542,37 @@
                         avatarPreview.style.backgroundSize = '';
                         avatarPreview.style.backgroundPosition = '';
                         avatarPreview.style.backgroundRepeat = '';
+                        syncRemoveAvatarButtonState();
                     };
                     reader.readAsDataURL(file);
                 });
             }
+
+            if (removeAvatarBtn) {
+                removeAvatarBtn.addEventListener('click', function () {
+                    const hasUploadedFile = Boolean(avatarInput && avatarInput.files && avatarInput.files[0]);
+                    const hasStoredAvatar = Boolean(currentUserData && currentUserData.avatar_path);
+                    if (!hasUploadedFile && !hasStoredAvatar) return;
+
+                    removeAccountAvatarRequested = true;
+                    if (avatarInput) avatarInput.value = '';
+
+                    if (fileStatus) {
+                        fileStatus.textContent = t('account_avatar_remove_pending', 'Фото будет удалено после сохранения');
+                        fileStatus.classList.remove('has-file');
+                    }
+
+                    const initials = (currentUserData?.full_name || currentUserData?.username || 'U').substring(0, 2).toUpperCase();
+                    avatarPreview.textContent = initials;
+                    avatarPreview.style.backgroundImage = '';
+                    avatarPreview.style.background = '';
+                    avatarPreview.style.backgroundSize = '';
+                    avatarPreview.style.backgroundPosition = '';
+                    avatarPreview.style.backgroundRepeat = '';
+                    syncRemoveAvatarButtonState();
+                });
+            }
+            syncRemoveAvatarButtonState();
 
             const changePasswordBtn = document.getElementById('changePasswordBtn');
             if (changePasswordBtn) {
@@ -1621,6 +1709,7 @@
                         formData.append('full_name', fullName);
                         formData.append('phone', phone);
                         formData.append('email', email);
+                        formData.append('remove_avatar', removeAccountAvatarRequested ? '1' : '0');
 
                         if (avatarInput && avatarInput.files && avatarInput.files[0]) {
                             formData.append('avatar', avatarInput.files[0]);
@@ -1657,6 +1746,7 @@
 
                         const updatedUser = await response.json();
                         currentUserData = updatedUser;
+                        removeAccountAvatarRequested = false;
 
                         // Обновляем аватар в превью
                         const avatarPreview = document.getElementById('accountModalAvatar');
@@ -1708,6 +1798,7 @@
 
                         // Обновляем начальное состояние
                         initialAccountState = getAccountState();
+                        syncRemoveAvatarButtonState();
                         closeAccountModal();
                     } catch (error) {
                         console.error('Error saving profile:', error);

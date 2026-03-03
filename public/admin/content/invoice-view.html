@@ -407,7 +407,8 @@
                     if (s.includes('канал') || s.includes('sewerage') || s.includes('kanal')) return 'meter_sewerage';
                     if (s.includes('аренд') || s.includes('rent') || s.includes('icar')) return 'tariffs_purpose_rent';
                     if (s.includes('строит') || s.includes('construction') || s.includes('tikint')) return 'tariffs_purpose_construction';
-                    if (s.includes('сервис') || s.includes('service') || s.includes('xidmət') || s.includes('xidmet') || s.includes('utility')) return 'tariffs_purpose_service';
+                    if (s.includes('utility')) return 'payments_service_utility';
+                    if (s.includes('сервис') || s.includes('service') || s.includes('xidmət') || s.includes('xidmet')) return 'tariffs_purpose_service';
                     return '';
                 }
 
@@ -423,6 +424,19 @@
                     }
                     const unit = unitKey ? (window.i18n?.translate?.(unitKey, lang) || unitRaw) : unitRaw;
                     return { label, consumed: `${qty} ${unit}`.trim(), serviceKey: key, qty, unitKey };
+                }
+
+                // meter_* without qty is treated as fixed/stable tariff line
+                const keyOnlyMatch = descStr.match(/^(meter_[a-z_]+)$/i);
+                if (keyOnlyMatch) {
+                    const key = keyOnlyMatch[1];
+                    if (key === 'meter_sewerage') {
+                        const label = window.i18n?.translate?.(key, lang) || key;
+                        return { label, consumed: '—', serviceKey: key, qty: '', unitKey: '' };
+                    }
+                    const stableLabel = window.i18n?.translate?.('stable_tariff', lang) || 'Стабильный тариф';
+                    const svc = window.i18n?.translate?.(key, lang) || key;
+                    return { label: `${stableLabel} (${svc})`, consumed: '—', serviceKey: '', qty: '', unitKey: '' };
                 }
 
                 // Stable tariff lines in RU/AZ/EN
@@ -507,8 +521,26 @@
             // Render line items
             const tbody = document.getElementById('lineItemsTable');
             if (invoice.lineItems && invoice.lineItems.length > 0) {
-                let html = invoice.lineItems.map(item => {
-                    const parsed = _extractConsumption(item.description || '');
+                const parsedRows = invoice.lineItems.map((item) => ({
+                    item,
+                    parsed: _extractConsumption(item.description || '')
+                }));
+                const stableEligibleServiceKeys = new Set([
+                    'meter_electricity',
+                    'meter_gas',
+                    'meter_cold_water',
+                    'meter_hot_water',
+                    'tariffs_purpose_service',
+                    'tariffs_purpose_rent',
+                    'tariffs_purpose_construction'
+                ]);
+                const servicesWithVariablePart = new Set(
+                    parsedRows
+                        .filter(r => stableEligibleServiceKeys.has(r.parsed.serviceKey) && r.parsed.consumed !== '—')
+                        .map(r => r.parsed.serviceKey)
+                );
+
+                let html = parsedRows.map(({ item, parsed }) => {
                     const totalAmount = Number(item.amount_total || 0);
                     const paidAmount = Math.max(0, Number(item.paid_amount || 0));
                     const paymentStatus = item.payment_status || '';
@@ -535,9 +567,24 @@
                     const paidMeta = paidMetaTemplate
                         .replace('{paid}', paidAmount.toFixed(2))
                         .replace('{total}', totalAmount.toFixed(2));
+
+                    let displayLabel = parsed.label;
+                    let displayServiceKey = parsed.serviceKey || '';
+                    const isStandaloneStableLike =
+                        stableEligibleServiceKeys.has(parsed.serviceKey)
+                        && parsed.consumed === '—'
+                        && servicesWithVariablePart.has(parsed.serviceKey);
+                    if (isStandaloneStableLike) {
+                        const stableLabel = t('stable_tariff', 'Стабильный тариф');
+                        const serviceLabel = t(parsed.serviceKey, parsed.label || parsed.serviceKey);
+                        displayLabel = `${stableLabel} (${serviceLabel})`;
+                        // Prevent global post-translation from collapsing label back to service only.
+                        displayServiceKey = '';
+                    }
+
                     return `
                 <tr>
-                    <td data-original-description="${item.description || ''}" data-service-key="${parsed.serviceKey || ''}">${parsed.label}</td>
+                    <td data-original-description="${item.description || ''}" data-service-key="${displayServiceKey}">${displayLabel}</td>
                     <td data-consumed-qty="${parsed.qty || ''}" data-consumed-unit-key="${parsed.unitKey || ''}">${parsed.consumed}</td>
                     <td>${(item.amount_net || 0).toFixed(2)}</td>
                     <td>${(item.amount_vat || 0).toFixed(2)}</td>

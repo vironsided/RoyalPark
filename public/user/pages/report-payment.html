@@ -1884,12 +1884,8 @@ async function submitPayment(event) {
         const selectedRemainingTotal = await fetchSelectedLinesRemainingTotal(invoiceId, selectedLineIds);
         if (selectedRemainingTotal !== null) {
             if (useCustomAmount) {
-                if (amount > selectedRemainingTotal) {
-                    amount = selectedRemainingTotal;
-                    if (customAmountInput) {
-                        customAmountInput.value = String(selectedRemainingTotal.toFixed(2));
-                    }
-                }
+                // В режиме custom amount НЕ режем сумму до выбранных строк:
+                // backend применит к строкам только их остаток, а излишек останется авансом.
             } else {
                 amount = selectedRemainingTotal;
             }

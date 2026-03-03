@@ -177,6 +177,7 @@
                         </div>
                         <div class="service-filter-actions">
                             <button type="button" class="btn-filter-mini" id="exportMeterSelectAllBtn" data-i18n="readings_select_all">Выбрать все</button>
+                            <button type="button" class="btn-filter-mini" id="exportMeterOkBtn">OK</button>
                             <button type="button" class="btn-filter-mini" id="exportMeterClearBtn" data-i18n="user_resident_reset_btn">Очистить</button>
                         </div>
                     </div>
@@ -641,6 +642,26 @@
 
         console.log('Rendering', readingsData.rows.length, 'rows');
 
+        function translateMeterUnit(unitRaw) {
+            const src = String(unitRaw || '').trim();
+            if (!src) return '';
+            const low = src.toLowerCase();
+            if (/квт|kwh|kvt|kvt·s|kvt-saat/.test(low)) return t('user_unit_kwh', src);
+            if (/м³|m3|m³/.test(low)) return t('user_unit_m3', src);
+            if (/мес|month|ay/.test(low)) return t('readings_unit_month_short', src);
+            return src;
+        }
+
+        function translateResidentInfo(rawInfo) {
+            let text = String(rawInfo || '').trim();
+            if (!text) return '—';
+            text = text.replace(/(?:блок|blok|block)/gi, t('residents_filter_block', 'Блок'));
+            text = text.replace(/(?:дом|ev|house)/gi, t('residents_col_house', '№ дома'));
+            text = text.replace(/(?:фио|ad soyad|full name)/gi, t('residents_col_name', 'ФИО жителя'));
+            text = text.replace(/(?:телефон|telefon|phone)/gi, t('phone', 'Телефон'));
+            return text;
+        }
+
         let totalAmount = 0;
         const rowsHtmlArray = readingsData.rows.map((row, index) => {
             console.log(`Processing row ${index}:`, row);
@@ -659,30 +680,31 @@
                 let meterTypeLabel = rawType;
                 let isFixedType = false;
 
-                if (typeUpper === 'ELECTRIC' || typeLower.includes('электр')) {
+                if (typeUpper === 'ELECTRIC' || typeLower.includes('электр') || typeLower.includes('elektr') || typeLower.includes('electric')) {
                     meterTypeLabel = t('meter_electricity', 'Электричество');
-                } else if (typeUpper === 'GAS' || typeLower.includes('газ')) {
+                } else if (typeUpper === 'GAS' || typeLower.includes('газ') || typeLower.includes('qaz') || typeLower.includes('gas')) {
                     meterTypeLabel = t('meter_gas', 'Газ');
-                } else if (typeUpper === 'WATER' || typeLower.includes('вода')) {
+                } else if (typeUpper === 'WATER' || typeLower.includes('вода') || typeLower.includes('su') || typeLower.includes('water')) {
                     meterTypeLabel = t('meter_cold_water', 'Вода');
-                } else if (typeUpper === 'SEWERAGE' || typeLower.includes('канал')) {
+                } else if (typeUpper === 'SEWERAGE' || typeLower.includes('канал') || typeLower.includes('kanaliz') || typeLower.includes('sewerage')) {
                     meterTypeLabel = t('readings_meter_sewerage', 'Канализация');
-                } else if (typeUpper === 'SERVICE' || typeLower.includes('сервис')) {
+                } else if (typeUpper === 'SERVICE' || typeLower.includes('сервис') || typeLower.includes('xidmət') || typeLower.includes('service')) {
                     meterTypeLabel = t('tariffs_purpose_service', 'Сервис');
                     isFixedType = true;
-                } else if (typeUpper === 'RENT' || typeLower.includes('аренд')) {
+                } else if (typeUpper === 'RENT' || typeLower.includes('аренд') || typeLower.includes('icar') || typeLower.includes('rent')) {
                     meterTypeLabel = t('tariffs_purpose_rent', 'Аренда');
                     isFixedType = true;
-                } else if (typeUpper === 'CONSTRUCTION' || typeLower.includes('строит')) {
+                } else if (typeUpper === 'CONSTRUCTION' || typeLower.includes('строит') || typeLower.includes('tikinti') || typeLower.includes('construction')) {
                     meterTypeLabel = t('tariffs_purpose_construction', 'Строительство');
                     isFixedType = true;
                 }
 
+                const unitTranslated = translateMeterUnit(m.unit);
                 const chipClass = isFixedType ? 'meter-chip chip-warning' : 'meter-chip';
                 return `
                         <div class="meter-item">
                             <span class="${chipClass}">${meterTypeLabel}</span>
-                            <span class="meter-value">${m.consumption.toFixed(3)} ${m.unit}</span>
+                            <span class="meter-value">${m.consumption.toFixed(3)} ${unitTranslated}</span>
                         </div>
                     `;
             }).join('');
@@ -709,13 +731,14 @@
 
             const readingKey = `${row.block_name.toLowerCase()}_${row.unit_number}`;
             const residentTotal = row.total_amount || 0;
+            const residentInfoTranslated = translateResidentInfo(row.resident_info);
             return `
                     <div class="reading-row-scroll">
                     <div class="reading-row" data-reading-key="${readingKey}" data-resident-id="${row.resident_id}">
                         <div class="reading-col reading-col-resident">
                             <div class="resident-badge">
                                 <span class="resident-code">${row.resident_code}</span>
-                                <span class="resident-info">${row.resident_info}</span>
+                                <span class="resident-info">${residentInfoTranslated}</span>
                             </div>
                         </div>
                         <div class="reading-col">
@@ -1185,6 +1208,7 @@
 
         const allBox = document.getElementById('exportMeterTypeAll');
         const selectAllBtn = document.getElementById('exportMeterSelectAllBtn');
+        const okBtn = document.getElementById('exportMeterOkBtn');
         const clearBtn = document.getElementById('exportMeterClearBtn');
         const boxes = Array.from(document.querySelectorAll('#exportFilterMeterTypeDetails .export-meter-type-checkbox'));
         if (!allBox || boxes.length === 0) return;
@@ -1238,6 +1262,14 @@
                 updateExportMeterTypeSummary();
             };
             clearBtn.addEventListener('click', clearBtn._clickHandler);
+        }
+
+        if (okBtn) {
+            if (okBtn._clickHandler) okBtn.removeEventListener('click', okBtn._clickHandler);
+            okBtn._clickHandler = function () {
+                details.open = false;
+            };
+            okBtn.addEventListener('click', okBtn._clickHandler);
         }
 
         applyExportUtilityMeterTypeRules();
@@ -1803,21 +1835,7 @@
         }
     }
 
-    // Close modal on overlay click
-    document.getElementById('recordReadingModal').addEventListener('click', function (e) {
-        if (e.target === this) {
-            closeRecordModal();
-        }
-    });
-
-    const detailsModal = document.getElementById('readingDetailsModal');
-    if (detailsModal) {
-        detailsModal.addEventListener('click', function (e) {
-            if (e.target === this) {
-                closeReadingDetails();
-            }
-        });
-    }
+    // Do not close modals on overlay click
 
     // Close modal on Escape key
     document.addEventListener('keydown', function (e) {
