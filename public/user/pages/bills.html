@@ -70,7 +70,7 @@
 <script>
     (function() {
         'use strict';
-        const API_BASE_URL = window.API_BASE_URL || window.BACKEND_API_BASE || 'http://localhost:8000';
+        const API_BASE_URL = window.getApiBase ? window.getApiBase() : (window.API_BASE_URL || window.BACKEND_API_BASE || 'http://localhost:8000');
         
         // Если пришли со страницы оплаты, там могли сохранить:
         // - список id счетов, которые нужно показать (например, «Несколько счетов (3)»)
@@ -214,7 +214,9 @@
             // Render invoices in table
             function renderInvoices(invoices) {
             if (!invoices || invoices.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Счетов не найдено</td></tr>';
+                const lang = localStorage.getItem('language') || 'ru';
+                const emptyText = window.i18n?.translate?.('user_bills_empty', lang) || 'Счетов не найдено';
+                tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted" data-i18n="user_bills_empty">${emptyText}</td></tr>`;
                 return;
             }
 
@@ -234,7 +236,9 @@
                      'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'][inv.period_month - 1];
                 let periodText = `${monthName} ${inv.period_year}`;
                 if (inv.period_dates && inv.period_dates.from && inv.period_dates.to) {
-                    periodText = `${inv.period_dates.from} - ${inv.period_dates.to}`;
+                    periodText = inv.period_dates.from === inv.period_dates.to
+                        ? inv.period_dates.to
+                        : `${inv.period_dates.from} - ${inv.period_dates.to}`;
                 } else if (inv.period_dates && inv.period_dates.to) {
                     periodText = inv.period_dates.to;
                 }

@@ -537,6 +537,9 @@
     <!-- Theme Management -->
     <script src="/js/theme.js"></script>
 
+    <!-- Global App Config -->
+    <script src="/js/config.js"></script>
+
     <!-- Language Management -->
     <script src="/js/i18n.js"></script>
     <script src="/js/i18n-auto.js"></script>
@@ -549,13 +552,15 @@
 
     <!-- Initialize Theme Toggle and Language Selector -->
     <script>
+        const APP_API_BASE = window.getApiBase ? window.getApiBase() : (window.BACKEND_API_BASE || 'http://localhost:8000');
+
         // Session validation - redirect to login if not authenticated
         (async function checkSession() {
             // Hide body until session is validated
             document.body.style.visibility = 'hidden';
             
             try {
-                const response = await fetch('http://localhost:8000/api/auth/check', {
+                const response = await fetch(`${APP_API_BASE}/api/auth/check`, {
                     credentials: 'include'
                 });
                 if (!response.ok) {
@@ -619,7 +624,7 @@
 
         async function updateAppealsBadge() {
             try {
-                const response = await fetch('http://localhost:8000/api/notifications/unread-count');
+                const response = await fetch(`${APP_API_BASE}/api/notifications/unread-count`);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const data = await response.json();
                 const unreadCount = data.count || 0;
@@ -639,8 +644,8 @@
             // Загружаем количество непрочитанных обращений
             updateAppealsBadge();
 
-            // Обновляем каждые 30 секунд
-            setInterval(updateAppealsBadge, 30000);
+            // Обновляем чаще, чтобы обращения и системные уведомления приходили быстрее (каждые 10 секунд)
+            setInterval(updateAppealsBadge, 10000);
 
             // Language Selector Buttons
             const langButtons = document.querySelectorAll('.lang-btn');
@@ -859,7 +864,7 @@
 
                     try {
                         // Call backend logout to clear session cookie
-                        await fetch('http://localhost:8000/api/auth/logout', {
+                        await fetch(`${APP_API_BASE}/api/auth/logout`, {
                             method: 'POST',
                             credentials: 'include'
                         });
@@ -896,7 +901,7 @@
 
             // API Configuration
             if (typeof window.API_BASE === 'undefined') {
-                window.API_BASE = window.BACKEND_API_BASE || 'http://localhost:8000';
+                window.API_BASE = APP_API_BASE;
             }
             const API_BASE = window.API_BASE;
 
@@ -905,9 +910,42 @@
             const t = (key, fallback = '') => window.i18n?.translate?.(key) || fallback || key;
 
             // Форматирование времени
+            function parseServerDate(dateStr) {
+                if (!dateStr) return null;
+                let s = String(dateStr).trim();
+                if (!s) return null;
+
+                if (s.indexOf('T') === -1 && s.indexOf(' ') !== -1) {
+                    s = s.replace(' ', 'T');
+                }
+
+                const hasTimezone = /Z$|[+-]\d{2}:?\d{2}$/.test(s);
+                if (!hasTimezone) {
+                    s = `${s}Z`;
+                }
+
+                let d = new Date(s);
+                if (!isNaN(d.getTime())) {
+                    return d;
+                }
+
+                const m = s.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+                if (m) {
+                    const year = parseInt(m[1], 10);
+                    const month = parseInt(m[2], 10) - 1;
+                    const day = parseInt(m[3], 10);
+                    const hour = parseInt(m[4], 10);
+                    const minute = parseInt(m[5], 10);
+                    const second = m[6] ? parseInt(m[6], 10) : 0;
+                    d = new Date(Date.UTC(year, month, day, hour, minute, second));
+                }
+
+                return isNaN(d.getTime()) ? null : d;
+            }
+
             function formatTime(dateStr) {
-                if (!dateStr) return '—';
-                const date = new Date(dateStr);
+                const date = parseServerDate(dateStr);
+                if (!date) return '—';
                 const now = new Date();
                 const diffMs = now - date;
                 const diffMins = Math.floor(diffMs / 60000);
@@ -1164,8 +1202,8 @@
 
             // Загружаем уведомления при загрузке страницы
             loadNotifications();
-            // Обновляем каждые 30 секунд
-            setInterval(loadNotifications, 30000);
+            // Обновляем чаще, чтобы административные уведомления приходили быстрее (каждые 10 секунд)
+            setInterval(loadNotifications, 10000);
 
             // Expose API
             window.AdminNotifications = {
@@ -1790,10 +1828,12 @@
                         // Обновляем данные в шапке
                         updateHeaderUserInfo(updatedUser);
 
+                        const lang = localStorage.getItem('language') || 'az';
+                        const successText = window.i18n?.translate?.('account_profile_saved_success', lang) || 'Настройки сохранены!';
                         if (window.showSuccess) {
-                            showSuccess('Настройки сохранены!');
+                            showSuccess(successText);
                         } else {
-                            alert('Настройки сохранены!');
+                            alert(successText);
                         }
 
                         // Обновляем начальное состояние

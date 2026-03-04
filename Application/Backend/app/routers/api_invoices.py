@@ -5,7 +5,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, and_
 
 from ..database import get_db
 from ..models import (
@@ -125,7 +125,8 @@ def _list_invoices_internal(
     
     items = (
         query
-        .order_by(Invoice.period_year.desc(), Invoice.period_month.desc(), Invoice.id.desc())
+        # Показываем самые новые счета первыми
+        .order_by(Invoice.id.desc())
         .offset((page - 1) * per_page)
         .limit(per_page)
         .all()
@@ -946,6 +947,37 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
             end_str = row.max_curr.date().strftime('%d.%m.%Y')
             start_str = row.min_prev.date().strftime('%d.%m.%Y') if row.min_prev else None
             period_dates = {"from": start_str, "to": end_str}
+
+    # Align admin invoice detail/print period with bills list chaining:
+    # start = end of previous invoice for same resident (if exists), else raw start.
+    if period_dates and inv.resident_id:
+        prev_inv = (
+            db.query(Invoice)
+            .filter(
+                Invoice.resident_id == inv.resident_id,
+                or_(
+                    Invoice.period_year < inv.period_year,
+                    and_(
+                        Invoice.period_year == inv.period_year,
+                        or_(
+                            Invoice.period_month < inv.period_month,
+                            and_(Invoice.period_month == inv.period_month, Invoice.id < inv.id),
+                        ),
+                    ),
+                ),
+            )
+            .order_by(Invoice.period_year.desc(), Invoice.period_month.desc(), Invoice.id.desc())
+            .first()
+        )
+        if prev_inv:
+            prev_end_dt = (
+                db.query(func.max(MeterReading.reading_date))
+                .join(InvoiceLine, InvoiceLine.meter_reading_id == MeterReading.id)
+                .filter(InvoiceLine.invoice_id == prev_inv.id)
+                .scalar()
+            )
+            if prev_end_dt:
+                period_dates["from"] = prev_end_dt.date().strftime('%d.%m.%Y')
 
     resident_user_names = _resident_user_names_map(db, [int(inv.resident_id)]) if inv.resident_id else {}
     resident_user_phones = _resident_user_phones_map(db, [int(inv.resident_id)]) if inv.resident_id else {}

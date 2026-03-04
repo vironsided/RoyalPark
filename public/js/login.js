@@ -1,6 +1,7 @@
 // 🔥 LOGIN PAGE JAVASCRIPT - Backend Integration 🔥
 
 document.addEventListener('DOMContentLoaded', function() {
+    const API_BASE = window.getApiBase ? window.getApiBase() : (window.BACKEND_API_BASE || 'http://localhost:8000');
     // Initialize animations
     initParticles();
     addRippleEffect();
@@ -58,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             // API call to backend
-            const response = await fetch('http://localhost:8000/api/auth/login', {
+            const response = await fetch(`${API_BASE}/api/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

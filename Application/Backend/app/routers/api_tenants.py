@@ -105,9 +105,11 @@ def _list_tenants_internal(
     if page > last_page:
         page = last_page
 
+    # Новые жители (тенанты) должны отображаться первыми,
+    # поэтому сортируем по id по убыванию.
     tenants = (
         query.options(joinedload(User.resident_links))
-        .order_by(User.id.asc())
+        .order_by(User.id.desc())
         .offset((page - 1) * per_page)
         .limit(per_page)
         .all()

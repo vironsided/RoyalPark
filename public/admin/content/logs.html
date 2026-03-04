@@ -113,7 +113,7 @@
 (function() {
     'use strict';
     
-    const API_BASE = 'http://localhost:8000';
+    const API_BASE = window.getApiBase ? window.getApiBase() : (window.BACKEND_API_BASE || 'http://localhost:8000');
     const t = (key, fallback = '') => window.i18n?.translate?.(key) || fallback || key;
     
     // Pagination state
@@ -292,6 +292,39 @@
         return value;
     }
 
+    function parseLogServerDate(dateString) {
+        if (!dateString) return null;
+        let s = String(dateString).trim();
+        if (!s) return null;
+
+        if (s.indexOf('T') === -1 && s.indexOf(' ') !== -1) {
+            s = s.replace(' ', 'T');
+        }
+
+        const hasTimezone = /Z$|[+-]\d{2}:?\d{2}$/.test(s);
+        if (!hasTimezone) {
+            s = `${s}Z`;
+        }
+
+        let d = new Date(s);
+        if (!isNaN(d.getTime())) {
+            return d;
+        }
+
+        const m = s.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+        if (m) {
+            const year = parseInt(m[1], 10);
+            const month = parseInt(m[2], 10) - 1;
+            const day = parseInt(m[3], 10);
+            const hour = parseInt(m[4], 10);
+            const minute = parseInt(m[5], 10);
+            const second = m[6] ? parseInt(m[6], 10) : 0;
+            d = new Date(Date.UTC(year, month, day, hour, minute, second));
+        }
+
+        return isNaN(d.getTime()) ? null : d;
+    }
+
     function renderLogs(logs) {
         const tbody = document.getElementById('logsTableBody');
         if (!tbody) return;
@@ -300,16 +333,22 @@
             tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">' + t('logs_empty', 'Нет логов') + '</td></tr>';
             return;
         }
-        
+        const lang = (localStorage.getItem('language') || 'az').toLowerCase();
+        const locale = lang === 'ru' ? 'ru-RU' : (lang === 'en' ? 'en-US' : 'az-AZ');
+
         tbody.innerHTML = logs.map(log => {
             const actionInfo = normalizeLogAction(log.action);
             const actionText = actionInfo.key ? t(actionInfo.key, log.action || '') : (log.action || '');
             const meterText = localizeLogMeter(log.meter);
+            const dt = log.date_time ? parseLogServerDate(log.date_time) : null;
+            const dateDisplay = dt && !isNaN(dt.getTime())
+                ? dt.toLocaleString(locale)
+                : (log.date_time || '—');
             
             return `
                 <tr>
                     <td>${log.id}</td>
-                    <td>${log.date_time}</td>
+                    <td>${dateDisplay}</td>
                     <td><span class="badge ${actionInfo.className}"${actionInfo.key ? ` data-i18n="${actionInfo.key}"` : ''}>${actionText}</span></td>
                     <td>${log.resident}</td>
                     <td>${meterText}</td>

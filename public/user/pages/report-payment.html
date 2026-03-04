@@ -368,7 +368,7 @@
 
 <script>
 // API Configuration (используем var, чтобы избежать ошибок при повторной загрузке через SPA)
-var API_BASE = window.BACKEND_API_BASE || 'http://localhost:8000';
+var API_BASE = window.getApiBase ? window.getApiBase() : (window.BACKEND_API_BASE || 'http://localhost:8000');
 var BIN_LOOKUP_URL = API_BASE + '/api/payment/bin-lookup';
 // Флаг демо-режима оплаты: true — имитация платежа без реального запроса на backend
 var ENABLE_FAKE_PAYMENT = false;
@@ -1075,7 +1075,9 @@ async function loadPaymentInvoices(scope, residentCode, preferredAmount = null, 
             } else if (scope === 'invoice' && (selectedInvoice || targetInvoices.length > 0)) {
                 const inv = selectedInvoice || targetInvoices[0];
                 if (inv?.period_dates?.from && inv?.period_dates?.to) {
-                    paymentDateEl.textContent = `${inv.period_dates.from} - ${inv.period_dates.to}`;
+                    paymentDateEl.textContent = inv.period_dates.from === inv.period_dates.to
+                        ? inv.period_dates.to
+                        : `${inv.period_dates.from} - ${inv.period_dates.to}`;
                 } else if (inv?.period_year && inv?.period_month) {
                     const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
                     const mName = monthNames[inv.period_month - 1] || inv.period_month;
@@ -1150,7 +1152,9 @@ async function loadPaymentInvoices(scope, residentCode, preferredAmount = null, 
                 }
                 } else if (first) {
                     if (first.period_dates && first.period_dates.from && first.period_dates.to) {
-                        paymentDateEl.textContent = `${first.period_dates.from} — ${first.period_dates.to}`;
+                        paymentDateEl.textContent = first.period_dates.from === first.period_dates.to
+                            ? first.period_dates.to
+                            : `${first.period_dates.from} — ${first.period_dates.to}`;
                     } else if (first.period_year && first.period_month) {
                         const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
                         const mName = monthNames[first.period_month - 1] || first.period_month;

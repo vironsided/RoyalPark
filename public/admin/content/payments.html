@@ -236,7 +236,7 @@
 
 <script>
 (function(){
-    const API_BASE = 'http://localhost:8000';
+    const API_BASE = window.getApiBase ? window.getApiBase() : (window.BACKEND_API_BASE || 'http://localhost:8000');
     const t = (key, fallback = '') => window.i18n?.translate?.(key) || fallback || key;
     function isPaymentsRoute() {
         const route = String(window.spaRouter?.currentRoute || window.location.hash.replace('#', '') || '');

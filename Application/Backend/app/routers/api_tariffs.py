@@ -257,7 +257,8 @@ def list_tariffs_public(
         needle = q.strip().lower()
         query = [t for t in query if needle in t.name.lower()]
     
-    tariffs = sorted(query, key=lambda t: t.id)
+    # Новые тарифы должны идти первыми, поэтому сортируем по id по убыванию.
+    tariffs = sorted(query, key=lambda t: t.id, reverse=True)
     return tariffs
 
 
@@ -301,7 +302,8 @@ def list_tariffs_api(
         needle = q.strip().lower()
         query = [t for t in query if needle in t.name.lower()]
     
-    tariffs = sorted(query, key=lambda t: t.id)
+    # Новые тарифы должны идти первыми, поэтому сортируем по id по убыванию.
+    tariffs = sorted(query, key=lambda t: t.id, reverse=True)
     return tariffs
 
 

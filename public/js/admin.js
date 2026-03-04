@@ -1092,7 +1092,7 @@ window.issueMonthlyInvoices = async function() {
 };
 
 async function performMonthlyNotifyAll(dueDate) {
-    const API_BASE = window.API_BASE || window.BACKEND_API_BASE || 'http://localhost:8000';
+    const API_BASE = window.getApiBase ? window.getApiBase() : (window.API_BASE || window.BACKEND_API_BASE || 'http://localhost:8000');
     
     try {
         const payload = {

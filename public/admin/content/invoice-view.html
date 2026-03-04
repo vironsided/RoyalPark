@@ -164,7 +164,7 @@
 
 <script>
     (function () {
-        const API_BASE = 'http://localhost:8000';
+        const API_BASE = window.getApiBase ? window.getApiBase() : (window.BACKEND_API_BASE || 'http://localhost:8000');
         const t = (key, fallback = '') => window.i18n?.translate?.(key) || fallback || key;
 
         // URL params - need to be accessible globally
@@ -735,10 +735,12 @@
                     throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
                 }
 
-                const result = await response.json();
+                await response.json();
 
                 if (typeof showSuccess === 'function') {
-                    showSuccess(result.message || t('invoices_save_success', 'Счёт успешно обновлён!'));
+                    const lang = localStorage.getItem('language') || 'az';
+                    const successText = window.i18n?.translate?.('invoices_save_success', lang) || t('invoices_save_success', 'Счёт успешно обновлён!');
+                    showSuccess(successText);
                 }
 
                 // Reload invoice data
@@ -857,10 +859,12 @@
                     throw new Error(errorData.detail || `HTTP ${response.status}`);
                 }
 
-                const result = await response.json();
+                await response.json();
 
                 if (typeof showSuccess === 'function') {
-                    showSuccess(result.message || t('invoices_cancelled_success', 'Счёт отменён!'));
+                    const lang = localStorage.getItem('language') || 'az';
+                    const successText = window.i18n?.translate?.('invoices_cancelled_success', lang) || t('invoices_cancelled_success', 'Счёт отменён!');
+                    showSuccess(successText);
                 }
 
                 closeCancelModal();
@@ -1013,10 +1017,12 @@
                     throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
                 }
 
-                const result = await response.json();
+                await response.json();
 
                 if (typeof showSuccess === 'function') {
-                    showSuccess(result.message || t('invoices_reissue_success', 'Счёт выставлен заново!'));
+                    const lang = localStorage.getItem('language') || 'az';
+                    const successText = window.i18n?.translate?.('invoices_reissue_success', lang) || t('invoices_reissue_success', 'Счёт выставлен заново!');
+                    showSuccess(successText);
                 }
 
                 // Reload invoice data

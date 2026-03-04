@@ -296,7 +296,7 @@
     </div>
 
 <script>
-        const API_BASE = 'http://localhost:8000';
+        const API_BASE = window.getApiBase ? window.getApiBase() : (window.BACKEND_API_BASE || 'http://localhost:8000');
         const t = (key, fallback = '') => window.i18n?.translate?.(key) || fallback || key;
         const tr = (key, params = {}, fallback = '') => {
             const base = t(key, fallback);

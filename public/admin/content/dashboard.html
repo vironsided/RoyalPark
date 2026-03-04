@@ -109,7 +109,7 @@
     (function () {
         'use strict';
 
-        const API_BASE = 'http://localhost:8000';
+        const API_BASE = window.getApiBase ? window.getApiBase() : (window.BACKEND_API_BASE || 'http://localhost:8000');
         const getActiveLang = () => localStorage.getItem('language') || window.i18n?.currentLanguage || 'az';
         const t = (key, fallback = '') => window.i18n?.translate?.(key, getActiveLang()) || fallback || key;
         let recentPaymentsCache = [];

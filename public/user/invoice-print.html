@@ -75,11 +75,12 @@
         </div>
     </div>
 
+    <script src="/js/config.js"></script>
     <script src="/js/i18n.js"></script>
     <script src="/js/i18n-auto.js"></script>
     <script>
         (function () {
-            const API_BASE_URL = window.API_BASE_URL || window.BACKEND_API_BASE || 'http://localhost:8000';
+            const API_BASE_URL = window.getApiBase ? window.getApiBase() : (window.API_BASE_URL || window.BACKEND_API_BASE || 'http://localhost:8000');
             const resolveLang = () => String((window.i18n && window.i18n.currentLanguage) || localStorage.getItem('language') || 'az').toLowerCase();
             const localeFromLang = (lang) => (lang === 'az' ? 'az-AZ' : (lang === 'en' ? 'en-US' : 'ru-RU'));
             let currentInvoice = null;
@@ -334,7 +335,9 @@
                      'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'][invoiceData.period_month - 1];
                 let periodText = `${monthName} ${invoiceData.period_year}`;
                 if (invoiceData.period_dates && invoiceData.period_dates.from && invoiceData.period_dates.to) {
-                    periodText = `${invoiceData.period_dates.from} - ${invoiceData.period_dates.to}`;
+                    periodText = invoiceData.period_dates.from === invoiceData.period_dates.to
+                        ? invoiceData.period_dates.to
+                        : `${invoiceData.period_dates.from} - ${invoiceData.period_dates.to}`;
                 } else if (invoiceData.period_dates && invoiceData.period_dates.to) {
                     periodText = invoiceData.period_dates.to;
                 }

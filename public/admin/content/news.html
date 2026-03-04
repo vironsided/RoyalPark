@@ -1101,7 +1101,7 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
 (function() {
     'use strict';
     
-    const API_BASE = 'http://localhost:8000';
+    const API_BASE = window.getApiBase ? window.getApiBase() : (window.BACKEND_API_BASE || 'http://localhost:8000');
     let editingNewsId = null;
     let newsList = [];
     let blocks = [];

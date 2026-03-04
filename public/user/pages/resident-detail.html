@@ -59,7 +59,7 @@
     (function() {
         'use strict';
         
-        const API_BASE_URL = window.API_BASE_URL || window.BACKEND_API_BASE || 'http://localhost:8000';
+        const API_BASE_URL = window.getApiBase ? window.getApiBase() : (window.API_BASE_URL || window.BACKEND_API_BASE || 'http://localhost:8000');
         
         // Get resident ID from sessionStorage, dashboard data, or URL
         let currentResidentId = null;
@@ -218,7 +218,11 @@
                     );
 
                     if (metersWithReadings.length === 0) {
-                        metersList.innerHTML = '<div class="text-center p-4 text-muted">Нет счетчиков</div>';
+                        const lang = (localStorage.getItem('language') || 'ru').toLowerCase();
+                        const noMetersText = (window.i18n && typeof window.i18n.translate === 'function')
+                            ? window.i18n.translate('user_resident_no_meters', lang)
+                            : 'Нет счётчиков';
+                        metersList.innerHTML = `<div class="text-center p-4 text-muted" data-i18n="user_resident_no_meters">${noMetersText}</div>`;
                         return;
                     }
 

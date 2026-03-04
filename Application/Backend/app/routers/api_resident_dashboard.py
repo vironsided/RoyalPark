@@ -5,7 +5,7 @@ Returns JSON data for the resident's personal dashboard
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, and_
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 from typing import List, Optional
@@ -497,6 +497,54 @@ def get_resident_invoices(
                 "to": end_str,
             }
 
+    # Chain period ranges per resident so that each next invoice
+    # starts from the end date of the previous invoice for this resident.
+    chained_period_map: dict[int, dict[str, Optional[str]]] = {}
+    if items and period_map:
+        from datetime import datetime as _dt
+
+        # Group invoices by resident
+        invoices_by_resident: dict[int, list[Invoice]] = {}
+        for inv in items:
+            if inv.resident_id is None:
+                continue
+            invoices_by_resident.setdefault(int(inv.resident_id), []).append(inv)
+
+        def _parse_date(date_str: Optional[str]):
+            if not date_str:
+                return None
+            try:
+                return _dt.strptime(date_str, "%d.%m.%Y").date()
+            except Exception:
+                return None
+
+        for resident_id, inv_list in invoices_by_resident.items():
+            # Oldest first for chaining, по году/месяцу и id
+            sorted_invs = sorted(
+                inv_list,
+                key=lambda inv: (inv.period_year, inv.period_month, inv.id),
+            )
+            prev_end_date = None
+            for inv in sorted_invs:
+                raw = period_map.get(inv.id)
+                if not raw:
+                    continue
+                raw_start = _parse_date(raw.get("from"))
+                raw_end = _parse_date(raw.get("to"))
+                if not raw_end:
+                    continue
+
+                if prev_end_date:
+                    start_date = prev_end_date
+                else:
+                    start_date = raw_start or raw_end
+
+                prev_end_date = raw_end
+                chained_period_map[inv.id] = {
+                    "from": start_date.strftime("%d.%m.%Y") if start_date else None,
+                    "to": raw_end.strftime("%d.%m.%Y"),
+                }
+
     # Format response
     result = []
     for inv in items:
@@ -519,7 +567,7 @@ def get_resident_invoices(
             "amount_total": float(inv.amount_total or 0),
             "paid_amount": paid,
             "remaining_amount": remaining,
-            "period_dates": period_map.get(inv.id),
+            "period_dates": chained_period_map.get(inv.id) or period_map.get(inv.id),
         })
 
     return {"invoices": result}
@@ -654,6 +702,37 @@ def get_resident_invoice_detail(
                 "from": start_str,
                 "to": end_str,
             }
+
+    # Align invoice detail period with bills list chaining:
+    # start = end of previous invoice for same resident (if exists), else raw start.
+    if period_dates and inv.resident_id:
+        prev_inv = (
+            db.query(Invoice)
+            .filter(
+                Invoice.resident_id == inv.resident_id,
+                or_(
+                    Invoice.period_year < inv.period_year,
+                    and_(
+                        Invoice.period_year == inv.period_year,
+                        or_(
+                            Invoice.period_month < inv.period_month,
+                            and_(Invoice.period_month == inv.period_month, Invoice.id < inv.id),
+                        ),
+                    ),
+                ),
+            )
+            .order_by(Invoice.period_year.desc(), Invoice.period_month.desc(), Invoice.id.desc())
+            .first()
+        )
+        if prev_inv:
+            prev_end_dt = (
+                db.query(func.max(MeterReading.reading_date))
+                .join(InvoiceLine, InvoiceLine.meter_reading_id == MeterReading.id)
+                .filter(InvoiceLine.invoice_id == prev_inv.id)
+                .scalar()
+            )
+            if prev_end_dt:
+                period_dates["from"] = prev_end_dt.date().strftime('%d.%m.%Y')
     
     resident_code = f"{block.name if block else ''} / {resident.unit_number}" if block else resident.unit_number
     

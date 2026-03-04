@@ -969,8 +969,16 @@ def list_readings(
             "_reading_date_dt": reading_date,
         })
 
-    # Сортировка: новые (по последней дате показаний) сверху
-    result_rows.sort(key=lambda r: r.get("_reading_date_dt") or datetime.min, reverse=True)
+    # Сортировка: последние записи сверху.
+    # В качестве основного ключа используем ID резидента (новые ID первыми),
+    # а дату последнего показания оставляем вторичным критерием.
+    result_rows.sort(
+        key=lambda r: (
+            int(r.get("resident_id") or 0),
+            r.get("_reading_date_dt") or datetime.min,
+        ),
+        reverse=True,
+    )
     for r in result_rows:
         r.pop("_reading_date_dt", None)
 

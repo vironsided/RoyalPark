@@ -129,9 +129,10 @@ def get_reading_logs(
         
         result = []
         for log in logs:
-            # Форматируем дату/время
+            # Форматируем дату/время в ISO-формате для корректного отображения
+            # на фронтенде с учётом локального часового пояса пользователя.
             dt = log.created_at
-            date_time = dt.strftime("%d.%m.%Y, %H:%M")
+            date_time = dt.isoformat()
             
             # Определяем действие на русском
             action_map = {
@@ -252,7 +253,7 @@ def get_payment_logs(
         result = []
         for log in logs:
             dt = log.created_at
-            date_time = dt.strftime("%d.%m.%Y, %H:%M")
+            date_time = dt.isoformat()
             
             action_map = {
                 "CREATE": "СОЗДАНИЕ",

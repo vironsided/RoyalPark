@@ -483,9 +483,10 @@ def _list_residents_internal(
     if page > last_page:
         page = last_page
     
-    # Применяем пагинацию
+    # Применяем пагинацию. Новые резиденты должны идти первыми,
+    # поэтому сортируем по id по убыванию.
     residents = db.execute(
-        stmt.order_by(Resident.id.asc())
+        stmt.order_by(Resident.id.desc())
         .offset((page - 1) * per_page)
         .limit(per_page)
     ).scalars().all()

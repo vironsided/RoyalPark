@@ -124,7 +124,7 @@
 <script>
     (function() {
         'use strict';
-        const API_BASE_URL = window.API_BASE_URL || window.BACKEND_API_BASE || 'http://localhost:8000';
+        const API_BASE_URL = window.getApiBase ? window.getApiBase() : (window.API_BASE_URL || window.BACKEND_API_BASE || 'http://localhost:8000');
         
         // Get invoice ID from sessionStorage or URL
         let currentInvoiceId = null;
@@ -326,14 +326,20 @@
                         const toDate = new Date(invoice.period_dates.to);
                         // Проверяем, что даты валидны
                         if (!isNaN(fromDate.getTime()) && !isNaN(toDate.getTime())) {
-                            periodText = `${fromDate.toLocaleDateString(locale)} - ${toDate.toLocaleDateString(locale)}`;
+                            const fromText = fromDate.toLocaleDateString(locale);
+                            const toText = toDate.toLocaleDateString(locale);
+                            periodText = fromText === toText ? toText : `${fromText} - ${toText}`;
                         } else {
                             // Если даты невалидны, используем исходные строки или fallback
-                            periodText = `${invoice.period_dates.from} - ${invoice.period_dates.to}`;
+                            periodText = invoice.period_dates.from === invoice.period_dates.to
+                                ? invoice.period_dates.to
+                                : `${invoice.period_dates.from} - ${invoice.period_dates.to}`;
                         }
                     } catch (e) {
                         // В случае ошибки используем исходные строки или fallback
-                    periodText = `${invoice.period_dates.from} - ${invoice.period_dates.to}`;
+                    periodText = invoice.period_dates.from === invoice.period_dates.to
+                        ? invoice.period_dates.to
+                        : `${invoice.period_dates.from} - ${invoice.period_dates.to}`;
                     }
                 } else if (invoice.period_dates && invoice.period_dates.to) {
                     try {

@@ -97,10 +97,43 @@
 
             if (!list || !modal) return;
 
-            const API_BASE_URL = window.API_BASE_URL || window.BACKEND_API_BASE || 'http://localhost:8000';
+            const API_BASE_URL = window.getApiBase ? window.getApiBase() : (window.API_BASE_URL || window.BACKEND_API_BASE || 'http://localhost:8000');
 
             let residents = [];
             let currentAppealId = null;
+
+            function parseServerDate(dateString) {
+                if (!dateString) return null;
+                let s = String(dateString).trim();
+                if (!s) return null;
+
+                if (s.indexOf('T') === -1 && s.indexOf(' ') !== -1) {
+                    s = s.replace(' ', 'T');
+                }
+
+                const hasTimezone = /Z$|[+-]\d{2}:?\d{2}$/.test(s);
+                if (!hasTimezone) {
+                    s = `${s}Z`;
+                }
+
+                let d = new Date(s);
+                if (!isNaN(d.getTime())) {
+                    return d;
+                }
+
+                const m = s.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+                if (m) {
+                    const year = parseInt(m[1], 10);
+                    const month = parseInt(m[2], 10) - 1;
+                    const day = parseInt(m[3], 10);
+                    const hour = parseInt(m[4], 10);
+                    const minute = parseInt(m[5], 10);
+                    const second = m[6] ? parseInt(m[6], 10) : 0;
+                    d = new Date(Date.UTC(year, month, day, hour, minute, second));
+                }
+
+                return isNaN(d.getTime()) ? null : d;
+            }
 
             async function loadResidents() {
                 try {
@@ -141,9 +174,11 @@
                     item.className = 'user-appeal-item';
                     item.dataset.id = appeal.id;
                     item.dataset.apartment = appeal.resident_code || '—';
-                    const createdDate = appeal.created_at ? new Date(appeal.created_at) : null;
+                    const lang = (localStorage.getItem('language') || 'ru').toLowerCase();
+                    const locale = lang === 'az' ? 'az-AZ' : (lang === 'en' ? 'en-US' : 'ru-RU');
+                    const createdDate = appeal.created_at ? parseServerDate(appeal.created_at) : null;
                     const createdDisplay = createdDate && !isNaN(createdDate.getTime())
-                        ? createdDate.toLocaleString('ru-RU')
+                        ? createdDate.toLocaleString(locale)
                         : '—';
                     item.dataset.createdRaw = appeal.created_at || '';
                     item.dataset.created = createdDisplay;
@@ -283,9 +318,11 @@
                         const item = list.querySelector(`.user-appeal-item[data-id="${currentAppealId}"]`);
                         if (item) {
                             item.dataset.text = updated.message;
-                            const createdDate = updated.created_at ? new Date(updated.created_at) : null;
+                            const lang = (localStorage.getItem('language') || 'ru').toLowerCase();
+                            const locale = lang === 'az' ? 'az-AZ' : (lang === 'en' ? 'en-US' : 'ru-RU');
+                            const createdDate = updated.created_at ? parseServerDate(updated.created_at) : null;
                             const createdDisplay = createdDate && !isNaN(createdDate.getTime())
-                                ? createdDate.toLocaleString('ru-RU')
+                                ? createdDate.toLocaleString(locale)
                                 : '—';
                             item.dataset.createdRaw = updated.created_at || '';
                             item.dataset.created = createdDisplay;
@@ -303,6 +340,23 @@
             if (modalDeleteBtn) {
                 modalDeleteBtn.addEventListener('click', async () => {
                     if (!currentAppealId) return;
+
+                    // Подтверждение удаления
+                    let confirmed = true;
+                    const lang = localStorage.getItem('language') || 'ru';
+                    const confirmMessage =
+                        (window.i18n?.translate?.('appeals_delete_confirm', lang)) ||
+                        'Вы уверены, что хотите удалить это обращение?';
+                    const confirmTitle =
+                        (window.i18n?.translate?.('confirm_title', lang)) ||
+                        'Подтверждение';
+                    if (window.showConfirm && typeof window.showConfirm === 'function') {
+                        confirmed = await window.showConfirm(confirmMessage, confirmTitle);
+                    } else if (typeof window.confirm === 'function') {
+                        confirmed = window.confirm(confirmMessage);
+                    }
+                    if (!confirmed) return;
+
                     try {
                         const resp = await fetch(`${API_BASE_URL}/api/resident/appeals/${currentAppealId}`, {
                             method: 'DELETE',

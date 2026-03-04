@@ -844,6 +844,11 @@ const translations = {
         notifications_empty: "Нет уведомлений",
         notifications_load_error: "Не удалось загрузить уведомления",
         notifications_badge_new: "НОВАЯ",
+        notifications_invoice_issued_template: "Выставлен счёт для {house}. Сумма: {amount}. Период: {period}. Оплатить с {from} по {to}",
+        notifications_auto_advance_template: "Авто-оплата из аванса: списано {amount}.",
+        notifications_resident_template: "Резидент {resident}.",
+        notifications_invoices_paid_template: "Погашены счета: {details}.",
+        notifications_news_published_template: "Опубликована новость: {title}",
         notification_invoice_issued: "Выставлен счет для {house_info}. Сумма: {amount}. Период: {period}. Оплатить с {from_date} по {to_date}",
 
         // User portal (ЛК жильца)
@@ -864,6 +869,7 @@ const translations = {
         user_bills_remaining_label: "Остаток {amount}",
         user_bills_open_btn: "Открыть",
         user_bills_pdf_btn: "PDF",
+        user_bills_empty: "Счетов не найдено",
 
         // User invoice view
         user_invoice_view: "Просмотр счёта",
@@ -984,6 +990,7 @@ const translations = {
         user_appeal_modal_edit_hint: "Можно редактировать до прочтения оператором.",
         user_appeal_modal_delete: "Удалить",
         user_appeal_modal_save: "Сохранить",
+        confirm_title: "Подтверждение",
         appeals_delete_confirm: "Вы уверены, что хотите удалить это обращение?",
 
         // User dashboard main cards/texts
@@ -1088,6 +1095,7 @@ const translations = {
         user_resident_table_vat: "НДС, %",
         user_resident_table_comment: "Комментарий",
         user_resident_table_empty: "Записей пока нет",
+        user_resident_no_meters: "Нет счётчиков",
 
         // User appeals extra
         user_appeals_hint: "Максимум 2000 символов.",
@@ -1702,8 +1710,8 @@ const translations = {
         readings_meter_sewerage: "Kanalizasiya",
         readings_all_types: "Bütün növlər",
         readings_select_all: "Hamısını seç",
-        readings_month_from: "Ay başı",
-        readings_month_to: "Ay sonu",
+        readings_month_from: "From",
+        readings_month_to: "To",
         readings_record_button: "Göstərici qeydi",
         readings_consumption_by_meters: "Sayğaclar üzrə sərfiyyat",
         readings_amount_by_meters: "Sayğaclar üzrə məbləğ",
@@ -1974,6 +1982,11 @@ const translations = {
         notifications_empty: "Bildiriş yoxdur",
         notifications_load_error: "Bildirişləri yükləmək mümkün olmadı",
         notifications_badge_new: "YENİ",
+        notifications_invoice_issued_template: "{house} üçün hesab tərtib edildi. Məbləğ: {amount}. Dövr: {period}. Ödəniş müddəti {from} - {to}",
+        notifications_auto_advance_template: "Avansdan avtomatik ödəniş: {amount} silindi.",
+        notifications_resident_template: "Rezident {resident}.",
+        notifications_invoices_paid_template: "Bağlanan hesablar: {details}.",
+        notifications_news_published_template: "Xəbər dərc olundu: {title}",
         notification_invoice_issued: "Blok {house_info} üçün hesab tərtib edilib. Məbləğ: {amount}. Dövr: {period}. Ödəniş {from_date} - {to_date} tarixləri arasında mümkündür",
 
         // User portal (istifadəçi kabineti)
@@ -1994,6 +2007,7 @@ const translations = {
         user_bills_remaining_label: "Qalıq {amount}",
         user_bills_open_btn: "Aç",
         user_bills_pdf_btn: "PDF",
+        user_bills_empty: "Hesab tapılmadı",
 
         // User invoice view
         user_invoice_view: "Hesabın görüntülənməsi",
@@ -2063,6 +2077,7 @@ const translations = {
         user_appeal_modal_edit_hint: "Operator oxuyana qədər redaktə etmək olar.",
         user_appeal_modal_delete: "Sil",
         user_appeal_modal_save: "Yadda saxla",
+        confirm_title: "Təsdiq",
         appeals_delete_confirm: "Bu müraciəti silmək istədiyinizə əminsiniz?",
 
         // User dashboard main cards/texts
@@ -2219,6 +2234,7 @@ const translations = {
         user_resident_table_vat: "ƏDV, %",
         user_resident_table_comment: "Şərh",
         user_resident_table_empty: "Hələ ki, qeyd yoxdur",
+        user_resident_no_meters: "Sayğaclar yoxdur",
 
         // User appeals extra
         user_appeals_hint: "Maksimum 2000 simvol.",
@@ -3105,6 +3121,11 @@ const translations = {
         notifications_empty: "No notifications",
         notifications_load_error: "Failed to load notifications",
         notifications_badge_new: "NEW",
+        notifications_invoice_issued_template: "Invoice issued for {house}. Amount: {amount}. Period: {period}. Pay from {from} to {to}",
+        notifications_auto_advance_template: "Auto-payment from advance: charged {amount}.",
+        notifications_resident_template: "Resident {resident}.",
+        notifications_invoices_paid_template: "Invoices paid: {details}.",
+        notifications_news_published_template: "Published news: {title}",
         notification_invoice_issued: "Invoice issued for {house_info}. Amount: {amount}. Period: {period}. Pay between {from_date} and {to_date}",
 
         // User portal
@@ -3125,6 +3146,7 @@ const translations = {
         user_bills_remaining_label: "Remaining {amount}",
         user_bills_open_btn: "Open",
         user_bills_pdf_btn: "PDF",
+        user_bills_empty: "No bills found",
 
         // User invoice view
         user_invoice_view: "Invoice View",
@@ -3194,6 +3216,7 @@ const translations = {
         user_appeal_modal_edit_hint: "Can be edited until an operator reads it.",
         user_appeal_modal_delete: "Delete",
         user_appeal_modal_save: "Save",
+        confirm_title: "Confirmation",
         appeals_delete_confirm: "Are you sure you want to delete this appeal?",
 
         // User dashboard main cards/texts
@@ -3349,6 +3372,7 @@ const translations = {
         user_resident_table_vat: "VAT, %",
         user_resident_table_comment: "Comment",
         user_resident_table_empty: "No records yet",
+        user_resident_no_meters: "No meters",
 
         // User appeals extra
         user_appeals_hint: "Maximum 2000 characters.",

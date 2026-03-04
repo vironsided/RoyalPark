@@ -258,7 +258,7 @@ document.head.appendChild(rippleStyle);
 
 // API Configuration
 if (typeof window.API_BASE_URL === 'undefined') {
-    window.API_BASE_URL = window.BACKEND_API_BASE || 'http://localhost:8000';
+    window.API_BASE_URL = window.getApiBase ? window.getApiBase() : (window.BACKEND_API_BASE || 'http://localhost:8000');
 }
 const API_BASE_URL = window.API_BASE_URL;
 
@@ -771,7 +771,9 @@ function updateInvoicesUI(invoices) {
     billsList.innerHTML = '';
 
     if (invoices.length === 0) {
-        billsList.innerHTML = '<div class="text-center p-4 text-muted">Нет счетов</div>';
+        const lang = localStorage.getItem('language') || 'ru';
+        const emptyText = window.i18n?.translate?.('user_bills_empty', lang) || 'Нет счетов';
+        billsList.innerHTML = `<div class="text-center p-4 text-muted" data-i18n="user_bills_empty">${emptyText}</div>`;
         return;
     }
 
@@ -1623,20 +1625,51 @@ window.addEventListener('beforeunload', () => {
 (function() {
     'use strict';
     
-    const API_BASE = window.API_BASE_URL || 'http://localhost:8000';
+    const API_BASE = window.getApiBase ? window.getApiBase() : (window.API_BASE_URL || 'http://localhost:8000');
     const notificationBtn = document.querySelector('.notification-btn');
     const notificationBadge = document.querySelector('.notification-badge');
     const notificationsModal = document.getElementById('notificationsModal');
     const notificationsClose = document.getElementById('notificationsClose');
     const notificationsList = document.getElementById('notificationsList');
+    const t = (key, fallback = '') => window.i18n?.translate?.(key) || fallback || key;
     
     let notifications = [];
     
     // Format time
     function parseServerDate(dateString) {
         if (!dateString) return null;
-        const hasTimezone = /Z$|[+-]\d{2}:\d{2}$/.test(dateString);
-        return new Date(hasTimezone ? dateString : `${dateString}Z`);
+        let s = String(dateString).trim();
+        if (!s) return null;
+
+        // Нормализуем формат "YYYY-MM-DD HH:MM:SS" → "YYYY-MM-DDTHH:MM:SS"
+        if (s.indexOf('T') === -1 && s.indexOf(' ') !== -1) {
+            s = s.replace(' ', 'T');
+        }
+
+        // Если нет явного часового пояса, считаем, что это UTC и добавляем "Z"
+        const hasTimezone = /Z$|[+-]\d{2}:?\d{2}$/.test(s);
+        if (!hasTimezone) {
+            s = `${s}Z`;
+        }
+
+        let d = new Date(s);
+        if (!isNaN(d.getTime())) {
+            return d;
+        }
+
+        // Запасной вариант: ручной разбор "YYYY-MM-DDTHH:MM:SS"
+        const m = s.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+        if (m) {
+            const year = parseInt(m[1], 10);
+            const month = parseInt(m[2], 10) - 1;
+            const day = parseInt(m[3], 10);
+            const hour = parseInt(m[4], 10);
+            const minute = parseInt(m[5], 10);
+            const second = m[6] ? parseInt(m[6], 10) : 0;
+            d = new Date(Date.UTC(year, month, day, hour, minute, second));
+        }
+
+        return isNaN(d.getTime()) ? null : d;
     }
 
     function formatTime(dateString) {
@@ -1647,12 +1680,76 @@ window.addEventListener('beforeunload', () => {
         const minutes = Math.floor(diff / 60000);
         const hours = Math.floor(diff / 3600000);
         const days = Math.floor(diff / 86400000);
+        const lang = (localStorage.getItem('language') || 'az').toLowerCase();
+        const locale = lang === 'ru' ? 'ru-RU' : (lang === 'en' ? 'en-US' : 'az-AZ');
         
-        if (minutes < 1) return 'только что';
-        if (minutes < 60) return `${minutes} мин назад`;
-        if (hours < 24) return `${hours} ч назад`;
-        if (days < 7) return `${days} дн назад`;
-        return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        if (minutes < 1) return t('time_just_now', 'Только что');
+        if (minutes < 60) return `${minutes} ${t('time_minutes_ago', 'мин назад')}`;
+        if (hours < 24) return `${hours} ${t('time_hours_ago', 'ч назад')}`;
+        if (days < 7) return `${days} ${t('time_days_ago', 'дн назад')}`;
+        return date.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function localizeNotificationMessage(notif) {
+        const raw = String(notif?.message || '').trim();
+        if (!raw) return '';
+
+        function localizeHouseInfo(houseRaw) {
+            const source = String(houseRaw || '').trim();
+            if (!source) return source;
+            const blockWord = t('residents_filter_block', 'Блок');
+            // Normalize prefixes like "Блок C, №55555" / "Blok C, №55555" / "Block C, №55555"
+            return source.replace(/^\s*(?:блок|blok|block)\s+/i, `${blockWord} `);
+        }
+
+        // Invoice issue notification:
+        // "Выставлен счет для Блок C, №55555. Сумма: 1500.00 ₼. Период: 03.2026. Оплатить с 04.03.2026 по 06.03.2026"
+        const invoiceMatch = raw.match(/^Выставлен\s+сч[её]т\s+для\s+(.+?)\.\s*Сумма:\s*(.+?)\.\s*Период:\s*(.+?)\.\s*Оплатить\s+с\s*(.+?)\s+по\s*(.+)$/i);
+        if (invoiceMatch) {
+            const house = localizeHouseInfo(invoiceMatch[1].trim());
+            const amount = invoiceMatch[2].trim();
+            const period = invoiceMatch[3].trim();
+            const fromDate = invoiceMatch[4].trim();
+            const toDateRaw = invoiceMatch[5].trim().replace(/\.$/, '');
+            const toDate = /не\s*указан/i.test(toDateRaw) ? t('not_specified', 'not specified') : toDateRaw;
+            return t(
+                'notifications_invoice_issued_template',
+                'Invoice issued for {house}. Amount: {amount}. Period: {period}. Pay from {from} to {to}'
+            )
+                .replace('{house}', house)
+                .replace('{amount}', amount)
+                .replace('{period}', period)
+                .replace('{from}', fromDate)
+                .replace('{to}', toDate);
+        }
+
+        // Auto advance notification:
+        // "Авто-оплата из аванса: списано 2.50 ₼. Резидент K / 10. Погашены счета: ... ."
+        const autoAdvanceMatch = raw.match(/^Авто-оплата\s+из\s+аванса:\s*списано\s+(.+?)\.\s*(?:Резидент\s+(.+?)\.\s*)?Погашены\s+счета:\s*(.+?)(?:\.)?$/i);
+        if (autoAdvanceMatch) {
+            const amount = autoAdvanceMatch[1].trim();
+            const resident = (autoAdvanceMatch[2] || '').trim();
+            const details = autoAdvanceMatch[3].trim();
+            let localized = t(
+                'notifications_auto_advance_template',
+                'Auto-payment from advance: charged {amount}.'
+            ).replace('{amount}', amount);
+            if (resident) {
+                localized += ` ${t('notifications_resident_template', 'Resident {resident}.').replace('{resident}', resident)}`;
+            }
+            localized += ` ${t('notifications_invoices_paid_template', 'Invoices paid: {details}.').replace('{details}', details)}`;
+            return localized;
+        }
+
+        // News publish notification:
+        // "Опубликована новость: ..."
+        const newsMatch = raw.match(/^Опубликована\s+новость:\s*(.+)$/i);
+        if (newsMatch) {
+            const title = newsMatch[1].trim();
+            return t('notifications_news_published_template', 'Published news: {title}').replace('{title}', title);
+        }
+
+        return raw;
     }
     
     // Load notifications
@@ -1673,7 +1770,7 @@ window.addEventListener('beforeunload', () => {
         } catch (error) {
             console.error('Error loading notifications:', error);
             if (notificationsList) {
-                notificationsList.innerHTML = '<div class="text-center p-4 text-muted">Не удалось загрузить уведомления</div>';
+                notificationsList.innerHTML = `<div class="text-center p-4 text-muted">${t('notifications_load_error', 'Не удалось загрузить уведомления')}</div>`;
             }
         }
     }
@@ -1711,12 +1808,13 @@ window.addEventListener('beforeunload', () => {
         if (!notificationsList) return;
         
         if (notifications.length === 0) {
-            notificationsList.innerHTML = '<div class="text-center p-4 text-muted">Нет уведомлений</div>';
+            notificationsList.innerHTML = `<div class="text-center p-4 text-muted">${t('notifications_empty', 'Нет уведомлений')}</div>`;
             return;
         }
         
         const items = notifications.map(notif => {
             const isUnread = notif.status === 'UNREAD';
+            const messageText = localizeNotificationMessage(notif);
             const icon = notif.notification_type === 'INVOICE' 
                 ? '<i class="bi bi-receipt"></i>' 
                 : notif.notification_type === 'NEWS'
@@ -1737,8 +1835,8 @@ window.addEventListener('beforeunload', () => {
                     </div>
                     <div style="flex:1; min-width:0;">
                         <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-                            <strong style="color:var(--text-primary); font-size:0.95rem;">${escapeHtml(notif.message)}</strong>
-                            ${isUnread ? '<span class="badge" style="background:#10b981; height:20px; display:flex; align-items:center; padding:0 6px; font-size:0.7rem; flex-shrink:0;">НОВАЯ</span>' : ''}
+                            <strong style="color:var(--text-primary); font-size:0.95rem;">${escapeHtml(messageText)}</strong>
+                            ${isUnread ? `<span class="badge" style="background:#10b981; height:20px; display:flex; align-items:center; padding:0 6px; font-size:0.7rem; flex-shrink:0;">${t('notifications_badge_new', 'НОВАЯ')}</span>` : ''}
                         </div>
                         <span style="font-size:0.8rem; color:var(--text-secondary);">${formatTime(notif.created_at)}</span>
                     </div>
@@ -1858,8 +1956,16 @@ window.addEventListener('beforeunload', () => {
     // Load notifications count on page load
     updateNotificationCount();
     
-    // Refresh count every 30 seconds
-    setInterval(updateNotificationCount, 30000);
+    // Refresh count more often so notifications appear faster (every 10 seconds)
+    setInterval(updateNotificationCount, 10000);
+
+    // Re-render notification texts on language switch.
+    window.addEventListener('languageChanged', () => {
+        renderNotifications();
+    });
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'language') renderNotifications();
+    });
     
     // Expose functions globally
     window.loadUserNotifications = loadNotifications;
