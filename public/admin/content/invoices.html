@@ -43,12 +43,26 @@
         <div class="invoices-filters-row">
             <div class="invoices-filters-group">
                 <label data-i18n="year">Год</label>
-                <input type="number" id="filterYear" min="2000" max="2100" step="1" placeholder="Все годы">
+                <input
+                    type="number"
+                    id="filterYear"
+                    min="2000"
+                    max="2100"
+                    step="1"
+                    placeholder="Все годы"
+                    data-i18n-placeholder="invoices_filter_year_placeholder">
             </div>
             
             <div class="invoices-filters-group">
                 <label data-i18n="month">Месяц</label>
-                <input type="number" id="filterMonth" min="1" max="12" step="1" placeholder="1-12">
+                <input
+                    type="number"
+                    id="filterMonth"
+                    min="1"
+                    max="12"
+                    step="1"
+                    placeholder="1-12"
+                    data-i18n-placeholder="invoices_filter_month_placeholder">
             </div>
             
             <div class="invoices-filters-group">
@@ -162,12 +176,9 @@
             <div class="invoices-filters-group">
                 <label data-i18n="invoices_payment_method">Метод оплаты</label>
                 <select id="exportPaymentMethod">
-                    <option value="all">Все</option>
-                    <option value="CASH">Наличные</option>
-                    <option value="CARD">Карта</option>
-                    <option value="TRANSFER">Перевод</option>
-                    <option value="ONLINE">Онлайн</option>
-                    <option value="ADVANCE">Аванс</option>
+                    <option value="all" data-i18n="all">Все</option>
+                    <option value="CARD" data-i18n="payments_method_card">Карта</option>
+                    <option value="ADVANCE" data-i18n="payments_method_advance">Аванс</option>
                 </select>
             </div>
 
@@ -453,22 +464,36 @@
         return pair ? t(pair[0], pair[1]) : key;
     }
     const INVOICE_PAYMENT_METHOD_LABELS = {
-        CASH: 'Наличные',
-        CARD: 'Карта',
-        TRANSFER: 'Перевод',
-        ONLINE: 'Онлайн',
-        ADVANCE: 'Аванс'
+        CASH: ['payments_method_cash', 'Наличные'],
+        CARD: ['payments_method_card', 'Карта'],
+        TRANSFER: ['payments_method_transfer', 'Перевод'],
+        ONLINE: ['payments_method_online', 'Онлайн'],
+        ADVANCE: ['payment_advance_badge', 'Аванс']
     };
     const INVOICE_STATUS_LABELS = {
-        draft: 'Черновик',
-        issued: 'Выставлен',
-        partial: 'Частично оплачен',
-        paid: 'Оплачен',
-        unpaid: 'Не оплачен',
-        overdue: 'Просрочен',
-        overpaid: 'Переплата',
-        canceled: 'Отменён'
+        draft: ['invoices_status_draft', 'Черновик'],
+        issued: ['invoices_status_issued', 'Выставлен'],
+        partial: ['invoices_status_partial', 'Частично оплачен'],
+        paid: ['invoices_status_paid', 'Оплачен'],
+        unpaid: ['invoices_status_unpaid', 'Не оплачен'],
+        overdue: ['invoices_status_overdue', 'Просрочен'],
+        overpaid: ['invoices_status_overpaid', 'Переплата'],
+        canceled: ['invoices_status_canceled', 'Отменён']
     };
+
+    function getInvoiceStatusLabel(statusCode) {
+        const entry = INVOICE_STATUS_LABELS[statusCode];
+        if (!entry) return statusCode || '—';
+        const [key, fallback] = entry;
+        return t(key, fallback || statusCode);
+    }
+
+    function getInvoicePaymentMethodLabel(methodCode) {
+        const entry = INVOICE_PAYMENT_METHOD_LABELS[methodCode];
+        if (!entry) return methodCode;
+        const [key, fallback] = entry;
+        return t(key, fallback || methodCode);
+    }
 
     function normalizeInvoiceFromApi(inv) {
         const normalizedLines = Array.isArray(inv.lines) ? inv.lines.map((line) => ({
@@ -636,7 +661,7 @@
         const blockSelect = document.getElementById('invoiceBlock');
         if (blockSelect && blocks.length > 0) {
             const currentValue = blockSelect.value;
-            blockSelect.innerHTML = '<option value="">— выберите блок —</option>';
+            blockSelect.innerHTML = `<option value="" data-i18n="invoices_select_block">${t('invoices_select_block', '— выберите блок —')}</option>`;
             blocks.forEach(block => {
                 const option = document.createElement('option');
                 option.value = block.id;
@@ -650,7 +675,7 @@
         const residentSelect = document.getElementById('filterResident');
         if (residentSelect && residents.length > 0) {
             const currentValue = residentSelect.value;
-            residentSelect.innerHTML = '<option value="all">Все</option>';
+            residentSelect.innerHTML = `<option value="all" data-i18n="all">${t('all', 'Все')}</option>`;
             residents.forEach(resident => {
                 const option = document.createElement('option');
                 option.value = resident.id;
@@ -667,7 +692,7 @@
         if (!residentSelect) return;
 
         const currentValue = residentSelect.value;
-        residentSelect.innerHTML = '<option value="all">Все</option>';
+        residentSelect.innerHTML = `<option value="all" data-i18n="all">${t('all', 'Все')}</option>`;
 
         let filteredResidents = Array.isArray(residents) ? [...residents] : [];
         if (blockSelect && blockSelect.value !== 'all') {
@@ -691,7 +716,7 @@
         const blockSelect = document.getElementById('exportBlock');
         if (blockSelect) {
             const currentValue = blockSelect.value || 'all';
-            blockSelect.innerHTML = '<option value="all">Все</option>';
+            blockSelect.innerHTML = `<option value="all" data-i18n="all">${t('all', 'Все')}</option>`;
             (Array.isArray(blocks) ? blocks : []).forEach((block) => {
                 const option = document.createElement('option');
                 option.value = block.id;
@@ -875,6 +900,30 @@
         return { key: type, label: getInvoiceMeterLabel(type) };
     }
 
+    function buildInvoiceServiceTariffKey(line) {
+        const raw = String(line?.description || '').trim();
+        if (!raw) return '';
+
+        // 1) Формат "Газ - Qaz", "Сервис - 4234324", "Электричество - qweqwe"
+        const dashIdx = raw.indexOf('-');
+        if (dashIdx > 0) {
+            const left = raw.slice(0, dashIdx).trim();
+            const right = raw.slice(dashIdx + 1).trim();
+            if (left && right) {
+                return `${left} (${right})`;
+            }
+        }
+
+        let base = raw.replace(/\([^)]*₼[^)]*\)\s*$/, '').trim();
+
+        const qtyMatch = base.match(/^(.+?)\s+[\d.,]+\s*(квт·ч|квтч|квт|кВт·ч|кВтч|кВт|м³|м3|mes\.?|мес\.?)?$/i);
+        if (qtyMatch) {
+            return qtyMatch[1].trim();
+        }
+
+        return base;
+    }
+
     function collectInvoiceMeterTypes(invoice) {
         const set = new Set();
         const lines = Array.isArray(invoice?.lines) ? invoice.lines : [];
@@ -909,19 +958,42 @@
 
     function buildInvoicesExportFiltersText(filters) {
         const chunks = [];
-        chunks.push(`Статус: ${INVOICE_STATUS_LABELS[filters.status] || 'Все'}`);
-        if (filters.blockText && filters.blockValue !== 'all') chunks.push(`Блок: ${filters.blockText}`);
-        if (filters.residentText && filters.residentValue !== 'all') chunks.push(`Резидент: ${filters.residentText}`);
-        if (filters.residentSearch) chunks.push(`Поиск жителя: ${filters.residentSearch}`);
-        if (filters.invoiceNumber) chunks.push(`№ инвойса: ${filters.invoiceNumber}`);
-        if (filters.periodFrom || filters.periodTo) chunks.push(`Период: ${filters.periodFrom || '...'} — ${filters.periodTo || '...'}`);
-        if (filters.dueDateTo) chunks.push(`Срок оплаты до: ${filters.dueDateTo}`);
-        if (filters.amountFrom !== null || filters.amountTo !== null) chunks.push(`Сумма: ${filters.amountFrom ?? '...'} — ${filters.amountTo ?? '...'}`);
-        if (filters.paymentMethod !== 'all') chunks.push(`Метод: ${INVOICE_PAYMENT_METHOD_LABELS[filters.paymentMethod] || filters.paymentMethod}`);
+
+        const statusLabel = filters.status === 'all'
+            ? t('all', 'Все')
+            : getInvoiceStatusLabel(filters.status);
+        chunks.push(`${t('status', 'Статус')}: ${statusLabel}`);
+
+        if (filters.blockText && filters.blockValue !== 'all') {
+            chunks.push(`${t('blocks', 'Блок')}: ${filters.blockText}`);
+        }
+        if (filters.residentText && filters.residentValue !== 'all') {
+            chunks.push(`${t('resident', 'Резидент')}: ${filters.residentText}`);
+        }
+        if (filters.residentSearch) {
+            chunks.push(`${t('payments_select_resident', 'Поиск жителя')}: ${filters.residentSearch}`);
+        }
+        if (filters.invoiceNumber) {
+            chunks.push(`${t('invoices_export_invoice_no', '№ инвойса')}: ${filters.invoiceNumber}`);
+        }
+        if (filters.periodFrom || filters.periodTo) {
+            chunks.push(`${t('invoices_period_from', 'Период')}: ${filters.periodFrom || '...'} — ${filters.periodTo || '...'}`);
+        }
+        if (filters.dueDateTo) {
+            chunks.push(`${t('invoices_due_date_to', 'Срок оплаты до')}: ${filters.dueDateTo}`);
+        }
+        if (filters.amountFrom !== null || filters.amountTo !== null) {
+            chunks.push(`${t('payments_amount_from', 'Сумма')}: ${filters.amountFrom ?? '...'} — ${filters.amountTo ?? '...'}`);
+        }
+        if (filters.paymentMethod !== 'all') {
+            chunks.push(`${t('invoices_payment_method', 'Метод оплаты')}: ${getInvoicePaymentMethodLabel(filters.paymentMethod)}`);
+        }
+
         const meterLabels = filters.meterTypes.length >= INVOICE_EXPORT_METER_TYPES.length
-            ? 'Все'
-            : filters.meterTypes.map((t) => getInvoiceMeterLabel(t)).join(', ');
-        chunks.push(`Услуги: ${meterLabels}`);
+            ? t('all', 'Все')
+            : filters.meterTypes.map((tKey) => getInvoiceMeterLabel(tKey)).join(', ');
+        chunks.push(`${t('invoices_service_type', 'Услуги')}: ${meterLabels}`);
+
         return chunks.join(' | ');
     }
 
@@ -960,6 +1032,18 @@
                 return `${label.toLowerCase()} ${safeValue.toFixed(2)} ₼`;
             });
 
+            const serviceTariffAmounts = {};
+            serviceLines.forEach((line) => {
+                const type = detectInvoiceLineMeterType(line);
+                if (!type) return;
+                if (Array.isArray(selectedTypes) && selectedTypes.length > 0 && !selectedTypes.includes(type)) return;
+                const key = buildInvoiceServiceTariffKey(line);
+                if (!key) return;
+                const amount = Number(line?.amount_total || 0);
+                if (!(amount > 0)) return;
+                serviceTariffAmounts[key] = (serviceTariffAmounts[key] || 0) + amount;
+            });
+
             return {
                 period: `${inv.periodYear}-${String(inv.periodMonth).padStart(2, '0')}`,
                 block: inv.blockName || '—',
@@ -968,16 +1052,17 @@
                 residentPhone: inv.residentUserPhone || '—',
                 residentCode: inv.residentCode || '—',
                 invoiceNumber: inv.invoiceNumber || '—',
-                status: INVOICE_STATUS_LABELS[inv.status] || inv.status || '—',
+                status: getInvoiceStatusLabel(inv.status),
                 amount: Number(serviceCharged || 0),
                 paid: Number(servicePaid || 0),
                 remaining: Number(serviceRemaining || 0),
                 dueDate: inv.dueDateRaw || '—',
                 paymentMethodsText: (Array.isArray(inv.paymentMethods) && inv.paymentMethods.length)
-                    ? inv.paymentMethods.map((m) => INVOICE_PAYMENT_METHOD_LABELS[m] || m).join(', ')
+                    ? inv.paymentMethods.map((m) => getInvoicePaymentMethodLabel(m)).join(', ')
                     : '—',
                 linesList: lineTexts.length ? lineTexts : ['—'],
-                remainingByServicesList: serviceRemainingLines.length ? serviceRemainingLines : ['—']
+                remainingByServicesList: serviceRemainingLines.length ? serviceRemainingLines : ['—'],
+                serviceTariffAmounts
             };
         });
     }
@@ -1064,7 +1149,53 @@
     function exportInvoicesToStyledExcel(rows, filtersText) {
         const esc = (v) => String(v === null || v === undefined ? '' : v)
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const bodyRows = rows.map((r) => `
+
+        const lang = (window.i18n && window.i18n.currentLanguage) || localStorage.getItem('language') || 'az';
+        const locale = lang === 'az' ? 'az-AZ' : (lang === 'en' ? 'en-US' : 'ru-RU');
+
+        const titleMain = t('invoices_export_title', 'Отчет по счетам');
+        const titleSub = t('invoices_export_subtitle', 'Royal Park — Экспорт для учета');
+
+        const generatedLabel = t('tariffs_export_generated', 'Сформировано');
+        const filtersLabel = t('tariffs_export_filters', 'Фильтры');
+        const countLabel = t('tariffs_export_count', 'Количество счетов');
+
+        const colPeriod = t('invoices_export_column_period', 'Период');
+        const colBlock = t('invoices_export_column_block', 'Блок');
+        const colUnit = t('invoices_export_column_unit', '№ дома');
+        const colResidentName = t('invoices_export_column_resident_name', 'ФИО жителя');
+        const colResidentPhone = t('invoices_export_column_resident_phone', 'Телефон жителя');
+        const colResidentCode = t('invoices_export_column_resident_code', 'Код резидента');
+        const colInvoiceNumber = t('invoices_export_column_invoice_number', '№ инвойса');
+        const colStatus = t('invoices_export_column_status', 'Статус');
+        const colAmount = t('invoices_export_column_amount', 'Начислено');
+        const colPaid = t('invoices_export_column_paid', 'Оплачено');
+        const colRemaining = t('invoices_export_column_remaining', 'Остаток');
+        const colDueDate = t('invoices_export_column_due_date', 'Срок оплаты');
+        const colPaymentMethod = t('invoices_export_column_payment_method', 'Метод оплаты');
+        const colLines = t('invoices_export_column_lines', 'Состав начисления');
+
+        const tariffKeys = [];
+        const seenTariffKeys = new Set();
+        rows.forEach((r) => {
+            const map = r.serviceTariffAmounts || {};
+            Object.keys(map).forEach((key) => {
+                if (!seenTariffKeys.has(key)) {
+                    seenTariffKeys.add(key);
+                    tariffKeys.push(key);
+                }
+            });
+        });
+
+        const bodyRows = rows.map((r) => {
+            const serviceMap = r.serviceTariffAmounts || {};
+            const serviceCells = tariffKeys.map((key) => {
+                const amount = serviceMap[key] ? Number(serviceMap[key]) : 0;
+                const value = amount > 0 ? amount.toFixed(2) : '-';
+                return `<td class="money-cell">${esc(value)}</td>`;
+            }).join('');
+
+            return `
             <tr>
                 <td>${esc(r.period)}</td>
                 <td>${esc(r.block)}</td>
@@ -1080,9 +1211,10 @@
                 <td>${esc(r.dueDate)}</td>
                 <td>${esc(r.paymentMethodsText)}</td>
                 <td class="lines-cell">${(Array.isArray(r.linesList) ? r.linesList : ['—']).map((line, idx) => `<div class="line-row">${esc(String(idx + 1) + ') ' + line)}</div>`).join('')}</td>
-                <td class="lines-cell">${(Array.isArray(r.remainingByServicesList) ? r.remainingByServicesList : ['—']).map((line) => `<div class="line-row">${esc(line)}</div>`).join('')}</td>
+                ${serviceCells}
             </tr>
-        `).join('');
+        `;
+        }).join('');
 
         const html = `
             <html><head><meta charset="utf-8" />
@@ -1103,15 +1235,31 @@
                 .line-row { padding: 1px 0; border-bottom: 1px dashed #e5e7eb; }
                 .line-row:last-child { border-bottom: none; }
             </style></head><body>
-                <table class="title-table"><tr><td class="title-cell"><div class="title-main">Отчет по счетам</div><div class="title-sub">Royal Park - Экспорт для учета</div></td></tr></table>
+                <table class="title-table"><tr><td class="title-cell"><div class="title-main">${esc(titleMain)}</div><div class="title-sub">${esc(titleSub)}</div></td></tr></table>
                 <table class="meta">
-                    <tr><td>Сформировано</td><td>${esc(new Date().toLocaleString())}</td></tr>
-                    <tr><td>Фильтры</td><td>${esc(filtersText)}</td></tr>
-                    <tr><td>Количество счетов</td><td>${esc(rows.length)}</td></tr>
+                    <tr><td>${esc(generatedLabel)}</td><td>${esc(new Date().toLocaleString(locale))}</td></tr>
+                    <tr><td>${esc(filtersLabel)}</td><td>${esc(filtersText)}</td></tr>
+                    <tr><td>${esc(countLabel)}</td><td>${esc(rows.length)}</td></tr>
                 </table>
                 <table class="data">
-                    <thead><tr><th>Период</th><th>Блок</th><th>№ дома</th><th>ФИО жителя</th><th>Телефон жителя</th><th>Код резидента</th><th>№ инвойса</th><th>Статус</th><th>Начислено</th><th>Оплачено</th><th>Остаток</th><th>Срок оплаты</th><th>Метод оплаты</th><th>Состав начисления</th><th>Остаток по услугам</th></tr></thead>
-                    <tbody>${bodyRows || '<tr><td colspan="15">' + t('readings_no_records', 'Нет данных') + '</td></tr>'}</tbody>
+                    <thead><tr>
+                        <th>${esc(colPeriod)}</th>
+                        <th>${esc(colBlock)}</th>
+                        <th>${esc(colUnit)}</th>
+                        <th>${esc(colResidentName)}</th>
+                        <th>${esc(colResidentPhone)}</th>
+                        <th>${esc(colResidentCode)}</th>
+                        <th>${esc(colInvoiceNumber)}</th>
+                        <th>${esc(colStatus)}</th>
+                        <th>${esc(colAmount)}</th>
+                        <th>${esc(colPaid)}</th>
+                        <th>${esc(colRemaining)}</th>
+                        <th>${esc(colDueDate)}</th>
+                        <th>${esc(colPaymentMethod)}</th>
+                        <th>${esc(colLines)}</th>
+                        ${tariffKeys.map((key) => `<th>${esc(key)}</th>`).join('')}
+                    </tr></thead>
+                    <tbody>${bodyRows || '<tr><td colspan="' + (14 + tariffKeys.length) + '">' + t('readings_no_records', 'Нет данных') + '</td></tr>'}</tbody>
                 </table>
             </body></html>
         `;
@@ -1668,6 +1816,29 @@
                 updateExportDropdowns();
             }, 200);
         }, 200);
+    }
+
+    // Re-render invoices and related labels when interface language changes
+    if (typeof window !== 'undefined') {
+        if (window._invoicesLanguageChangedHandler) {
+            window.removeEventListener('languageChanged', window._invoicesLanguageChangedHandler);
+        }
+        window._invoicesLanguageChangedHandler = function() {
+            const invoicesPageRoot = document.querySelector('.content-wrapper.invoices-page');
+            if (!invoicesPageRoot) return;
+
+            if (Array.isArray(filteredInvoices) && filteredInvoices.length > 0) {
+                renderTable(filteredInvoices);
+            } else if (Array.isArray(allInvoices) && allInvoices.length > 0) {
+                renderTable(allInvoices);
+            } else {
+                loadInvoices();
+            }
+
+            updateFilterDropdowns();
+            updateExportDropdowns();
+        };
+        window.addEventListener('languageChanged', window._invoicesLanguageChangedHandler);
     }
 
     // Invoice Actions Functions

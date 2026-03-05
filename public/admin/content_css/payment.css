@@ -21,35 +21,41 @@
        margin-bottom: 20px;
    }
 
-   .payments-filters-group {
-       display: flex;
-       flex-direction: column;
-   }
+  .payments-filters-group {
+      display: flex;
+      flex-direction: column;
+  }
 
-   .payments-filters-group-wide {
-       grid-column: auto;
-       min-width: 260px;
-   }
+  .payments-filters-group-wide {
+      grid-column: auto;
+      min-width: 0;
+  }
 
-   .service-filter-details {
-       position: relative;
-       background: rgba(255, 255, 255, 0.05);
-       border: 1px solid rgba(255, 255, 255, 0.12);
-       border-radius: 8px;
-       padding: 0;
-       overflow: visible;
-   }
+  .service-filter-details {
+      position: relative;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 0;
+      overflow: visible;
+      max-width: 100%;
+      box-sizing: border-box;
+  }
 
-   .service-filter-details summary {
-       position: relative;
-       display: block;
-       width: 100%;
-       padding: 10px 34px 10px 12px;
-       cursor: pointer;
-       color: #fefefe;
-       font-size: 0.92rem;
-       list-style: none;
-   }
+  .service-filter-details summary {
+      position: relative;
+      display: block;
+      width: 100%;
+      padding: 10px 34px 10px 12px;
+      cursor: pointer;
+      color: #fefefe;
+      font-size: 0.92rem;
+      list-style: none;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+  }
 
    .service-filter-details summary::after {
        content: "▾";

@@ -16,10 +16,10 @@
                 <label data-i18n="filter_method">Метод</label>
                 <select id="filterMethod">
                     <option value="all" data-i18n="all">Все</option>
-                    <option value="CASH" data-i18n="payments_method_cash">Наличные</option>
-                    <option value="CARD">CARD</option>
-                    <option value="TRANSFER" data-i18n="payments_method_transfer">Банк</option>
-                    <option value="ONLINE" data-i18n="payments_method_online">Онлайн</option>
+                    <option value="ADVANCE" data-i18n="payments_method_advance">Аванс</option>
+                    <option value="CARD" data-i18n="payments_method_card">CARD</option>
+                    <!-- <option value="TRANSFER" data-i18n="payments_method_transfer">Банк</option>
+                    <option value="ONLINE" data-i18n="payments_method_online">Онлайн</option> -->
                 </select>
             </div>
             
@@ -51,7 +51,7 @@
             <div class="payments-filters-group payments-filters-group-wide">
                 <label data-i18n="payments_services_export">Услуги для экспорта</label>
                 <details class="service-filter-details" id="serviceExportDetails">
-                    <summary id="serviceExportSummary" data-i18n="payments_services_all_categories">Все категории</summary>
+                    <summary id="serviceExportSummary">Все категории</summary>
                     <div class="service-filter-dropdown">
                         <div class="service-filter-options" id="serviceExportOptions">
                             <label><input type="checkbox" value="utility" checked> <span data-i18n="payments_service_utility">Utility</span></label>
@@ -263,8 +263,19 @@
         if (method === 'CASH') return t('payments_method_cash', 'Наличные');
         if (method === 'TRANSFER') return t('payments_method_transfer', 'Банк');
         if (method === 'ONLINE') return t('payments_method_online', 'Онлайн');
-        if (method === 'CARD') return 'CARD';
+        if (method === 'CARD') return t('payments_method_card', 'Карта');
         return method || '—';
+    }
+
+    function getReferenceLabel(reference) {
+        if (!reference) return '—';
+        const raw = String(reference);
+
+        if (raw.startsWith('ADVANCE_USE')) {
+            return t('payment_advance_auto_done', 'Аванс автоматически распределён по счетам');
+        }
+
+        return raw;
     }
 
     function getServiceLabel(key) {
@@ -850,26 +861,26 @@
         const chunks = [];
         const resident = document.getElementById('filterResident');
         if (resident && resident.value && resident.value !== 'all') {
-            chunks.push(`Резидент: ${resident.options[resident.selectedIndex]?.text || resident.value}`);
+            chunks.push(`${t('payments_export_filters_resident', 'Резидент')}: ${resident.options[resident.selectedIndex]?.text || resident.value}`);
         }
         const method = document.getElementById('filterMethod');
         if (method && method.value && method.value !== 'all') {
-            chunks.push(`Метод: ${method.options[method.selectedIndex]?.text || method.value}`);
+            chunks.push(`${t('payments_export_filters_method', 'Метод')}: ${method.options[method.selectedIndex]?.text || method.value}`);
         }
         const dateFrom = document.getElementById('filterDateFrom')?.value;
         const dateTo = document.getElementById('filterDateTo')?.value;
         if (dateFrom || dateTo) {
-            chunks.push(`Период: ${dateFrom || '...'} — ${dateTo || '...'}`);
+            chunks.push(`${t('payments_export_filters_period', 'Период')}: ${dateFrom || '...'} — ${dateTo || '...'}`);
         }
         const search = document.getElementById('filterSearch')?.value?.trim();
-        if (search) chunks.push(`Поиск: "${search}"`);
+        if (search) chunks.push(`${t('payments_export_filters_search', 'Поиск')}: "${search}"`);
         if (extraFilters.minAmount !== null || extraFilters.maxAmount !== null) {
-            chunks.push(`Сумма: ${extraFilters.minAmount ?? '...'} — ${extraFilters.maxAmount ?? '...'}`);
+            chunks.push(`${t('payments_export_filters_amount', 'Сумма')}: ${extraFilters.minAmount ?? '...'} — ${extraFilters.maxAmount ?? '...'}`);
         }
         if (extraFilters.allocatedOnly) {
-            chunks.push('Только распределенные платежи');
+            chunks.push(t('payments_export_filters_allocated_only', 'Только распределенные платежи'));
         }
-        chunks.push(`Услуги: ${selectedServices.map((k) => getServiceDisplayLabel(k)).join(', ')}`);
+        chunks.push(`${t('payments_export_filters_services', 'Услуги')}: ${selectedServices.map((k) => getServiceDisplayLabel(k)).join(', ')}`);
         return chunks.join(' | ');
     }
 
@@ -896,7 +907,7 @@
 
     async function buildPaymentInvoiceAllocations(payment, selectedServices) {
         if ((payment?.method || '').toUpperCase() === 'ADVANCE') {
-            return [{ invoice: '—', services: '—' }];
+            return [{ invoice: '—', services: '—', serviceBreakdown: {} }];
         }
 
         const apps = Array.isArray(payment?.applications) ? payment.applications : [];
@@ -919,7 +930,7 @@
         });
 
         if (!byInvoice.size) {
-            return [{ invoice: '—', services: '—' }];
+            return [{ invoice: '—', services: '—', serviceBreakdown: {} }];
         }
 
         const allocations = [];
@@ -948,11 +959,12 @@
             const services = formatServiceBreakdown(invoiceServiceBreakdown, selectedServices);
             allocations.push({
                 invoice: `${item.invoiceNumber} ->`,
-                services
+                services,
+                serviceBreakdown: invoiceServiceBreakdown
             });
         }
 
-        return allocations.length ? allocations : [{ invoice: '—', services: '—' }];
+        return allocations.length ? allocations : [{ invoice: '—', services: '—', serviceBreakdown: {} }];
     }
 
     function joinAllocationPartsForCell(parts) {
@@ -1010,6 +1022,17 @@
             const invoiceCell = joinAllocationPartsForCell(invoiceAllocations.map((a) => a.invoice));
             const servicesCell = joinAllocationPartsForCell(invoiceAllocations.map((a) => a.services));
 
+            const serviceFlags = {};
+            selectedServices.forEach((key) => {
+                let amountForKey = 0;
+                if (key === 'utility') {
+                    amountForKey = getUtilityAmount(serviceBreakdown);
+                } else {
+                    amountForKey = Number(serviceBreakdown[key] || 0);
+                }
+                serviceFlags[key] = amountForKey;
+            });
+
             rows.push({
                 date: formatExportDate(payment.received_at),
                 resident: payment.resident_code || '—',
@@ -1017,10 +1040,11 @@
                 amount: toMoney(payment.amount_total),
                 method: getMethodLabel(payment.method),
                 leftover: toMoney(payment.leftover),
-                reference: payment.reference || '—',
+                reference: getReferenceLabel(payment.reference),
                 invoice: invoiceCell,
                 services: servicesCell,
                 invoice_allocations: invoiceAllocations,
+                serviceAmounts: serviceFlags,
                 selected_services_amount: toMoney(selectedAmount),
             });
         }
@@ -1064,12 +1088,31 @@
         };
 
         const flatRows = [];
+        const selectedServiceKeys = Array.isArray(summary.selectedServices) ? summary.selectedServices : [];
         rows.forEach((row) => {
             const allocations = Array.isArray(row.invoice_allocations) && row.invoice_allocations.length
                 ? row.invoice_allocations
-                : [{ invoice: row.invoice || '—', services: row.services || '—' }];
+                : [{ invoice: row.invoice || '—', services: row.services || '—', serviceBreakdown: row.serviceAmounts || {} }];
 
             allocations.forEach((alloc, idx) => {
+                const breakdown = alloc.serviceBreakdown || {};
+                const perServiceColumns = {};
+                selectedServiceKeys.forEach((key) => {
+                    let amount = 0;
+                    if (key === 'utility') {
+                        utilityServiceKeys.forEach((uKey) => {
+                            amount += Number(breakdown[uKey] || 0);
+                        });
+                    } else {
+                        amount = Number(breakdown[key] || 0);
+                    }
+                    if (amount > 0) {
+                        perServiceColumns[key] = toExcelMoney(toMoney(amount));
+                    } else {
+                        perServiceColumns[key] = '—';
+                    }
+                });
+
                 flatRows.push({
                     date: idx === 0 ? row.date : '',
                     resident: idx === 0 ? row.resident : '',
@@ -1079,7 +1122,7 @@
                     leftover: idx === 0 ? toExcelMoney(row.leftover) : '',
                     reference: idx === 0 ? row.reference : '',
                     invoice: toText(alloc?.invoice || '—'),
-                    services: toText(alloc?.services || '—'),
+                    servicesByKey: perServiceColumns,
                     selected_services_amount: idx === 0 ? toExcelMoney(row.selected_services_amount) : '',
                     isContinuation: idx > 0,
                 });
@@ -1097,7 +1140,15 @@
             `;
         }).join('');
 
-        const dataRowsHtml = flatRows.map((row) => `
+        const dataRowsHtml = flatRows.map((row) => {
+            const serviceCells = selectedServiceKeys.map((key) => {
+                const value = row.servicesByKey && row.servicesByKey[key] !== undefined
+                    ? row.servicesByKey[key]
+                    : '';
+                return `<td class="cell center-cell">${toHtmlCell(value)}</td>`;
+            }).join('');
+
+            return `
             <tr class="${row.isContinuation ? 'continuation-row' : 'main-row'}">
                 <td class="cell">${toHtmlCell(row.date)}</td>
                 <td class="cell">${toHtmlCell(row.resident)}</td>
@@ -1107,10 +1158,11 @@
                 <td class="cell money-cell">${toHtmlCell(row.leftover)}</td>
                 <td class="cell">${toHtmlCell(row.reference)}</td>
                 <td class="cell">${toHtmlCell(row.invoice)}</td>
-                <td class="cell">${toHtmlCell(row.services)}</td>
+                ${serviceCells}
                 <td class="cell money-cell">${toHtmlCell(row.selected_services_amount)}</td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
 
         const html = `
             <html>
@@ -1139,48 +1191,65 @@
             </head>
             <body>
                 <table class="title-table">
-                    <tr><td class="title-cell"><div class="title-main">Отчет по платежам</div><div class="title-sub">Royal Park - Экспорт для бухгалтерии</div></td></tr>
+                    <tr>
+                        <td class="title-cell">
+                            <div class="title-main">${toHtmlCell(t('payments_export_title', 'Отчет по платежам'))}</div>
+                            <div class="title-sub">${toHtmlCell(t('payments_export_subtitle', 'Royal Park - Экспорт для бухгалтерии'))}</div>
+                        </td>
+                    </tr>
                 </table>
 
                 <table class="meta-table">
-                    <tr><td class="meta-label">Сформировано</td><td>${toHtmlCell(new Date().toLocaleString())}</td></tr>
-                    <tr><td class="meta-label">Фильтры</td><td>${toHtmlCell(summary.filtersText || '—')}</td></tr>
-                    <tr><td class="meta-label">Количество платежей</td><td>${toHtmlCell(summary.totalPayments)}</td></tr>
-                    <tr><td class="meta-label">Общая сумма</td><td>${toHtmlCell(toExcelMoney(summary.totalAmount))}</td></tr>
+                    <tr>
+                        <td class="meta-label">${toHtmlCell(t('payments_export_generated', 'Сформировано'))}</td>
+                        <td>${toHtmlCell(new Date().toLocaleString())}</td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">${toHtmlCell(t('payments_export_filters', 'Фильтры'))}</td>
+                        <td>${toHtmlCell(summary.filtersText || '—')}</td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">${toHtmlCell(t('payments_export_count', 'Количество платежей'))}</td>
+                        <td>${toHtmlCell(summary.totalPayments)}</td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">${toHtmlCell(t('payments_export_total', 'Общая сумма'))}</td>
+                        <td>${toHtmlCell(toExcelMoney(summary.totalAmount))}</td>
+                    </tr>
                 </table>
 
-                <div class="block-title">Сводка по услугам</div>
+                <div class="block-title">${toHtmlCell(t('payments_export_services_block_title', 'Сводка по услугам'))}</div>
                 <table class="service-table">
                     <thead>
                         <tr>
-                            <th>Услуга</th>
-                            <th>Кол-во платежей</th>
-                            <th>Сумма</th>
+                            <th>${toHtmlCell(t('payments_export_services_header_service', 'Услуга'))}</th>
+                            <th>${toHtmlCell(t('payments_export_services_header_count', 'Кол-во платежей'))}</th>
+                            <th>${toHtmlCell(t('payments_export_services_header_amount', 'Сумма'))}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${serviceSummaryRows || '<tr><td colspan="3" class="cell center-cell">Нет данных</td></tr>'}
+                        ${serviceSummaryRows || '<tr><td colspan="3" class="cell center-cell">' + toHtmlCell(t('payments_export_services_no_data', 'Нет данных')) + '</td></tr>'}
                     </tbody>
                 </table>
 
-                <div class="block-title">Детализация платежей</div>
+                <div class="block-title">${toHtmlCell(t('payments_export_details_block_title', 'Детализация платежей'))}</div>
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Дата</th>
-                            <th>Резидент</th>
-                            <th>Житель</th>
-                            <th>Сумма</th>
-                            <th>Метод</th>
-                            <th>Остаток</th>
-                            <th>Ссылка</th>
-                            <th>Invoice</th>
-                            <th>Услуги</th>
-                            <th>Сумма по услугам</th>
+                            <th>${toHtmlCell(t('payments_export_details_date', 'Дата'))}</th>
+                            <th>${toHtmlCell(t('payments_export_details_resident', 'Резидент'))}</th>
+                            <th>${toHtmlCell(t('payments_export_details_tenant', 'Житель'))}</th>
+                            <th>${toHtmlCell(t('payments_export_details_amount', 'Сумма'))}</th>
+                            <th>${toHtmlCell(t('payments_export_details_method', 'Метод'))}</th>
+                            <th>${toHtmlCell(t('payments_export_details_leftover', 'Остаток'))}</th>
+                            <th>${toHtmlCell(t('payments_export_details_reference', 'Ссылка'))}</th>
+                            <th>${toHtmlCell(t('payments_export_details_invoice', 'Invoice'))}</th>
+                            ${selectedServiceKeys.map((key) => `<th>${toHtmlCell(getServiceDisplayLabel(key))}</th>`).join('')}
+                            <th>${toHtmlCell(t('payments_export_details_services_total', 'Сумма по услугам'))}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${dataRowsHtml || '<tr><td colspan="10" class="cell center-cell">Нет данных для экспорта</td></tr>'}
+                        ${dataRowsHtml || '<tr><td colspan="' + (8 + selectedServiceKeys.length + 1) + '" class="cell center-cell">' + toHtmlCell(t('payments_export_details_no_data', 'Нет данных для экспорта')) + '</td></tr>'}
                     </tbody>
                 </table>
             </body>
@@ -1376,7 +1445,7 @@
                 const amount = typeof p.amount_total === 'number' ? p.amount_total.toFixed(2) : (p.amount_total || '0.00');
                 const method = getMethodLabel(p.method);
                 const leftover = typeof p.leftover === 'number' ? p.leftover.toFixed(2) : '0.00';
-                const reference = p.reference || '—';
+                const reference = getReferenceLabel(p.reference);
                 
                 return `<tr>
                     <td>${date}</td>
