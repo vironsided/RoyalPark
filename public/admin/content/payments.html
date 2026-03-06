@@ -613,6 +613,27 @@
         };
     }
 
+    function hasAlternativeExportFilter() {
+        const residentId = document.getElementById('filterResident')?.value;
+        if (residentId && residentId !== 'all') return true;
+
+        const method = document.getElementById('filterMethod')?.value;
+        if (method && method !== 'all') return true;
+
+        const dateTo = document.getElementById('filterDateTo')?.value;
+        if (dateTo) return true;
+
+        const search = document.getElementById('filterSearch')?.value?.trim();
+        if (search) return true;
+
+        const extraFilters = getExportExtraFilters();
+        if (extraFilters.minAmount !== null || extraFilters.maxAmount !== null || extraFilters.allocatedOnly) {
+            return true;
+        }
+
+        return false;
+    }
+
     async function getInvoiceServiceBreakdown(invoiceId) {
         const id = Number(invoiceId);
         if (!Number.isFinite(id) || id <= 0) {
@@ -1115,7 +1136,9 @@
 
                 flatRows.push({
                     date: idx === 0 ? row.date : '',
-                    resident: idx === 0 ? row.resident : '',
+                    // Repeat resident identifiers on every invoice row so Excel filters
+                    // still show all allocations for the same apartment/unit.
+                    resident: row.resident,
                     resident_user_full_name: idx === 0 ? row.resident_user_full_name : '',
                     amount: idx === 0 ? toExcelMoney(row.amount) : '',
                     method: idx === 0 ? row.method : '',
@@ -1384,7 +1407,21 @@
     window.exportPayments = async function() {
         const exportBtn = document.querySelector('.btn-export');
         const formatSelect = document.getElementById('paymentExportFormat');
+        const dateFromInput = document.getElementById('filterDateFrom');
         const format = formatSelect ? formatSelect.value : 'csv';
+
+        if (!dateFromInput?.value && !hasAlternativeExportFilter()) {
+            const message = t('payments_export_date_from_required', 'Для экспорта обязательно выберите дату начала в поле "От".');
+            if (typeof showWarning === 'function') {
+                showWarning(message);
+            } else if (typeof showError === 'function') {
+                showError(message);
+            } else {
+                alert(message);
+            }
+            dateFromInput?.focus();
+            return;
+        }
 
         if (exportBtn) {
             exportBtn.disabled = true;

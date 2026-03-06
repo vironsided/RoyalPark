@@ -1797,6 +1797,41 @@
         }, 250);
     }
 
+    function hasAlternativeInvoiceExportFilter() {
+        const residentSearch = String(document.getElementById('exportResidentSearch')?.value || '').trim();
+        if (residentSearch) return true;
+
+        const invoiceNumber = String(document.getElementById('exportInvoiceNumber')?.value || '').trim();
+        if (invoiceNumber) return true;
+
+        const periodTo = document.getElementById('exportPeriodTo')?.value;
+        if (periodTo) return true;
+
+        const dueDateTo = document.getElementById('exportDueDateTo')?.value;
+        if (dueDateTo) return true;
+
+        const blockValue = document.getElementById('exportBlock')?.value;
+        if (blockValue && blockValue !== 'all') return true;
+
+        const residentValue = document.getElementById('exportResident')?.value;
+        if (residentValue && residentValue !== 'all') return true;
+
+        const statusEl = document.getElementById('exportInvoiceStatus');
+        if (statusEl?.value && statusEl.value !== 'all') return true;
+
+        const amountFromEl = document.getElementById('exportAmountFrom');
+        const amountToEl = document.getElementById('exportAmountTo');
+        const amountFrom = amountFromEl?.value ? Number(amountFromEl.value) : null;
+        const amountTo = amountToEl?.value ? Number(amountToEl.value) : null;
+        if (Number.isFinite(amountFrom) && amountFrom > 0) return true;
+        if (Number.isFinite(amountTo) && amountTo > 0) return true;
+
+        const paymentMethod = document.getElementById('exportPaymentMethod')?.value;
+        if (paymentMethod && paymentMethod !== 'all') return true;
+
+        return false;
+    }
+
     async function runInvoicesExport() {
         const exportBtn = document.getElementById('invoicesExportRunBtn');
         const statusEl = document.getElementById('exportInvoiceStatus');
@@ -1811,6 +1846,19 @@
         const amountToEl = document.getElementById('exportAmountTo');
         const paymentMethodEl = document.getElementById('exportPaymentMethod');
         const formatEl = document.getElementById('invoicesExportFormat');
+
+        if (!periodFromEl?.value && !hasAlternativeInvoiceExportFilter()) {
+            const message = t('invoices_export_period_from_required', 'Для экспорта обязательно выберите период начала в поле \"Период от\".');
+            if (typeof showWarning === 'function') {
+                showWarning(message);
+            } else if (typeof showError === 'function') {
+                showError(message);
+            } else {
+                alert(message);
+            }
+            periodFromEl?.focus();
+            return;
+        }
 
         const filters = {
             status: statusEl?.value || 'all',
