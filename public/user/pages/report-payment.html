@@ -1291,9 +1291,14 @@ async function initPaymentPage() {
                 linkedResidentCodes = Array.from(new Set(linkedResidentCodes));
 
                 if (residents.length) {
-                    // prefer match by code or resident_code, else first resident
-                    const matched = residents.find(r => (r?.code === codeFromSession || r?.resident_code === codeFromSession)) || residents[0];
-                    displayName = matched?.full_name || matched?.resident_name || matched?.code || matched?.resident_code || displayName;
+                    const norm = (s) => (s || '').toString().replace(/\s+/g, ' ').trim();
+                    const codeNorm = norm(codeFromSession);
+                    const matched = residents.find(r => {
+                        const rc = norm(r?.code || r?.resident_code || '');
+                        return rc && codeNorm && (rc === codeNorm || rc.replace(/\s*\/\s*/g, '/') === codeNorm.replace(/\s*\/\s*/g, '/'));
+                    }) || residents[0];
+                    // show resident's full name (owner_full_name), not the code U/7878
+                    displayName = matched?.full_name || matched?.owner_full_name || matched?.resident_name || matched?.code || matched?.resident_code || displayName;
 
                     // try multiple possible advance keys (приоритет: advance_total из API)
                     advanceValue = matched?.advance_total ?? matched?.advance ?? matched?.advance_balance ?? matched?.balance?.advance ?? matched?.balance?.advance_balance ?? null;

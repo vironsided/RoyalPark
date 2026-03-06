@@ -1163,6 +1163,7 @@ def get_resident_detail(
 class ResidentDashboardData(BaseModel):
     id: int
     code: str  # "E / 444"
+    full_name: Optional[str] = None  # owner_full_name for display on advance card
     month_due: float
     month_total: float
     month_paid: float
@@ -2122,6 +2123,7 @@ def get_resident_dashboard(
         residents_data.append(ResidentDashboardData(
             id=r.id,
             code=code,
+            full_name=r.owner_full_name if r.owner_full_name else None,
             month_due=float(res_month_due),
             month_total=float(month_total.get(r.id, Decimal("0"))),
             month_paid=float(month_paid.get(r.id, Decimal("0"))),

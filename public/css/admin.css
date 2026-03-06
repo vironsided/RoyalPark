@@ -3019,6 +3019,7 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
 
 .account-profile-avatar {
     text-align: center;
+    min-width: 0;
 }
 
 .account-form-row {
@@ -3037,6 +3038,7 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    min-width: 0;
 }
 
 .account-file-select-btn {
@@ -3066,6 +3068,8 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
 
 .account-file-status {
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
     padding: 0.5rem 0.75rem;
     background: rgba(55, 65, 81, 0.5);
     border: 1px solid rgba(229, 231, 235, 0.2);
@@ -3074,12 +3078,13 @@ html[data-theme="dark"] .dashboard-content .content-wrapper,
     color: #9ca3af;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    word-break: break-all;
+    overflow: hidden;
     white-space: normal;
     text-align: center;
     min-height: 2.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: block;
+    box-sizing: border-box;
 }
 
 .account-file-status.has-file {
