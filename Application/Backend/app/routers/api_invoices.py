@@ -31,6 +31,12 @@ class InvoiceLineOut(BaseModel):
     payment_status: Optional[str] = None  # "Оплачена", "Частично", "Не оплачена"
     paid_amount: Optional[float] = None  # Сколько оплачено по этой строке
     remaining_amount: Optional[float] = None  # Сколько осталось оплатить
+    meter_previous: Optional[float] = None
+    meter_current: Optional[float] = None
+    meter_unit: Optional[str] = None
+    tariff_name: Optional[str] = None
+    tariff_from_date: Optional[str] = None
+    tariff_to_date: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -1024,6 +1030,61 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
         }
 
         rd = reading_map.get(line.meter_reading_id)
+        meter_previous = None
+        meter_current = None
+        meter_unit = None
+        tariff_name = None
+        tariff_from_date = None
+        tariff_to_date = None
+        if rd is not None:
+            try:
+                current_val_dec = Decimal(str(getattr(rd, "value", 0) or 0))
+                consumption_dec = Decimal(str(getattr(rd, "consumption", 0) or 0))
+                previous_val_dec = current_val_dec - consumption_dec
+                meter_current = float(current_val_dec)
+                meter_previous = float(previous_val_dec)
+            except Exception:
+                meter_previous = None
+                meter_current = None
+
+            meter_type_val = str(getattr(getattr(rd, "resident_meter", None), "meter_type", "") or "").upper()
+            if meter_type_val == "ELECTRIC":
+                meter_unit = "кВт·ч"
+            elif meter_type_val in {"GAS", "WATER", "SEWERAGE"}:
+                meter_unit = "м³"
+            tariff_name = str(getattr(getattr(rd, "tariff", None), "name", "") or "").strip() or None
+
+            try:
+                tariff_obj = getattr(rd, "tariff", None)
+                rd_date = getattr(rd, "reading_date", None)
+                rd_day = rd_date.date() if hasattr(rd_date, "date") else None
+                tariff_steps = list(getattr(tariff_obj, "steps", []) or [])
+                dated_steps = [st for st in tariff_steps if getattr(st, "from_date", None) or getattr(st, "to_date", None)]
+                selected_step = None
+                if rd_day and dated_steps:
+                    for st in dated_steps:
+                        fd = getattr(st, "from_date", None)
+                        td = getattr(st, "to_date", None)
+                        if (fd is None or rd_day >= fd) and (td is None or rd_day <= td):
+                            selected_step = st
+                            break
+                if selected_step is None and dated_steps:
+                    selected_step = dated_steps[0]
+                if selected_step is not None:
+                    fd = getattr(selected_step, "from_date", None)
+                    td = getattr(selected_step, "to_date", None)
+                    tariff_from_date = fd.strftime("%d.%m.%Y") if fd else None
+                    tariff_to_date = td.strftime("%d.%m.%Y") if td else None
+            except Exception:
+                tariff_from_date = None
+                tariff_to_date = None
+
+        base_line["meter_previous"] = meter_previous
+        base_line["meter_current"] = meter_current
+        base_line["meter_unit"] = meter_unit
+        base_line["tariff_name"] = tariff_name
+        base_line["tariff_from_date"] = tariff_from_date
+        base_line["tariff_to_date"] = tariff_to_date
         try:
             stable_fee_total = _money2(Decimal(str(getattr(rd, "stable_fee_total", 0) or 0)))
         except Exception:
@@ -1084,6 +1145,12 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
                     "payment_status": variable_status,
                     "paid_amount": float(variable_paid),
                     "remaining_amount": float(variable_remaining),
+                    "meter_previous": meter_previous,
+                    "meter_current": meter_current,
+                    "meter_unit": meter_unit,
+                    "tariff_name": tariff_name,
+                    "tariff_from_date": tariff_from_date,
+                    "tariff_to_date": tariff_to_date,
                 })
                 service_label = _stable_service_label(line.description)
                 stable_label = "Стабильный тариф"
@@ -1098,6 +1165,7 @@ def _get_invoice_detail_internal(db: Session, invoice_id: int):
                     "payment_status": stable_status,
                     "paid_amount": float(stable_paid),
                     "remaining_amount": float(stable_remaining),
+                    "tariff_name": tariff_name,
                 })
                 continue
 

@@ -498,10 +498,17 @@
     function normalizeInvoiceFromApi(inv) {
         const normalizedLines = Array.isArray(inv.lines) ? inv.lines.map((line) => ({
             description: line?.description || '—',
+            amount_vat: Number(line?.amount_vat || 0),
             amount_total: Number(line?.amount_total || 0),
             paid_amount: Number(line?.paid_amount || 0),
             remaining_amount: Number(line?.remaining_amount || 0),
-            payment_status: line?.payment_status || null
+            payment_status: line?.payment_status || null,
+            meter_previous: Number.isFinite(Number(line?.meter_previous)) ? Number(line?.meter_previous) : null,
+            meter_current: Number.isFinite(Number(line?.meter_current)) ? Number(line?.meter_current) : null,
+            meter_unit: String(line?.meter_unit || '').trim() || null,
+            tariff_name: String(line?.tariff_name || '').trim() || null,
+            tariff_from_date: String(line?.tariff_from_date || '').trim() || null,
+            tariff_to_date: String(line?.tariff_to_date || '').trim() || null
         })) : [];
         return {
             id: inv.id,
@@ -521,6 +528,8 @@
             period: `${inv.period_year}-${String(inv.period_month).padStart(2, '0')}`,
             periodYear: inv.period_year,
             periodMonth: inv.period_month,
+            periodDateFrom: inv?.period_dates?.from || null,
+            periodDateTo: inv?.period_dates?.to || null,
             amount: Number(inv.amount_total || 0),
             amountNet: Number(inv.amount_net || 0),
             amountVat: Number(inv.amount_vat || 0),
@@ -538,12 +547,21 @@
         const detail = await response.json();
         return {
             residentUserPhone: detail?.resident_user_phone || '—',
+            periodDateFrom: detail?.period_dates?.from || null,
+            periodDateTo: detail?.period_dates?.to || null,
             lines: Array.isArray(detail?.lines) ? detail.lines.map((line) => ({
                 description: line?.description || '—',
+                amount_vat: Number(line?.amount_vat || 0),
                 amount_total: Number(line?.amount_total || 0),
                 paid_amount: Number(line?.paid_amount || 0),
                 remaining_amount: Number(line?.remaining_amount || 0),
-                payment_status: line?.payment_status || null
+                payment_status: line?.payment_status || null,
+                meter_previous: Number.isFinite(Number(line?.meter_previous)) ? Number(line?.meter_previous) : null,
+                meter_current: Number.isFinite(Number(line?.meter_current)) ? Number(line?.meter_current) : null,
+                meter_unit: String(line?.meter_unit || '').trim() || null,
+                tariff_name: String(line?.tariff_name || '').trim() || null,
+                tariff_from_date: String(line?.tariff_from_date || '').trim() || null,
+                tariff_to_date: String(line?.tariff_to_date || '').trim() || null
             })) : []
         };
     }
@@ -903,6 +921,19 @@
     function buildInvoiceServiceTariffKey(line) {
         const raw = String(line?.description || '').trim();
         if (!raw) return '';
+        const tariffName = String(line?.tariff_name || '').trim();
+        const lineType = detectInvoiceLineMeterType(line);
+        const isStableLine = raw.toLowerCase().includes('стабил') || raw.toLowerCase().includes('stable');
+
+        if (tariffName) {
+            if (isStableLine) {
+                return `${raw} — ${tariffName}`;
+            }
+            if (lineType) {
+                return `${getInvoiceMeterLabel(lineType)} — ${tariffName}`;
+            }
+            return `${raw} — ${tariffName}`;
+        }
 
         // 1) Формат "Газ - Qaz", "Сервис - 4234324", "Электричество - qweqwe"
         const dashIdx = raw.indexOf('-');
@@ -922,6 +953,119 @@
         }
 
         return base;
+    }
+
+    var INVOICE_LINE_SERVICE_PREFIXES = {
+        ELECTRIC: [/^электричество\s+/i, /^electricity\s+/i, /^elektrik\s+/i],
+        GAS: [/^газ\s+/i, /^gas\s+/i, /^qaz\s+/i],
+        WATER: [/^вода\s+/i, /^water\s+/i, /^su\s+/i],
+        SEWERAGE: [/^канализация\s*/i, /^sewerage\s*/i, /^kanalizasiya\s*/i],
+        SERVICE: [/^сервис\s+/i, /^service\s+/i, /^xidmət\s+/i],
+        RENT: [/^аренда\s+/i, /^rent\s+/i, /^icarə\s+/i, /^icare\s+/i],
+        CONSTRUCTION: [/^строительство\s+/i, /^construction\s+/i, /^tikinti\s+/i]
+    };
+
+    /** Returns i18n-translated unit for export (single unit string). */
+    function getTranslatedExportUnit(unit) {
+        var u = String(unit || '').trim().toLowerCase();
+        if (!u) return '';
+        if (/квт[-·]?ч|квтч|квт\b|kwh|kvt·s|kvt·saat/.test(u)) return t('user_unit_kwh', 'кВт·ч');
+        if (/м³|м3|m³|m3/.test(u)) return t('user_unit_m3', 'м³');
+        if (/мес\.?|mes\.?|^month$|^ay$/.test(u)) return t('readings_unit_month_short', 'мес.');
+        return unit;
+    }
+
+    /** Replaces unit abbreviations in export text with i18n-translated units (kWh, m³, month). */
+    function translateUnitsInExportText(str) {
+        if (!str || typeof str !== 'string') return str;
+        var s = str;
+        var kwh = t('user_unit_kwh', 'кВт·ч');
+        var m3 = t('user_unit_m3', 'м³');
+        var month = t('readings_unit_month_short', 'мес.');
+        s = s.replace(/([\d.,]+)\s*(кВт[-·]?ч|кВтч|квт[-·]?ч|квтч|квт|kwh|kvt·s|kvt·saat)/gi, '$1 ' + kwh);
+        s = s.replace(/([\d.,]+)\s*(м³|м3|m³|m3)/gi, '$1 ' + m3);
+        s = s.replace(/([\d.,]+)\s*(мес\.?|mes\.?|month\b|ay\b)/gi, '$1 ' + month);
+        return s;
+    }
+
+    function getInvoiceLineDisplayDescription(line) {
+        let raw = String(line?.description || '').trim();
+        if (!raw) return '';
+        var lower = raw.toLowerCase();
+        if (lower === 'hesablanma tərkibi') {
+            return t('invoices_export_column_lines', 'Состав начисления');
+        }
+        if (lower.indexOf('стабильный тариф (электричество)') === 0 || lower.indexOf('stable tariff (electricity)') === 0 || lower.indexOf('stabil tarif (elektrik)') === 0) {
+            var rest = raw.slice(raw.indexOf(')') + 1).replace(/^\s+/, '');
+            rest = translateUnitsInExportText(rest);
+            return t('invoices_export_stable_tariff_electricity', 'Стабильный тариф (Электричество)') + (rest ? ' ' + rest : '');
+        }
+        if (lower.indexOf('стабильный тариф (газ)') === 0 || lower.indexOf('stable tariff (gas)') === 0 || lower.indexOf('stabil tarif (qaz)') === 0) {
+            var rest = raw.slice(raw.indexOf(')') + 1).replace(/^\s+/, '');
+            rest = translateUnitsInExportText(rest);
+            return t('invoices_export_stable_tariff_gas', 'Стабильный тариф (Газ)') + (rest ? ' ' + rest : '');
+        }
+        if (lower.indexOf('канализация') === 0 || lower.indexOf('sewerage') === 0 || lower.indexOf('kanalizasiya') === 0) {
+            var rest = raw.replace(/^(канализация|sewerage|kanalizasiya)\s*/i, '');
+            rest = translateUnitsInExportText(rest);
+            return t('invoices_export_sewerage', 'Канализация') + (rest ? ' ' + rest : '');
+        }
+        var type = detectInvoiceLineMeterType(line);
+        if (type && INVOICE_LINE_SERVICE_PREFIXES[type]) {
+            var label = getInvoiceMeterLabel(type);
+            var rest = raw;
+            for (var i = 0; i < INVOICE_LINE_SERVICE_PREFIXES[type].length; i++) {
+                rest = raw.replace(INVOICE_LINE_SERVICE_PREFIXES[type][i], '');
+                if (rest !== raw) break;
+            }
+            rest = rest ? translateUnitsInExportText(rest.trim()) : '';
+            return label + (rest ? ' ' + rest : '');
+        }
+        return translateUnitsInExportText(raw);
+    }
+
+    function isUtilityInvoiceLine(line) {
+        const type = detectInvoiceLineMeterType(line);
+        if (!type) return false;
+        const isBaseUtility = type === 'WATER' || type === 'SEWERAGE' || type === 'GAS' || type === 'ELECTRIC';
+        if (!isBaseUtility) return false;
+
+        const text = String(line?.description || '').toLowerCase();
+        const isStable = text.includes('стабил') || text.includes('stable');
+        // В коммунальные включаем обычные вода/канализация/газ/электричество
+        // и стабильные тарифы только для газа и электричества.
+        if (!isStable) return true;
+        return type === 'GAS' || type === 'ELECTRIC';
+    }
+
+    function parseInvoiceLineUsage(description) {
+        const text = String(description || '').trim();
+        if (!text) return null;
+
+        const qtyMatch = text.match(/(?:^|\s)([\d]+(?:[.,]\d+)?)\s*(квт·ч|квтч|квт|kwh|м³|м3|m3|мес\.?|mes\.?)(?:\s|$)/i);
+        if (!qtyMatch) return null;
+
+        const value = Number(String(qtyMatch[1]).replace(',', '.'));
+        if (!Number.isFinite(value)) return null;
+
+        const unitRaw = String(qtyMatch[2] || '').toLowerCase();
+        let unit = unitRaw;
+        if (unitRaw === 'квтч' || unitRaw === 'квт' || unitRaw === 'kwh') unit = 'кВт·ч';
+        if (unitRaw === 'м3' || unitRaw === 'm3') unit = 'м³';
+        if (unitRaw.startsWith('мес') || unitRaw.startsWith('mes')) unit = 'мес.';
+
+        return { value, unit };
+    }
+
+    function formatInvoiceUsageCell(metric) {
+        if (!metric) return '-';
+        if (!Number.isFinite(Number(metric.value))) return '-';
+        const value = Number(metric.value);
+        const rounded = Math.abs(value - Math.round(value)) < 0.000001
+            ? String(Math.round(value))
+            : value.toFixed(2).replace(/\.?0+$/, '');
+        const unit = getTranslatedExportUnit(metric.unit) || String(metric.unit || '').trim();
+        return unit ? `${rounded} ${unit}` : rounded;
     }
 
     function collectInvoiceMeterTypes(invoice) {
@@ -1002,9 +1146,20 @@
             const serviceLines = filterInvoiceLinesByService(inv, selectedTypes);
             const lineTexts = serviceLines.map((line) => {
                 const amount = Number(line?.amount_total || 0).toFixed(2);
-                return `${line?.description || '—'} (${amount} ₼)`;
+                const desc = getInvoiceLineDisplayDescription(line) || '—';
+                return `${desc} (${amount} ₼)`;
             });
             const serviceCharged = serviceLines.reduce((acc, line) => acc + Number(line?.amount_total || 0), 0);
+            const utilityTotals = serviceLines.reduce((acc, line) => {
+                if (!isUtilityInvoiceLine(line)) return acc;
+                const totalVal = Number(line?.amount_total || 0);
+                const vatVal = Number(line?.amount_vat || 0);
+                const netVal = totalVal - vatVal;
+                acc.net += netVal;
+                acc.vat += vatVal;
+                acc.total += totalVal;
+                return acc;
+            }, { net: 0, vat: 0, total: 0 });
             const hasPaidMeta = serviceLines.some((line) => Number.isFinite(Number(line?.paid_amount)));
             const hasRemainingMeta = serviceLines.some((line) => Number.isFinite(Number(line?.remaining_amount)));
             const servicePaid = hasPaidMeta
@@ -1032,7 +1187,7 @@
                 return `${label.toLowerCase()} ${safeValue.toFixed(2)} ₼`;
             });
 
-            const serviceTariffAmounts = {};
+            const serviceTariffMetrics = {};
             serviceLines.forEach((line) => {
                 const type = detectInvoiceLineMeterType(line);
                 if (!type) return;
@@ -1040,8 +1195,159 @@
                 const key = buildInvoiceServiceTariffKey(line);
                 if (!key) return;
                 const amount = Number(line?.amount_total || 0);
-                if (!(amount > 0)) return;
-                serviceTariffAmounts[key] = (serviceTariffAmounts[key] || 0) + amount;
+                const usage = parseInvoiceLineUsage(line?.description);
+                const prevReading = Number(line?.meter_previous);
+                const currentReading = Number(line?.meter_current);
+                const readingUnit = String(line?.meter_unit || usage?.unit || '').trim();
+                const tariffFromDate = String(line?.tariff_from_date || '').trim();
+                const tariffToDate = String(line?.tariff_to_date || '').trim();
+
+                if (!serviceTariffMetrics[key]) {
+                    serviceTariffMetrics[key] = {
+                        total: 0,
+                        vat: 0,
+                        paid: 0,
+                        remaining: 0,
+                        usage: null,
+                        previous: null,
+                        current: null,
+                        isConstruction: false,
+                        tariffFromDate: null,
+                        tariffToDate: null
+                    };
+                }
+
+                if (amount > 0) {
+                    serviceTariffMetrics[key].total += amount;
+                }
+                serviceTariffMetrics[key].vat += Number(line?.amount_vat || 0);
+                serviceTariffMetrics[key].paid += Number(line?.paid_amount || 0);
+                serviceTariffMetrics[key].remaining += Number(line?.remaining_amount || 0);
+
+                if (usage && Number.isFinite(usage.value) && usage.value > 0) {
+                    const currentUsage = serviceTariffMetrics[key].usage;
+                    if (!currentUsage) {
+                        serviceTariffMetrics[key].usage = { value: usage.value, unit: usage.unit };
+                    } else if (currentUsage.unit === usage.unit) {
+                        currentUsage.value += usage.value;
+                    }
+                }
+
+                if (Number.isFinite(prevReading)) {
+                    const currentPrev = serviceTariffMetrics[key].previous;
+                    if (!currentPrev) {
+                        serviceTariffMetrics[key].previous = { value: prevReading, unit: readingUnit };
+                    } else if ((currentPrev.unit || '') === readingUnit) {
+                        currentPrev.value = Math.min(currentPrev.value, prevReading);
+                    }
+                }
+
+                if (Number.isFinite(currentReading)) {
+                    const currentCurr = serviceTariffMetrics[key].current;
+                    if (!currentCurr) {
+                        serviceTariffMetrics[key].current = { value: currentReading, unit: readingUnit };
+                    } else if ((currentCurr.unit || '') === readingUnit) {
+                        currentCurr.value = Math.max(currentCurr.value, currentReading);
+                    }
+                }
+
+                if (tariffFromDate) {
+                    if (type === 'CONSTRUCTION') serviceTariffMetrics[key].isConstruction = true;
+                    serviceTariffMetrics[key].tariffFromDate = tariffFromDate;
+                }
+                if (tariffToDate) {
+                    if (type === 'CONSTRUCTION') serviceTariffMetrics[key].isConstruction = true;
+                    serviceTariffMetrics[key].tariffToDate = tariffToDate;
+                }
+            });
+
+            const serviceTariffAmounts = {};
+            const serviceTariffUsage = {};
+            const serviceTariffPrevious = {};
+            const serviceTariffCurrent = {};
+            const serviceTariffVat = {};
+            const serviceTariffPaid = {};
+            const serviceTariffRemaining = {};
+            Object.entries(serviceTariffMetrics).forEach(([key, metric]) => {
+                if (metric && metric.total > 0) {
+                    serviceTariffAmounts[key] = metric.total;
+                }
+                if (metric && metric.usage && Number(metric.usage.value) > 0) {
+                    serviceTariffUsage[key] = formatInvoiceUsageCell(metric.usage);
+                }
+                if (metric && metric.previous && Number.isFinite(Number(metric.previous.value))) {
+                    serviceTariffPrevious[key] = formatInvoiceUsageCell(metric.previous);
+                }
+                if (metric && metric.current && Number.isFinite(Number(metric.current.value))) {
+                    serviceTariffCurrent[key] = formatInvoiceUsageCell(metric.current);
+                }
+                if (metric && metric.isConstruction && metric.tariffFromDate) {
+                    serviceTariffPrevious[key] = `${t('invoices_export_date_from', 'ОТ')} ${metric.tariffFromDate}`;
+                }
+                if (metric && metric.isConstruction && metric.tariffToDate) {
+                    serviceTariffCurrent[key] = `${t('invoices_export_date_to', 'ДО')} ${metric.tariffToDate}`;
+                }
+                if (metric && Number.isFinite(Number(metric.vat))) {
+                    serviceTariffVat[key] = Number(metric.vat);
+                }
+                if (metric && Number.isFinite(Number(metric.paid))) {
+                    serviceTariffPaid[key] = Number(metric.paid);
+                }
+                if (metric && Number.isFinite(Number(metric.remaining))) {
+                    serviceTariffRemaining[key] = Number(metric.remaining);
+                }
+            });
+
+            const serviceTypeTotals = {};
+            serviceLines.forEach((line) => {
+                const type = detectInvoiceLineMeterType(line);
+                if (!type) return;
+                if (Array.isArray(selectedTypes) && selectedTypes.length > 0 && !selectedTypes.includes(type)) return;
+
+                if (!serviceTypeTotals[type]) {
+                    serviceTypeTotals[type] = {
+                        total: 0,
+                        vat: 0,
+                        paid: 0,
+                        remaining: 0,
+                        usage: null,
+                        previous: null,
+                        current: null
+                    };
+                }
+
+                const metric = serviceTypeTotals[type];
+                metric.total += Number(line?.amount_total || 0);
+                metric.vat += Number(line?.amount_vat || 0);
+                metric.paid += Number(line?.paid_amount || 0);
+                metric.remaining += Number(line?.remaining_amount || 0);
+
+                const usage = parseInvoiceLineUsage(line?.description);
+                if (usage && Number.isFinite(usage.value) && usage.value > 0) {
+                    if (!metric.usage) {
+                        metric.usage = { value: usage.value, unit: usage.unit };
+                    } else if (metric.usage.unit === usage.unit) {
+                        metric.usage.value += usage.value;
+                    }
+                }
+
+                const prevReading = Number(line?.meter_previous);
+                const currentReading = Number(line?.meter_current);
+                const readingUnit = String(line?.meter_unit || usage?.unit || '').trim();
+                if (Number.isFinite(prevReading)) {
+                    if (!metric.previous) {
+                        metric.previous = { value: prevReading, unit: readingUnit };
+                    } else if ((metric.previous.unit || '') === readingUnit) {
+                        metric.previous.value = Math.min(metric.previous.value, prevReading);
+                    }
+                }
+                if (Number.isFinite(currentReading)) {
+                    if (!metric.current) {
+                        metric.current = { value: currentReading, unit: readingUnit };
+                    } else if ((metric.current.unit || '') === readingUnit) {
+                        metric.current.value = Math.max(metric.current.value, currentReading);
+                    }
+                }
             });
 
             return {
@@ -1057,12 +1363,24 @@
                 paid: Number(servicePaid || 0),
                 remaining: Number(serviceRemaining || 0),
                 dueDate: inv.dueDateRaw || '—',
+                periodDateFrom: inv.periodDateFrom || null,
+                periodDateTo: inv.periodDateTo || null,
                 paymentMethodsText: (Array.isArray(inv.paymentMethods) && inv.paymentMethods.length)
                     ? inv.paymentMethods.map((m) => getInvoicePaymentMethodLabel(m)).join(', ')
                     : '—',
                 linesList: lineTexts.length ? lineTexts : ['—'],
                 remainingByServicesList: serviceRemainingLines.length ? serviceRemainingLines : ['—'],
-                serviceTariffAmounts
+                utilityNet: Number(utilityTotals.net || 0),
+                utilityVat: Number(utilityTotals.vat || 0),
+                utilityTotal: Number(utilityTotals.total || 0),
+                serviceTariffAmounts,
+                serviceTariffUsage,
+                serviceTariffPrevious,
+                serviceTariffCurrent,
+                serviceTariffVat,
+                serviceTariffPaid,
+                serviceTariffRemaining,
+                serviceTypeTotals
             };
         });
     }
@@ -1158,7 +1476,7 @@
 
         const generatedLabel = t('tariffs_export_generated', 'Сформировано');
         const filtersLabel = t('tariffs_export_filters', 'Фильтры');
-        const countLabel = t('tariffs_export_count', 'Количество счетов');
+        const countLabel = t('invoices_export_count_invoices', 'Количество счетов');
 
         const colPeriod = t('invoices_export_column_period', 'Период');
         const colBlock = t('invoices_export_column_block', 'Блок');
@@ -1174,12 +1492,63 @@
         const colDueDate = t('invoices_export_column_due_date', 'Срок оплаты');
         const colPaymentMethod = t('invoices_export_column_payment_method', 'Метод оплаты');
         const colLines = t('invoices_export_column_lines', 'Состав начисления');
+        const colUtilityNet = t('invoices_export_utilities_net', 'Коммунальные (без НДС)');
+        const colUtilityVat = t('invoices_export_utilities_vat', 'НДС коммунальных');
+        const colUtilityTotal = t('invoices_export_utilities_with_vat', 'Коммунальные (с НДС)');
+
+        const usageSuffix = t('invoices_export_usage', 'Расход');
+        const previousSuffix = t('invoices_export_previous_reading', 'Предыдущий показатель');
+        const currentSuffix = t('invoices_export_current_reading', 'Показатель на момент инвойса');
+        const totalSuffix = t('invoices_export_total', 'Итого');
+        const paidSuffix = t('invoices_export_column_paid', 'Оплачено');
+        const remainingSuffix = t('invoices_export_column_remaining', 'Остаток');
+        const vatSuffix = t('invoices_export_vat', 'НДС');
+
+        function isStableTariffKey(key) {
+            const k = String(key || '').toLowerCase();
+            return k.indexOf('стабильн') !== -1 || k.indexOf('stable') !== -1;
+        }
+
+        function isServiceTariffKey(key) {
+            const k = String(key || '').toLowerCase();
+            return k.indexOf('сервис') !== -1 || k.indexOf('service') !== -1;
+        }
+
+        function isRentTariffKey(key) {
+            const k = String(key || '').toLowerCase();
+            return k.indexOf('аренда') !== -1 || k.indexOf('rent') !== -1;
+        }
+
+        function isSewerageTariffKey(key) {
+            const k = String(key || '').toLowerCase();
+            return k.indexOf('канализац') !== -1 || k.indexOf('sewerage') !== -1;
+        }
+
+        function isConstructionTariffKey(key) {
+            const k = String(key || '').toLowerCase();
+            return k.indexOf('строител') !== -1 || k.indexOf('construction') !== -1;
+        }
+
+        function isInitialDebtTariffKey(key) {
+            const k = String(key || '').toLowerCase();
+            return k.indexOf('начальный долг') !== -1 || k.indexOf('initial debt') !== -1;
+        }
+
+        function getTranslatedTariffColumnLabel(key) {
+            const k = String(key || '').trim();
+            const lower = k.toLowerCase();
+            if (lower.indexOf('стабиль') !== -1 && (lower.indexOf('электр') !== -1 || lower.indexOf('electric') !== -1)) return t('invoices_export_stable_tariff_electricity', 'Стабильный тариф (Электричество)');
+            if (lower.indexOf('стабиль') !== -1 && (lower.indexOf('газ') !== -1 || lower.indexOf('gas') !== -1 || lower.indexOf('qaz') !== -1)) return t('invoices_export_stable_tariff_gas', 'Стабильный тариф (Газ)');
+            if (lower.indexOf('канализац') !== -1 || lower.indexOf('sewerage') !== -1 || lower.indexOf('kanalizasiya') !== -1) return t('invoices_export_sewerage', 'Канализация');
+            return key;
+        }
 
         const tariffKeys = [];
         const seenTariffKeys = new Set();
         rows.forEach((r) => {
             const map = r.serviceTariffAmounts || {};
             Object.keys(map).forEach((key) => {
+                if (isInitialDebtTariffKey(key)) return;
                 if (!seenTariffKeys.has(key)) {
                     seenTariffKeys.add(key);
                     tariffKeys.push(key);
@@ -1187,12 +1556,76 @@
             });
         });
 
+        const serviceTypeOrder = ['ELECTRIC', 'GAS', 'WATER', 'SEWERAGE', 'SERVICE', 'RENT', 'CONSTRUCTION'];
+        const serviceTotalTypes = serviceTypeOrder.filter((type) => rows.some((r) => r?.serviceTypeTotals?.[type]));
+
+        const serviceTotalColCount = serviceTotalTypes.reduce((sum, type) => {
+            if (type === 'SEWERAGE') return sum + 4;
+            if (type === 'SERVICE' || type === 'RENT' || type === 'CONSTRUCTION') return sum + 5;
+            return sum + 7;
+        }, 0);
+
+        const tariffColCount = tariffKeys.reduce((sum, key) => {
+            if (isStableTariffKey(key) || isSewerageTariffKey(key)) return sum + 4;
+            if (isConstructionTariffKey(key)) return sum + 6;
+            if (isServiceTariffKey(key) || isRentTariffKey(key)) return sum + 5;
+            return sum + 7;
+        }, 0);
+
         const bodyRows = rows.map((r) => {
             const serviceMap = r.serviceTariffAmounts || {};
+            const serviceUsageMap = r.serviceTariffUsage || {};
+            const servicePrevMap = r.serviceTariffPrevious || {};
+            const serviceCurrMap = r.serviceTariffCurrent || {};
+            const serviceVatMap = r.serviceTariffVat || {};
+            const servicePaidMap = r.serviceTariffPaid || {};
+            const serviceRemainingMap = r.serviceTariffRemaining || {};
+            const serviceTypeTotals = r.serviceTypeTotals || {};
+            const serviceTotalCells = serviceTotalTypes.map((type) => {
+                const totals = serviceTypeTotals[type] || {};
+                const totalValue = Number.isFinite(Number(totals.total)) ? Number(totals.total).toFixed(2) : '-';
+                const vatValue = Number.isFinite(Number(totals.vat)) ? Number(totals.vat).toFixed(2) : '-';
+                const paidValue = Number.isFinite(Number(totals.paid)) ? Number(totals.paid).toFixed(2) : '-';
+                const remainingValue = Number.isFinite(Number(totals.remaining)) ? Number(totals.remaining).toFixed(2) : '-';
+
+                if (type === 'SEWERAGE') {
+                    return `<td class="money-cell">${esc(totalValue)}</td><td class="money-cell">${esc(vatValue)}</td><td class="money-cell">${esc(paidValue)}</td><td class="money-cell">${esc(remainingValue)}</td>`;
+                }
+                if (type === 'SERVICE' || type === 'RENT' || type === 'CONSTRUCTION') {
+                    const usageValue = totals.usage ? formatInvoiceUsageCell(totals.usage) : '-';
+                    return `<td>${esc(usageValue)}</td><td class="money-cell">${esc(totalValue)}</td><td class="money-cell">${esc(vatValue)}</td><td class="money-cell">${esc(paidValue)}</td><td class="money-cell">${esc(remainingValue)}</td>`;
+                }
+
+                const previousValue = totals.previous ? formatInvoiceUsageCell(totals.previous) : '-';
+                const currentValue = totals.current ? formatInvoiceUsageCell(totals.current) : '-';
+                const usageValue = totals.usage ? formatInvoiceUsageCell(totals.usage) : '-';
+                return `<td>${esc(previousValue)}</td><td>${esc(currentValue)}</td><td>${esc(usageValue)}</td><td class="money-cell">${esc(totalValue)}</td><td class="money-cell">${esc(vatValue)}</td><td class="money-cell">${esc(paidValue)}</td><td class="money-cell">${esc(remainingValue)}</td>`;
+            }).join('');
             const serviceCells = tariffKeys.map((key) => {
                 const amount = serviceMap[key] ? Number(serviceMap[key]) : 0;
-                const value = amount > 0 ? amount.toFixed(2) : '-';
-                return `<td class="money-cell">${esc(value)}</td>`;
+                const totalValue = amount > 0 ? amount.toFixed(2) : '-';
+                const vatVal = serviceVatMap[key];
+                const paidVal = servicePaidMap[key];
+                const remainingVal = serviceRemainingMap[key];
+                const vatValue = Number.isFinite(Number(vatVal)) ? Number(vatVal).toFixed(2) : '-';
+                const paidValue = Number.isFinite(Number(paidVal)) ? Number(paidVal).toFixed(2) : '-';
+                const remainingValue = Number.isFinite(Number(remainingVal)) ? Number(remainingVal).toFixed(2) : '-';
+                if (isStableTariffKey(key) || isSewerageTariffKey(key)) {
+                    return `<td class="money-cell">${esc(totalValue)}</td><td class="money-cell">${esc(vatValue)}</td><td class="money-cell">${esc(paidValue)}</td><td class="money-cell">${esc(remainingValue)}</td>`;
+                }
+                if (isConstructionTariffKey(key)) {
+                    const fromValue = String(servicePrevMap[key] || '-');
+                    const toValue = String(serviceCurrMap[key] || '-');
+                    return `<td>${esc(fromValue)}</td><td>${esc(toValue)}</td><td class="money-cell">${esc(totalValue)}</td><td class="money-cell">${esc(vatValue)}</td><td class="money-cell">${esc(paidValue)}</td><td class="money-cell">${esc(remainingValue)}</td>`;
+                }
+                if (isServiceTariffKey(key) || isRentTariffKey(key)) {
+                    const usageValue = String(serviceUsageMap[key] || '-');
+                    return `<td>${esc(usageValue)}</td><td class="money-cell">${esc(totalValue)}</td><td class="money-cell">${esc(vatValue)}</td><td class="money-cell">${esc(paidValue)}</td><td class="money-cell">${esc(remainingValue)}</td>`;
+                }
+                const previousValue = String(servicePrevMap[key] || '-');
+                const currentValue = String(serviceCurrMap[key] || '-');
+                const usageValue = String(serviceUsageMap[key] || '-');
+                return `<td>${esc(previousValue)}</td><td>${esc(currentValue)}</td><td>${esc(usageValue)}</td><td class="money-cell">${esc(totalValue)}</td><td class="money-cell">${esc(vatValue)}</td><td class="money-cell">${esc(paidValue)}</td><td class="money-cell">${esc(remainingValue)}</td>`;
             }).join('');
 
             return `
@@ -1211,7 +1644,11 @@
                 <td>${esc(r.dueDate)}</td>
                 <td>${esc(r.paymentMethodsText)}</td>
                 <td class="lines-cell">${(Array.isArray(r.linesList) ? r.linesList : ['—']).map((line, idx) => `<div class="line-row">${esc(String(idx + 1) + ') ' + line)}</div>`).join('')}</td>
+                <td class="money-cell">${esc(Number(r.utilityNet || 0).toFixed(2))}</td>
+                <td class="money-cell">${esc(Number(r.utilityVat || 0).toFixed(2))}</td>
+                <td class="money-cell">${esc(Number(r.utilityTotal || 0).toFixed(2))}</td>
                 ${serviceCells}
+                ${serviceTotalCells}
             </tr>
         `;
         }).join('');
@@ -1257,9 +1694,35 @@
                         <th>${esc(colDueDate)}</th>
                         <th>${esc(colPaymentMethod)}</th>
                         <th>${esc(colLines)}</th>
-                        ${tariffKeys.map((key) => `<th>${esc(key)}</th>`).join('')}
+                        <th>${esc(colUtilityNet)}</th>
+                        <th>${esc(colUtilityVat)}</th>
+                        <th>${esc(colUtilityTotal)}</th>
+                        ${tariffKeys.map((key) => {
+                            const label = getTranslatedTariffColumnLabel(key);
+                            if (isStableTariffKey(key) || isSewerageTariffKey(key)) {
+                                return `<th>${esc(label)} (${esc(totalSuffix)})</th><th>${esc(label)} (${esc(vatSuffix)})</th><th>${esc(label)} (${esc(paidSuffix)})</th><th>${esc(label)} (${esc(remainingSuffix)})</th>`;
+                            }
+                            if (isConstructionTariffKey(key)) {
+                                return `<th>${esc(label)} (${esc(previousSuffix)})</th><th>${esc(label)} (${esc(currentSuffix)})</th><th>${esc(label)} (${esc(totalSuffix)})</th><th>${esc(label)} (${esc(vatSuffix)})</th><th>${esc(label)} (${esc(paidSuffix)})</th><th>${esc(label)} (${esc(remainingSuffix)})</th>`;
+                            }
+                            if (isServiceTariffKey(key) || isRentTariffKey(key)) {
+                                return `<th>${esc(label)} (${esc(usageSuffix)})</th><th>${esc(label)} (${esc(totalSuffix)})</th><th>${esc(label)} (${esc(vatSuffix)})</th><th>${esc(label)} (${esc(paidSuffix)})</th><th>${esc(label)} (${esc(remainingSuffix)})</th>`;
+                            }
+                            return `<th>${esc(label)} (${esc(previousSuffix)})</th><th>${esc(label)} (${esc(currentSuffix)})</th><th>${esc(label)} (${esc(usageSuffix)})</th><th>${esc(label)} (${esc(totalSuffix)})</th><th>${esc(label)} (${esc(vatSuffix)})</th><th>${esc(label)} (${esc(paidSuffix)})</th><th>${esc(label)} (${esc(remainingSuffix)})</th>`;
+                        }).join('')}
+                        ${serviceTotalTypes.map((type) => {
+                            const typeLabel = getInvoiceMeterLabel(type);
+                            const totalLabel = `${typeLabel} — ${t('invoices_export_service_total_label', 'Итого')}`;
+                            if (type === 'SEWERAGE') {
+                                return `<th>${esc(totalLabel)} (${esc(totalSuffix)})</th><th>${esc(totalLabel)} (${esc(vatSuffix)})</th><th>${esc(totalLabel)} (${esc(paidSuffix)})</th><th>${esc(totalLabel)} (${esc(remainingSuffix)})</th>`;
+                            }
+                            if (type === 'SERVICE' || type === 'RENT' || type === 'CONSTRUCTION') {
+                                return `<th>${esc(totalLabel)} (${esc(usageSuffix)})</th><th>${esc(totalLabel)} (${esc(totalSuffix)})</th><th>${esc(totalLabel)} (${esc(vatSuffix)})</th><th>${esc(totalLabel)} (${esc(paidSuffix)})</th><th>${esc(totalLabel)} (${esc(remainingSuffix)})</th>`;
+                            }
+                            return `<th>${esc(totalLabel)} (${esc(previousSuffix)})</th><th>${esc(totalLabel)} (${esc(currentSuffix)})</th><th>${esc(totalLabel)} (${esc(usageSuffix)})</th><th>${esc(totalLabel)} (${esc(totalSuffix)})</th><th>${esc(totalLabel)} (${esc(vatSuffix)})</th><th>${esc(totalLabel)} (${esc(paidSuffix)})</th><th>${esc(totalLabel)} (${esc(remainingSuffix)})</th>`;
+                        }).join('')}
                     </tr></thead>
-                    <tbody>${bodyRows || '<tr><td colspan="' + (14 + tariffKeys.length) + '">' + t('readings_no_records', 'Нет данных') + '</td></tr>'}</tbody>
+                    <tbody>${bodyRows || '<tr><td colspan="' + (17 + serviceTotalColCount + tariffColCount) + '">' + t('readings_no_records', 'Нет данных') + '</td></tr>'}</tbody>
                 </table>
             </body></html>
         `;
@@ -1379,6 +1842,8 @@
                     return {
                         ...inv,
                         residentUserPhone: detail?.residentUserPhone || inv.residentUserPhone || '—',
+                        periodDateFrom: detail?.periodDateFrom || inv.periodDateFrom || null,
+                        periodDateTo: detail?.periodDateTo || inv.periodDateTo || null,
                         lines: Array.isArray(detail?.lines) && detail.lines.length ? detail.lines : inv.lines
                     };
                 } catch (detailError) {
