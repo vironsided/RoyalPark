@@ -266,7 +266,21 @@
             value = value.slice(0, firstDot + 1) + value.slice(firstDot + 1).replace(/\./g, '');
         }
         if (value.startsWith('.')) value = `0${value}`;
-        if (!allowEmpty && value === '') return '0';
+
+        // Не подставляем "0" в пустое поле:
+        // это ломало UX (после удаления следующая цифра превращалась в "03", "05", ...).
+        if (value === '') return '';
+
+        // Нормализуем ведущие нули.
+        if (value.includes('.')) {
+            const parts = value.split('.');
+            const intPart = (parts[0] || '').replace(/^0+(?=\d)/, '');
+            value = `${intPart === '' ? '0' : intPart}.${parts[1] ?? ''}`;
+        } else {
+            value = value.replace(/^0+(?=\d)/, '');
+        }
+
+        if (allowEmpty && value === '') return '';
         return value;
     }
 

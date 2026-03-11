@@ -743,6 +743,25 @@
 
                 // Elements for mobile overlay
                 const sidebarOverlay = document.getElementById('sidebarOverlay');
+                let wasMobileViewport = window.innerWidth <= 768;
+
+                function syncSidebarViewportState(isMobile) {
+                    if (isMobile) {
+                        // Entering mobile: force a safe closed state.
+                        // This prevents broken intermediate state when desktop-open sidebar
+                        // is resized into mobile layout.
+                        sidebar.classList.remove('open');
+                        sidebar.classList.add('collapsed');
+                        if (sidebarOverlay) sidebarOverlay.classList.remove('show');
+                        return;
+                    }
+
+                    // Returning to desktop: remove mobile-only classes and restore preference.
+                    sidebar.classList.remove('open');
+                    if (sidebarOverlay) sidebarOverlay.classList.remove('show');
+                    const desktopCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+                    sidebar.classList.toggle('collapsed', desktopCollapsed);
+                }
 
                 const handleToggleClick = function (e) {
                     console.log('=== CLICK EVENT FIRED ===');
@@ -814,7 +833,12 @@
 
                 // Handle resize - cleanup mobile classes when returning to desktop
                 window.addEventListener('resize', function () {
-                    if (window.innerWidth > 768) {
+                    const isMobile = window.innerWidth <= 768;
+                    if (isMobile !== wasMobileViewport) {
+                        syncSidebarViewportState(isMobile);
+                        wasMobileViewport = isMobile;
+                    } else if (!isMobile) {
+                        // Keep desktop clean even for regular desktop resizes.
                         sidebar.classList.remove('open');
                         if (sidebarOverlay) sidebarOverlay.classList.remove('show');
                     }

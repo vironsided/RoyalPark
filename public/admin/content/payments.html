@@ -91,6 +91,9 @@
                 <button class="btn-filter" onclick="applyPaymentFilters()">
                     <i class="bi bi-funnel"></i> <span data-i18n="filter">Фильтр</span>
                 </button>
+                <button class="btn btn-outline-warning" type="button" onclick="resetPaymentsExportFilters()">
+                    <i class="bi bi-x-circle"></i> <span data-i18n="reset">Сброс</span>
+                </button>
                 <button class="btn btn-success" type="button" onclick="exportPayments()">
                     <i class="bi bi-box-arrow-down"></i> <span data-i18n="export">Экспорт</span>
                 </button>
@@ -1463,6 +1466,33 @@
                 exportBtn.innerHTML = '<i class="bi bi-box-arrow-down"></i> Экспорт';
             }
         }
+    };
+
+    window.resetPaymentsExportFilters = function() {
+        const byId = (id) => document.getElementById(id);
+
+        if (byId('filterResident')) byId('filterResident').value = 'all';
+        if (byId('filterMethod')) byId('filterMethod').value = 'all';
+        if (byId('filterDateFrom')) byId('filterDateFrom').value = '';
+        if (byId('filterDateTo')) byId('filterDateTo').value = '';
+        if (byId('filterSearch')) byId('filterSearch').value = '';
+
+        if (byId('filterAmountMin')) byId('filterAmountMin').value = '';
+        if (byId('filterAmountMax')) byId('filterAmountMax').value = '';
+        if (byId('filterAllocatedOnly')) byId('filterAllocatedOnly').checked = false;
+        if (byId('paymentExportFormat')) byId('paymentExportFormat').value = 'csv';
+
+        const optionsRoot = byId('serviceExportOptions');
+        if (optionsRoot) {
+            optionsRoot.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+                cb.checked = true;
+                cb.disabled = false;
+            });
+            applyUtilitySelectionRules(optionsRoot);
+            updateServiceSummaryLabel();
+        }
+
+        if (byId('serviceExportDetails')) byId('serviceExportDetails').open = false;
     };
     
     // Render table function
