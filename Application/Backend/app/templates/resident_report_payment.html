@@ -1,15 +1,15 @@
 {% extends "resident_base.html" %}
-{% block title %}Сообщить об оплате{% endblock %}
+{% block title %}Оплата картой{% endblock %}
 {% block content %}
 
-<h4 class="mb-3">Сообщить об оплате</h4>
+<h4 class="mb-3">Оплата картой</h4>
 
 <div class="card">
   <div class="card-body">
-    <form method="post" action="/resident/report-payment" class="row g-3">
+    <form id="azericard-form" class="row g-3">
       <div class="col-md-4">
         <label class="form-label">Дом</label>
-        <select name="resident_id" class="form-select" required>
+        <select id="resident_id" name="resident_id" class="form-select" required>
           {% for r in residents %}
             <option value="{{ r.id }}" {{ 'selected' if (preselect is defined and preselect==r.id) }}>
               {{ r.block.name }} / {{ r.unit_number }}
@@ -17,41 +17,78 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-3">
-        <label class="form-label">Дата оплаты</label>
-        <input type="date" name="received_at" class="form-control" required>
-      </div>
-      <div class="col-md-3">
+      <div class="col-md-4">
         <label class="form-label">Сумма</label>
-        <input type="number" name="amount_total" step="0.01" min="0.01" class="form-control" required>
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">Метод</label>
-        <select name="method" class="form-select">
-          <option value="TRANSFER">TRANSFER</option>
-          <option value="CARD">CARD</option>
-          <option value="CASH">CASH</option>
-          <option value="ONLINE">ONLINE</option>
-        </select>
+        <input id="amount_total" type="number" name="amount_total" step="0.01" min="0.01" class="form-control" required>
       </div>
       <div class="col-md-4">
-        <label class="form-label">№/Референс</label>
-        <input name="reference" class="form-control" placeholder="номер квитанции/перевода">
-      </div>
-      <div class="col-md-8">
-        <label class="form-label">Комментарий</label>
-        <input name="comment" class="form-control" placeholder="любая доп. информация">
+        <label class="form-label">Комментарий (опционально)</label>
+        <input id="description" name="description" class="form-control" placeholder="например: Оплата по счетам">
       </div>
 
       <div class="col-12 d-flex justify-content-end gap-2">
         <a class="btn btn-outline-secondary" href="/resident/invoices">Отмена</a>
-        <button class="btn btn-primary">Отправить</button>
+        <button id="pay-btn" class="btn btn-primary" type="submit">Pay by Card</button>
       </div>
     </form>
-    <div class="form-text mt-2">
-      После отправки оператор проверит информацию и применит платёж к вашим счетам.
+    <div id="payment-hint" class="form-text mt-2">
+      После нажатия вы будете перенаправлены в AzeriCard для 3D Secure подтверждения.
     </div>
   </div>
 </div>
 
+<script>
+  (function () {
+    const form = document.getElementById('azericard-form');
+    const payBtn = document.getElementById('pay-btn');
+    const hint = document.getElementById('payment-hint');
+
+    function createAndSubmitGatewayForm(actionUrl, params) {
+      const gatewayForm = document.createElement('form');
+      gatewayForm.method = 'POST';
+      gatewayForm.action = actionUrl;
+      gatewayForm.style.display = 'none';
+
+      Object.entries(params || {}).forEach(([key, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value == null ? '' : String(value);
+        gatewayForm.appendChild(input);
+      });
+
+      document.body.appendChild(gatewayForm);
+      gatewayForm.submit();
+    }
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      payBtn.disabled = true;
+      hint.textContent = 'Идет подготовка платежа...';
+
+      const payload = {
+        resident_id: Number(document.getElementById('resident_id').value),
+        amount: Number(document.getElementById('amount_total').value),
+        description: document.getElementById('description').value || null
+      };
+
+      try {
+        const resp = await fetch('/api/azericard/initiate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) {
+          throw new Error(data.detail || 'Не удалось инициализировать платеж');
+        }
+        hint.textContent = 'Переадресация в AzeriCard...';
+        createAndSubmitGatewayForm(data.gateway_url, data.params);
+      } catch (err) {
+        hint.textContent = (err && err.message) ? err.message : 'Ошибка платежа. Попробуйте еще раз.';
+        payBtn.disabled = false;
+      }
+    });
+  })();
+</script>
 {% endblock %}

@@ -8,7 +8,7 @@ from .config import settings
 from .database import Base, engine, SessionLocal
 from .models import User, RoleEnum
 from .security import hash_password
-from .routers import auth_routes, dashboard, users, blocks, tariffs, residents, readings, tenants, resident_portal, invoices, payments, notifications, api_users, api_blocks, api_tariffs, api_residents, api_readings, api_tenants, api_invoices, api_payments, api_notifications, api_dashboard, api_logs, api_qr, api_payment, api_resident_dashboard, api_news
+from .routers import auth_routes, dashboard, users, blocks, tariffs, residents, readings, tenants, resident_portal, invoices, payments, notifications, api_users, api_blocks, api_tariffs, api_residents, api_readings, api_tenants, api_invoices, api_payments, api_notifications, api_dashboard, api_logs, api_qr, api_payment, api_resident_dashboard, api_news, api_azericard
 from fastapi.responses import RedirectResponse
 from sqlalchemy import text
 from fastapi.staticfiles import StaticFiles
@@ -266,6 +266,7 @@ def create_app() -> FastAPI:
     app.include_router(api_payment.router)
     app.include_router(api_resident_dashboard.router)
     app.include_router(api_news.router)
+    app.include_router(api_azericard.router)
     app.include_router(blocks.router)
     app.include_router(tariffs.router)
     app.include_router(residents.router)

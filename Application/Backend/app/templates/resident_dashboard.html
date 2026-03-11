@@ -4,6 +4,13 @@
 
 <h4 class="mb-3">Здравствуйте, {{ user.full_name or user.username }}</h4>
 
+{% if pending_online_count and pending_online_count > 0 %}
+  <div class="alert alert-warning py-2">
+    Есть незавершенные онлайн-оплаты: {{ pending_online_count }}.
+    <a href="/resident/invoices" class="alert-link">Проверить статус</a>
+  </div>
+{% endif %}
+
 {# --- Сводка по всем домам --- #}
 <div class="row g-3 mb-2">
   <div class="col-12 col-md-4">
@@ -109,7 +116,7 @@
         <div class="mt-auto pt-3 d-flex flex-wrap gap-2">
           <a class="btn btn-outline-secondary btn-sm" href="/resident/detail/{{ r.id }}">Подробнее</a>
           <a class="btn btn-outline-primary btn-sm" href="/resident/invoices?resident_id={{ r.id }}">Мои счета</a>
-          <a class="btn btn-primary btn-sm" href="/resident/report-payment?resident_id={{ r.id }}">Сообщить об оплате</a>
+          <a class="btn btn-primary btn-sm" href="/resident/report-payment?resident_id={{ r.id }}">Оплатить картой</a>
 
           {# НОВОЕ: Погасить из аванса (если есть что применять) #}
           <form method="post" action="/resident/apply-advance" class="ms-auto">

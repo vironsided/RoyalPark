@@ -14,11 +14,56 @@
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   </div>
 {% endif %}
+{% if ok == 'online_payment_success' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Онлайн-оплата успешно подтверждена.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+{% if ok == 'online_payment_failed' %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    Онлайн-оплата не выполнена или была отклонена банком.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
 
 <div class="d-flex align-items-center justify-content-between mb-3">
   <h4 class="mb-0">Мои счета</h4>
-  <a class="btn btn-outline-primary btn-sm" href="/resident/report-payment">Сообщить об оплате</a>
+  <a class="btn btn-outline-primary btn-sm" href="/resident/report-payment">Оплатить картой</a>
 </div>
+
+{% if pending_online and pending_online|length > 0 %}
+<div class="card mb-3 border-warning">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">Онлайн-оплаты в обработке</h6>
+      <span class="badge bg-warning text-dark">{{ pending_online|length }}</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm table-dark table-striped mb-0">
+        <thead>
+          <tr>
+            <th>Дата</th>
+            <th>ORDER</th>
+            <th>Сумма</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tx in pending_online %}
+            <tr>
+              <td>{{ tx.created_at }}</td>
+              <td>{{ tx.order_id }}</td>
+              <td>{{ '%.2f'|format(tx.amount_total or 0) }} {{ tx.currency or 'AZN' }}</td>
+              <td><span class="badge bg-warning text-dark">{{ tx.gateway_status }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 <div class="card mb-3">
   <div class="card-body">

@@ -2009,6 +2009,24 @@ async function submitPayment(event) {
         payButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Обработка...';
     }
 
+    function submitToGateway(actionUrl, params) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = actionUrl;
+        form.style.display = 'none';
+
+        Object.entries(params || {}).forEach(([key, value]) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = value == null ? '' : String(value);
+            form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+
     // DEMO: имитация успешной оплаты без обращения к backend
     if (ENABLE_FAKE_PAYMENT) {
         try {
@@ -2043,6 +2061,53 @@ async function submitPayment(event) {
             }
         }
         return false;
+    }
+
+    // Для банковской карты используем реальный поток AzeriCard:
+    // инициируем ORDER на backend и редиректим пользователя на gateway.
+    if (paymentMethod === 'CARD') {
+        try {
+            const description = paymentComment || (isTopupOnlyPayment
+                ? 'Пополнение аванса'
+                : (paymentScope === 'all' ? 'Оплата всех счетов' : 'Оплата счета'));
+
+            const initiatePayload = {
+                resident_id: residentId,
+                amount: amount,
+                invoice_id: invoiceIdForRequest || null,
+                description
+            };
+
+            const response = await fetch(`${API_BASE}/api/azericard/initiate`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(initiatePayload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail || `Ошибка инициализации платежа: ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (!result || !result.ok || !result.gateway_url || !result.params) {
+                throw new Error('Некорректный ответ сервера при инициализации платежа');
+            }
+
+            submitToGateway(result.gateway_url, result.params);
+            return false;
+        } catch (error) {
+            console.error('AzeriCard initiate error:', error);
+            showPaymentError(error.message || 'Не удалось открыть страницу оплаты банка');
+            if (payButton) {
+                payButton.disabled = false;
+                payButton.textContent = originalText;
+            }
+            return false;
+        }
     }
 
     try {

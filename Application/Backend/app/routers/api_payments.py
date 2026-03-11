@@ -136,7 +136,9 @@ def _build_payment_applications(db: Session, p: Payment) -> list[dict]:
                 func.coalesce(func.sum(PaymentApplication.amount_applied), 0)
             )
             .join(PaymentApplication, PaymentApplication.invoice_id == Invoice.id)
-            .filter(PaymentApplication.reference == ref_tag)
+            # Поддерживаем как точный тег "ADVANCE:<id>", так и расширенный
+            # формат с дополнительными метками (например, "|LINESEL:...").
+            .filter(PaymentApplication.reference.like(f"{ref_tag}%"))
             .group_by(Invoice.id, Invoice.number, Invoice.resident_id, Invoice.period_year, Invoice.period_month)
             .all()
         )

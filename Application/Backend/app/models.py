@@ -122,6 +122,39 @@ class PaymentApplication(Base):
 
 
 
+class OnlineTransaction(Base):
+    __tablename__ = "online_transactions"
+    __table_args__ = (
+        UniqueConstraint("order_id", name="uq_online_transactions_order_id"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    payment_id = Column(ForeignKey("payments.id", ondelete="SET NULL"), nullable=True)
+    resident_id = Column(ForeignKey("residents.id", ondelete="SET NULL"), nullable=True)
+    invoice_id = Column(ForeignKey("invoices.id", ondelete="SET NULL"), nullable=True)
+
+    order_id = Column(String(32), nullable=False, index=True)
+    amount_total = Column(Numeric(12, 2), nullable=False, default=0)
+    currency = Column(String(8), nullable=False, default="AZN")
+    trtype = Column(String(8), nullable=True)
+
+    rrn = Column(String(32), nullable=True)
+    int_ref = Column(String(64), nullable=True)
+    approval = Column(String(32), nullable=True)
+    action_code = Column(String(16), nullable=True)
+    rc = Column(String(16), nullable=True)
+    gateway_status = Column(String(32), nullable=False, default="INITIATED")
+
+    request_payload = Column(Text, nullable=True)
+    callback_payload = Column(Text, nullable=True)
+    created_at = Column(DateTime, nullable=False, server_default=text("NOW()"))
+    updated_at = Column(DateTime, nullable=False, server_default=text("NOW()"), onupdate=datetime.utcnow)
+
+    payment = relationship("Payment", lazy="joined")
+    resident = relationship("Resident", lazy="joined")
+    invoice = relationship("Invoice", lazy="joined")
+
+
 class User(Base):
     __tablename__ = "users"
     __table_args__ = (UniqueConstraint("username", name="uq_users_username"),)

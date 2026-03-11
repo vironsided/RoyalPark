@@ -31,7 +31,7 @@ from ..models import (
     Invoice, InvoiceStatus, InvoiceLine,
     Resident, ResidentMeter, MeterReading, MeterType,
     Payment, PaymentApplication, PaymentMethod,
-    Notification, NotificationStatus,
+    Notification, NotificationStatus, OnlineTransaction,
 )
 from ..utils import now_baku, to_baku_datetime
 from ..security import (
@@ -517,6 +517,17 @@ def resident_invoices(
             "end": end_str,
         }
 
+    pending_online = (
+        db.query(OnlineTransaction)
+        .filter(
+            OnlineTransaction.resident_id.in_(resident_ids),
+            OnlineTransaction.gateway_status == "INITIATED",
+        )
+        .order_by(OnlineTransaction.created_at.desc(), OnlineTransaction.id.desc())
+        .limit(20)
+        .all()
+    )
+
     return templates.TemplateResponse("resident_invoices.html", {
         "request": request,
         "user": user,
@@ -525,6 +536,7 @@ def resident_invoices(
         "status_val": status_val or "",
         "paid_map": paid_map,
         "period_map": period_map,
+        "pending_online": pending_online,
     })
 
 

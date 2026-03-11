@@ -19,6 +19,7 @@ from ..models import (
     Notification, NotificationStatus, MeterReading,
     user_residents, PaymentLog,
     Tariff, MeterType, CustomerType
+    , OnlineTransaction
 )
 from ..security import get_user_id_from_session
 from ..utils import now_baku, to_baku_datetime
@@ -1340,6 +1341,23 @@ def _build_portal_dashboard_context(db: Session, user: User) -> dict:
     total_adv = sum(advance_total.values(), Decimal("0"))
     total_pay = sum(pay_now.values(), Decimal("0"))
 
+    resident_ids = [r.id for r in residents]
+    pending_online = []
+    pending_count = 0
+    if resident_ids:
+        pending_rows = (
+            db.query(OnlineTransaction)
+            .filter(
+                OnlineTransaction.resident_id.in_(resident_ids),
+                OnlineTransaction.gateway_status == "INITIATED",
+            )
+            .order_by(OnlineTransaction.created_at.desc(), OnlineTransaction.id.desc())
+            .limit(20)
+            .all()
+        )
+        pending_online = pending_rows
+        pending_count = len(pending_rows)
+
     return {
         "user": user,
         "residents": residents,
@@ -1354,6 +1372,8 @@ def _build_portal_dashboard_context(db: Session, user: User) -> dict:
         "total_debt": total_debt,
         "total_adv": total_adv,
         "total_pay": total_pay,
+        "pending_online": pending_online,
+        "pending_online_count": pending_count,
     }
 
 
