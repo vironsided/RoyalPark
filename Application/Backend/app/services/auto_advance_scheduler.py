@@ -22,7 +22,7 @@ from ..models import (
     TariffStep,
     MeterType,
 )
-from ..routers.payments import auto_apply_advance
+from ..routers.api_payment_logic import auto_apply_advance
 from ..utils import now_baku, to_baku_datetime
 
 # TEMP: shorter values for testing

@@ -999,7 +999,7 @@
             // Загрузка уведомлений с сервера (список) + обновление счётчика
             async function loadNotifications() {
                 try {
-                    const url = `${API_BASE}/notifications/json?page=1&per_page=200`;
+                    const url = `${API_BASE}/api/notifications/public?page=1&per_page=200`;
                     const response = await fetch(url);
 
                     if (!response.ok) {
@@ -1068,7 +1068,7 @@
                 }
                 // Дёргаем сервер, чтобы статус сохранился
                 try {
-                    await fetch(`${API_BASE}/notifications/${id}/json`, { method: 'GET' });
+                    await fetch(`${API_BASE}/api/notifications/${id}/public`, { method: 'GET' });
                     // После ответа уточняем реальное количество
                     const unread = await fetchUnreadCount();
                     updateNotificationCount(unread);
@@ -1210,7 +1210,7 @@
                     setAppealsBadge(0);
 
                     // Параллельно дергаем сервер (не блокируем UI)
-                    Promise.all(unreadIds.map(id => fetch(`${API_BASE}/notifications/${id}/json`, { method: 'GET' }).catch(() => null)))
+                    Promise.all(unreadIds.map(id => fetch(`${API_BASE}/api/notifications/${id}/public`, { method: 'GET' }).catch(() => null)))
                         .finally(async () => {
                             const unread = await fetchUnreadCount();
                             updateNotificationCount(unread);

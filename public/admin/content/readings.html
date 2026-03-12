@@ -448,6 +448,14 @@
         totalPages: 1
     };
 
+    function isReadingsPageActive() {
+        const route = window.location.hash.split('?')[0].slice(1);
+        if (route && route !== '/readings' && !route.startsWith('/readings')) {
+            return false;
+        }
+        return !!document.getElementById('readingsTableBody');
+    }
+
     const meterPhotoFiles = new Map();
     const meterPhotoObjectUrls = new Map();
     let activePhotoMeterId = null;
@@ -575,6 +583,10 @@
             paginationState.totalPages = pagination.last_page || 1;
             paginationState.currentPage = pagination.page || 1;
 
+            if (!isReadingsPageActive()) {
+                return;
+            }
+
             console.log('Calling renderReadingsTable...');
             if (typeof window.renderReadingsTable === 'function') {
                 window.renderReadingsTable();
@@ -618,7 +630,7 @@
         console.log('Rendering readings table:', { tbody: !!tbody, readingsData, hasRows: readingsData?.rows });
 
         if (!tbody) {
-            console.error('Table body not found');
+            // Ignore stale async renders when SPA view is already replaced.
             return;
         }
 
@@ -3646,6 +3658,7 @@
     function initReadingsPage() {
         console.log('=== Initializing readings page ===');
         setTimeout(async () => {
+            if (!isReadingsPageActive()) return;
             initCustomReadingPaginationDropdown();
             // Сначала загружаем все блоки, чтобы фильтр был полным
             await window.loadAllBlocks();

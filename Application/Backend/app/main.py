@@ -8,11 +8,8 @@ from .config import settings
 from .database import Base, engine, SessionLocal
 from .models import User, RoleEnum
 from .security import hash_password
-from .routers import auth_routes, dashboard, users, blocks, tariffs, residents, readings, tenants, resident_portal, invoices, payments, notifications, api_users, api_blocks, api_tariffs, api_residents, api_readings, api_tenants, api_invoices, api_payments, api_notifications, api_dashboard, api_logs, api_qr, api_payment, api_resident_dashboard, api_news, api_azericard
+from .routers import auth_routes, dashboard, api_users, api_blocks, api_tariffs, api_residents, api_readings, api_tenants, api_invoices, api_payments, api_notifications, api_dashboard, api_logs, api_qr, api_payment, api_resident_dashboard, api_news, api_azericard
 from fastapi.responses import RedirectResponse
-from sqlalchemy import text
-from fastapi.staticfiles import StaticFiles
-import os
 
 
 
@@ -224,10 +221,6 @@ def run_bootstrap_schema():
 def create_app() -> FastAPI:
     app = FastAPI(title="FastAPI Admin (Dark)")
     app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY, session_cookie=settings.COOKIE_NAME)
-    
-    # Инициализируем общий экземпляр шаблонов с фильтрами
-    from .utils import get_templates
-    get_templates()
 
     # Разрешаем запросы с фронта (для разработки разрешаем все localhost origins)
     app.add_middleware(
@@ -245,12 +238,10 @@ def create_app() -> FastAPI:
         expose_headers=["*"],
     )
 
-    app.mount("/static", StaticFiles(directory="app/static"), name="static")
     app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
     app.include_router(auth_routes.router)
     app.include_router(dashboard.router)
-    app.include_router(users.router)
     app.include_router(api_users.router)
     app.include_router(api_blocks.router)
     app.include_router(api_tariffs.router)
@@ -267,16 +258,6 @@ def create_app() -> FastAPI:
     app.include_router(api_resident_dashboard.router)
     app.include_router(api_news.router)
     app.include_router(api_azericard.router)
-    app.include_router(blocks.router)
-    app.include_router(tariffs.router)
-    app.include_router(residents.router)
-    app.include_router(readings.router)
-    app.include_router(tenants.router)
-    app.include_router(resident_portal.router)
-    app.include_router(invoices.router)
-    app.include_router(payments.router)
-    app.include_router(notifications.router)
-
     @app.get("/healthz")
     def healthz():
         return {"ok": True}

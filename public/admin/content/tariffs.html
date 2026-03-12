@@ -325,6 +325,14 @@
     let seweragePercentDirty = false;
     let editingTariffId = null;
 
+    function isTariffsPageActive() {
+        const route = window.location.hash.split('?')[0].slice(1);
+        if (route && route !== '/tariffs' && !route.startsWith('/tariffs')) {
+            return false;
+        }
+        return !!document.getElementById('tariffsTableBody');
+    }
+
     // Маппинг типов для отображения
     const meterTypeMap = {
         'ELECTRIC': { labelKey: 'meter_electricity', key: 'electricity', badge: 'bg-info' },
@@ -580,7 +588,8 @@
     function renderTariffsTable(data) {
         const tbody = document.getElementById('tariffsTableBody');
         if (!tbody) {
-            console.error('tariffsTableBody element not found!');
+            // SPA may switch page while async request is still running.
+            // Skip silently when tariffs view is no longer mounted.
             return;
         }
         console.log('Rendering tariffs table with', data.length, 'items');
@@ -1834,6 +1843,7 @@
     async function initTariffsPage() {
         // Небольшая задержка, чтобы убедиться, что DOM готов
         await new Promise(resolve => setTimeout(resolve, 100));
+        if (!isTariffsPageActive()) return;
         console.log('Initializing tariffs page...');
         applyNumericOnlyBindings(document.getElementById('createTariffModal') || document);
         bindTariffPurposeMultiSelect();
@@ -1847,7 +1857,11 @@
     }
 
     // Вызываем инициализацию
-    initTariffsPage();
+    initTariffsPage().then(() => {
+        if (isTariffsPageActive()) {
+            loadUtilityStats();
+        }
+    });
 
     // Также слушаем событие от роутера (на случай повторной загрузки)
     // Удаляем старый обработчик, если он существует
@@ -1914,11 +1928,6 @@
             if (gasEl) gasEl.textContent = '0.00';
         }
     }
-
-    // Load utility stats when page loads
-    initTariffsPage().then(() => {
-        loadUtilityStats();
-    });
 
     // Also load stats when content is loaded via SPA router
     const originalContentLoadedHandler = window._tariffsContentLoadedHandler;

@@ -17,6 +17,7 @@ class Settings(BaseModel):
     # Root-учётка из ТЗ:
     ROOT_USERNAME: str = os.getenv("ROOT_USERNAME", "root")
     ROOT_PASSWORD: str = os.getenv("ROOT_PASSWORD", "admin Ayaz")
+    FRONTEND_BASE_URL: str = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000")
 
     # AzeriCard
     AZERICARD_GATEWAY_URL: str = os.getenv("AZERICARD_GATEWAY_URL", "https://testmpi.3dsecure.az/cgi-bin/cgi_link")

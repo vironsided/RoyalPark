@@ -207,8 +207,8 @@ function addRippleEffect() {
 async function logout() {
     try {
         // Call backend logout endpoint to clear session
-        await fetch(`${API_BASE_URL}/resident/logout`, {
-            method: 'GET',
+        await fetch(`${API_BASE_URL}/api/auth/logout`, {
+            method: 'POST',
             credentials: 'include'
         });
     } catch (error) {

@@ -205,7 +205,7 @@ def list_notifications(
     block: Optional[str] = Query(None, alias="block"),
     q: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
-    per_page: int = Query(25, ge=1, le=100),
+    per_page: int = Query(25, ge=1, le=200),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -231,7 +231,7 @@ def list_notifications_public(
     block: Optional[str] = Query(None, alias="block"),
     q: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
-    per_page: int = Query(25, ge=1, le=100),
+    per_page: int = Query(25, ge=1, le=200),
     db: Session = Depends(get_db),
 ):
     """Получить список уведомлений (публичный endpoint без авторизации)."""
