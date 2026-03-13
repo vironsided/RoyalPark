@@ -2101,12 +2101,24 @@ async function submitPayment(event) {
             return false;
         } catch (error) {
             console.error('AzeriCard initiate error:', error);
-            showPaymentError(error.message || 'Не удалось открыть страницу оплаты банка');
-            if (payButton) {
-                payButton.disabled = false;
-                payButton.textContent = originalText;
+            const msg = String(error?.message || '');
+            const canFallbackToDirectPayment =
+                msg.includes('AZERICARD_') ||
+                msg.includes('dummy placeholder') ||
+                msg.includes('invalid PEM format') ||
+                msg.includes('Ошибка инициализации платежа: 500');
+
+            if (!canFallbackToDirectPayment) {
+                showPaymentError(error.message || 'Не удалось открыть страницу оплаты банка');
+                if (payButton) {
+                    payButton.disabled = false;
+                    payButton.textContent = originalText;
+                }
+                return false;
             }
-            return false;
+
+            // Local/dev fallback: if gateway is not configured, keep old direct payment flow.
+            console.warn('AzeriCard is not configured, fallback to direct payment API');
         }
     }
 

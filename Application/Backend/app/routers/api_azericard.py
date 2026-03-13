@@ -17,6 +17,7 @@ from ..utils import now_baku
 from ..services.azericard import (
     CALLBACK_SIGN_FIELDS,
     CREATE_SIGN_FIELDS,
+    _private_key,
     amount_to_gateway,
     build_nonce,
     build_order_id,
@@ -60,6 +61,13 @@ def _ensure_signing_config() -> None:
         raise HTTPException(status_code=500, detail="AZERICARD_TERMINAL_ID is not configured")
     if not settings.AZERICARD_PRIVATE_KEY:
         raise HTTPException(status_code=500, detail="AZERICARD_PRIVATE_KEY is not configured")
+    if "DUMMY_PRIVATE_KEY" in str(settings.AZERICARD_PRIVATE_KEY).upper():
+        raise HTTPException(status_code=500, detail="AZERICARD_PRIVATE_KEY is still a dummy placeholder")
+    try:
+        # Fail fast with clear message if key format is invalid.
+        _private_key()
+    except Exception:
+        raise HTTPException(status_code=500, detail="AZERICARD_PRIVATE_KEY has invalid PEM format")
 
 
 def _pick(data: dict[str, Any], *keys: str) -> str:
