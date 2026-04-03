@@ -59,6 +59,11 @@
                     <span data-i18n="user_appeal_modal_status">Статус</span>
                     <strong id="userAppealModalStatus">—</strong>
                 </div>
+                <div class="user-appeal-modal-text" id="userAppealStaffBlock" style="display: none;">
+                    <span class="label" data-i18n="user_appeal_staff_update_label">Ответ службы</span>
+                    <div id="userAppealWorkflowPill" class="user-appeal-workflow-pill" style="display: none;"></div>
+                    <p id="userAppealStaffMessage" class="mb-0 mt-2" style="white-space: pre-wrap;"></p>
+                </div>
                 <div class="user-appeal-modal-text">
                     <span class="label" data-i18n="user_appeal_modal_text_label">Текст обращения</span>
                     <p id="userAppealModalText">—</p>
@@ -94,6 +99,9 @@
             const modalEditBlock = document.querySelector('.user-appeal-modal-edit');
             const modalSaveBtn = document.getElementById('userAppealSave');
             const modalDeleteBtn = document.getElementById('userAppealDelete');
+            const userAppealStaffBlock = document.getElementById('userAppealStaffBlock');
+            const userAppealWorkflowPill = document.getElementById('userAppealWorkflowPill');
+            const userAppealStaffMessageEl = document.getElementById('userAppealStaffMessage');
 
             if (!list || !modal) return;
 
@@ -184,22 +192,34 @@
                     item.dataset.created = createdDisplay;
                     item.dataset.status = appeal.status === 'READ' ? 'read' : 'unread';
                     item.dataset.text = appeal.message;
+                    item.dataset.appealWorkflow = appeal.appeal_workflow || '';
+                    item.dataset.staffMessage = appeal.staff_message || '';
 
                     const isRead = appeal.status === 'READ';
+                    const statusRead = window.i18n?.translate?.('user_appeal_status_read', lang) || 'Прочитано';
+                    const statusUnread = window.i18n?.translate?.('user_appeal_status_unread', lang) || 'Не прочитано';
+                    const viewLabel = window.i18n?.translate?.('action_view', lang) || 'Просмотр';
+                    const wfCode = appeal.appeal_workflow || '';
+                    const wfText = wfCode
+                        ? (window.i18n?.translate?.('appeal_wf_' + String(wfCode).toLowerCase(), lang) || wfCode)
+                        : '';
+                    const wfHtml = wfText
+                        ? `<div class="user-appeal-wf-line">${wfText}</div>`
+                        : '';
 
                     item.innerHTML = `
                         <div class="user-appeal-main">
                             <div>
                                 <div class="user-appeal-house">${item.dataset.apartment}</div>
                                 <div class="user-appeal-date">${item.dataset.created}</div>
+                                ${wfHtml}
                             </div>
                             <span class="user-appeal-badge ${isRead ? 'user-appeal-badge-read' : 'user-appeal-badge-unread'}" 
                                   data-appeal-status="${isRead ? 'read' : 'unread'}">
-                                ${isRead ? (window.i18n?.translate?.('user_appeal_status_read', localStorage.getItem('language') || 'ru') || 'Прочитано')
-                                         : (window.i18n?.translate?.('user_appeal_status_unread', localStorage.getItem('language') || 'ru') || 'Не прочитано')}
+                                ${isRead ? statusRead : statusUnread}
                             </span>
                         </div>
-                        <button type="button" class="btn btn-outline-info btn-sm user-appeal-view" data-i18n="apply">Просмотр</button>
+                        <button type="button" class="btn btn-outline-info btn-sm user-appeal-view">${viewLabel}</button>
                     `;
 
                     list.insertBefore(item, emptyState);
@@ -218,6 +238,20 @@
                     }
                     const data = await resp.json();
                     renderAppeals(data);
+                    let highlightId = null;
+                    try {
+                        highlightId = sessionStorage.getItem('appealsHighlightId');
+                    } catch (e) { /* ignore */ }
+                    if (highlightId) {
+                        try {
+                            sessionStorage.removeItem('appealsHighlightId');
+                        } catch (e) { /* ignore */ }
+                        const row = list.querySelector(`.user-appeal-item[data-id="${highlightId}"]`);
+                        if (row) {
+                            row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            openModalFromItem(row);
+                        }
+                    }
                 } catch (e) {
                     console.error('Failed to load appeals:', e);
                 }
@@ -263,6 +297,26 @@
 
                 modalText.textContent = item.dataset.text || '—';
                 modalEdit.value = item.dataset.text || '';
+
+                const wfRaw = item.dataset.appealWorkflow || '';
+                const staffRaw = item.dataset.staffMessage || '';
+                if (userAppealStaffBlock && userAppealWorkflowPill && userAppealStaffMessageEl) {
+                    const showStaff = isRead && (wfRaw || staffRaw);
+                    userAppealStaffBlock.style.display = showStaff ? '' : 'none';
+                    if (showStaff) {
+                        if (wfRaw) {
+                            const wfLabel = window.i18n?.translate?.(
+                                'appeal_wf_' + String(wfRaw).toLowerCase(),
+                                lang
+                            ) || wfRaw;
+                            userAppealWorkflowPill.textContent = wfLabel;
+                            userAppealWorkflowPill.style.display = '';
+                        } else {
+                            userAppealWorkflowPill.style.display = 'none';
+                        }
+                        userAppealStaffMessageEl.textContent = staffRaw || '';
+                    }
+                }
 
                 // READ: скрываем редактор и кнопку "Сохранить", оставляем только просмотр и удаление
                 if (isRead) {
@@ -450,10 +504,13 @@
                         .then(appeal => {
                             // Дополняем список локально
                             renderAppeals([appeal, ...Array.from(list.querySelectorAll('.user-appeal-item')).map(el => ({
+                                id: Number(el.dataset.id),
                                 resident_code: el.dataset.apartment,
                                 created_at: el.dataset.createdRaw || el.dataset.created,
                                 status: el.dataset.status === 'read' ? 'READ' : 'UNREAD',
-                                message: el.dataset.text
+                                message: el.dataset.text,
+                                appeal_workflow: el.dataset.appealWorkflow || null,
+                                staff_message: el.dataset.staffMessage || null
                             }))]);
                             textarea.value = '';
                             hideError();
@@ -468,6 +525,10 @@
             // initial load
             loadResidents();
             loadAppeals();
+
+            window.addEventListener('languageChanged', () => {
+                loadAppeals();
+            });
         })();
     </script>
 </section>

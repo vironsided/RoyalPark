@@ -1749,6 +1749,27 @@ window.addEventListener('beforeunload', () => {
             return t('notifications_news_published_template', 'Published news: {title}').replace('{title}', title);
         }
 
+        try {
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.k === 'appeal_update') {
+                const wf = String(parsed.wf || '').trim();
+                const staff = String(parsed.m || '').trim();
+                const wfLabel = wf
+                    ? t('appeal_wf_' + wf.toLowerCase(), wf)
+                    : '';
+                let out = t(
+                    'notifications_appeal_update_summary',
+                    'Appeal status updated: {status}'
+                ).replace('{status}', wfLabel || '—');
+                if (staff) {
+                    out += ' — ' + staff;
+                }
+                return out;
+            }
+        } catch (e) {
+            /* not JSON */
+        }
+
         return raw;
     }
     
@@ -1815,12 +1836,18 @@ window.addEventListener('beforeunload', () => {
         const items = notifications.map(notif => {
             const isUnread = notif.status === 'UNREAD';
             const messageText = localizeNotificationMessage(notif);
-            const icon = notif.notification_type === 'INVOICE' 
-                ? '<i class="bi bi-receipt"></i>' 
+            const icon = notif.notification_type === 'INVOICE'
+                ? '<i class="bi bi-receipt"></i>'
                 : notif.notification_type === 'NEWS'
                 ? '<i class="bi bi-bell"></i>'
+                : notif.notification_type === 'APPEAL_UPDATE'
+                ? '<i class="bi bi-chat-left-text"></i>'
                 : '<i class="bi bi-bell"></i>';
-            const iconColor = notif.notification_type === 'INVOICE' ? '#f59e0b' : '#667eea';
+            const iconColor = notif.notification_type === 'INVOICE'
+                ? '#f59e0b'
+                : notif.notification_type === 'APPEAL_UPDATE'
+                ? '#22c55e'
+                : '#667eea';
             
             return `
                 <div class="notification-item" 
@@ -1898,8 +1925,19 @@ window.addEventListener('beforeunload', () => {
                             window.openNewsDetail(parseInt(relatedId));
                         }
                     }, 1000);
+                } else if (notificationType === 'APPEAL_UPDATE' && relatedId) {
+                    try {
+                        sessionStorage.setItem('appealsHighlightId', String(relatedId));
+                    } catch (e) {
+                        console.warn('sessionStorage appealsHighlightId', e);
+                    }
+                    if (window.userSpaRouter) {
+                        window.userSpaRouter.navigate('appeals', true);
+                    } else {
+                        window.location.hash = 'appeals';
+                    }
                 }
-                
+
                 // Reload notifications
                 setTimeout(() => {
                     loadNotifications();

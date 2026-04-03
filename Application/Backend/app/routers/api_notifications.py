@@ -1,8 +1,9 @@
+import json
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
@@ -10,7 +11,8 @@ from ..database import get_db
 from ..models import (
     User, RoleEnum,
     Notification, NotificationStatus,
-    Resident, Block
+    AppealWorkflow,
+    Resident, Block,
 )
 from ..deps import get_current_user
 
@@ -44,8 +46,59 @@ class NotificationOut(BaseModel):
     block_name: Optional[str] = None
     unit_number: Optional[str] = None
 
+    appeal_workflow: Optional[str] = None
+    staff_message: Optional[str] = None
+    workflow_updated_at: Optional[datetime] = None
+
     class Config:
         from_attributes = True
+
+
+class NotificationPatch(BaseModel):
+    status: Optional[str] = None
+    appeal_workflow: Optional[str] = None
+    staff_message: Optional[str] = Field(None, max_length=4000)
+
+
+def _is_appeal_notification(notif: Notification) -> bool:
+    t = (notif.notification_type or "").upper()
+    return t == "APPEAL" or t == ""
+
+
+def _build_notification_out(notif: Notification) -> NotificationOut:
+    resident_code = None
+    resident_info = None
+    block_name = None
+    unit_number = None
+
+    if notif.resident:
+        block_name = notif.resident.block.name if notif.resident.block else None
+        unit_number = notif.resident.unit_number
+        if block_name and unit_number:
+            resident_code = f"{block_name} / {unit_number}"
+            resident_info = f"Блок {block_name}, №{unit_number}"
+
+    return NotificationOut(
+        id=notif.id,
+        user_id=notif.user_id,
+        resident_id=notif.resident_id,
+        message=notif.message,
+        status=notif.status.value,
+        created_at=notif.created_at,
+        read_at=notif.read_at,
+        notification_type=notif.notification_type,
+        related_id=notif.related_id,
+        user_full_name=notif.user.full_name,
+        user_phone=notif.user.phone,
+        user_email=notif.user.email,
+        resident_code=resident_code,
+        resident_info=resident_info,
+        block_name=block_name,
+        unit_number=unit_number,
+        appeal_workflow=notif.appeal_workflow,
+        staff_message=notif.staff_message,
+        workflow_updated_at=notif.workflow_updated_at,
+    )
 
 
 def _list_notifications_internal(
@@ -105,39 +158,7 @@ def _list_notifications_internal(
     
     notifications = query.order_by(Notification.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
     
-    # Преобразуем в формат для ответа
-    result = []
-    for notif in notifications:
-        resident_code = None
-        resident_info = None
-        block_name = None
-        unit_number = None
-        
-        if notif.resident:
-            block_name = notif.resident.block.name if notif.resident.block else None
-            unit_number = notif.resident.unit_number
-            if block_name and unit_number:
-                resident_code = f"{block_name} / {unit_number}"
-                resident_info = f"Блок {block_name}, №{unit_number}"
-        
-        result.append(NotificationOut(
-            id=notif.id,
-            user_id=notif.user_id,
-            resident_id=notif.resident_id,
-            message=notif.message,
-            status=notif.status.value,
-            created_at=notif.created_at,
-            read_at=notif.read_at,
-            notification_type=notif.notification_type,
-            related_id=notif.related_id,
-            user_full_name=notif.user.full_name,
-            user_phone=notif.user.phone,
-            user_email=notif.user.email,
-            resident_code=resident_code,
-            resident_info=resident_info,
-            block_name=block_name,
-            unit_number=unit_number,
-        ))
+    result = [_build_notification_out(notif) for notif in notifications]
     
     return {
         "notifications": result,
@@ -153,49 +174,20 @@ def _list_notifications_internal(
 def _get_notification_internal(
     db: Session,
     notification_id: int,
+    mark_read: bool = True,
 ):
     """Внутренняя функция для получения одного уведомления."""
     notif = db.query(Notification).filter(Notification.id == notification_id).first()
     if not notif:
         return None
-    
-    # Помечаем как прочитанное, если еще не прочитано
-    if notif.status == NotificationStatus.UNREAD:
+
+    if mark_read and notif.status == NotificationStatus.UNREAD:
         notif.status = NotificationStatus.READ
         notif.read_at = datetime.utcnow()
         db.commit()
         db.refresh(notif)
-    
-    resident_code = None
-    resident_info = None
-    block_name = None
-    unit_number = None
-    
-    if notif.resident:
-        block_name = notif.resident.block.name if notif.resident.block else None
-        unit_number = notif.resident.unit_number
-        if block_name and unit_number:
-            resident_code = f"{block_name} / {unit_number}"
-            resident_info = f"Блок {block_name}, №{unit_number}"
-    
-    return NotificationOut(
-        id=notif.id,
-        user_id=notif.user_id,
-        resident_id=notif.resident_id,
-        message=notif.message,
-        status=notif.status.value,
-        created_at=notif.created_at,
-        read_at=notif.read_at,
-        notification_type=notif.notification_type,
-        related_id=notif.related_id,
-        user_full_name=notif.user.full_name,
-        user_phone=notif.user.phone,
-        user_email=notif.user.email,
-        resident_code=resident_code,
-        resident_info=resident_info,
-        block_name=block_name,
-        unit_number=unit_number,
-    )
+
+    return _build_notification_out(notif)
 
 
 @router.get("/")
@@ -307,24 +299,29 @@ def get_user_notifications(
                 resident_code = f"{block_name} / {unit_number}"
                 resident_info = f"Блок {block_name}, №{unit_number}"
         
-        result.append(NotificationOut(
-            id=notif.id,
-            user_id=notif.user_id,
-            resident_id=notif.resident_id,
-            message=notif.message,
-            status=notif.status.value,
-            created_at=notif.created_at,
-            read_at=notif.read_at,
-            notification_type=notif.notification_type,
-            related_id=notif.related_id,
-            user_full_name=notif.user.full_name,
-            user_phone=notif.user.phone,
-            user_email=notif.user.email,
-            resident_code=resident_code,
-            resident_info=resident_info,
-            block_name=block_name,
-            unit_number=unit_number,
-        ))
+        result.append(
+            NotificationOut(
+                id=notif.id,
+                user_id=notif.user_id,
+                resident_id=notif.resident_id,
+                message=notif.message,
+                status=notif.status.value,
+                created_at=notif.created_at,
+                read_at=notif.read_at,
+                notification_type=notif.notification_type,
+                related_id=notif.related_id,
+                user_full_name=notif.user.full_name,
+                user_phone=notif.user.phone,
+                user_email=notif.user.email,
+                resident_code=resident_code,
+                resident_info=resident_info,
+                block_name=block_name,
+                unit_number=unit_number,
+                appeal_workflow=notif.appeal_workflow,
+                staff_message=notif.staff_message,
+                workflow_updated_at=notif.workflow_updated_at,
+            )
+        )
     
     return {
         "notifications": result,
@@ -357,11 +354,12 @@ def get_user_unread_count(
 @router.get("/{notification_id}")
 def get_notification(
     notification_id: int,
+    mark_read: bool = Query(True, description="Если false — не помечать прочитанным (для предпросмотра в админке)."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Получить одно уведомление по ID (требует авторизации)."""
-    notif = _get_notification_internal(db, notification_id)
+    notif = _get_notification_internal(db, notification_id, mark_read=mark_read)
     if not notif:
         raise HTTPException(status_code=404, detail="Notification not found")
     return notif
@@ -373,10 +371,125 @@ def get_notification_public(
     db: Session = Depends(get_db),
 ):
     """Получить одно уведомление по ID (публичный endpoint без авторизации)."""
-    notif = _get_notification_internal(db, notification_id)
+    notif = _get_notification_internal(db, notification_id, mark_read=True)
     if not notif:
         raise HTTPException(status_code=404, detail="Notification not found")
     return notif
+
+
+def _norm_optional_str(v: Optional[str]) -> Optional[str]:
+    s = (v or "").strip()
+    return s if s else None
+
+
+@router.patch("/{notification_id}", response_model=NotificationOut)
+def patch_notification(
+    notification_id: int,
+    data: NotificationPatch,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Обновить обращение: стадия обработки, комментарий для жителя, статус прочтения."""
+    notif = db.query(Notification).filter(Notification.id == notification_id).first()
+    if not notif:
+        raise HTTPException(status_code=404, detail="Notification not found")
+
+    snap_wf = notif.appeal_workflow
+    snap_msg = notif.staff_message
+
+    new_status = None
+    if data.status is not None:
+        su = data.status.upper()
+        if su not in {s.value for s in NotificationStatus}:
+            raise HTTPException(status_code=400, detail="Invalid status")
+        new_status = NotificationStatus(su)
+
+    wf_in = data.appeal_workflow
+    if wf_in is not None:
+        wf_in = wf_in.strip().upper()
+        valid = {w.value for w in AppealWorkflow}
+        if wf_in not in valid:
+            raise HTTPException(status_code=400, detail="Invalid appeal_workflow")
+
+    is_appeal = _is_appeal_notification(notif)
+
+    # UNREAD + только workflow: считаем принятием в работу (READ + стадия)
+    if is_appeal and notif.status == NotificationStatus.UNREAD and wf_in is not None and new_status is None:
+        new_status = NotificationStatus.READ
+
+    transitioning_to_read = (
+        is_appeal
+        and notif.status == NotificationStatus.UNREAD
+        and new_status == NotificationStatus.READ
+    )
+
+    if transitioning_to_read and not wf_in:
+        raise HTTPException(
+            status_code=400,
+            detail="appeal_workflow is required when marking an appeal as read",
+        )
+
+    if wf_in is not None:
+        notif.appeal_workflow = wf_in
+        notif.workflow_updated_at = datetime.utcnow()
+    if data.staff_message is not None:
+        msg = (data.staff_message or "").strip() or None
+        notif.staff_message = msg
+        notif.workflow_updated_at = datetime.utcnow()
+
+    if new_status is not None:
+        notif.status = new_status
+        if new_status == NotificationStatus.READ and notif.read_at is None:
+            notif.read_at = datetime.utcnow()
+        if new_status == NotificationStatus.UNREAD:
+            notif.read_at = None
+
+    wf_changed = wf_in is not None and _norm_optional_str(snap_wf) != _norm_optional_str(notif.appeal_workflow)
+    msg_changed = data.staff_message is not None and _norm_optional_str(snap_msg) != _norm_optional_str(notif.staff_message)
+    has_wf = bool(_norm_optional_str(notif.appeal_workflow))
+    has_staff = bool(_norm_optional_str(notif.staff_message))
+    if is_appeal and (wf_changed or msg_changed) and (has_wf or has_staff):
+        payload = json.dumps(
+            {
+                "k": "appeal_update",
+                "wf": notif.appeal_workflow or "",
+                "m": notif.staff_message or "",
+            },
+            ensure_ascii=False,
+        )
+        # Один пуш жителю: при двойном клике / параллельных PATCH не плодим строки — обновляем недавнее
+        cutoff = datetime.utcnow() - timedelta(seconds=12)
+        recent_push = (
+            db.query(Notification)
+            .filter(
+                Notification.user_id == notif.user_id,
+                Notification.notification_type == "APPEAL_UPDATE",
+                Notification.related_id == notif.id,
+                Notification.created_at >= cutoff,
+            )
+            .order_by(Notification.created_at.desc())
+            .first()
+        )
+        if recent_push:
+            recent_push.message = payload
+            recent_push.status = NotificationStatus.UNREAD
+            recent_push.created_at = datetime.utcnow()
+        else:
+            db.add(
+                Notification(
+                    user_id=notif.user_id,
+                    resident_id=notif.resident_id,
+                    message=payload,
+                    status=NotificationStatus.UNREAD,
+                    notification_type="APPEAL_UPDATE",
+                    related_id=notif.id,
+                    created_at=datetime.utcnow(),
+                )
+            )
+
+    db.commit()
+    db.refresh(notif)
+    return _build_notification_out(notif)
 
 
 @router.delete("/{notification_id}")

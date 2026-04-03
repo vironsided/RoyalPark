@@ -204,6 +204,10 @@ def run_bootstrap_schema():
         # Новые поля для уведомлений
         "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS notification_type VARCHAR(20);",
         "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS related_id INTEGER;",
+        # Обращения: стадия обработки и сообщение для жителя
+        "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS appeal_workflow VARCHAR(40);",
+        "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS staff_message TEXT;",
+        "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS workflow_updated_at TIMESTAMP WITHOUT TIME ZONE;",
         "ALTER TABLE news ADD COLUMN IF NOT EXISTS target_blocks TEXT;",
 
     ]

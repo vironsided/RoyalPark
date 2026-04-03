@@ -478,6 +478,19 @@ class NotificationType(str, enum.Enum):
     INVOICE = "INVOICE"  # Уведомление о выставленном счете
     NEWS = "NEWS"        # Уведомление о новости
     APPEAL = "APPEAL"    # Обращение (существующий тип для обращений)
+    APPEAL_UPDATE = "APPEAL_UPDATE"  # Обновление стадии обращения (пуш жителю в колокольчик)
+
+
+class AppealWorkflow(str, enum.Enum):
+    """Стадия обработки обращения (только для notification_type == APPEAL)."""
+
+    UNDER_REVIEW = "UNDER_REVIEW"  # Принято / на рассмотрении
+    AWAITING_CONTACT = "AWAITING_CONTACT"  # Свяжемся с вами
+    TECH_DISPATCHED = "TECH_DISPATCHED"  # Назначен / выезжает специалист
+    IN_PROGRESS = "IN_PROGRESS"  # Выполняются работы
+    AWAITING_RESIDENT = "AWAITING_RESIDENT"  # Нужны уточнения / доступ от жителя
+    RESOLVED = "RESOLVED"  # Выполнено
+    CLOSED = "CLOSED"  # Закрыто без действий / дубликат
 
 
 class Notification(Base):
@@ -502,6 +515,11 @@ class Notification(Base):
     # Но проще изменить default на текущее время Баку в самом приложении
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False, default=datetime.utcnow)
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+
+    # Обращения (APPEAL): стадия обработки и комментарий для жителя
+    appeal_workflow: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    staff_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    workflow_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
 
     user: Mapped["User"] = relationship("User", lazy="joined")
     resident: Mapped["Resident"] = relationship("Resident", lazy="joined")

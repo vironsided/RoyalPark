@@ -109,7 +109,7 @@
                         <th data-i18n="user_invoice_items_th_charged">Начислено</th>
                         <th data-i18n="user_invoice_items_th_vat">НДС</th>
                         <th data-i18n="user_invoice_items_th_total">Итого</th>
-                        <th>Статус</th>
+                        <th data-i18n="user_invoice_status_label">Статус</th>
                     </tr>
                 </thead>
                 <tbody id="invoiceItemsBody">
@@ -833,6 +833,21 @@
             updateMasterCheckboxState();
         }
 
+        function normalizeLinePaymentStatus(rawStatus) {
+            const s = String(rawStatus || '').toLowerCase();
+            if (
+                s.includes('не оплач') ||
+                s.includes('неоплач') ||
+                s.includes('ödənilm') ||
+                s.includes('odenilm') ||
+                s.includes('unpaid') ||
+                s.includes('not paid')
+            ) return 'unpaid';
+            if (s.includes('част') || s.includes('qism') || s.includes('partial')) return 'partial';
+            if (s.includes('оплач') || s.includes('ödənilib') || s.includes('odenilib') || s.includes('paid')) return 'paid';
+            return 'unpaid';
+        }
+
         // Render invoice lines
         function renderInvoiceLines(lines, total) {
             const tbody = document.getElementById('invoiceItemsBody');
@@ -889,11 +904,27 @@
                 }
 
                 const checked = selectable && selectedPayableLineIds.has(checkboxLineId);
-                const paymentStatus = line.payment_status || 'Не оплачена';
+                const rawPaymentStatus = line.payment_status || '';
+                let statusCode = normalizeLinePaymentStatus(rawPaymentStatus);
+                if (totalAmount > 0) {
+                    if (paidAmount <= 0.000001) statusCode = 'unpaid';
+                    else if (paidAmount >= totalAmount - 0.000001) statusCode = 'paid';
+                    else statusCode = 'partial';
+                }
                 const ratio = totalAmount > 0 ? Math.min(100, Math.max(0, (paidAmount / totalAmount) * 100)) : 0;
                 let statusClass = 'payment-status-unpaid';
-                if (paymentStatus === 'Оплачена') statusClass = 'payment-status-paid';
-                else if (paymentStatus === 'Частично') statusClass = 'payment-status-partial';
+                let statusText = window.i18n?.translate?.('invoice_line_status_unpaid', lang) || 'Не оплачена';
+                if (statusCode === 'paid') {
+                    statusClass = 'payment-status-paid';
+                    statusText = window.i18n?.translate?.('invoice_line_status_paid', lang) || 'Оплачена';
+                } else if (statusCode === 'partial') {
+                    statusClass = 'payment-status-partial';
+                    statusText = window.i18n?.translate?.('invoice_line_status_partial', lang) || 'Частично';
+                }
+                const paidMetaTemplate = window.i18n?.translate?.('invoice_line_paid_of', lang) || 'Оплачено {paid} из {total}';
+                const paidMeta = paidMetaTemplate
+                    .replace('{paid}', formatCurrency(paidAmount))
+                    .replace('{total}', formatCurrency(totalAmount));
                 return `
                 <tr>
                     <td class="pay-select-cell">
@@ -912,8 +943,8 @@
                     <td class="total-value">${formatCurrency(line.amount_total)}</td>
                     <td>
                         <div class="payment-status-card ${statusClass}">
-                            <div class="payment-status-head">${paymentStatus}</div>
-                            <div class="payment-status-meta">Оплачено ${formatCurrency(paidAmount)} из ${formatCurrency(totalAmount)}</div>
+                            <div class="payment-status-head">${statusText}</div>
+                            <div class="payment-status-meta">${paidMeta}</div>
                             <div class="payment-status-track"><span style="width:${ratio.toFixed(2)}%"></span></div>
                         </div>
                     </td>

@@ -916,6 +916,7 @@ const translations = {
         notifications_resident_template: "Резидент {resident}.",
         notifications_invoices_paid_template: "Погашены счета: {details}.",
         notifications_news_published_template: "Опубликована новость: {title}",
+        notifications_appeal_update_summary: "Статус обращения: {status}",
         notification_invoice_issued: "Выставлен счет для {house_info}. Сумма: {amount}. Период: {period}. Оплатить с {from_date} по {to_date}",
 
         // User portal (ЛК жильца)
@@ -1168,6 +1169,19 @@ const translations = {
         user_appeals_hint: "Максимум 2000 символов.",
         user_appeal_status_read: "Прочитано",
         user_appeal_status_unread: "Не прочитано",
+        appeals_workflow_label: "Стадия обработки",
+        appeals_staff_message_label: "Сообщение для жителя",
+        appeals_staff_message_placeholder: "Кратко: что происходит дальше (необязательно)",
+        appeals_save_workflow: "Сохранить",
+        appeals_read_require_workflow: "Чтобы отметить обращение прочитанным, выберите стадию и сохраните.",
+        appeal_wf_under_review: "На рассмотрении",
+        appeal_wf_awaiting_contact: "Свяжемся с вами",
+        appeal_wf_tech_dispatched: "Назначен специалист / выезд",
+        appeal_wf_in_progress: "Выполняются работы",
+        appeal_wf_awaiting_resident: "Нужны уточнения / доступ",
+        appeal_wf_resolved: "Выполнено",
+        appeal_wf_closed: "Закрыто",
+        user_appeal_staff_update_label: "Ответ службы",
         
         // Pagination
         pagination_page: "Стр.",
@@ -2121,6 +2135,7 @@ const translations = {
         notifications_resident_template: "Rezident {resident}.",
         notifications_invoices_paid_template: "Bağlanan hesablar: {details}.",
         notifications_news_published_template: "Xəbər dərc olundu: {title}",
+        notifications_appeal_update_summary: "Müraciətin statusu: {status}",
         notification_invoice_issued: "Blok {house_info} üçün hesab tərtib edilib. Məbləğ: {amount}. Dövr: {period}. Ödəniş {from_date} - {to_date} tarixləri arasında mümkündür",
 
         // User portal (istifadəçi kabineti)
@@ -2374,6 +2389,19 @@ const translations = {
         user_appeals_hint: "Maksimum 2000 simvol.",
         user_appeal_status_read: "Oxunub",
         user_appeal_status_unread: "Oxunmayıb",
+        appeals_workflow_label: "İşləmə mərhələsi",
+        appeals_staff_message_label: "Sakin üçün mesaj",
+        appeals_staff_message_placeholder: "Qısa: növbəti addımlar (istəyə bağlı)",
+        appeals_save_workflow: "Yadda saxla",
+        appeals_read_require_workflow: "Oxunmuş kimi işarə etmək üçün mərhələ seçin və saxlayın.",
+        appeal_wf_under_review: "Baxılır",
+        appeal_wf_awaiting_contact: "Sizinlə əlaqə saxlayacağıq",
+        appeal_wf_tech_dispatched: "Texnik təyin edilib / çıxış",
+        appeal_wf_in_progress: "İşlər aparılır",
+        appeal_wf_awaiting_resident: "Sizdən məlumat / giriş lazımdır",
+        appeal_wf_resolved: "Həll edilib",
+        appeal_wf_closed: "Bağlanıb",
+        user_appeal_staff_update_label: "Xidmətin cavabı",
         
         // Pagination
         pagination_page: "Səh.",
@@ -3327,6 +3355,7 @@ const translations = {
         notifications_resident_template: "Resident {resident}.",
         notifications_invoices_paid_template: "Invoices paid: {details}.",
         notifications_news_published_template: "Published news: {title}",
+        notifications_appeal_update_summary: "Appeal status: {status}",
         notification_invoice_issued: "Invoice issued for {house_info}. Amount: {amount}. Period: {period}. Pay between {from_date} and {to_date}",
 
         // User portal
@@ -3579,6 +3608,19 @@ const translations = {
         user_appeals_hint: "Maximum 2000 characters.",
         user_appeal_status_read: "Read",
         user_appeal_status_unread: "Unread",
+        appeals_workflow_label: "Processing stage",
+        appeals_staff_message_label: "Message to resident",
+        appeals_staff_message_placeholder: "Brief update on next steps (optional)",
+        appeals_save_workflow: "Save",
+        appeals_read_require_workflow: "To mark as read, choose a stage and save.",
+        appeal_wf_under_review: "Under review",
+        appeal_wf_awaiting_contact: "We will contact you",
+        appeal_wf_tech_dispatched: "Technician assigned / visit",
+        appeal_wf_in_progress: "Work in progress",
+        appeal_wf_awaiting_resident: "Waiting for your input / access",
+        appeal_wf_resolved: "Resolved",
+        appeal_wf_closed: "Closed",
+        user_appeal_staff_update_label: "Staff update",
         
         // Pagination
         pagination_page: "Page",

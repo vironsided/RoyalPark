@@ -1203,6 +1203,9 @@ class ResidentAppeal(BaseModel):
     message: str
     status: str
     created_at: datetime
+    appeal_workflow: Optional[str] = None
+    staff_message: Optional[str] = None
+    workflow_updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -1215,6 +1218,20 @@ class ResidentAppealCreate(BaseModel):
 
 class ResidentAppealUpdate(BaseModel):
     message: str
+
+
+def _resident_appeal_from_notif(notif: Notification, resident_code: str) -> ResidentAppeal:
+    return ResidentAppeal(
+        id=notif.id,
+        resident_id=notif.resident_id or 0,
+        resident_code=resident_code,
+        message=notif.message,
+        status=notif.status.value,
+        created_at=notif.created_at,
+        appeal_workflow=notif.appeal_workflow,
+        staff_message=notif.staff_message,
+        workflow_updated_at=notif.workflow_updated_at,
+    )
 
 
 def _get_resident_user(request: Request, db: Session) -> Optional[User]:
@@ -1409,16 +1426,7 @@ def get_resident_appeals(
         block_name = notif.resident.block.name if notif.resident and notif.resident.block else ""
         unit_number = notif.resident.unit_number if notif.resident else ""
         resident_code = f"{block_name} / {unit_number}" if block_name and unit_number else unit_number or block_name or ""
-        result.append(
-            ResidentAppeal(
-                id=notif.id,
-                resident_id=notif.resident_id or 0,
-                resident_code=resident_code,
-                message=notif.message,
-                status=notif.status.value,
-                created_at=notif.created_at,
-            )
-        )
+        result.append(_resident_appeal_from_notif(notif, resident_code))
 
     return result
 
@@ -1459,14 +1467,7 @@ def create_resident_appeal(
     block_name = resident.block.name if resident.block else ""
     resident_code = f"{block_name} / {resident.unit_number}" if block_name else resident.unit_number
 
-    return ResidentAppeal(
-        id=notif.id,
-        resident_id=notif.resident_id or 0,
-        resident_code=resident_code,
-        message=notif.message,
-        status=notif.status.value,
-        created_at=notif.created_at,
-    )
+    return _resident_appeal_from_notif(notif, resident_code)
 
 
 @router.put("/appeals/{appeal_id}", response_model=ResidentAppeal)
@@ -1503,14 +1504,7 @@ def update_resident_appeal(
     unit_number = resident.unit_number if resident else ""
     resident_code = f"{block_name} / {unit_number}" if block_name and unit_number else unit_number or block_name or ""
 
-    return ResidentAppeal(
-        id=notif.id,
-        resident_id=notif.resident_id or 0,
-        resident_code=resident_code,
-        message=notif.message,
-        status=notif.status.value,
-        created_at=notif.created_at,
-    )
+    return _resident_appeal_from_notif(notif, resident_code)
 
 
 @router.delete("/appeals/{appeal_id}")
