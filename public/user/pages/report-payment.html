@@ -275,7 +275,7 @@
         <!-- Right Column: Payment Details -->
         <div class="payment-right-column">
             <h3 class="payment-section-title" data-i18n="payment_details_title">Детали оплаты</h3>
-            <div id="paymentCountdown" style="display:none;margin:0 0 12px 0;padding:10px 12px;border:1px solid #2563eb;border-radius:10px;background:rgba(37,99,235,0.08);color:#e5e7eb;font-weight:600;"></div>
+            <div id="paymentCountdown" style="display:none;"></div>
             
             <div class="order-summary">
                 <div class="order-header">
@@ -353,7 +353,7 @@
                     </div>
                 </div>
 
-                <button type="button" class="pay-button" id="topupAdvanceBtn" data-i18n="payment_topup_advance_btn" style="margin-top: 12px; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.45);">
+                <button type="button" class="pay-button payment-secondary-btn" id="topupAdvanceBtn" data-i18n="payment_topup_advance_btn" style="margin-top: 12px;">
                     Пополнить аванс
                 </button>
             </div>
@@ -437,8 +437,9 @@ function stopPaymentCountdown() {
     if (timerEl) {
         timerEl.style.display = 'none';
         timerEl.textContent = '';
-        timerEl.style.borderColor = '#2563eb';
-        timerEl.style.background = 'rgba(37,99,235,0.08)';
+        timerEl.style.borderColor = '';
+        timerEl.style.background = '';
+        timerEl.style.color = '';
     }
 }
 
@@ -490,7 +491,7 @@ function resetPaymentSummaryUIAfterExpiry() {
 if (!window.bankStyles) {
     window.bankStyles = {
         default: {
-            gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            gradient: 'linear-gradient(135deg, #b1ba88 0%, #9aa972 100%)',
             logo: 'MC'
         },
         'sberbank': {
@@ -2458,24 +2459,20 @@ async function setupAdvanceTopupButton() {
     }
 
     function setAdvanceTopupButtonState(isCancelMode) {
-        if (!btn.dataset.defaultBackground) {
-            btn.dataset.defaultBackground = btn.style.background || '';
-            btn.dataset.defaultBorder = btn.style.border || '';
+        if (!btn.dataset.defaultI18n) {
             btn.dataset.defaultI18n = btn.getAttribute('data-i18n') || 'payment_topup_advance_btn';
         }
 
         if (isCancelMode) {
             btn.setAttribute('data-i18n', 'payment_cancel_topup_btn');
             btn.textContent = getI18nText('payment_cancel_topup_btn', 'Отменить пополнение');
-            btn.style.background = 'rgba(220,38,38,0.16)';
-            btn.style.border = '1px solid rgba(220,38,38,0.5)';
+            btn.classList.add('payment-secondary-btn--cancel');
             return;
         }
 
         btn.setAttribute('data-i18n', btn.dataset.defaultI18n || 'payment_topup_advance_btn');
         btn.textContent = getI18nText('payment_topup_advance_btn', 'Пополнить аванс');
-        btn.style.background = btn.dataset.defaultBackground || '';
-        btn.style.border = btn.dataset.defaultBorder || '';
+        btn.classList.remove('payment-secondary-btn--cancel');
     }
 
     function syncAdvanceTopupButtonState() {

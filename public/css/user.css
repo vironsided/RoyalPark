@@ -1,21 +1,7 @@
-/* 🎨 USER DASHBOARD - Яркие сочные цвета 🎨 */
+/* Кабинет жильца: вёрстка и поведение — этот файл; палитра royalpark.az — user-theme.css (админка не подключает). */
 
-/* Переопределяем цвета sidebar для user */
-.admin-container .sidebar,
-.user-app .sidebar {
-    background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
-    /* Сам sidebar больше не скроллится – скролл внутри nav-menu */
-    overflow: visible !important;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
-[data-theme="dark"] .admin-container .sidebar,
+.user-app .sidebar,
 [data-theme="dark"] .user-app .sidebar {
-    background: linear-gradient(180deg, #12141d 0%, #090b13 100%);
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.6);
     overflow: visible !important;
     height: 100vh;
     display: flex;
@@ -73,17 +59,6 @@
 .user-app .sidebar.collapsed::-webkit-scrollbar-thumb:hover,
 [data-theme="dark"] .user-app .sidebar.collapsed::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.5);
-}
-
-[data-theme="dark"] .sidebar .nav-item {
-    color: rgba(255, 255, 255, 0.65);
-}
-
-[data-theme="dark"] .sidebar .nav-item:hover,
-[data-theme="dark"] .sidebar .nav-item.active {
-    background: linear-gradient(135deg, #6a5bff 0%, #a75bff 100%);
-    color: #fff;
-    box-shadow: 0 12px 24px rgba(109, 91, 255, 0.35);
 }
 
 /* Делаем шапку сайдбара тем же цветом, что и остальная часть в user-кабинете */
@@ -313,15 +288,15 @@
     gap: 0.35rem;
     padding: 0.2rem 0.9rem;
     border-radius: 999px;
-    background: rgba(79, 172, 254, 0.12);
-    color: #4facfe;
+    background: rgba(177, 186, 136, 0.18);
+    color: #9aa972;
     font-weight: 600;
     font-size: 0.9rem;
 }
 
 [data-theme="dark"] .resident-tag {
-    background: rgba(79, 172, 254, 0.2);
-    color: #7ed2ff;
+    background: rgba(177, 186, 136, 0.22);
+    color: #c5cd9f;
 }
 
 .resident-due-date {
@@ -418,7 +393,7 @@
 .resident-progress-fill {
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, #42e695 0%, #3bb2b8 100%);
+    background: linear-gradient(90deg, #b1ba88 0%, #9aa972 100%);
 }
 
 .resident-progress-text {
@@ -510,20 +485,20 @@
 }
 
 .resident-btn.primary {
-    background: #2562ff;
+    background: linear-gradient(135deg, #b1ba88 0%, #9aa972 100%);
     color: white;
-    box-shadow: 0 10px 20px rgba(37, 98, 255, 0.25);
+    box-shadow: 0 10px 20px rgba(177, 186, 136, 0.3);
 }
 
 .resident-btn.primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 15px 25px rgba(37, 98, 255, 0.35);
+    box-shadow: 0 15px 25px rgba(177, 186, 136, 0.4);
 }
 
 .resident-btn.success {
-    background: linear-gradient(135deg, #1dd1a1 0%, #10ac84 100%);
+    background: linear-gradient(135deg, #a3b896 0%, #7d8f68 100%);
     color: white;
-    box-shadow: 0 15px 25px rgba(16, 172, 132, 0.35);
+    box-shadow: 0 15px 25px rgba(125, 143, 104, 0.35);
 }
 
 .resident-btn.success:hover {
@@ -560,8 +535,9 @@
     border-color: rgba(255, 255, 255, 0.08);
 }
 
+/* Акцентная карточка (долг / итог): брендовый градиент; «Аванс» ниже — отдельно зелёный */
 .resident-summary-card.accent {
-    background: linear-gradient(135deg, #24c6dc 0%, #2af598 100%);
+    background: linear-gradient(135deg, #9aa972 0%, #7d8759 100%);
     border-color: transparent;
     color: white;
     transition: all 0.3s ease;
@@ -569,13 +545,13 @@
 
 .resident-summary-card.accent:hover {
     transform: translateY(-2px);
-    box-shadow: 0 15px 30px rgba(36, 198, 220, 0.4);
+    box-shadow: 0 15px 30px rgba(177, 186, 136, 0.35);
     filter: brightness(1.05);
 }
 
 .resident-summary-card.accent:active {
     transform: translateY(0);
-    box-shadow: 0 5px 15px rgba(36, 198, 220, 0.3);
+    box-shadow: 0 5px 15px rgba(177, 186, 136, 0.28);
 }
 
 .summary-label {
@@ -618,9 +594,9 @@
 
 .bill-item:hover {
     background: var(--bg-primary);
-    border-color: rgba(79, 172, 254, 0.4);
+    border-color: rgba(177, 186, 136, 0.45);
     transform: translateX(5px);
-    box-shadow: 0 8px 20px rgba(79, 172, 254, 0.25);
+    box-shadow: 0 8px 20px rgba(177, 186, 136, 0.2);
 }
 
 .bill-icon {
@@ -635,9 +611,9 @@
 }
 
 .bill-icon.bill-pending {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: linear-gradient(135deg, #e07a8a 0%, #c94a5c 100%);
     color: white;
-    box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+    box-shadow: 0 4px 12px rgba(201, 74, 92, 0.3);
 }
 
 .bill-icon.bill-paid {
@@ -689,7 +665,7 @@
     position: relative;
     overflow: hidden;
     color: var(--text-primary);
-    --action-icon-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --action-icon-gradient: linear-gradient(135deg, #b1ba88 0%, #9aa972 100%);
 }
 
 [data-theme="dark"] .action-button {
@@ -711,7 +687,7 @@
 }
 
 .action-button.action-primary {
-    --action-icon-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --action-icon-gradient: linear-gradient(135deg, #b1ba88 0%, #9aa972 100%);
 }
 
 .action-button.action-success {
@@ -723,7 +699,7 @@
 }
 
 .action-button.action-info {
-    --action-icon-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --action-icon-gradient: linear-gradient(135deg, #c5cd9f 0%, #b1ba88 100%);
 }
 
 .action-button:hover::before {
@@ -833,7 +809,7 @@
 .news-item:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    border-color: rgba(102, 126, 234, 0.4);
+    border-color: rgba(177, 186, 136, 0.45);
 }
 
 .news-icon {
@@ -1032,8 +1008,8 @@
 }
 
 .status-checkbox input[type="checkbox"]:checked {
-    border-color: #2562ff;
-    background: linear-gradient(135deg, #2562ff 0%, #24c6dc 100%);
+    border-color: #9aa972;
+    background: linear-gradient(135deg, #b1ba88 0%, #9aa972 100%);
 }
 
 .status-checkbox input[type="checkbox"]:checked::after {
@@ -1080,7 +1056,7 @@
 }
 
 .user-bills-filter-btn:hover {
-    background: linear-gradient(135deg, #2562ff 0%, #24c6dc 100%);
+    background: linear-gradient(135deg, #b1ba88 0%, #9aa972 100%);
     border-color: transparent;
     color: #fff;
 }
@@ -1220,8 +1196,8 @@
     border-radius: 999px;
     font-size: 0.78rem;
     font-weight: 600;
-    background: rgba(102, 126, 234, 0.2);
-    color: #a5b4fc;
+    background: rgba(177, 186, 136, 0.22);
+    color: #c5cd9f;
 }
 
 .user-appeal-badge {
@@ -1358,8 +1334,8 @@
 }
 
 .user-appeal-modal-edit textarea:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 1px rgba(102, 126, 234, 0.8);
+    border-color: #b1ba88;
+    box-shadow: 0 0 0 1px rgba(177, 186, 136, 0.65);
     background: rgba(8, 12, 24, 0.9);
 }
 
@@ -1508,7 +1484,7 @@ body[data-theme="dark"] .user-bills-section select option {
     border-radius: 999px;
     padding: 0.45rem 1.3rem;
     border: none;
-    background: linear-gradient(135deg, #2562ff 0%, #24c6dc 100%);
+    background: linear-gradient(135deg, #b1ba88 0%, #9aa972 100%);
     color: #fff;
     font-size: 0.85rem;
     font-weight: 600;
@@ -1518,7 +1494,7 @@ body[data-theme="dark"] .user-bills-section select option {
 
 .user-bill-open-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 25px rgba(37, 98, 255, 0.35);
+    box-shadow: 0 10px 25px rgba(177, 186, 136, 0.35);
 }
 
 .user-bill-pdf-btn {
@@ -1544,7 +1520,7 @@ body[data-theme="dark"] .user-bills-section select option {
     border-radius: 999px;
     padding: 0.45rem 1.3rem;
     border: none;
-    background: linear-gradient(135deg, #6a5bff 0%, #a75bff 100%);
+    background: linear-gradient(135deg, #b1ba88 0%, #9aa972 100%);
     color: #fff;
     font-size: 0.85rem;
     font-weight: 600;
@@ -1554,7 +1530,7 @@ body[data-theme="dark"] .user-bills-section select option {
 
 .invoice-pay-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 25px rgba(109, 91, 255, 0.35);
+    box-shadow: 0 10px 25px rgba(177, 186, 136, 0.35);
 }
 
 .invoice-pay-btn:disabled,
@@ -1609,49 +1585,49 @@ body[data-theme="dark"] .user-bills-section select option {
 .user-app .invoice-view-page .invoice-pay-btn {
     position: relative;
     margin-left: 0.5rem;
-    border: 1px solid rgba(198, 160, 255, 0.45);
+    border: 1px solid rgba(197, 205, 159, 0.55);
     border-radius: 999px;
     padding: 0.52rem 1.45rem;
-    background: linear-gradient(135deg, #7156ff 0%, #9c5dff 52%, #c178ff 100%);
+    background: linear-gradient(135deg, #b1ba88 0%, #8f9b6b 52%, #9aa972 100%);
     color: #ffffff;
     font-size: 0.85rem;
     font-weight: 700;
     letter-spacing: 0.01em;
     box-shadow:
-        0 8px 24px rgba(113, 86, 255, 0.35),
+        0 8px 24px rgba(177, 186, 136, 0.35),
         inset 0 1px 0 rgba(255, 255, 255, 0.22);
     transition: transform 0.2s ease, box-shadow 0.25s ease, filter 0.25s ease, border-color 0.25s ease;
 }
 
 .user-app .invoice-view-page .invoice-pay-btn:hover:not(:disabled):not([disabled]) {
     transform: translateY(-1px);
-    border-color: rgba(214, 185, 255, 0.65);
-    filter: brightness(1.05) saturate(1.05);
+    border-color: rgba(220, 226, 195, 0.75);
+    filter: brightness(1.04) saturate(1.02);
     box-shadow:
-        0 12px 32px rgba(122, 93, 255, 0.45),
-        0 0 18px rgba(171, 116, 255, 0.28),
+        0 12px 32px rgba(154, 169, 114, 0.4),
+        0 0 18px rgba(177, 186, 136, 0.25),
         inset 0 1px 0 rgba(255, 255, 255, 0.26);
 }
 
 .user-app .invoice-view-page .invoice-pay-btn:active:not(:disabled):not([disabled]) {
     transform: translateY(0);
     box-shadow:
-        0 6px 18px rgba(113, 86, 255, 0.3),
+        0 6px 18px rgba(154, 169, 114, 0.3),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .user-app .invoice-view-page .invoice-pay-btn:focus-visible {
     outline: none;
     box-shadow:
-        0 0 0 3px rgba(37, 20, 58, 0.9),
-        0 0 0 5px rgba(177, 130, 255, 0.65),
-        0 12px 32px rgba(122, 93, 255, 0.4);
+        0 0 0 3px rgba(26, 28, 24, 0.9),
+        0 0 0 5px rgba(177, 186, 136, 0.55),
+        0 12px 32px rgba(154, 169, 114, 0.35);
 }
 
 .user-app .invoice-view-page .invoice-pay-btn:disabled,
 .user-app .invoice-view-page .invoice-pay-btn[disabled] {
     border-color: rgba(255, 255, 255, 0.2);
-    background: linear-gradient(135deg, rgba(103, 95, 150, 0.95) 0%, rgba(96, 90, 138, 0.95) 100%);
+    background: linear-gradient(135deg, rgba(90, 98, 78, 0.95) 0%, rgba(74, 82, 64, 0.95) 100%);
     color: rgba(255, 255, 255, 0.72);
     box-shadow: none;
     transform: none;
@@ -1783,13 +1759,13 @@ body[data-theme="dark"] .user-bills-section select option {
 }
 
 .payment-left-column .animated-bg-1 {
-    background: linear-gradient(45deg, #2e1a47, #1a1c2c, #3a3d5e);
+    background: linear-gradient(45deg, #2a3228, #1a1f18, #3a4034);
     background-size: 400% 400%;
     animation: meshGradientSaved1 10s ease infinite;
 }
 
 .payment-left-column .animated-bg-2 {
-    background: linear-gradient(-45deg, #0f2027, #203a43, #2c5364, #1a1c2c);
+    background: linear-gradient(-45deg, #1c221e, #252b26, #343d30, #1a1f18);
     background-size: 400% 400%;
     animation: meshGradientSaved2 12s ease infinite;
 }
@@ -2066,8 +2042,8 @@ body[data-theme="dark"] .user-bills-section select option {
 .pass-type {
     font-size: 10px;
     letter-spacing: 1px;
-    opacity: 0.6;
     text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.92);
 }
 
 .pass-chip-row {
@@ -2101,7 +2077,7 @@ body[data-theme="dark"] .user-bills-section select option {
 .pass-contactless {
     width: 22px;
     height: 22px;
-    opacity: 0.6;
+    color: rgba(255, 255, 255, 0.88);
     transform: rotate(90deg);
 }
 
@@ -2114,15 +2090,16 @@ body[data-theme="dark"] .user-bills-section select option {
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    opacity: 0.55;
     margin-bottom: 4px;
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .pass-amount {
     font-family: 'Space Mono', 'Inter', monospace;
     font-size: 28px;
     letter-spacing: 1px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+    color: #ffffff;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
 }
 
 .pass-footer {
@@ -2136,6 +2113,7 @@ body[data-theme="dark"] .user-bills-section select option {
     font-size: 15px;
     letter-spacing: 1.4px;
     font-weight: 500;
+    color: rgba(255, 255, 255, 0.95);
 }
 
 .pass-expiry {
@@ -2145,6 +2123,7 @@ body[data-theme="dark"] .user-bills-section select option {
 .pass-exp {
     font-family: 'Space Mono', monospace;
     font-size: 14px;
+    color: rgba(255, 255, 255, 0.95);
 }
 
 .pass-pattern {
@@ -2269,7 +2248,7 @@ body[data-theme="dark"] .user-bills-section select option {
 .saved-card-wrapper:hover .saved-card-back {
     box-shadow: 
         0 30px 60px rgba(0, 0, 0, 0.4),
-        0 0 30px rgba(102, 126, 234, 0.3),
+        0 0 30px rgba(177, 186, 136, 0.28),
         0 0 0 1px rgba(255, 255, 255, 0.2) inset;
     border-color: rgba(255, 255, 255, 0.3);
 }
@@ -2285,7 +2264,7 @@ body[data-theme="dark"] .user-bills-section select option {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.4) 100%);
+    background: linear-gradient(135deg, rgba(177, 186, 136, 0.45) 0%, rgba(154, 169, 114, 0.4) 100%);
     opacity: 0.6;
     pointer-events: none;
     z-index: 0;
@@ -2299,7 +2278,7 @@ body[data-theme="dark"] .user-bills-section select option {
     right: -30%;
     width: 400px;
     height: 400px;
-    background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(177, 186, 136, 0.32) 0%, transparent 70%);
     border-radius: 50%;
     pointer-events: none;
     z-index: 0;
@@ -2689,8 +2668,8 @@ body[data-theme="dark"] .user-bills-section select option {
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     
-    /* Animated gradient background similar to saved bank cards */
-    background: linear-gradient(45deg, #2e1a47, #1a1c2c, #3a3d5e);
+    /* Фон превью карты — тёмные оливковые тона (бренд), не фиолетовый */
+    background: linear-gradient(45deg, #2a3228, #1a1f18, #3a4034);
     background-size: 400% 400%;
     animation: meshGradientSaved1 10s ease infinite;
 
@@ -2754,7 +2733,7 @@ body[data-theme="dark"] .user-bills-section select option {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.4) 100%);
+    background: linear-gradient(135deg, rgba(177, 186, 136, 0.45) 0%, rgba(154, 169, 114, 0.4) 100%);
     opacity: 0.6;
     pointer-events: none;
     z-index: 0;
@@ -2780,7 +2759,7 @@ body[data-theme="dark"] .user-bills-section select option {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.4) 100%);
+    background: linear-gradient(135deg, rgba(177, 186, 136, 0.45) 0%, rgba(154, 169, 114, 0.4) 100%);
     opacity: 0.6;
     pointer-events: none;
     z-index: 0;
@@ -3033,7 +3012,7 @@ body[data-theme="dark"] .user-bills-section select option {
 }
 
 .detail-value.invoice-link {
-    color: #2f9bff; /* более яркий синий для кликабельного текста */
+    color: #9aa972;
     text-decoration: underline;
     text-underline-offset: 3px;
 }
@@ -3103,7 +3082,7 @@ body[data-theme="dark"] .user-bills-section select option {
     width: 20px;
     height: 20px;
     cursor: pointer;
-    accent-color: #667eea;
+    accent-color: #b1ba88;
 }
 
 .custom-amount-checkbox-text {
@@ -3146,9 +3125,9 @@ body[data-theme="dark"] .user-bills-section select option {
 
 .custom-amount-input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #b1ba88;
     background: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 3px rgba(177, 186, 136, 0.2);
 }
 
 .custom-amount-currency {
@@ -3166,8 +3145,8 @@ body[data-theme="dark"] .user-bills-section select option {
     line-height: 1.4;
     padding: 0.5rem 0.75rem;
     border-radius: 0.5rem;
-    background: rgba(102, 126, 234, 0.1);
-    color: #7ed2ff;
+    background: rgba(177, 186, 136, 0.15);
+    color: #c5cd9f;
 }
 
 .custom-amount-hint.hint-advance {
@@ -3520,14 +3499,14 @@ body[data-theme="dark"] .user-bills-section select option {
 }
 
 .user-btn-primary {
-    background: #667eea;
+    background: linear-gradient(135deg, #b1ba88 0%, #9aa972 100%);
     color: #fff;
 }
 
 .user-btn-primary:hover {
-    background: #5568d3;
+    background: linear-gradient(135deg, #9aa972 0%, #8a9668 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px rgba(177, 186, 136, 0.35);
 }
 
 .user-btn-secondary {

@@ -1,0 +1,1548 @@
+/**
+ * Тема личного кабинета резидента (royalpark.az: milky + olive).
+ * Подключается ТОЛЬКО на страницах с body.user-app — admin/index.html этот файл не загружает.
+ * Здесь — токены и перекрытия цветов из admin.css/global; разметка остаётся общей, внешний вид — отдельный.
+ */
+
+body.user-app {
+    /* Базовые токены бренда */
+    --user-milky: #efefe6;
+    --user-milky-dark: #edebe1;
+    --user-charcoal: #56565c;
+    --user-charcoal-muted: #6b6b73;
+    --user-olive: #b1ba88;
+    --user-olive-mid: #9aa972;
+    --user-olive-dark: #8a9668;
+    --user-olive-light: #c5cd9f;
+
+    /* Мост к переменным, которые читает разметка/стили admin.css внутри кабинета */
+    --primary-color: var(--user-olive);
+    --accent-color: var(--user-olive-mid);
+    --accent-hover: var(--user-olive-dark);
+    --primary-gradient: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%);
+    --primary-gradient-enhanced: linear-gradient(
+        135deg,
+        var(--user-olive-light) 0%,
+        var(--user-olive) 45%,
+        var(--user-olive-mid) 100%
+    );
+    --glow-shadow: 0 0 28px rgba(177, 186, 136, 0.32);
+
+    /* Поверх глобальных токенов [data-theme="dark"] — весь кабинет резидента светлый */
+    --bg-primary: var(--user-milky);
+    --bg-secondary: #fafaf6;
+    --bg-dark: #e8e7df;
+    --text-primary: var(--user-charcoal);
+    --text-secondary: var(--user-charcoal-muted);
+    --text-light: #7a7a82;
+    --border-color: rgba(177, 186, 136, 0.28);
+    --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.07);
+    --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.09);
+    --shadow-xl: 0 20px 44px rgba(0, 0, 0, 0.1);
+}
+
+/* Молочный фон вместо тёмного canvas из admin.css ([data-theme="dark"] html/body / .admin-container) */
+html[data-theme="dark"]:has(body.user-app) {
+    background-color: var(--user-milky) !important;
+}
+
+[data-theme="dark"] body.user-app {
+    background-color: var(--user-milky) !important;
+}
+
+/*
+ * admin.css: .admin-container::before — фиолетово-сиреневые radial-gradient по всему экрану;
+ * .sidebar::before — пурпурное пятно слева. Для резидента убираем полностью, иначе «просвечивает» сквозь меню.
+ */
+body.user-app .admin-container::before {
+    display: none !important;
+    content: none !important;
+}
+
+body.user-app .sidebar::before {
+    display: none !important;
+    content: none !important;
+}
+
+/* Всегда молочный canvas (не светлый сине-серый градиент из admin.css без data-theme) */
+body.user-app .admin-container {
+    background: linear-gradient(
+        180deg,
+        var(--user-milky) 0%,
+        var(--user-milky-dark) 45%,
+        #e3e1d6 100%
+    ) !important;
+}
+
+/*
+ * admin.css: .dashboard-content / #spa-content { color: #e4e6eb !important } + inherit на p/span/div —
+ * на светлых карточках текст становился невидимым. Возвращаем тёмную типографику.
+ */
+[data-theme="dark"] body.user-app .dashboard-content,
+[data-theme="dark"] body.user-app #userSpaContent,
+[data-theme="dark"] body.user-app #spa-content {
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app .dashboard-content h1,
+[data-theme="dark"] body.user-app .dashboard-content h2,
+[data-theme="dark"] body.user-app .dashboard-content h3,
+[data-theme="dark"] body.user-app .dashboard-content h4,
+[data-theme="dark"] body.user-app .dashboard-content h5,
+[data-theme="dark"] body.user-app #spa-content h1,
+[data-theme="dark"] body.user-app #spa-content h2,
+[data-theme="dark"] body.user-app #spa-content h3,
+[data-theme="dark"] body.user-app #spa-content h4,
+[data-theme="dark"] body.user-app #spa-content h5 {
+    color: var(--user-charcoal) !important;
+    -webkit-text-fill-color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app .dashboard-content p,
+[data-theme="dark"] body.user-app #spa-content p {
+    color: var(--user-charcoal-muted) !important;
+}
+
+[data-theme="dark"] body.user-app .resident-card .resident-greeting,
+[data-theme="dark"] body.user-app .resident-card .resident-greeting span,
+[data-theme="dark"] body.user-app .resident-full-name {
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app .resident-stat-label,
+[data-theme="dark"] body.user-app .resident-progress-labels span {
+    color: var(--user-charcoal-muted) !important;
+}
+
+[data-theme="dark"] body.user-app .resident-stat-value:not(.positive) {
+    color: var(--user-charcoal) !important;
+}
+
+/* Акцентные карточки / кнопки — белый текст на цветном фоне */
+[data-theme="dark"] body.user-app .resident-summary-card.accent .summary-label,
+[data-theme="dark"] body.user-app .resident-summary-card.accent .summary-value {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+}
+
+[data-theme="dark"] body.user-app .resident-btn.primary,
+[data-theme="dark"] body.user-app .resident-btn.success {
+    color: #fff !important;
+}
+
+[data-theme="dark"] body.user-app .news-content h4 {
+    color: var(--user-charcoal) !important;
+    -webkit-text-fill-color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app .news-content p {
+    color: var(--user-charcoal-muted) !important;
+}
+
+[data-theme="dark"] body.user-app .news-date {
+    color: var(--user-charcoal-muted) !important;
+}
+
+/* Новости: fallback, если нет класса типа (старая разметка) */
+[data-theme="dark"] body.user-app #spa-content .news-item:not([class*='news-item--']),
+[data-theme="dark"] body.user-app .dashboard-content .news-item:not([class*='news-item--']) {
+    background: rgba(255, 255, 255, 0.96) !important;
+    border-color: rgba(177, 186, 136, 0.28) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Новости: пастельный фон карточки по типу иконки (.news-item--announcement и т.д.) */
+[data-theme="dark"] body.user-app #spa-content .news-item.news-item--info,
+[data-theme="dark"] body.user-app .dashboard-content .news-item.news-item--info {
+    background: linear-gradient(145deg, #eef1f6 0%, #e2e8f0 100%) !important;
+    border-color: rgba(122, 143, 163, 0.38) !important;
+    box-shadow: 0 6px 20px rgba(90, 110, 130, 0.1) !important;
+}
+
+[data-theme="dark"] body.user-app #spa-content .news-item.news-item--announcement,
+[data-theme="dark"] body.user-app .dashboard-content .news-item.news-item--announcement {
+    background: linear-gradient(145deg, #e9f0f4 0%, #dce8ef 100%) !important;
+    border-color: rgba(107, 140, 158, 0.4) !important;
+    box-shadow: 0 6px 20px rgba(107, 140, 158, 0.12) !important;
+}
+
+[data-theme="dark"] body.user-app #spa-content .news-item.news-item--calendar,
+[data-theme="dark"] body.user-app .dashboard-content .news-item.news-item--calendar {
+    background: linear-gradient(145deg, #ecf4e8 0%, #dfead8 100%) !important;
+    border-color: rgba(125, 154, 107, 0.42) !important;
+    box-shadow: 0 6px 20px rgba(100, 130, 85, 0.1) !important;
+}
+
+[data-theme="dark"] body.user-app #spa-content .news-item.news-item--warning,
+[data-theme="dark"] body.user-app .dashboard-content .news-item.news-item--warning {
+    background: linear-gradient(145deg, #fceee9 0%, #f3ddd4 100%) !important;
+    border-color: rgba(193, 122, 108, 0.4) !important;
+    box-shadow: 0 6px 20px rgba(180, 100, 85, 0.1) !important;
+}
+
+[data-theme="dark"] body.user-app #spa-content .news-item.news-item--star,
+[data-theme="dark"] body.user-app .dashboard-content .news-item.news-item--star {
+    background: linear-gradient(145deg, #f7f4e8 0%, #ede6d4 100%) !important;
+    border-color: rgba(177, 168, 120, 0.4) !important;
+    box-shadow: 0 6px 20px rgba(140, 130, 90, 0.08) !important;
+}
+
+[data-theme="dark"] body.user-app #spa-content .news-item.news-item--tools,
+[data-theme="dark"] body.user-app .dashboard-content .news-item.news-item--tools {
+    background: linear-gradient(145deg, #efefea 0%, #e2e4dc 100%) !important;
+    border-color: rgba(138, 134, 128, 0.38) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="dark"] body.user-app #spa-content .news-item[class*='news-item--']:hover,
+[data-theme="dark"] body.user-app .dashboard-content .news-item[class*='news-item--']:hover {
+    border-color: rgba(177, 186, 136, 0.48) !important;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Круг иконки: лёгкое кольцо на пастельном фоне (цвет заливки по-прежнему из JS) */
+[data-theme="dark"] body.user-app #spa-content .news-item .news-icon,
+[data-theme="dark"] body.user-app .dashboard-content .news-item .news-icon {
+    border: 2px solid rgba(255, 255, 255, 0.88);
+    box-sizing: border-box;
+}
+
+[data-theme="dark"] body.user-app .news-title {
+    color: var(--user-charcoal) !important;
+    -webkit-text-fill-color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app .news-text {
+    color: var(--user-charcoal-muted) !important;
+}
+
+/* Модалка новости на главной (ensureDashboardNewsModal в user.js — раньше была тёмной) */
+body.user-app .dashboard-news-modal-overlay {
+    background: rgba(86, 86, 92, 0.38) !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+}
+
+body.user-app .dashboard-news-modal {
+    background: linear-gradient(180deg, #fafaf6 0%, #f3f2ec 100%) !important;
+    border: 1px solid rgba(177, 186, 136, 0.32) !important;
+    box-shadow: 0 22px 48px rgba(0, 0, 0, 0.12) !important;
+}
+
+body.user-app .dashboard-news-modal-header {
+    border-bottom-color: rgba(177, 186, 136, 0.22) !important;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #f3f2eb 100%) !important;
+}
+
+body.user-app .dashboard-news-modal-title {
+    color: var(--user-charcoal) !important;
+}
+
+body.user-app .dashboard-news-modal-date {
+    color: var(--user-charcoal-muted) !important;
+}
+
+body.user-app .dashboard-news-modal-close {
+    color: var(--user-charcoal-muted) !important;
+}
+
+body.user-app .dashboard-news-modal-close:hover {
+    color: var(--user-olive-dark) !important;
+}
+
+body.user-app .dashboard-news-modal-body {
+    color: #3d3d42 !important;
+    background: rgba(255, 255, 255, 0.55) !important;
+}
+
+body.user-app .dashboard-news-modal-footer {
+    border-top-color: rgba(177, 186, 136, 0.22) !important;
+    background: rgba(255, 255, 255, 0.65) !important;
+}
+
+body.user-app .dashboard-news-modal-close-btn {
+    border: 1px solid rgba(177, 186, 136, 0.45) !important;
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(177, 186, 136, 0.28) !important;
+}
+
+body.user-app .dashboard-news-modal-close-btn:hover {
+    background: linear-gradient(135deg, var(--user-olive-mid) 0%, var(--user-olive-dark) 100%) !important;
+}
+
+/* Модалка детали новости на странице #news */
+body.user-app .user-news-modal-overlay {
+    background: rgba(86, 86, 92, 0.38) !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+}
+
+body.user-app .user-news-modal-close:hover {
+    background: rgba(177, 186, 136, 0.16) !important;
+    color: var(--user-olive-dark) !important;
+}
+
+[data-theme="dark"] body.user-app .main-content {
+    color: var(--user-charcoal);
+}
+
+[data-theme="dark"] body.user-app .dashboard-content .text-muted,
+[data-theme="dark"] body.user-app #spa-content .text-muted {
+    color: var(--user-charcoal-muted) !important;
+}
+
+/* Поверхность сайдбара — только резидент */
+.user-app .sidebar {
+    background: linear-gradient(180deg, var(--user-olive) 0%, var(--user-olive-mid) 100%);
+}
+
+[data-theme="dark"] .user-app .sidebar {
+    background: linear-gradient(180deg, #f7f6f0 0%, #ebe9e1 100%) !important;
+    border-right: 1px solid rgba(177, 186, 136, 0.35) !important;
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="dark"] .user-app .sidebar .logo-text h2,
+[data-theme="dark"] .user-app .sidebar .logo-text p {
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] .user-app .sidebar .toggle-sidebar {
+    color: var(--user-charcoal-muted) !important;
+}
+
+[data-theme="dark"] .user-app .sidebar .nav-item {
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] .user-app .sidebar .nav-item:hover,
+[data-theme="dark"] .user-app .sidebar .nav-item.active {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%);
+    color: #fff !important;
+    box-shadow: 0 10px 22px rgba(177, 186, 136, 0.38);
+}
+
+/* Перекрытия admin.css (жёсткий #667eea) — только под body.user-app */
+body.user-app .sidebar .nav-item::before {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+}
+
+body.user-app .sidebar .nav-item.active {
+    background: linear-gradient(
+            90deg,
+            rgba(177, 186, 136, 0.38) 0%,
+            rgba(154, 169, 114, 0.24) 100%
+        )
+        !important;
+    box-shadow: 0 4px 20px rgba(177, 186, 136, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+body.user-app .sidebar .nav-item.active::before {
+    background: linear-gradient(180deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+    box-shadow: 0 0 10px rgba(177, 186, 136, 0.7) !important;
+}
+
+body.user-app .lang-btn.active,
+[data-theme="dark"] body.user-app .lang-btn.active {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(177, 186, 136, 0.4) !important;
+}
+
+body.user-app .lang-btn.active:hover,
+[data-theme="dark"] body.user-app .lang-btn.active:hover {
+    box-shadow: 0 6px 16px rgba(177, 186, 136, 0.45) !important;
+}
+
+body.user-app .lang-btn:hover {
+    color: var(--user-olive-light) !important;
+}
+
+[data-theme="dark"] body.user-app .lang-btn:hover {
+    background: rgba(177, 186, 136, 0.18) !important;
+    color: var(--user-olive-light) !important;
+}
+
+[data-theme="dark"] body.user-app .stat-card:hover,
+[data-theme="dark"] body.user-app .chart-card:hover,
+[data-theme="dark"] body.user-app .activity-card:hover,
+[data-theme="dark"] body.user-app .card:hover {
+    border-color: rgba(177, 186, 136, 0.45) !important;
+}
+
+/* Карточки и панели: убираем #242831 / #1e232f из dark-theme — молочные поверхности */
+[data-theme="dark"] body.user-app .card:not(.stat-card),
+[data-theme="dark"] body.user-app .stat-card:not(.solid-purple):not(.solid-orange):not(.solid-blue):not(.solid-red):not(.solid-green):not(.solid-yellow),
+[data-theme="dark"] body.user-app .chart-card,
+[data-theme="dark"] body.user-app .activity-card,
+[data-theme="dark"] body.user-app .bill-card,
+[data-theme="dark"] body.user-app .request-card,
+[data-theme="dark"] body.user-app .report-card,
+[data-theme="dark"] body.user-app .meter-card {
+    background: rgba(255, 255, 255, 0.94) !important;
+    border-color: rgba(177, 186, 136, 0.26) !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.07) !important;
+}
+
+[data-theme="dark"] body.user-app .card:hover,
+[data-theme="dark"] body.user-app .stat-card:not(.solid-purple):not(.solid-orange):not(.solid-blue):not(.solid-red):not(.solid-green):not(.solid-yellow):hover,
+[data-theme="dark"] body.user-app .chart-card:hover,
+[data-theme="dark"] body.user-app .activity-card:hover,
+[data-theme="dark"] body.user-app .bill-card:hover,
+[data-theme="dark"] body.user-app .request-card:hover,
+[data-theme="dark"] body.user-app .report-card:hover,
+[data-theme="dark"] body.user-app .meter-card:hover {
+    border-color: rgba(177, 186, 136, 0.42) !important;
+}
+
+/*
+ * admin.css задаёт тёмные .dashboard-content / #spa-content .card с более высокой специфичностью,
+ * чем body.user-app .card — из-за этого блок «Новости» (.card.mt-4) оставался серым.
+ */
+[data-theme="dark"] body.user-app #spa-content .card:not(.stat-card):not(.text-center),
+[data-theme="dark"] body.user-app .dashboard-content .card:not(.stat-card):not(.text-center),
+[data-theme="dark"] body.user-app .content-wrapper .card:not(.stat-card):not(.text-center) {
+    background: rgba(255, 255, 255, 0.94) !important;
+    color: var(--user-charcoal) !important;
+    border: 1px solid rgba(177, 186, 136, 0.26) !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.07) !important;
+}
+
+[data-theme="dark"] body.user-app #spa-content .card:not(.stat-card):not(.text-center):hover,
+[data-theme="dark"] body.user-app .dashboard-content .card:not(.stat-card):not(.text-center):hover,
+[data-theme="dark"] body.user-app .content-wrapper .card:not(.stat-card):not(.text-center):hover {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border-color: rgba(177, 186, 136, 0.38) !important;
+    box-shadow: 0 12px 32px rgba(177, 186, 136, 0.12) !important;
+}
+
+[data-theme="dark"] body.user-app #spa-content .card-header,
+[data-theme="dark"] body.user-app .dashboard-content .card-header,
+[data-theme="dark"] body.user-app .content-wrapper .card-header {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #f3f2eb 100%) !important;
+    border-bottom-color: rgba(177, 186, 136, 0.22) !important;
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app #spa-content .card-body,
+[data-theme="dark"] body.user-app .dashboard-content .card-body,
+[data-theme="dark"] body.user-app .content-wrapper .card-body {
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app .card-header {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #f3f2eb 100%) !important;
+    border-bottom-color: rgba(177, 186, 136, 0.22) !important;
+}
+
+[data-theme="dark"] body.user-app .card-header h3,
+[data-theme="dark"] body.user-app .card-header h4,
+[data-theme="dark"] body.user-app .card-header h5 {
+    color: var(--user-charcoal) !important;
+}
+
+/* Типографика на светлых stat-card без solid-* */
+[data-theme="dark"] body.user-app .stat-card:not(.solid-purple):not(.solid-orange):not(.solid-blue):not(.solid-red):not(.solid-green):not(.solid-yellow) .stat-value,
+[data-theme="dark"] body.user-app .stat-card:not(.solid-purple):not(.solid-orange):not(.solid-blue):not(.solid-red):not(.solid-green):not(.solid-yellow) .stat-change {
+    color: var(--user-charcoal) !important;
+    -webkit-text-fill-color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app .stat-card:not(.solid-purple):not(.solid-orange):not(.solid-blue):not(.solid-red):not(.solid-green):not(.solid-yellow) .stat-label {
+    color: var(--user-charcoal-muted) !important;
+    opacity: 1 !important;
+}
+
+/* Цветные stat-card: у каждого свой тон текста (специфичность выше admin.css [data-theme="dark"] .stat-card.solid-*) */
+/* solid-purple = ödənilməmiş hesablar — индиго/счёт (не олива, не янтарь) */
+[data-theme="dark"] body.user-app .stat-card.solid-purple .stat-value,
+body.user-app .stat-card.solid-purple .stat-value {
+    color: #2a2d3d !important;
+    -webkit-text-fill-color: #2a2d3d !important;
+}
+[data-theme="dark"] body.user-app .stat-card.solid-purple .stat-label,
+body.user-app .stat-card.solid-purple .stat-label {
+    color: #3d4158 !important;
+    opacity: 1 !important;
+}
+[data-theme="dark"] body.user-app .stat-card.solid-purple .stat-change,
+body.user-app .stat-card.solid-purple .stat-change {
+    color: #4a4f6a !important;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] body.user-app .stat-card.solid-orange .stat-value,
+body.user-app .stat-card.solid-orange .stat-value {
+    color: #5c3d12 !important;
+    -webkit-text-fill-color: #5c3d12 !important;
+}
+[data-theme="dark"] body.user-app .stat-card.solid-orange .stat-label,
+body.user-app .stat-card.solid-orange .stat-label {
+    color: #7a5520 !important;
+    opacity: 1 !important;
+}
+[data-theme="dark"] body.user-app .stat-card.solid-orange .stat-change,
+body.user-app .stat-card.solid-orange .stat-change {
+    color: #8a6633 !important;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] body.user-app .stat-card.solid-blue .stat-value,
+body.user-app .stat-card.solid-blue .stat-value {
+    color: #1a4a56 !important;
+    -webkit-text-fill-color: #1a4a56 !important;
+}
+[data-theme="dark"] body.user-app .stat-card.solid-blue .stat-label,
+body.user-app .stat-card.solid-blue .stat-label {
+    color: #2d5f6e !important;
+    opacity: 1 !important;
+}
+[data-theme="dark"] body.user-app .stat-card.solid-blue .stat-change,
+body.user-app .stat-card.solid-blue .stat-change {
+    color: #3d7585 !important;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] body.user-app .stat-card.solid-red .stat-value,
+body.user-app .stat-card.solid-red .stat-value {
+    color: #5c2e28 !important;
+    -webkit-text-fill-color: #5c2e28 !important;
+}
+[data-theme="dark"] body.user-app .stat-card.solid-red .stat-label,
+body.user-app .stat-card.solid-red .stat-label {
+    color: #7a4238 !important;
+    opacity: 1 !important;
+}
+[data-theme="dark"] body.user-app .stat-card.solid-red .stat-change,
+body.user-app .stat-card.solid-red .stat-change {
+    color: #8b5248 !important;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] body.user-app .stat-card.solid-green .stat-value,
+body.user-app .stat-card.solid-green .stat-value {
+    color: #1e4638 !important;
+    -webkit-text-fill-color: #1e4638 !important;
+}
+[data-theme="dark"] body.user-app .stat-card.solid-green .stat-label,
+body.user-app .stat-card.solid-green .stat-label {
+    color: #2d5a4a !important;
+    opacity: 1 !important;
+}
+[data-theme="dark"] body.user-app .stat-card.solid-green .stat-change,
+body.user-app .stat-card.solid-green .stat-change {
+    color: #3d6f5c !important;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] body.user-app .stat-card.solid-yellow .stat-value,
+body.user-app .stat-card.solid-yellow .stat-value {
+    color: #5c4510 !important;
+    -webkit-text-fill-color: #5c4510 !important;
+}
+[data-theme="dark"] body.user-app .stat-card.solid-yellow .stat-label,
+body.user-app .stat-card.solid-yellow .stat-label {
+    color: #7a6220 !important;
+    opacity: 1 !important;
+}
+[data-theme="dark"] body.user-app .stat-card.solid-yellow .stat-change,
+body.user-app .stat-card.solid-yellow .stat-change {
+    color: #8a7430 !important;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] body.user-app .activity-title {
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app .activity-time {
+    color: var(--user-charcoal-muted) !important;
+}
+
+[data-theme="dark"] body.user-app .chart-title,
+[data-theme="dark"] body.user-app .chart-header .chart-title {
+    color: var(--user-charcoal) !important;
+    -webkit-text-fill-color: var(--user-charcoal) !important;
+    background: none !important;
+    background-clip: border-box !important;
+}
+
+[data-theme="dark"] body.user-app .table {
+    background: rgba(255, 255, 255, 0.96) !important;
+}
+
+[data-theme="dark"] body.user-app .table tbody td {
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app .table tbody tr:hover {
+    background: rgba(177, 186, 136, 0.12) !important;
+}
+
+[data-theme="dark"] body.user-app .resident-summary-card:not(.accent) {
+    background: rgba(255, 255, 255, 0.94) !important;
+    border-color: rgba(177, 186, 136, 0.24) !important;
+}
+
+[data-theme="dark"] body.user-app .resident-btn.subtle {
+    background: rgba(255, 255, 255, 0.85) !important;
+    color: var(--user-charcoal) !important;
+    border: 1px solid rgba(177, 186, 136, 0.35) !important;
+}
+
+[data-theme="dark"] body.user-app .resident-btn.subtle:hover {
+    background: #fff !important;
+    border-color: rgba(177, 186, 136, 0.5) !important;
+}
+
+/* Sürətli əməliyyatlar: пастельный фон по смыслу (primary=ödəniş — сине-стальной, info=xəbərlər — инфо-лаванда, не олива) */
+[data-theme="dark"] body.user-app .action-button.action-primary {
+    background: linear-gradient(145deg, #e8eef6 0%, #dce6f2 100%) !important;
+    border-color: rgba(88, 118, 152, 0.4) !important;
+    box-shadow: 0 6px 18px rgba(70, 100, 135, 0.12) !important;
+}
+
+[data-theme="dark"] body.user-app .action-button.action-success {
+    background: linear-gradient(145deg, #e8f4f1 0%, #d8ebe6 100%) !important;
+    border-color: rgba(95, 155, 145, 0.4) !important;
+    box-shadow: 0 6px 18px rgba(80, 130, 120, 0.1) !important;
+}
+
+[data-theme="dark"] body.user-app .action-button.action-warning {
+    background: linear-gradient(145deg, #fff4e8 0%, #ffe8d4 100%) !important;
+    border-color: rgba(220, 155, 95, 0.42) !important;
+    box-shadow: 0 6px 18px rgba(200, 130, 70, 0.1) !important;
+}
+
+[data-theme="dark"] body.user-app .action-button.action-info {
+    background: linear-gradient(145deg, #eceef8 0%, #e0e2f2 100%) !important;
+    border-color: rgba(105, 110, 160, 0.38) !important;
+    box-shadow: 0 6px 18px rgba(95, 100, 150, 0.1) !important;
+}
+
+[data-theme="dark"] body.user-app .action-button:hover::before {
+    opacity: 0 !important;
+}
+
+[data-theme="dark"] body.user-app .action-button:hover {
+    border-color: rgba(177, 186, 136, 0.52) !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="dark"] body.user-app .action-button:hover .action-title {
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app .action-button:hover .action-subtitle {
+    color: var(--user-charcoal-muted) !important;
+}
+
+[data-theme="dark"] body.user-app .action-button:hover > i:last-child {
+    color: var(--user-olive-dark) !important;
+}
+
+body.user-app .action-button:hover::before {
+    opacity: 0 !important;
+}
+
+body.user-app .action-button:hover .action-title {
+    color: var(--user-charcoal) !important;
+}
+
+body.user-app .action-button:hover .action-subtitle {
+    color: var(--user-charcoal-muted) !important;
+}
+
+body.user-app .action-button:hover > i:last-child {
+    color: var(--user-olive-dark) !important;
+}
+
+[data-theme="dark"] body.user-app .quick-stats {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, #f2f1ea 100%) !important;
+    border-color: rgba(177, 186, 136, 0.26) !important;
+}
+
+[data-theme="dark"] body.user-app .quick-stat-item {
+    border-bottom-color: rgba(177, 186, 136, 0.2) !important;
+}
+
+[data-theme="dark"] body.user-app .bill-status {
+    background: rgba(177, 186, 136, 0.16) !important;
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app .format-option:hover {
+    color: var(--user-olive-dark) !important;
+}
+
+/* Панель показателей: у каждой карточки свой пастельный фон (читаемый тёмный текст — блоки выше) */
+body.user-app .stat-card.solid-purple {
+    background: linear-gradient(145deg, #eceef8 0%, #dde3f2 45%, #cfd6ec 100%) !important;
+    border: 1px solid rgba(100, 112, 175, 0.45) !important;
+    box-shadow: 0 8px 26px rgba(85, 95, 150, 0.2) !important;
+    color: inherit !important;
+}
+
+body.user-app .stat-card.solid-purple:hover {
+    box-shadow: 0 12px 36px rgba(85, 95, 150, 0.28) !important;
+}
+
+body.user-app .stat-card.solid-orange {
+    background: linear-gradient(145deg, #fff8ed 0%, #ffeccf 55%, #ffd9a8 100%) !important;
+    border: 1px solid rgba(232, 160, 69, 0.45) !important;
+    box-shadow: 0 8px 26px rgba(217, 120, 32, 0.14) !important;
+    color: inherit !important;
+}
+
+body.user-app .stat-card.solid-orange:hover {
+    box-shadow: 0 12px 36px rgba(217, 120, 32, 0.22) !important;
+}
+
+body.user-app .stat-card.solid-blue {
+    background: linear-gradient(145deg, #eef6f8 0%, #d8ebf2 55%, #c5dee8 100%) !important;
+    border: 1px solid rgba(94, 138, 154, 0.4) !important;
+    box-shadow: 0 8px 26px rgba(77, 122, 140, 0.18) !important;
+    color: inherit !important;
+}
+
+body.user-app .stat-card.solid-blue:hover {
+    box-shadow: 0 12px 36px rgba(77, 122, 140, 0.26) !important;
+}
+
+body.user-app .stat-card.solid-red {
+    background: linear-gradient(145deg, #fdf0ec 0%, #f5ddd4 55%, #ebc9bc 100%) !important;
+    border: 1px solid rgba(196, 120, 108, 0.45) !important;
+    box-shadow: 0 8px 26px rgba(180, 90, 75, 0.14) !important;
+    color: inherit !important;
+}
+
+body.user-app .stat-card.solid-red:hover {
+    box-shadow: 0 12px 36px rgba(180, 90, 75, 0.22) !important;
+}
+
+body.user-app .stat-card.solid-green {
+    background: linear-gradient(145deg, #ecf8f3 0%, #d4eee4 55%, #bde3d4 100%) !important;
+    border: 1px solid rgba(90, 160, 130, 0.4) !important;
+    box-shadow: 0 8px 26px rgba(70, 140, 115, 0.16) !important;
+    color: inherit !important;
+}
+
+body.user-app .stat-card.solid-green:hover {
+    box-shadow: 0 12px 36px rgba(70, 140, 115, 0.24) !important;
+}
+
+body.user-app .stat-card.solid-yellow {
+    background: linear-gradient(145deg, #fffbf0 0%, #ffefd4 55%, #ffe0a8 100%) !important;
+    border: 1px solid rgba(212, 170, 80, 0.45) !important;
+    box-shadow: 0 8px 26px rgba(200, 150, 50, 0.14) !important;
+    color: inherit !important;
+}
+
+body.user-app .stat-card.solid-yellow:hover {
+    box-shadow: 0 12px 36px rgba(200, 150, 50, 0.22) !important;
+}
+
+/* Заголовок в шапке: читабельный тёмный текст (градиент с клипом давал «невидимый» текст на белом) */
+body.user-app .top-bar .page-title h1,
+[data-theme="dark"] body.user-app .top-bar .page-title h1 {
+    background: none !important;
+    background-image: none !important;
+    color: var(--user-charcoal) !important;
+    -webkit-text-fill-color: var(--user-charcoal) !important;
+    background-clip: border-box !important;
+    -webkit-background-clip: border-box !important;
+}
+
+body.user-app .user-avatar {
+    background: linear-gradient(135deg, var(--user-olive) 0%, #8f9b6b 100%) !important;
+    box-shadow: 0 4px 14px rgba(177, 186, 136, 0.4) !important;
+}
+
+body.user-app .notification-btn:hover {
+    color: var(--user-olive-light) !important;
+}
+
+body.user-app .user-profile:hover {
+    background: rgba(177, 186, 136, 0.12) !important;
+}
+
+[data-theme="dark"] body.user-app .user-profile:hover {
+    background: rgba(177, 186, 136, 0.2) !important;
+}
+
+body.user-app .quick-filter-btn.active,
+body.user-app .quick-filter-btn:hover {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%);
+    border-color: transparent;
+    color: #fff;
+}
+
+/* ========== global.css: переключатель языка (.language-btn), не путать с admin .lang-btn ========== */
+body.user-app .language-btn:hover {
+    box-shadow: 0 6px 20px rgba(177, 186, 136, 0.28) !important;
+    border-color: transparent !important;
+}
+
+body.user-app .language-btn.active {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(177, 186, 136, 0.38) !important;
+}
+
+[data-theme="dark"] body.user-app .language-btn.active {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+}
+
+body.user-app .lang-notification {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+}
+
+/* ========== solid-purple = ödənilməmiş: иконка индиго (su — бирюзовее, это «счёт») ========== */
+[data-theme="dark"] body.user-app .stat-card.solid-purple .stat-icon {
+    background: linear-gradient(135deg, #6a78b8 0%, #4d5c98 100%) !important;
+}
+
+[data-theme="dark"] body.user-app .stat-card.solid-blue .stat-icon {
+    background: linear-gradient(135deg, #7eb0c2 0%, #4d8599 100%) !important;
+}
+
+[data-theme="dark"] body.user-app .stat-card.solid-orange .stat-icon {
+    background: linear-gradient(135deg, #f0a84a 0%, #d97820 100%) !important;
+}
+
+[data-theme="dark"] body.user-app .stat-card.solid-red .stat-icon {
+    background: linear-gradient(135deg, #e08878 0%, #c24e40 100%) !important;
+}
+
+[data-theme="dark"] body.user-app .stat-card.solid-green .stat-icon {
+    background: linear-gradient(135deg, #5cbb9a 0%, #2f8f72 100%) !important;
+}
+
+[data-theme="dark"] body.user-app .stat-card.solid-yellow .stat-icon {
+    background: linear-gradient(135deg, #e8b84a 0%, #c99220 100%) !important;
+}
+
+/* ========== Фон и полосы: молочный canvas + светлая шапка ========== */
+[data-theme="dark"] body.user-app .top-bar {
+    background: rgba(255, 255, 255, 0.82) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(86, 86, 92, 0.1) !important;
+    border-bottom-color: rgba(86, 86, 92, 0.12) !important;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 12px 32px rgba(0, 0, 0, 0.06) !important;
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app .top-bar .user-name,
+[data-theme="dark"] body.user-app .top-bar .user-role,
+[data-theme="dark"] body.user-app .top-bar .page-breadcrumb {
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app .top-bar .notification-btn {
+    color: var(--user-charcoal-muted) !important;
+}
+
+[data-theme="dark"] body.user-app .top-bar .notification-btn:hover {
+    color: var(--user-olive-dark) !important;
+}
+
+[data-theme="dark"] body.user-app .lang-btn:not(.active) {
+    color: var(--user-charcoal-muted) !important;
+}
+
+[data-theme="dark"] body.user-app .lang-btn:hover:not(.active) {
+    background: rgba(177, 186, 136, 0.18) !important;
+    color: var(--user-olive-dark) !important;
+}
+
+/* global.css: кнопки AZ/EN/RU в топ-баре на молочном фоне */
+[data-theme="dark"] body.user-app .language-btn:not(.active) {
+    background: rgba(255, 255, 255, 0.72) !important;
+}
+
+[data-theme="dark"] body.user-app .language-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 6px 18px rgba(177, 186, 136, 0.28) !important;
+}
+
+[data-theme="dark"] body.user-app .language-btn .lang-code {
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app .resident-card,
+[data-theme="dark"] body.user-app .bill-item {
+    background: rgba(255, 255, 255, 0.96) !important;
+    border-color: rgba(177, 186, 136, 0.26) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="dark"] body.user-app .resident-card .resident-amount-box span {
+    color: var(--user-charcoal-muted) !important;
+}
+
+[data-theme="dark"] body.user-app .breadcrumb-item {
+    color: var(--user-charcoal-muted) !important;
+}
+
+[data-theme="dark"] body.user-app .breadcrumb-item.active {
+    color: var(--user-charcoal) !important;
+}
+
+/* Карточки с заливкой из dark-theme — граница при hover */
+[data-theme="dark"] body.user-app .card:hover,
+[data-theme="dark"] body.user-app .bill-card:hover,
+[data-theme="dark"] body.user-app .chart-card:hover {
+    border-color: rgba(177, 186, 136, 0.35) !important;
+}
+
+/* Аккаунт: кнопка выбора файла */
+[data-theme="dark"] body.user-app #accountAvatarInput::file-selector-button:hover {
+    border-color: var(--user-olive) !important;
+}
+
+/* Модальное окно аккаунта (классы из admin.css, только резидент) */
+body.user-app .account-btn-primary {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+    box-shadow: 0 4px 15px rgba(177, 186, 136, 0.32) !important;
+}
+
+body.user-app .account-btn-primary:hover {
+    box-shadow: 0 6px 20px rgba(177, 186, 136, 0.45) !important;
+}
+
+body.user-app .account-tab-btn::before {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+}
+
+body.user-app .account-tab-btn:hover {
+    color: var(--user-olive) !important;
+    background: rgba(177, 186, 136, 0.08) !important;
+}
+
+body.user-app .account-tab-btn.active {
+    color: var(--user-olive) !important;
+    background: rgba(177, 186, 136, 0.14) !important;
+    box-shadow: 0 2px 8px rgba(177, 186, 136, 0.2) !important;
+}
+
+[data-theme="dark"] body.user-app .account-tab-btn:hover {
+    color: var(--user-olive-light) !important;
+    background: rgba(177, 186, 136, 0.12) !important;
+}
+
+[data-theme="dark"] body.user-app .account-tab-btn.active {
+    color: var(--user-olive-light) !important;
+    background: rgba(177, 186, 136, 0.16) !important;
+    box-shadow: 0 2px 8px rgba(177, 186, 136, 0.22) !important;
+}
+
+[data-theme="dark"] body.user-app .account-tab-btn.active::before {
+    background: linear-gradient(135deg, var(--user-olive-light) 0%, var(--user-olive) 100%) !important;
+}
+
+[data-theme="dark"] body.user-app .account-modal-header {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+}
+
+/* Модалки (#accountModal / #notificationsModal): не тёмный rgba(36,40,49), а молочный фон */
+[data-theme="dark"] body.user-app #notificationsModal .account-modal,
+[data-theme="dark"] body.user-app #accountModal .account-modal {
+    background: #fafaf6 !important;
+    border: 1px solid rgba(177, 186, 136, 0.3) !important;
+    backdrop-filter: none !important;
+}
+
+[data-theme="dark"] body.user-app #notificationsModal .account-modal-body,
+[data-theme="dark"] body.user-app #accountModal .account-modal-body {
+    background: #efefe6 !important;
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app #notificationsModal .account-modal-body {
+    scrollbar-color: rgba(177, 186, 136, 0.55) rgba(237, 235, 225, 0.95) !important;
+}
+
+[data-theme="dark"] body.user-app #notificationsModal .account-modal-body::-webkit-scrollbar-track {
+    background: rgba(237, 235, 225, 0.95) !important;
+}
+
+[data-theme="dark"] body.user-app #notificationsModal .account-modal-body::-webkit-scrollbar-thumb {
+    background: rgba(177, 186, 136, 0.5) !important;
+}
+
+[data-theme="dark"] body.user-app #notificationsModal .account-modal-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(154, 169, 114, 0.65) !important;
+}
+
+[data-theme="dark"] body.user-app #notificationsModal .account-modal-footer {
+    border-top-color: rgba(177, 186, 136, 0.28) !important;
+    background: #fafaf6 !important;
+}
+
+/* Настройки аккаунта: поля на светлом фоне (тот же .account-modal) */
+[data-theme="dark"] body.user-app #accountModal .account-form-group label {
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app #accountModal .account-form-group input,
+[data-theme="dark"] body.user-app #accountModal .account-form-group select,
+[data-theme="dark"] body.user-app #accountModal .account-tab-panel .account-form-group input {
+    background: #fff !important;
+    border: 1px solid rgba(177, 186, 136, 0.35) !important;
+    color: var(--user-charcoal) !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] body.user-app #accountModal .account-info-section h3,
+[data-theme="dark"] body.user-app #accountModal .account-info-value {
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app #accountModal .account-info-label {
+    color: var(--user-charcoal-muted) !important;
+}
+
+/* Вкладки: неактивная — читаемый серый, не фиолетовый hover из dark-theme */
+[data-theme="dark"] body.user-app #accountModal .account-tab-btn:not(.active) {
+    color: var(--user-charcoal-muted) !important;
+}
+
+[data-theme="dark"] body.user-app #accountModal .account-tab-btn:hover:not(.active) {
+    color: var(--user-olive-dark) !important;
+    background: rgba(177, 186, 136, 0.1) !important;
+}
+
+[data-theme="dark"] body.user-app #accountModal .account-tabs {
+    border-bottom-color: rgba(177, 186, 136, 0.28) !important;
+}
+
+/* Пароль: правило из dark-theme.css с !important на .account-tab-panel input */
+[data-theme="dark"] body.user-app #accountModal .account-tab-panel .account-form-group input,
+[data-theme="dark"] body.user-app #accountModal .account-tab-panel .account-form-group select {
+    background: #fff !important;
+    border: 1px solid rgba(177, 186, 136, 0.4) !important;
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app #accountModal .account-form-group input::placeholder,
+[data-theme="dark"] body.user-app #accountModal .account-form-group input::-webkit-input-placeholder {
+    color: rgba(86, 86, 92, 0.55) !important;
+}
+
+[data-theme="dark"] body.user-app #accountModal .account-form-group input:focus,
+[data-theme="dark"] body.user-app #accountModal .account-form-group select:focus {
+    border-color: var(--user-olive) !important;
+    box-shadow: 0 0 0 3px rgba(177, 186, 136, 0.22) !important;
+}
+
+/* Кнопка «Отмена» */
+[data-theme="dark"] body.user-app #accountModal .account-btn-secondary {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: var(--user-charcoal) !important;
+    border: 1.5px solid rgba(177, 186, 136, 0.45) !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] body.user-app #accountModal .account-btn-secondary:hover {
+    background: rgba(177, 186, 136, 0.14) !important;
+    border-color: rgba(177, 186, 136, 0.6) !important;
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app #accountModal .account-modal-footer {
+    border-top: 1px solid rgba(177, 186, 136, 0.25) !important;
+    background: #fafaf6 !important;
+}
+
+/* Аватар и файл */
+[data-theme="dark"] body.user-app #accountModal .account-avatar-large {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+    box-shadow: 0 8px 22px rgba(177, 186, 136, 0.35) !important;
+    color: #fff !important;
+}
+
+[data-theme="dark"] body.user-app #accountModal .account-file-select-btn {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+    color: #fff !important;
+    border: 1.5px solid rgba(177, 186, 136, 0.35) !important;
+    box-shadow: 0 4px 14px rgba(177, 186, 136, 0.25) !important;
+}
+
+[data-theme="dark"] body.user-app #accountModal .account-file-select-btn:hover {
+    background: linear-gradient(135deg, var(--user-olive-mid) 0%, var(--user-olive-dark) 100%) !important;
+    border-color: rgba(177, 186, 136, 0.5) !important;
+}
+
+[data-theme="dark"] body.user-app #accountModal .account-file-status {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(177, 186, 136, 0.28) !important;
+    color: var(--user-charcoal-muted) !important;
+}
+
+[data-theme="dark"] body.user-app #accountModal .account-file-status.has-file {
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app #accountModal .account-hint {
+    color: var(--user-charcoal-muted) !important;
+}
+
+/* Карточки уведомлений (inline-стили в user.js перебиваем !important) */
+[data-theme="dark"] body.user-app #notificationsList .notification-item {
+    border: 1px solid rgba(177, 186, 136, 0.3) !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+}
+
+[data-theme="dark"] body.user-app #notificationsList .notification-item strong {
+    color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] body.user-app #notificationsList .notification-item .badge {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+    color: #fff !important;
+}
+
+/* ========== action-button: градиенты иконки + кольцо (карточка — пастель выше) ========== */
+/* Оплата: сине-стальной (финансы), не зелёный бренда */
+body.user-app .action-button.action-primary {
+    --action-icon-gradient: linear-gradient(135deg, #4a6f8c 0%, #5d86a6 100%);
+}
+
+body.user-app .action-button.action-success {
+    --action-icon-gradient: linear-gradient(135deg, #4f9d8f 0%, #62b89a 100%);
+}
+
+body.user-app .action-button.action-warning {
+    --action-icon-gradient: linear-gradient(135deg, #e09050 0%, #d97828 100%);
+}
+
+/* Xəbərlər: лавандово-синий «info», не олива и не как ödəniş */
+body.user-app .action-button.action-info {
+    --action-icon-gradient: linear-gradient(135deg, #5c649a 0%, #6f78b0 100%);
+}
+
+body.user-app .action-button > i:first-child::after {
+    box-shadow:
+        0 10px 18px rgba(0, 0, 0, 0.16),
+        0 0 0 2px rgba(255, 255, 255, 0.92) !important;
+}
+
+body.user-app .action-button:hover > i:first-child::after {
+    box-shadow:
+        0 12px 22px rgba(0, 0, 0, 0.2),
+        0 0 0 2px rgba(255, 255, 255, 0.95) !important;
+}
+
+/* admin.css: у .btn-primary тени с rgba(102,126,234,…) */
+body.user-app .btn-primary {
+    box-shadow: 0 4px 15px rgba(177, 186, 136, 0.35) !important;
+}
+
+body.user-app .btn-primary:hover {
+    box-shadow: 0 6px 20px rgba(177, 186, 136, 0.45) !important;
+}
+
+/* Оплата (report-payment): главное действие — сине-стальной «финансы», не олива; аванс — вторичная кнопка */
+body.user-app .user-payment-page .default-pay-button,
+body.user-app .user-payment-page .payment-card-form .pay-button {
+    background: linear-gradient(135deg, #3a6582 0%, #4a7fa0 100%) !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 4px 18px rgba(58, 101, 130, 0.35) !important;
+}
+
+body.user-app .user-payment-page .default-pay-button:hover,
+body.user-app .user-payment-page .payment-card-form .pay-button:hover {
+    background: linear-gradient(135deg, #325a74 0%, #3d6d8c 100%) !important;
+    box-shadow: 0 6px 22px rgba(58, 101, 130, 0.42) !important;
+}
+
+body.user-app .user-payment-page .payment-secondary-btn {
+    background: rgba(255, 255, 255, 0.94) !important;
+    color: var(--user-charcoal) !important;
+    border: 1px solid rgba(90, 120, 145, 0.38) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.user-app .user-payment-page .payment-secondary-btn:hover:not(.payment-secondary-btn--cancel) {
+    background: #fff !important;
+    border-color: rgba(58, 101, 130, 0.45) !important;
+}
+
+body.user-app .user-payment-page .payment-secondary-btn--cancel {
+    background: rgba(220, 38, 38, 0.12) !important;
+    color: #9a1c1c !important;
+    border: 1px solid rgba(220, 38, 38, 0.42) !important;
+    box-shadow: none !important;
+}
+
+body.user-app .user-payment-page .payment-secondary-btn--cancel:hover {
+    background: rgba(220, 38, 38, 0.18) !important;
+    border-color: rgba(185, 28, 28, 0.52) !important;
+}
+
+body.user-app .user-payment-page .order-logo {
+    background: linear-gradient(135deg, #4a6d8a 0%, #5d82a0 100%) !important;
+    color: #fff !important;
+}
+
+body.user-app .user-payment-page #paymentCountdown {
+    margin: 0 0 12px 0 !important;
+    padding: 10px 12px !important;
+    border: 1px solid rgba(90, 120, 145, 0.35) !important;
+    border-radius: 10px !important;
+    background: rgba(232, 240, 247, 0.96) !important;
+    color: var(--user-charcoal) !important;
+    font-weight: 600 !important;
+}
+
+/* Kart «avans»: светлый текст на тёмном фоне (SPA не должен перебивать var(--text-primary)) */
+body.user-app .user-payment-page .resident-pass-card {
+    color: #ffffff !important;
+}
+
+body.user-app .user-payment-page .resident-pass-card .pass-type,
+body.user-app .user-payment-page .resident-pass-card .pass-label,
+body.user-app .user-payment-page .resident-pass-card .pass-name,
+body.user-app .user-payment-page .resident-pass-card .pass-exp {
+    color: rgba(255, 255, 255, 0.92) !important;
+}
+
+body.user-app .user-payment-page .resident-pass-card .pass-label {
+    color: rgba(255, 255, 255, 0.82) !important;
+}
+
+body.user-app .user-payment-page .resident-pass-card .pass-amount {
+    color: #ffffff !important;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55) !important;
+}
+
+body.user-app .user-payment-page .resident-pass-card .pass-contactless {
+    color: rgba(255, 255, 255, 0.88) !important;
+}
+
+/* ========== Просмотр счёта (invoice-view.css ориентирован на тёмный admin — в SPA читаемый светлый UI) ========== */
+body.user-app .invoice-view-page .invoice-header h1 {
+    color: var(--user-charcoal) !important;
+    -webkit-text-fill-color: var(--user-charcoal) !important;
+}
+
+body.user-app .invoice-view-page .invoice-summary,
+body.user-app .invoice-view-page .payments-section,
+body.user-app .invoice-view-page .user-invoice-items {
+    background: rgba(255, 255, 255, 0.96) !important;
+    border: 1px solid rgba(177, 186, 136, 0.28) !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.07) !important;
+}
+
+/* Как у .payments-section: одинаковый отступ карточки, заголовок «Описание» совпадает с «Оплаты по счёту» */
+body.user-app .invoice-view-page .user-invoice-items {
+    padding: 20px !important;
+    margin-bottom: 20px !important;
+}
+
+body.user-app .invoice-view-page .invoice-summary-item label,
+body.user-app .invoice-view-page .invoice-form-group label {
+    color: var(--user-charcoal-muted) !important;
+}
+
+body.user-app .invoice-view-page .invoice-summary-item .value {
+    color: var(--user-charcoal) !important;
+}
+
+body.user-app .invoice-view-page .invoice-summary-item .value.total {
+    color: #c43d3d !important;
+}
+
+body.user-app .invoice-view-page .payments-section h3,
+body.user-app .invoice-view-page .user-invoice-items h3 {
+    color: var(--user-charcoal) !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    line-height: 1.35 !important;
+    margin: 0 0 15px 0 !important;
+}
+
+body.user-app .invoice-view-page .payments-summary {
+    color: var(--user-charcoal-muted) !important;
+}
+
+body.user-app .invoice-view-page .payments-summary strong {
+    color: var(--user-charcoal) !important;
+}
+
+body.user-app .invoice-view-page .line-items-table {
+    background: #fff !important;
+    border: 1px solid rgba(177, 186, 136, 0.22) !important;
+}
+
+body.user-app .invoice-view-page .line-items-table thead th {
+    background: rgba(232, 240, 247, 0.95) !important;
+    color: var(--user-charcoal) !important;
+    border-bottom: 1px solid rgba(90, 120, 145, 0.22) !important;
+}
+
+body.user-app .invoice-view-page .line-items-table tbody td {
+    color: var(--user-charcoal) !important;
+    border-bottom-color: rgba(86, 86, 92, 0.12) !important;
+}
+
+body.user-app .invoice-view-page .line-items-table .total-row {
+    background: rgba(239, 244, 248, 0.92) !important;
+}
+
+body.user-app .invoice-view-page .line-items-table .total-row .total-value {
+    color: #c43d3d !important;
+}
+
+body.user-app .invoice-view-page .text-muted {
+    color: var(--user-charcoal-muted) !important;
+}
+
+body.user-app .invoice-view-page .btn-back {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid rgba(177, 186, 136, 0.35) !important;
+    color: var(--user-charcoal) !important;
+}
+
+body.user-app .invoice-view-page .btn-back:hover {
+    background: #fff !important;
+    border-color: rgba(177, 186, 136, 0.5) !important;
+    color: var(--user-olive-dark) !important;
+}
+
+body.user-app .invoice-view-page .invoice-pdf-btn {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid rgba(90, 120, 145, 0.35) !important;
+    color: var(--user-charcoal) !important;
+}
+
+body.user-app .invoice-view-page .invoice-pdf-btn:hover {
+    background: #fff !important;
+    border-color: rgba(58, 101, 130, 0.45) !important;
+    color: #3a6582 !important;
+}
+
+body.user-app .invoice-view-page .invoice-pay-btn {
+    background: linear-gradient(135deg, #3a6582 0%, #4a7fa0 100%) !important;
+    border: 1px solid rgba(74, 109, 138, 0.45) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 18px rgba(58, 101, 130, 0.32) !important;
+}
+
+body.user-app .invoice-view-page .invoice-pay-btn:hover:not(:disabled):not([disabled]) {
+    background: linear-gradient(135deg, #325a74 0%, #3d6d8c 100%) !important;
+    box-shadow: 0 6px 22px rgba(58, 101, 130, 0.4) !important;
+    filter: none !important;
+}
+
+body.user-app .invoice-view-page .user-invoice-items .invoice-items-table-wrap {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 1px solid rgba(177, 186, 136, 0.26) !important;
+    border-radius: 12px !important;
+    padding: 0 !important;
+    overflow-x: auto !important;
+}
+
+body.user-app .invoice-view-page .invoice-selection-summary {
+    border-color: rgba(90, 120, 145, 0.35) !important;
+    background: rgba(232, 240, 247, 0.85) !important;
+    color: var(--user-charcoal) !important;
+}
+
+body.user-app .invoice-view-page .invoice-selection-summary.is-empty {
+    border-color: rgba(177, 186, 136, 0.32) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: var(--user-charcoal-muted) !important;
+}
+
+/* Мини-карточки статуса оплаты строки: тёмный текст на пастели */
+body.user-app .invoice-view-page .payment-status-card {
+    border: 1px solid rgba(177, 186, 136, 0.3) !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
+    backdrop-filter: none !important;
+}
+
+body.user-app .invoice-view-page .payment-status-meta {
+    color: var(--user-charcoal-muted) !important;
+}
+
+body.user-app .invoice-view-page .payment-status-track {
+    background: rgba(86, 86, 92, 0.12) !important;
+}
+
+body.user-app .invoice-view-page .payment-status-paid {
+    border-color: rgba(80, 150, 110, 0.45) !important;
+    background: linear-gradient(135deg, rgba(230, 248, 238, 0.95), rgba(255, 255, 255, 0.98)) !important;
+}
+
+body.user-app .invoice-view-page .payment-status-paid .payment-status-head {
+    color: #1d6b42 !important;
+}
+
+body.user-app .invoice-view-page .payment-status-paid .payment-status-track > span {
+    background: linear-gradient(90deg, #3a9d62, #5cbf7a) !important;
+}
+
+body.user-app .invoice-view-page .payment-status-partial {
+    border-color: rgba(210, 155, 70, 0.5) !important;
+    background: linear-gradient(135deg, rgba(255, 246, 230, 0.95), rgba(255, 255, 255, 0.98)) !important;
+}
+
+body.user-app .invoice-view-page .payment-status-partial .payment-status-head {
+    color: #8a5a12 !important;
+}
+
+body.user-app .invoice-view-page .payment-status-partial .payment-status-track > span {
+    background: linear-gradient(90deg, #e09030, #f0b04a) !important;
+}
+
+body.user-app .invoice-view-page .payment-status-unpaid {
+    border-color: rgba(200, 100, 95, 0.45) !important;
+    background: linear-gradient(135deg, rgba(255, 236, 234, 0.95), rgba(255, 255, 255, 0.98)) !important;
+}
+
+body.user-app .invoice-view-page .payment-status-unpaid .payment-status-head {
+    color: #b03030 !important;
+}
+
+body.user-app .invoice-view-page .payment-status-unpaid .payment-status-track > span {
+    background: linear-gradient(90deg, #e05555, #e88080) !important;
+}
+
+body.user-app .invoice-view-page .invoice-line-pay-checkbox,
+body.user-app .invoice-view-page .invoice-master-checkbox {
+    accent-color: #3a6582 !important;
+}
+
+body.user-app .invoice-view-page .payment-link {
+    color: #2d5a78 !important;
+}
+
+/* Быстрые ссылки (как в resident-detail, если попадают в SPA) */
+body.user-app .quick-link.active,
+body.user-app .quick-link:hover {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+}
+
+/* Таблица «Мои счета»: шапка вместо фиолетовой из dark-theme */
+[data-theme="dark"] body.user-app .table thead {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+}
+
+/* Рабочая зона: прозрачная поверх молочного .admin-container */
+[data-theme="dark"] body.user-app .main-content {
+    background: transparent !important;
+}
+
+[data-theme="dark"] body.user-app .dashboard-content {
+    background: transparent !important;
+}
+
+[data-theme="dark"] body.user-app #spa-content {
+    background: transparent !important;
+}
+
+/* notifications.js: стили вставляются в <head> после CSS — перекрываем фиолетовый prompt/confirm */
+body.user-app .prompt-input:focus {
+    border-color: var(--user-olive) !important;
+    box-shadow: 0 0 0 3px rgba(177, 186, 136, 0.28) !important;
+}
+
+body.user-app .confirm-ok {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+}
+
+body.user-app .confirm-ok:hover {
+    background: linear-gradient(135deg, var(--user-olive-mid) 0%, var(--user-olive-dark) 100%) !important;
+    box-shadow: 0 4px 12px rgba(177, 186, 136, 0.35) !important;
+}
+
+body.user-app .toast-info {
+    border-left-color: var(--user-olive) !important;
+}
+
+body.user-app .toast-info .toast-icon {
+    color: var(--user-olive) !important;
+}
+
+/* resident-detail.css: индикаторы «электричество» и т.п. */
+body.user-app .meter-electric {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+}
+
+/* ========== Заявки, счета, модалки: убрать оставшийся тёмный UI из user.css ========== */
+body.user-app .user-appeals-field select,
+body.user-app .user-appeals-field textarea {
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: var(--user-charcoal) !important;
+}
+
+body.user-app .user-appeals-field textarea::placeholder {
+    color: rgba(86, 86, 92, 0.55) !important;
+}
+
+body.user-app .user-appeal-item {
+    background: rgba(255, 255, 255, 0.9) !important;
+}
+
+body.user-app .status-multiselect-toggle {
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: var(--user-charcoal) !important;
+    border: 1px solid rgba(177, 186, 136, 0.35) !important;
+}
+
+body.user-app .status-multiselect-dropdown {
+    background: #fafaf6 !important;
+    border: 1px solid rgba(177, 186, 136, 0.28) !important;
+    color: var(--user-charcoal) !important;
+}
+
+body.user-app .user-confirm-modal,
+body.user-app .user-alert-modal,
+body.user-app .user-appeal-modal {
+    background: #fafaf6 !important;
+    color: var(--user-charcoal) !important;
+    border: 1px solid rgba(177, 186, 136, 0.28) !important;
+    box-shadow: 0 24px 56px rgba(0, 0, 0, 0.12) !important;
+}
+
+body.user-app .user-confirm-modal-header,
+body.user-app .user-confirm-modal-footer,
+body.user-app .user-alert-modal-header,
+body.user-app .user-appeal-modal-header,
+body.user-app .user-appeal-modal-footer {
+    border-color: rgba(177, 186, 136, 0.22) !important;
+}
+
+body.user-app .user-confirm-modal-close,
+body.user-app .user-appeal-modal-close {
+    color: var(--user-charcoal-muted) !important;
+}
+
+body.user-app .user-confirm-modal-close:hover,
+body.user-app .user-appeal-modal-close:hover {
+    background: rgba(177, 186, 136, 0.18) !important;
+    color: var(--user-charcoal) !important;
+}
+
+body.user-app .user-appeal-modal-text {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border-color: rgba(177, 186, 136, 0.25) !important;
+}
+
+body.user-app .user-appeal-modal-text .label {
+    background: #fafaf6 !important;
+    color: var(--user-charcoal-muted) !important;
+}
+
+body.user-app .user-appeal-modal-edit textarea {
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: var(--user-charcoal) !important;
+}

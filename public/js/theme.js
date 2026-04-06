@@ -1,9 +1,19 @@
-// Dark-only theme manager.
-// The project supports a single visual mode: dark.
+// Dark-only theme manager for app dashboards.
+// Login page uses light theme to match royalpark.az marketing (see login.css).
 (function () {
     "use strict";
 
+    function isLoginPage() {
+        var p = window.location.pathname || "";
+        return /\/login\.html$/i.test(p) || /\/login\/?$/i.test(p);
+    }
+
     function enforceDarkTheme() {
+        if (isLoginPage()) {
+            document.documentElement.setAttribute("data-theme", "light");
+            document.body?.setAttribute("data-theme", "light");
+            return;
+        }
         document.documentElement.setAttribute("data-theme", "dark");
         document.body?.setAttribute("data-theme", "dark");
         localStorage.setItem("theme", "dark");

@@ -1290,44 +1290,60 @@ function ensureDashboardNewsModal() {
     let overlay = document.getElementById('dashboardNewsDetailModal');
     if (overlay) return overlay;
 
-    if (!document.getElementById('dashboard-news-modal-style')) {
+    if (!document.getElementById('dashboard-news-modal-style-v2')) {
+        document.getElementById('dashboard-news-modal-style')?.remove();
         const style = document.createElement('style');
-        style.id = 'dashboard-news-modal-style';
+        style.id = 'dashboard-news-modal-style-v2';
         style.textContent = `
             .dashboard-news-modal-overlay {
-                position: fixed; inset: 0; background: rgba(6, 12, 24, 0.6);
-                backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center;
+                position: fixed; inset: 0; background: rgba(86, 86, 92, 0.38);
+                backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+                display: none; align-items: center; justify-content: center;
                 z-index: 12000; padding: 16px;
             }
             .dashboard-news-modal-overlay.show { display: flex; }
             .dashboard-news-modal {
                 width: min(760px, 100%); max-height: min(82vh, 760px); overflow: hidden;
-                background: #242831; border: 1px solid rgba(255,255,255,0.12); border-radius: 14px;
-                box-shadow: 0 18px 40px rgba(0,0,0,0.45); display: flex; flex-direction: column;
+                background: linear-gradient(180deg, #fafaf6 0%, #f3f2ec 100%);
+                border: 1px solid rgba(177, 186, 136, 0.32); border-radius: 14px;
+                box-shadow: 0 22px 48px rgba(0, 0, 0, 0.12); display: flex; flex-direction: column;
             }
             .dashboard-news-modal-header {
                 display: flex; align-items: center; gap: 12px; padding: 16px 18px;
-                border-bottom: 1px solid rgba(255,255,255,0.08);
+                border-bottom: 1px solid rgba(177, 186, 136, 0.22);
+                background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, #f3f2eb 100%);
             }
             .dashboard-news-modal-icon {
                 width: 42px; height: 42px; border-radius: 12px; display: inline-flex;
                 align-items: center; justify-content: center; color: #fff; font-size: 18px;
+                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
             }
             .dashboard-news-modal-title-wrap { flex: 1; min-width: 0; }
             .dashboard-news-modal-title {
-                margin: 0; color: #f6f7ff; font-weight: 700; font-size: 1.08rem; line-height: 1.3;
+                margin: 0; color: #56565c; font-weight: 700; font-size: 1.08rem; line-height: 1.3;
             }
-            .dashboard-news-modal-date { margin-top: 4px; color: #9aa4b2; font-size: 0.85rem; }
+            .dashboard-news-modal-date { margin-top: 4px; color: #6b6b73; font-size: 0.85rem; }
             .dashboard-news-modal-close {
-                border: none; background: transparent; color: #b9c2cf; font-size: 28px; line-height: 1;
+                border: none; background: transparent; color: #6b6b73; font-size: 28px; line-height: 1;
                 cursor: pointer; padding: 0 2px;
             }
-            .dashboard-news-modal-close:hover { color: #fff; }
-            .dashboard-news-modal-body { padding: 18px; overflow: auto; color: #eef2ff; white-space: pre-wrap; line-height: 1.6; }
-            .dashboard-news-modal-footer { padding: 14px 18px; border-top: 1px solid rgba(255,255,255,0.08); text-align: right; }
+            .dashboard-news-modal-close:hover { color: #5a6348; }
+            .dashboard-news-modal-body {
+                padding: 18px; overflow: auto; color: #3d3d42; white-space: pre-wrap; line-height: 1.6;
+                background: rgba(255, 255, 255, 0.55);
+            }
+            .dashboard-news-modal-footer {
+                padding: 14px 18px; border-top: 1px solid rgba(177, 186, 136, 0.22);
+                text-align: right; background: rgba(255, 255, 255, 0.65);
+            }
             .dashboard-news-modal-close-btn {
-                border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.08);
-                color: #f6f7ff; border-radius: 10px; padding: 8px 14px; cursor: pointer;
+                border: 1px solid rgba(177, 186, 136, 0.45);
+                background: linear-gradient(135deg, #b1ba88 0%, #9aa972 100%);
+                color: #fff; border-radius: 10px; padding: 8px 18px; cursor: pointer;
+                font-weight: 600; box-shadow: 0 4px 12px rgba(177, 186, 136, 0.28);
+            }
+            .dashboard-news-modal-close-btn:hover {
+                background: linear-gradient(135deg, #9aa972 0%, #8a9668 100%);
             }
         `;
         document.head.appendChild(style);
@@ -1434,6 +1450,56 @@ window.loadDashboardNews = async function loadDashboardNews() {
     }
 };
 
+/**
+ * Иконки новостей в портале сакин: мягкая палитра Royal Park (олива / молоко).
+ * Яркие пресеты из админки (#667eea и т.д.) приводятся к тем же смыслам, но приглушённо.
+ */
+window.USER_NEWS_ICON_DEFAULTS = {
+    announcement: '#6b8c9e',
+    calendar: '#7d9a6b',
+    warning: '#c17a6c',
+    info: '#7a8fa3',
+    star: '#b1a878',
+    tools: '#8a8680'
+};
+
+const USER_NEWS_LEGACY_ICON_COLORS = {
+    '#667eea': '#6b8c9e',
+    '#8854d0': '#7d7a90',
+    '#764ba2': '#7d7a90',
+    '#a55eea': '#7d7a90',
+    '#4facfe': '#6b9db0',
+    '#2e86de': '#5f8fa8',
+    '#00f2fe': '#6b9db0',
+    '#11998e': '#5d8f7a',
+    '#38ef7d': '#6d9a87',
+    '#56ab2f': '#7d9a6b',
+    '#ff6b6b': '#c17a6c',
+    '#ee5253': '#c17a6c',
+    '#f12711': '#c17a6c',
+    '#f5af19': '#c4a04a',
+    '#e8830c': '#c49a5c',
+    '#f5a623': '#c49a5c',
+    '#fa709a': '#c4899a'
+};
+
+window.resolveUserNewsIconColor = function resolveUserNewsIconColor(icon, stored) {
+    const defaults = window.USER_NEWS_ICON_DEFAULTS || {};
+    const iconKey = icon && Object.prototype.hasOwnProperty.call(defaults, icon) ? icon : 'info';
+    const fallback = defaults[iconKey] || defaults.info || '#9aa972';
+    if (stored == null || String(stored).trim() === '') return fallback;
+    const key = String(stored).trim().toLowerCase();
+    if (USER_NEWS_LEGACY_ICON_COLORS[key]) return USER_NEWS_LEGACY_ICON_COLORS[key];
+    return String(stored).trim();
+};
+
+/** Класс модификатора для карточки новости (пастельный фон в user-theme по типу иконки) */
+window.newsItemModifierClass = function newsItemModifierClass(icon) {
+    const allowed = ['info', 'announcement', 'star', 'warning', 'calendar', 'tools'];
+    const k = icon && allowed.includes(icon) ? icon : 'info';
+    return 'news-item--' + k;
+};
+
 // Open dashboard news modal on the same page (without navigation)
 window.openDashboardNewsDetail = async function openDashboardNewsDetail(newsId) {
     const id = parseInt(newsId, 10);
@@ -1487,7 +1553,7 @@ window.openDashboardNewsDetail = async function openDashboardNewsDetail(newsId) 
         modalContent.textContent = contentText;
         modalDate.textContent = formatDashboardNewsDate(news.published_at, lang);
         if (modalIcon) {
-            modalIcon.style.background = news.icon_color || '#667eea';
+            modalIcon.style.background = window.resolveUserNewsIconColor(news.icon, news.icon_color);
             modalIcon.innerHTML = `<i class="bi ${iconMap[news.icon] || 'bi-info-circle-fill'}"></i>`;
         }
     } catch (e) {
@@ -1568,12 +1634,12 @@ function renderDashboardNews(newsItems, lang) {
             return div.innerHTML;
         };
         
-        const iconColor = news.icon_color || '#667eea';
-        // Создаем тень с тем же цветом, но прозрачностью 0.4 для эффекта свечения
+        const iconColor = window.resolveUserNewsIconColor(news.icon, news.icon_color);
         const iconShadow = `0 4px 15px ${iconColor}66`;
-        
+        const modClass = window.newsItemModifierClass(news.icon);
+
         return `
-            <div class="news-item" onclick="if(window.openDashboardNewsDetail){window.openDashboardNewsDetail(${news.id})}">
+            <div class="news-item ${modClass}" onclick="if(window.openDashboardNewsDetail){window.openDashboardNewsDetail(${news.id})}">
                 <div class="news-icon" style="background-color: ${iconColor} !important; box-shadow: ${iconShadow} !important;">
                     <i class="bi ${iconMap[news.icon] || 'bi-info-circle-fill'}"></i>
                 </div>
@@ -1847,23 +1913,26 @@ window.addEventListener('beforeunload', () => {
                 ? '#f59e0b'
                 : notif.notification_type === 'APPEAL_UPDATE'
                 ? '#22c55e'
-                : '#667eea';
+                : '#b1ba88';
             
+            const rowBg = isUnread ? "rgba(177,186,136,0.18)" : "rgba(255,255,255,0.75)";
+            const rowBgHover = "rgba(177,186,136,0.28)";
+            const rowBgOut = isUnread ? "rgba(177,186,136,0.18)" : "rgba(255,255,255,0.75)";
             return `
                 <div class="notification-item" 
                      data-id="${notif.id}" 
                      data-type="${notif.notification_type || ''}"
                      data-related-id="${notif.related_id || ''}"
-                     style="display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border:1px solid rgba(255,255,255,0.08); border-radius:12px; margin-bottom:10px; background:${isUnread ? 'rgba(102,126,234,0.08)' : 'transparent'}; cursor:pointer; transition:background 0.2s;"
-                     onmouseover="this.style.background='rgba(102,126,234,0.15)'" 
-                     onmouseout="this.style.background='${isUnread ? 'rgba(102,126,234,0.08)' : 'transparent'}'">
+                     style="display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border:1px solid rgba(177,186,136,0.28); border-radius:12px; margin-bottom:10px; background:${rowBg}; cursor:pointer; transition:background 0.2s;"
+                     onmouseover="this.style.background='${rowBgHover}'" 
+                     onmouseout="this.style.background='${rowBgOut}'">
                     <div style="width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; background:${iconColor}; box-shadow:0 6px 16px rgba(0,0,0,.15); flex-shrink:0;">
                         ${icon}
                     </div>
                     <div style="flex:1; min-width:0;">
                         <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
                             <strong style="color:var(--text-primary); font-size:0.95rem;">${escapeHtml(messageText)}</strong>
-                            ${isUnread ? `<span class="badge" style="background:#10b981; height:20px; display:flex; align-items:center; padding:0 6px; font-size:0.7rem; flex-shrink:0;">${t('notifications_badge_new', 'НОВАЯ')}</span>` : ''}
+                            ${isUnread ? `<span class="badge" style="background:linear-gradient(135deg,#b1ba88 0%,#9aa972 100%); height:20px; display:flex; align-items:center; padding:0 6px; font-size:0.7rem; flex-shrink:0; color:#fff;">${t('notifications_badge_new', 'НОВАЯ')}</span>` : ''}
                         </div>
                         <span style="font-size:0.8rem; color:var(--text-secondary);">${formatTime(notif.created_at)}</span>
                     </div>

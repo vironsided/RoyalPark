@@ -4305,13 +4305,17 @@ class LanguageManager {
             <span>${message}</span>
         `;
         
+        const residentToastBg =
+            typeof document !== "undefined" && document.body?.classList?.contains("user-app")
+                ? "linear-gradient(135deg, #b1ba88 0%, #9aa972 100%)"
+                : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
         notification.style.cssText = `
             position: fixed;
             top: 100px;
             right: 20px;
             padding: 1rem 1.5rem;
             border-radius: 0.75rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: ${residentToastBg};
             color: white;
             font-weight: 600;
             display: flex;

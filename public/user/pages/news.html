@@ -89,13 +89,10 @@
 .news-item:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-    border-color: rgba(102, 126, 234, 0.5);
+    border-color: rgba(177, 186, 136, 0.45);
 }
 
-[data-theme="dark"] .news-item {
-    background: #1e232f;
-    border-color: rgba(255, 255, 255, 0.08);
-}
+/* Тёмный фон убран: страница только в sakin portalı (body.user-app), токены — молочные */
 
 .news-icon {
     width: 60px;
@@ -174,11 +171,9 @@
     gap: 1rem;
 }
 
-[data-theme="dark"] .table-pagination,
-body[data-theme="dark"] .table-pagination,
-html[data-theme="dark"] .table-pagination {
-    background: #2d303b;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+html[data-theme="dark"] body.user-app .table-pagination {
+    background: rgba(255, 255, 255, 0.94) !important;
+    border: 1px solid rgba(177, 186, 136, 0.28) !important;
 }
 
 .pagination-controls {
@@ -198,10 +193,10 @@ html[data-theme="dark"] .table-pagination {
     min-width: 36px;
     height: 36px;
     padding: 0 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(177, 186, 136, 0.3);
     border-radius: 8px;
-    color: rgba(255, 255, 255, 0.7);
+    color: #56565c;
     cursor: pointer;
     transition: all 0.3s;
     display: flex;
@@ -211,9 +206,9 @@ html[data-theme="dark"] .table-pagination {
 }
 
 .btn-pagination:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
+    background: rgba(177, 186, 136, 0.14);
+    border-color: rgba(177, 186, 136, 0.45);
+    color: #3d3d42;
 }
 
 .btn-pagination:disabled {
@@ -222,11 +217,11 @@ html[data-theme="dark"] .table-pagination {
 }
 
 .btn-pagination.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-color: #667eea;
+    background: linear-gradient(135deg, #b1ba88 0%, #9aa972 100%);
+    border-color: #9aa972;
     color: #ffffff;
     font-weight: 600;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 2px 8px rgba(177, 186, 136, 0.35);
 }
 
 .pagination-info {
@@ -255,10 +250,10 @@ html[data-theme="dark"] .table-pagination {
     align-items: center;
     justify-content: space-between;
     padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(177, 186, 136, 0.3);
     border-radius: 6px;
-    color: rgba(255, 255, 255, 0.9);
+    color: #56565c;
     font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.3s;
@@ -267,17 +262,17 @@ html[data-theme="dark"] .table-pagination {
 }
 
 .custom-pag-select .select-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: #fff;
+    border-color: rgba(177, 186, 136, 0.45);
 }
 
 .custom-pag-select .select-options {
     position: absolute;
     bottom: calc(100% + 8px);
     left: 0;
-    background: #1f2432 !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+    background: #fafaf6 !important;
+    border: 1px solid rgba(177, 186, 136, 0.28) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     padding: 6px;
     display: none;
@@ -292,18 +287,18 @@ html[data-theme="dark"] .table-pagination {
 .custom-pag-select .select-option {
     padding: 6px 10px;
     border-radius: 6px;
-    color: rgba(255, 255, 255, 0.9);
+    color: #56565c;
     cursor: pointer;
     transition: all 0.2s;
     text-align: center;
 }
 
 .custom-pag-select .select-option:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(177, 186, 136, 0.16);
 }
 
 .custom-pag-select .select-option.selected {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #b1ba88 0%, #9aa972 100%);
     color: #fff;
 }
 
@@ -351,9 +346,9 @@ html[data-theme="dark"] .table-pagination {
     transform: scale(1);
 }
 
-[data-theme="dark"] .user-news-modal {
-    background: #1e232f;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+html[data-theme="dark"] body.user-app .user-news-modal {
+    background: #fafaf6 !important;
+    border: 1px solid rgba(177, 186, 136, 0.25) !important;
 }
 
 .user-news-modal-header {
@@ -365,8 +360,8 @@ html[data-theme="dark"] .table-pagination {
     position: relative;
 }
 
-[data-theme="dark"] .user-news-modal-header {
-    border-bottom-color: rgba(255, 255, 255, 0.1);
+html[data-theme="dark"] body.user-app .user-news-modal-header {
+    border-bottom-color: rgba(177, 186, 136, 0.22) !important;
 }
 
 .user-news-modal-icon {
@@ -431,8 +426,8 @@ html[data-theme="dark"] .table-pagination {
     color: var(--text-secondary);
 }
 
-[data-theme="dark"] .user-news-modal-date {
-    border-bottom-color: rgba(255, 255, 255, 0.1);
+html[data-theme="dark"] body.user-app .user-news-modal-date {
+    border-bottom-color: rgba(177, 186, 136, 0.2) !important;
 }
 
 .user-news-modal-content {
@@ -452,20 +447,20 @@ html[data-theme="dark"] .table-pagination {
 }
 
 .user-news-modal-close-btn {
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: #252a35;
-    color: #e2e6f0;
+    border: 1px solid rgba(177, 186, 136, 0.4);
+    background: linear-gradient(135deg, #b1ba88 0%, #9aa972 100%);
+    color: #fff;
     padding: 0.7rem 1.6rem;
     border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
-    box-shadow: none;
+    box-shadow: 0 4px 14px rgba(177, 186, 136, 0.3);
 }
 
 .user-news-modal-close-btn:hover {
-    background: #2d333f;
-    border-color: rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, #9aa972 0%, #8a9668 100%);
+    border-color: rgba(177, 186, 136, 0.55);
     transform: translateY(-1px);
 }
 
@@ -681,12 +676,19 @@ html[data-theme="dark"] .table-pagination {
                 publishedDate = `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getFullYear()}`;
             }
             
-            const iconColor = news.icon_color || '#667eea';
+            const iconColor =
+                typeof window.resolveUserNewsIconColor === 'function'
+                    ? window.resolveUserNewsIconColor(news.icon, news.icon_color)
+                    : news.icon_color || '#b1ba88';
             const iconShadow = `0 4px 15px ${iconColor}66`;
-            
+            const modClass =
+                typeof window.newsItemModifierClass === 'function'
+                    ? window.newsItemModifierClass(news.icon)
+                    : 'news-item--info';
+
             // Сохраняем данные для быстрой перерисовки при смене языка
             return `
-                <div class="news-item" 
+                <div class="news-item ${modClass}" 
                      onclick="window.openNewsDetail(${news.id})"
                      data-news-id="${news.id}"
                      data-published-at="${news.published_at}"
@@ -815,7 +817,10 @@ html[data-theme="dark"] .table-pagination {
             modalDate.textContent = publishedDate;
             
             if (modalIcon) {
-                modalIcon.style.background = news.icon_color || '#667eea';
+                modalIcon.style.background =
+                    typeof window.resolveUserNewsIconColor === 'function'
+                        ? window.resolveUserNewsIconColor(news.icon, news.icon_color)
+                        : news.icon_color || '#b1ba88';
                 modalIcon.innerHTML = `<i class="bi ${iconMap[news.icon] || 'bi-info-circle-fill'}"></i>`;
             }
             
