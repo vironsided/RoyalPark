@@ -49,6 +49,27 @@
     --transition-fast: 0.15s ease;
     --transition-base: 0.3s ease;
     --transition-slow: 0.5s ease;
+
+    /* Milky & Olivia Premium Suite (Stitch / DESIGN) */
+    --milky-canvas: #efefe6;
+    --milky-surface: #fafaf6;
+    --milky-dark: #edebe1;
+    /* Акцент / навигация / кнопки — olive; светлый акцент — olive-light; подвал — как olive */
+    --olivia-brand: #b1ba88;
+    --olivia-soft: #c5cd9f;
+    --olivia-deep: #9aa972;
+    --olivia-highlight: #c5cd9f;
+    --footer-bg: #b1ba88;
+    --charcoal-deep: #56565c;
+    --charcoal-muted: #6b6b73;
+    --border-radius-lg: 24px;
+    --border-radius-md: 16px;
+    --soft-shadow: 0 12px 32px rgba(86, 86, 92, 0.08);
+    --elevation-low: 0 4px 12px rgba(0, 0, 0, 0.04);
+
+    /* Stitch: семантика поверх Milky & Olivia (логин/админка по-прежнему со своими --primary-color выше) */
+    --milky-text-primary: var(--charcoal-deep);
+    --milky-text-secondary: var(--charcoal-muted);
 }
 
 /* 🌓 DARK MODE */
@@ -73,92 +94,140 @@
     --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
 }
 
-/* 🌍 LANGUAGE SELECTOR */
+/* 🌍 LANGUAGE SELECTOR — glass pill + soft motion (Royal Park: sage / olive accent) */
 .language-selector {
     position: relative !important;
     top: auto !important;
     right: auto !important;
-    display: flex !important;
+    display: inline-flex !important;
     flex-direction: row;
+    align-items: center;
     gap: 6px;
     z-index: 10 !important;
     opacity: 1 !important;
     visibility: visible !important;
     margin-left: 0.5rem;
-    /* убираем любую фон‑рамку контейнера */
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid rgba(177, 186, 136, 0.28);
+    background: rgba(255, 255, 255, 0.62);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow:
+        0 4px 18px rgba(15, 23, 42, 0.06),
+        0 1px 0 rgba(255, 255, 255, 0.65) inset;
 }
 
 .language-btn {
-    width: 50px;
-    height: 40px;
-    border-radius: 0.5rem;
-    background: white;
-    /* убираем видимую рамку и тень вокруг кнопок языка */
-    border: none;
+    position: relative;
+    z-index: 0;
+    min-width: 46px;
+    height: 38px;
+    padding: 0 8px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #64748b;
     cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
+    transition:
+        color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+        background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 2px;
-    box-shadow: none;
-    padding: 0.25rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    overflow: visible;
 }
 
-.language-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
-    border-color: #667eea;
+.language-btn:hover:not(.active) {
+    background: rgba(177, 186, 136, 0.1);
+    color: #1e293b;
+    transform: translateY(-1px);
+}
+
+.language-btn:active {
+    transform: scale(0.96);
 }
 
 .language-btn.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-color: transparent;
-    color: white;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    color: #fff;
+    border-color: rgba(177, 186, 136, 0.5);
+    background: linear-gradient(135deg, var(--olivia-soft) 0%, var(--olivia-brand) 100%);
+    box-shadow:
+        0 6px 20px rgba(177, 186, 136, 0.35),
+        0 2px 8px rgba(154, 169, 114, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.language-btn.active::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, var(--olivia-soft), var(--olivia-deep));
+    opacity: 0.35;
+    filter: blur(10px);
+    z-index: -1;
 }
 
 .language-btn .flag {
     font-size: 1.5rem;
     line-height: 1;
+    position: relative;
+    z-index: 1;
 }
 
 .language-btn .lang-code {
-    font-size: 0.65rem;
+    position: relative;
+    z-index: 1;
+    font-size: 0.68rem;
     font-weight: 700;
-    letter-spacing: 0.5px;
-    color: #495057;
+    letter-spacing: 0.06em;
+    color: inherit;
+}
+
+.language-btn:not(.active) .lang-code {
+    color: #64748b;
 }
 
 .language-btn.active .lang-code {
-    color: white;
+    color: #fff;
 }
 
-/* Dark Mode */
-[data-theme="dark"] .language-btn {
-    background: #242831;
-    border-color: transparent;
+/* Dark Mode — тёмное стекло, активная — та же оливковая схема */
+[data-theme="dark"] .language-selector {
+    background: rgba(30, 32, 38, 0.55);
+    border-color: rgba(177, 186, 136, 0.22);
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.28),
+        0 1px 0 rgba(255, 255, 255, 0.06) inset;
 }
 
-[data-theme="dark"] .language-btn:hover {
-    background: #2d3139;
-    border-color: transparent;
+[data-theme="dark"] .language-btn:not(.active) {
+    background: transparent;
 }
 
-[data-theme="dark"] .language-btn .lang-code {
+[data-theme="dark"] .language-btn:hover:not(.active) {
+    background: rgba(177, 186, 136, 0.14);
+    color: #e8e9ec;
+}
+
+[data-theme="dark"] .language-btn:not(.active) .lang-code {
     color: #b8bcc4;
 }
 
 [data-theme="dark"] .language-btn.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--olivia-soft) 0%, var(--olivia-brand) 100%);
 }
 
 [data-theme="dark"] .language-btn.active .lang-code {
-    color: white;
+    color: #fff;
 }
 
 /* Language Notification */
@@ -168,13 +237,13 @@
     right: 20px;
     padding: 1rem 1.5rem;
     border-radius: 0.75rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--olivia-soft) 0%, var(--olivia-brand) 100%);
     color: white;
     font-weight: 600;
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 28px rgba(177, 186, 136, 0.32);
     animation: slideInRight 0.3s ease-out;
     z-index: 10000;
 }
@@ -188,8 +257,8 @@
     }
     
     .language-btn {
-        width: 45px;
-        height: 35px;
+        min-width: 42px;
+        height: 34px;
     }
     
     .language-btn .flag {
@@ -209,7 +278,7 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.6;
@@ -218,7 +287,7 @@ body {
     min-width: 0;
 }
 
-/* Typography */
+/* Typography (шрифты логина и ЛК резидента — только в login.css и user-theme.css) */
 h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
     line-height: 1.2;

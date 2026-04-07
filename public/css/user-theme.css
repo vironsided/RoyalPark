@@ -5,15 +5,21 @@
  */
 
 body.user-app {
-    /* Базовые токены бренда */
-    --user-milky: #efefe6;
-    --user-milky-dark: #edebe1;
-    --user-charcoal: #56565c;
-    --user-charcoal-muted: #6b6b73;
-    --user-olive: #b1ba88;
-    --user-olive-mid: #9aa972;
-    --user-olive-dark: #8a9668;
-    --user-olive-light: #c5cd9f;
+    /* Только ЛК резидента: те же семейства, что и на login (админка этот файл не подключает) */
+    --font-sans: "Times New Roman", Times, serif;
+    --font-serif: "Times New Roman", Times, serif;
+    --font-display: "Cormorant Garamond", "Times New Roman", Times, serif;
+    --font-ui: "Montserrat", system-ui, -apple-system, sans-serif;
+
+    /* Базовые токены бренда (синхрон с :root Milky & Olivia) */
+    --user-milky: var(--milky-canvas, #efefe6);
+    --user-milky-dark: var(--milky-dark, #edebe1);
+    --user-charcoal: var(--charcoal-deep, #56565c);
+    --user-charcoal-muted: var(--charcoal-muted, #6b6b73);
+    --user-olive: var(--olivia-soft, #c5cd9f);
+    --user-olive-mid: var(--olivia-brand, #b1ba88);
+    --user-olive-dark: var(--olivia-deep, #9aa972);
+    --user-olive-light: var(--olivia-highlight, #c5cd9f);
 
     /* Мост к переменным, которые читает разметка/стили admin.css внутри кабинета */
     --primary-color: var(--user-olive);
@@ -29,8 +35,8 @@ body.user-app {
     --glow-shadow: 0 0 28px rgba(177, 186, 136, 0.32);
 
     /* Поверх глобальных токенов [data-theme="dark"] — весь кабинет резидента светлый */
-    --bg-primary: var(--user-milky);
-    --bg-secondary: #fafaf6;
+    --bg-primary: var(--milky-canvas, var(--user-milky));
+    --bg-secondary: var(--milky-surface, #fafaf6);
     --bg-dark: #e8e7df;
     --text-primary: var(--user-charcoal);
     --text-secondary: var(--user-charcoal-muted);
@@ -40,6 +46,10 @@ body.user-app {
     --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.07);
     --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.09);
     --shadow-xl: 0 20px 44px rgba(0, 0, 0, 0.1);
+
+    /* resident-detail.css — иначе SPA #resident тянет тёмные карточки из :root */
+    --detail-card-bg: rgba(255, 255, 255, 0.96);
+    --detail-border: rgba(177, 186, 136, 0.28);
 }
 
 /* Молочный фон вместо тёмного canvas из admin.css ([data-theme="dark"] html/body / .admin-container) */
@@ -49,6 +59,34 @@ html[data-theme="dark"]:has(body.user-app) {
 
 [data-theme="dark"] body.user-app {
     background-color: var(--user-milky) !important;
+    font-family: var(--font-sans) !important;
+}
+
+/* Montserrat: навигация, кнопки, переключатель языка, подписи разделов */
+body.user-app .nav-text,
+body.user-app .nav-section-title,
+body.user-app .language-btn,
+body.user-app .language-btn .lang-code,
+body.user-app .resident-btn,
+body.user-app .notification-btn,
+body.user-app .toggle-sidebar,
+body.user-app .dashboard-fab,
+body.user-app .account-btn-primary,
+body.user-app .account-btn-secondary,
+body.user-app .action-button,
+body.user-app .user-name,
+body.user-app .user-role {
+    font-family: var(--font-ui) !important;
+}
+
+/* Cormorant: заголовки в кабинете */
+body.user-app h1,
+body.user-app h2,
+body.user-app h3,
+body.user-app h4,
+body.user-app .chart-title,
+body.user-app .resident-greeting {
+    font-family: var(--font-display) !important;
 }
 
 /*
@@ -65,14 +103,35 @@ body.user-app .sidebar::before {
     content: none !important;
 }
 
-/* Всегда молочный canvas (не светлый сине-серый градиент из admin.css без data-theme) */
+/* Milky canvas (плоский фон по DESIGN; без «громких» градиентов) */
 body.user-app .admin-container {
-    background: linear-gradient(
-        180deg,
-        var(--user-milky) 0%,
-        var(--user-milky-dark) 45%,
-        #e3e1d6 100%
-    ) !important;
+    background: var(--milky-canvas, var(--user-milky)) !important;
+}
+
+/* ========== Milky & Olivia Premium Suite: stat cards + primary CTA (резидент) ========== */
+[data-theme="dark"] body.user-app .stat-card:not(.solid-purple):not(.solid-orange):not(.solid-blue):not(.solid-red):not(.solid-green):not(.solid-yellow) {
+    background: var(--milky-surface, #fafaf6) !important;
+    border: none !important;
+    border-radius: var(--border-radius-md, 16px) !important;
+    box-shadow: var(--soft-shadow, 0 12px 32px rgba(86, 86, 92, 0.08)) !important;
+    padding: 2rem !important;
+}
+
+[data-theme="dark"] body.user-app .resident-btn.primary {
+    background: var(--olivia-brand, #b1ba88) !important;
+    border-radius: 12px !important;
+    padding: 0.85rem 1.75rem !important;
+    box-shadow: 0 8px 24px rgba(177, 186, 136, 0.25) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+[data-theme="dark"] body.user-app .resident-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(177, 186, 136, 0.35) !important;
+}
+
+[data-theme="dark"] body.user-app .stat-card:not(.solid-purple):not(.solid-orange):not(.solid-blue):not(.solid-red):not(.solid-green):not(.solid-yellow):hover {
+    box-shadow: 0 16px 40px rgba(86, 86, 92, 0.11) !important;
 }
 
 /*
@@ -293,20 +352,97 @@ body.user-app .user-news-modal-close:hover {
     color: var(--user-charcoal-muted) !important;
 }
 
-/* Поверхность сайдбара — только резидент */
+/* Сайдбар: milky-dark, активный пункт — Olivia (без заливки градиентом) */
 .user-app .sidebar {
-    background: linear-gradient(180deg, var(--user-olive) 0%, var(--user-olive-mid) 100%);
+    background: var(--milky-dark, var(--user-milky-dark)) !important;
+    border-right: 1px solid rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.04) !important;
 }
 
 [data-theme="dark"] .user-app .sidebar {
-    background: linear-gradient(180deg, #f7f6f0 0%, #ebe9e1 100%) !important;
-    border-right: 1px solid rgba(177, 186, 136, 0.35) !important;
-    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.05) !important;
+    background: var(--milky-dark, var(--user-milky-dark)) !important;
+    border-right: 1px solid rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.04) !important;
 }
 
+/* layout.css: .sidebar { color: white } — на светлом фоне ЛК заголовки групп (XİDMƏT, PARAMETRLƏR) нечитаемы */
+body.user-app .sidebar .nav-section-title,
+[data-theme="dark"] .user-app .sidebar .nav-section-title {
+    color: var(--user-charcoal-muted) !important;
+    opacity: 1 !important;
+    -webkit-text-fill-color: var(--user-charcoal-muted) !important;
+}
+
+/* Текст бренда: admin.css задаёт градиент с transparent fill — на milky сайдбаре «пропадает» */
 [data-theme="dark"] .user-app .sidebar .logo-text h2,
-[data-theme="dark"] .user-app .sidebar .logo-text p {
+body.user-app .sidebar .logo-text h2 {
+    background: none !important;
+    background-image: none !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
     color: var(--user-charcoal) !important;
+    -webkit-text-fill-color: var(--user-charcoal) !important;
+}
+
+[data-theme="dark"] .user-app .sidebar .logo-text p,
+body.user-app .sidebar .logo-text p,
+body.user-app .sidebar .sidebar-tagline {
+    color: var(--user-charcoal-muted) !important;
+    opacity: 1 !important;
+}
+
+/* Блок логотипа: картинка с wordmark + одна строка подписи (без дубля «RoyalPark») */
+body.user-app .sidebar .sidebar-logo {
+    flex-direction: column !important;
+    gap: 0.55rem !important;
+    align-items: stretch !important;
+    text-align: center !important;
+    padding: 0.25rem 0.35rem 0.5rem !important;
+    width: 100%;
+    min-width: 0;
+}
+
+body.user-app .sidebar .sidebar-logo--with-mark .logo-text {
+    margin-top: 0.1rem;
+}
+
+body.user-app .sidebar .sidebar-tagline {
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.04em !important;
+    margin: 0 !important;
+    line-height: 1.35 !important;
+}
+
+body.user-app .sidebar .sidebar-brand-mark {
+    display: block;
+    width: auto;
+    max-width: min(100%, 200px);
+    height: auto;
+    max-height: 72px;
+    margin: 0 auto;
+    object-fit: contain;
+    object-position: center bottom;
+    flex-shrink: 0;
+    /* Тёмно-оливковый силуэт вместо жёсткого чёрного — лучше на #edebe1 */
+    filter: brightness(0) saturate(100%) invert(28%) sepia(8%) saturate(1200%) hue-rotate(38deg) brightness(0.92)
+        contrast(1.05);
+    opacity: 0.92;
+}
+
+body.user-app .sidebar.collapsed .sidebar-brand-mark {
+    max-height: 46px;
+    max-width: 52px;
+}
+
+/* Шапка сайдбара: логотип выше по высоте — выравниваем гамбургер по верху, не по центру колонки */
+body.user-app .sidebar:not(.collapsed) .sidebar-header {
+    align-items: flex-start !important;
+}
+
+body.user-app .sidebar:not(.collapsed) .sidebar-header .toggle-sidebar {
+    flex-shrink: 0;
+    margin-top: 0.2rem;
 }
 
 [data-theme="dark"] .user-app .sidebar .toggle-sidebar {
@@ -317,31 +453,48 @@ body.user-app .user-news-modal-close:hover {
     color: var(--user-charcoal) !important;
 }
 
-[data-theme="dark"] .user-app .sidebar .nav-item:hover,
-[data-theme="dark"] .user-app .sidebar .nav-item.active {
-    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%);
-    color: #fff !important;
-    box-shadow: 0 10px 22px rgba(177, 186, 136, 0.38);
+[data-theme="dark"] .user-app .sidebar .nav-item:hover:not(.active) {
+    background: rgba(177, 186, 136, 0.06) !important;
+    color: var(--user-charcoal) !important;
+    box-shadow: none !important;
 }
 
-/* Перекрытия admin.css (жёсткий #667eea) — только под body.user-app */
+/* Выход: красный hover как в admin (layout.css / admin.css), поверх оливкового nav-item:hover выше */
+[data-theme="dark"] body.user-app .sidebar .nav-item.logout-btn:hover,
+body.user-app .sidebar .nav-item.logout-btn:hover {
+    background: linear-gradient(135deg, #f5576c 0%, #e53935 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 20px rgba(245, 87, 108, 0.4) !important;
+}
+
+[data-theme="dark"] body.user-app .sidebar .nav-item.logout-btn:hover::before,
+body.user-app .sidebar .nav-item.logout-btn:hover::before {
+    background: #ff1744 !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .user-app .sidebar .nav-item.active {
+    background: rgba(177, 186, 136, 0.1) !important;
+    color: var(--olivia-brand, #b1ba88) !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
+}
+
+/* Перекрытия admin.css — индикатор слева */
 body.user-app .sidebar .nav-item::before {
-    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+    background: var(--olivia-brand, var(--user-olive-mid)) !important;
 }
 
 body.user-app .sidebar .nav-item.active {
-    background: linear-gradient(
-            90deg,
-            rgba(177, 186, 136, 0.38) 0%,
-            rgba(154, 169, 114, 0.24) 100%
-        )
-        !important;
-    box-shadow: 0 4px 20px rgba(177, 186, 136, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    background: rgba(177, 186, 136, 0.1) !important;
+    color: var(--olivia-brand, #b1ba88) !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
 }
 
 body.user-app .sidebar .nav-item.active::before {
-    background: linear-gradient(180deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
-    box-shadow: 0 0 10px rgba(177, 186, 136, 0.7) !important;
+    background: var(--olivia-brand, var(--user-olive-mid)) !important;
+    box-shadow: none !important;
 }
 
 body.user-app .lang-btn.active,
@@ -372,9 +525,9 @@ body.user-app .lang-btn:hover {
     border-color: rgba(177, 186, 136, 0.45) !important;
 }
 
-/* Карточки и панели: убираем #242831 / #1e232f из dark-theme — молочные поверхности */
+/* Карточки и панели: убираем #242831 / #1e232f из dark-theme — молочные поверхности
+   (нейтральные stat-card заданы выше — Milky & Olivia Premium Suite) */
 [data-theme="dark"] body.user-app .card:not(.stat-card),
-[data-theme="dark"] body.user-app .stat-card:not(.solid-purple):not(.solid-orange):not(.solid-blue):not(.solid-red):not(.solid-green):not(.solid-yellow),
 [data-theme="dark"] body.user-app .chart-card,
 [data-theme="dark"] body.user-app .activity-card,
 [data-theme="dark"] body.user-app .bill-card,
@@ -387,7 +540,6 @@ body.user-app .lang-btn:hover {
 }
 
 [data-theme="dark"] body.user-app .card:hover,
-[data-theme="dark"] body.user-app .stat-card:not(.solid-purple):not(.solid-orange):not(.solid-blue):not(.solid-red):not(.solid-green):not(.solid-yellow):hover,
 [data-theme="dark"] body.user-app .chart-card:hover,
 [data-theme="dark"] body.user-app .activity-card:hover,
 [data-theme="dark"] body.user-app .bill-card:hover,
@@ -444,7 +596,13 @@ body.user-app .lang-btn:hover {
 }
 
 /* Типографика на светлых stat-card без solid-* */
-[data-theme="dark"] body.user-app .stat-card:not(.solid-purple):not(.solid-orange):not(.solid-blue):not(.solid-red):not(.solid-green):not(.solid-yellow) .stat-value,
+[data-theme="dark"] body.user-app .stat-card:not(.solid-purple):not(.solid-orange):not(.solid-blue):not(.solid-red):not(.solid-green):not(.solid-yellow) .stat-value {
+    color: var(--charcoal-deep, var(--user-charcoal)) !important;
+    font-size: 2rem !important;
+    font-weight: 800 !important;
+    -webkit-text-fill-color: var(--charcoal-deep, var(--user-charcoal)) !important;
+}
+
 [data-theme="dark"] body.user-app .stat-card:not(.solid-purple):not(.solid-orange):not(.solid-blue):not(.solid-red):not(.solid-green):not(.solid-yellow) .stat-change {
     color: var(--user-charcoal) !important;
     -webkit-text-fill-color: var(--user-charcoal) !important;
@@ -733,15 +891,16 @@ body.user-app .stat-card.solid-green:hover {
     box-shadow: 0 12px 36px rgba(70, 140, 115, 0.24) !important;
 }
 
+/* Электричество и др.: тёплый лимонный фон (не персик/оранж) */
 body.user-app .stat-card.solid-yellow {
-    background: linear-gradient(145deg, #fffbf0 0%, #ffefd4 55%, #ffe0a8 100%) !important;
-    border: 1px solid rgba(212, 170, 80, 0.45) !important;
-    box-shadow: 0 8px 26px rgba(200, 150, 50, 0.14) !important;
+    background: linear-gradient(145deg, #fffef5 0%, #fff6c8 45%, #ffeaa0 100%) !important;
+    border: 1px solid rgba(212, 185, 60, 0.42) !important;
+    box-shadow: 0 8px 26px rgba(200, 170, 40, 0.12) !important;
     color: inherit !important;
 }
 
 body.user-app .stat-card.solid-yellow:hover {
-    box-shadow: 0 12px 36px rgba(200, 150, 50, 0.22) !important;
+    box-shadow: 0 12px 36px rgba(200, 170, 40, 0.2) !important;
 }
 
 /* Заголовок в шапке: читабельный тёмный текст (градиент с клипом давал «невидимый» текст на белом) */
@@ -753,11 +912,20 @@ body.user-app .top-bar .page-title h1,
     -webkit-text-fill-color: var(--user-charcoal) !important;
     background-clip: border-box !important;
     -webkit-background-clip: border-box !important;
+    font-size: 1.5rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+    line-height: 1.25 !important;
 }
 
-body.user-app .user-avatar {
-    background: linear-gradient(135deg, var(--user-olive) 0%, #8f9b6b 100%) !important;
+/* Без фото — оливковый круг; с фото класс .has-preview-photo (ставит user.js) */
+body.user-app .user-avatar:not(.has-preview-photo) {
+    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
     box-shadow: 0 4px 14px rgba(177, 186, 136, 0.4) !important;
+}
+
+body.user-app .user-avatar.has-preview-photo {
+    box-shadow: 0 4px 14px rgba(177, 186, 136, 0.35) !important;
 }
 
 body.user-app .notification-btn:hover {
@@ -779,20 +947,58 @@ body.user-app .quick-filter-btn:hover {
     color: #fff;
 }
 
-/* ========== global.css: переключатель языка (.language-btn), не путать с admin .lang-btn ========== */
-body.user-app .language-btn:hover {
-    box-shadow: 0 6px 20px rgba(177, 186, 136, 0.28) !important;
-    border-color: transparent !important;
+/* ========== Stitch: refined language switcher (кабинет резидента; перекрывает global.css) ========== */
+body.user-app .language-selector {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    background: rgba(255, 255, 255, 0.4) !important;
+    backdrop-filter: blur(12px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 999px !important;
+    padding: 4px !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+    transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+body.user-app .language-btn {
+    min-width: auto !important;
+    height: auto !important;
+    padding: 6px 14px !important;
+    border-radius: 999px !important;
+    border: none !important;
+    background: transparent !important;
+    color: var(--charcoal-deep, #56565c) !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.1em !important;
+    cursor: pointer !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+body.user-app .language-btn:hover:not(.active) {
+    color: var(--olivia-brand, #b1ba88) !important;
+    background: rgba(177, 186, 136, 0.05) !important;
+    box-shadow: none !important;
+    transform: none !important;
 }
 
 body.user-app .language-btn.active {
-    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
-    color: white !important;
-    box-shadow: 0 4px 15px rgba(177, 186, 136, 0.38) !important;
+    background: var(--olivia-brand, #b1ba88) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(177, 186, 136, 0.3) !important;
+}
+
+body.user-app .language-btn.active::after {
+    display: none !important;
+    content: none !important;
 }
 
 [data-theme="dark"] body.user-app .language-btn.active {
-    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+    background: var(--olivia-brand, #b1ba88) !important;
 }
 
 body.user-app .lang-notification {
@@ -820,8 +1026,9 @@ body.user-app .lang-notification {
     background: linear-gradient(135deg, #5cbb9a 0%, #2f8f72 100%) !important;
 }
 
+/* Иконка молнии: явный «электрический» жёлтый */
 [data-theme="dark"] body.user-app .stat-card.solid-yellow .stat-icon {
-    background: linear-gradient(135deg, #e8b84a 0%, #c99220 100%) !important;
+    background: linear-gradient(135deg, #f5d547 0%, #e6b000 55%, #c9a000 100%) !important;
 }
 
 /* ========== Фон и полосы: молочный canvas + светлая шапка ========== */
@@ -858,25 +1065,23 @@ body.user-app .lang-notification {
     color: var(--user-olive-dark) !important;
 }
 
-/* global.css: кнопки AZ/EN/RU в топ-баре на молочном фоне */
 [data-theme="dark"] body.user-app .language-btn:not(.active) {
-    background: rgba(255, 255, 255, 0.72) !important;
-}
-
-[data-theme="dark"] body.user-app .language-btn:hover:not(.active) {
-    background: rgba(255, 255, 255, 0.95) !important;
-    box-shadow: 0 6px 18px rgba(177, 186, 136, 0.28) !important;
+    background: transparent !important;
 }
 
 [data-theme="dark"] body.user-app .language-btn .lang-code {
-    color: var(--user-charcoal) !important;
+    color: inherit !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.1em !important;
 }
 
+/* Как в гайде Stitch: milky surface + мягкая оливковая обводка + soft-shadow */
 [data-theme="dark"] body.user-app .resident-card,
 [data-theme="dark"] body.user-app .bill-item {
-    background: rgba(255, 255, 255, 0.96) !important;
-    border-color: rgba(177, 186, 136, 0.26) !important;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08) !important;
+    background: var(--milky-surface, #fafaf6) !important;
+    border: 1px solid rgba(177, 186, 136, 0.15) !important;
+    border-radius: var(--border-radius-lg, 24px) !important;
+    box-shadow: var(--soft-shadow, 0 12px 32px rgba(86, 86, 92, 0.08)) !important;
 }
 
 [data-theme="dark"] body.user-app .resident-card .resident-amount-box span {
@@ -974,7 +1179,7 @@ body.user-app .account-tab-btn.active {
 }
 
 [data-theme="dark"] body.user-app #notificationsModal .account-modal-body::-webkit-scrollbar-thumb:hover {
-    background: rgba(154, 169, 114, 0.65) !important;
+    background: rgba(177, 186, 136, 0.65) !important;
 }
 
 [data-theme="dark"] body.user-app #notificationsModal .account-modal-footer {
@@ -1057,11 +1262,15 @@ body.user-app .account-tab-btn.active {
     background: #fafaf6 !important;
 }
 
-/* Аватар и файл */
-[data-theme="dark"] body.user-app #accountModal .account-avatar-large {
+/* Аватар: градиент только без своего фото (инлайн background-image иначе проигрывает !important из этого блока) */
+[data-theme="dark"] body.user-app #accountModal .account-avatar-large:not(.has-preview-photo) {
     background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
     box-shadow: 0 8px 22px rgba(177, 186, 136, 0.35) !important;
     color: #fff !important;
+}
+
+[data-theme="dark"] body.user-app #accountModal .account-avatar-large.has-preview-photo {
+    box-shadow: 0 8px 22px rgba(177, 186, 136, 0.25) !important;
 }
 
 [data-theme="dark"] body.user-app #accountModal .account-file-select-btn {
@@ -1199,6 +1408,24 @@ body.user-app .user-payment-page #paymentCountdown {
     font-weight: 600 !important;
 }
 
+/* Инструкция «как оплатить»: светлая карточка, заголовок как у колонок, текст с отступом */
+body.user-app .payment-howto-block {
+    background: rgba(255, 255, 255, 0.96) !important;
+    border: 1px solid rgba(177, 186, 136, 0.28) !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.07) !important;
+}
+
+body.user-app .payment-howto-title {
+    color: var(--user-charcoal) !important;
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    -webkit-text-fill-color: var(--user-charcoal) !important;
+}
+
+body.user-app .payment-howto-list {
+    color: var(--user-charcoal-muted) !important;
+}
+
 /* Kart «avans»: светлый текст на тёмном фоне (SPA не должен перебивать var(--text-primary)) */
 body.user-app .user-payment-page .resident-pass-card {
     color: #ffffff !important;
@@ -1257,13 +1484,38 @@ body.user-app .invoice-view-page .invoice-summary-item .value.total {
     color: #c43d3d !important;
 }
 
+/* Как .chart-title на дашборде («Последние счета», «Быстрые действия»): 1.25rem / 600 */
+body.user-app .invoice-view-page .user-section-heading,
 body.user-app .invoice-view-page .payments-section h3,
 body.user-app .invoice-view-page .user-invoice-items h3 {
     color: var(--user-charcoal) !important;
-    font-size: 1.1rem !important;
+    font-size: 1.25rem !important;
     font-weight: 600 !important;
-    line-height: 1.35 !important;
+    line-height: 1.3 !important;
     margin: 0 0 15px 0 !important;
+    -webkit-text-fill-color: var(--user-charcoal) !important;
+}
+
+body.user-app .invoice-view-page .invoice-howto-block {
+    padding: 16px 20px !important;
+    margin-bottom: 20px !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    border: 1px solid rgba(177, 186, 136, 0.28) !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.07) !important;
+}
+
+body.user-app .invoice-view-page .invoice-howto-title {
+    margin-bottom: 10px !important;
+}
+
+body.user-app .invoice-view-page .invoice-howto-lead {
+    margin: 0 !important;
+    padding-left: 12px !important;
+    border-left: 3px solid rgba(177, 186, 136, 0.45) !important;
+    color: var(--user-charcoal-muted) !important;
+    font-size: 0.95rem !important;
+    line-height: 1.5 !important;
 }
 
 body.user-app .invoice-view-page .payments-summary {
@@ -1477,6 +1729,81 @@ body.user-app .meter-electric {
     background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
 }
 
+/* ========== Страница резидента (#resident) в SPA: светлые карточки и фильтры ========== */
+[data-theme="dark"] body.user-app .resident-detail-card,
+[data-theme="dark"] body.user-app .resident-filter-card {
+    background: rgba(255, 255, 255, 0.96) !important;
+    border-color: rgba(177, 186, 136, 0.28) !important;
+    box-shadow: var(--shadow-md) !important;
+    color: var(--user-charcoal) !important;
+}
+
+/* dark-theme.css задаёт input[type="date"] { color-scheme: dark !important } — ломает нативный календарь на светлом поле */
+body.user-app .resident-filter-card .filter-col input[type="date"] {
+    background: rgba(255, 255, 255, 0.98) !important;
+    color: var(--user-charcoal) !important;
+    border: 1px solid rgba(177, 186, 136, 0.35) !important;
+    color-scheme: light !important;
+}
+
+body.user-app .resident-filter-card {
+    color-scheme: light;
+}
+
+body.user-app .resident-filter-card .filter-col input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 1;
+}
+
+body.user-app .resident-detail-card .back-button {
+    background: rgba(177, 186, 136, 0.16) !important;
+    color: var(--user-charcoal) !important;
+}
+
+body.user-app .resident-detail-card .back-button:hover {
+    background: rgba(177, 186, 136, 0.26) !important;
+    color: var(--user-charcoal) !important;
+}
+
+body.user-app .resident-filter-card .quick-filter-btn {
+    border-color: rgba(177, 186, 136, 0.35) !important;
+    color: var(--user-charcoal) !important;
+}
+
+body.user-app .resident-filter-card .quick-filter-btn.active,
+body.user-app .resident-filter-card .quick-filter-btn:hover {
+    background: linear-gradient(135deg, var(--user-olive-light) 0%, var(--user-olive-mid) 100%) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+}
+
+body.user-app .resident-filter-card .filter-buttons-row .btn-outline-light {
+    border: 1px solid rgba(177, 186, 136, 0.45) !important;
+    color: var(--user-charcoal) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+}
+
+body.user-app .resident-filter-card .filter-buttons-row .btn-outline-light:hover {
+    background: rgba(177, 186, 136, 0.12) !important;
+    border-color: rgba(177, 186, 136, 0.55) !important;
+    color: var(--user-charcoal) !important;
+}
+
+body.user-app .meter-card .meter-row {
+    background: rgba(239, 239, 230, 0.55) !important;
+    border: 1px solid rgba(177, 186, 136, 0.22) !important;
+}
+
+body.user-app .meter-card .meter-head-unit {
+    color: var(--user-charcoal) !important;
+    border-color: rgba(177, 186, 136, 0.35) !important;
+}
+
+body.user-app .meter-card .meter-unit {
+    color: var(--user-charcoal) !important;
+    border-color: rgba(177, 186, 136, 0.3) !important;
+}
+
 /* ========== Заявки, счета, модалки: убрать оставшийся тёмный UI из user.css ========== */
 body.user-app .user-appeals-field select,
 body.user-app .user-appeals-field textarea {
@@ -1545,4 +1872,18 @@ body.user-app .user-appeal-modal-text .label {
 body.user-app .user-appeal-modal-edit textarea {
     background: rgba(255, 255, 255, 0.96) !important;
     color: var(--user-charcoal) !important;
+}
+
+/*
+ * Последний слой: admin.css задаёт [data-theme="dark"] .admin-container с !important —
+ * без html+body+классов иногда побеждает порядок/кэш. Фиксируем Milky явно.
+ */
+html[data-theme="dark"] body.user-app .admin-container {
+    background: var(--milky-canvas, #efefe6) !important;
+}
+
+html[data-theme="dark"] body.user-app .admin-container::before {
+    display: none !important;
+    content: none !important;
+    background: none !important;
 }

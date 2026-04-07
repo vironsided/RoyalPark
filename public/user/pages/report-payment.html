@@ -1,4 +1,13 @@
 <section class="user-bills-section user-payment-page">
+    <div class="payment-page-inner">
+    <aside class="payment-howto-block" aria-labelledby="payment-howto-heading">
+        <h3 class="payment-section-title payment-howto-title" id="payment-howto-heading" data-i18n="payment_howto_title">Описание: как оплатить по счёту</h3>
+        <ol class="payment-howto-list">
+            <li data-i18n="payment_howto_step1">В разделе «Мои счета» откройте счёт и нажмите «Оплатить», либо перейдите на эту страницу из списка неоплаченных счетов.</li>
+            <li data-i18n="payment_howto_step2">Выберите способ: баланс Resident Pass (аванс), сохранённую карту или введите реквизиты новой карты.</li>
+            <li data-i18n="payment_howto_step3">Проверьте сумму в блоке «Детали оплаты» и нажмите «Оплатить». После успешной оплаты статус обновится автоматически.</li>
+        </ol>
+    </aside>
     <div class="payment-container">
         <!-- Left Column: Saved Cards -->
         <div class="payment-left-column">
@@ -364,6 +373,7 @@
             </div>
         </div>
     </div>
+    </div>
 </section>
 
 <script>
@@ -491,7 +501,7 @@ function resetPaymentSummaryUIAfterExpiry() {
 if (!window.bankStyles) {
     window.bankStyles = {
         default: {
-            gradient: 'linear-gradient(135deg, #b1ba88 0%, #9aa972 100%)',
+            gradient: 'linear-gradient(135deg, #c5cd9f 0%, #b1ba88 100%)',
             logo: 'MC'
         },
         'sberbank': {

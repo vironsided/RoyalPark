@@ -960,6 +960,8 @@ const translations = {
         user_invoice_selected_lines_summary: "Выбрано услуг: {count} · К оплате: {amount}",
         user_invoice_selected_lines_empty: "Не выбрано ни одной услуги для оплаты",
         user_invoice_pay_btn: "Оплатить",
+        user_invoice_howto_title: "Описание: как оплатить по счёту",
+        user_invoice_howto_lead: "Нажмите «Оплатить» вверху или отметьте позиции в таблице «Описание». На странице оплаты выберите способ и подтвердите сумму.",
         user_invoice_items_title: "Описание",
         user_invoice_items_th_description: "Описание",
         user_invoice_items_th_consumed: "Израсходовано",
@@ -991,6 +993,10 @@ const translations = {
         
         // Payment page
         payment_select_method: "Выберите способ оплаты",
+        payment_howto_title: "Описание: как оплатить по счёту",
+        payment_howto_step1: "В разделе «Мои счета» откройте счёт и нажмите «Оплатить», либо перейдите на эту страницу из списка неоплаченных счетов.",
+        payment_howto_step2: "Выберите способ: баланс Resident Pass (аванс), сохранённую карту или введите реквизиты новой карты.",
+        payment_howto_step3: "Проверьте сумму в блоке «Детали оплаты» и нажмите «Оплатить». После успешной оплаты статус обновится автоматически.",
         payment_add_new_card: "Добавить новую",
         payment_card_payment: "Оплата банковской картой",
         payment_amount_label: "Сумма к оплате",
@@ -2180,6 +2186,8 @@ const translations = {
         user_invoice_selected_lines_summary: "Seçilmiş xidmətlər: {count} · Ödəniləcək: {amount}",
         user_invoice_selected_lines_empty: "Ödəniş üçün heç bir xidmət seçilməyib",
         user_invoice_pay_btn: "Ödəmək",
+        user_invoice_howto_title: "Açıqlama: hesabı necə ödəmək olar",
+        user_invoice_howto_lead: "Yuxarıdan «Ödə» düyməsini basın və ya «Açıqlama» cədvəlində sətirləri seçin. Ödəniş səhifəsində üsulu seçin və məbləği təsdiqləyin.",
         user_invoice_items_title: "Açıqlama",
         user_invoice_items_th_description: "Açıqlama",
         user_invoice_items_th_consumed: "İstehlak",
@@ -2265,6 +2273,10 @@ const translations = {
         
         // Payment page
         payment_select_method: "Ödəniş üsulunu seçin",
+        payment_howto_title: "Açıqlama: hesabı necə ödəmək olar",
+        payment_howto_step1: "«Hesablarım» bölməsində hesabı açın və «Ödə» düyməsini basın və ya ödənilməmiş siyahıdan bu səhifəyə keçin.",
+        payment_howto_step2: "Ödəniş üsulunu seçin: Resident Pass balansı (avans), yadda saxlanılmış kart və ya yeni kartın məlumatları.",
+        payment_howto_step3: "«Ödəniş detalları» blokunda məbləği yoxlayın və «Ödə» düyməsinə basın. Uğurlu ödənişdən sonra status avtomatik yenilənəcək.",
         payment_add_new_card: "Yeni əlavə et",
         payment_card_payment: "Bank kartı ilə ödəniş",
         payment_amount_label: "Ödəniləcək məbləğ",
@@ -3400,6 +3412,8 @@ const translations = {
         user_invoice_selected_lines_summary: "Selected services: {count} · To pay: {amount}",
         user_invoice_selected_lines_empty: "No services selected for payment",
         user_invoice_pay_btn: "Pay",
+        user_invoice_howto_title: "How to pay this invoice",
+        user_invoice_howto_lead: "Tap «Pay» at the top or select lines in the «Description» table. On the payment page choose a method and confirm the amount.",
         user_invoice_items_title: "Description",
         user_invoice_items_th_description: "Description",
         user_invoice_items_th_consumed: "Consumed",
@@ -3527,6 +3541,10 @@ const translations = {
         
         // Payment page
         payment_select_method: "Select payment method",
+        payment_howto_title: "How to pay your invoice",
+        payment_howto_step1: "Open an invoice under «My bills» and tap «Pay», or arrive here from your unpaid list.",
+        payment_howto_step2: "Choose a method: Resident Pass balance (advance), a saved card, or enter a new card.",
+        payment_howto_step3: "Check the amount in «Payment details» and press «Pay». After a successful payment, the status updates automatically.",
         payment_add_new_card: "Add new",
         payment_card_payment: "Card payment",
         payment_amount_label: "Amount to pay",
@@ -4305,10 +4323,16 @@ class LanguageManager {
             <span>${message}</span>
         `;
         
-        const residentToastBg =
-            typeof document !== "undefined" && document.body?.classList?.contains("user-app")
-                ? "linear-gradient(135deg, #b1ba88 0%, #9aa972 100%)"
-                : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+        const oliveLangToast =
+            typeof document !== "undefined" &&
+            (document.body?.classList?.contains("user-app") ||
+                document.body?.classList?.contains("login-page"));
+        const residentToastBg = oliveLangToast
+            ? "linear-gradient(135deg, #b1ba88 0%, #9aa972 100%)"
+            : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+        const residentToastShadow = oliveLangToast
+            ? "0 10px 28px rgba(177, 186, 136, 0.35)"
+            : "0 10px 30px rgba(0, 0, 0, 0.3)";
         notification.style.cssText = `
             position: fixed;
             top: 100px;
@@ -4321,7 +4345,7 @@ class LanguageManager {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: ${residentToastShadow};
             animation: slideInRight 0.3s ease-out;
             z-index: 10000;
         `;

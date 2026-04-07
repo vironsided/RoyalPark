@@ -298,26 +298,32 @@ window.updateUserHeader = function updateUserHeader(userData) {
         const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
         
         if (userData.avatar_path) {
-            // Create image object to check if it loads correctly
+            const ts = Date.now();
+            const photoUrl = `${API_BASE_URL}${userData.avatar_path}?t=${ts}`;
             const img = new Image();
             img.onload = function() {
-                userAvatarEl.style.background = 'none';
-                userAvatarEl.style.backgroundImage = `url('${API_BASE_URL}${userData.avatar_path}')`;
-                userAvatarEl.style.backgroundSize = 'cover';
-                userAvatarEl.style.backgroundPosition = 'center';
-                userAvatarEl.style.backgroundRepeat = 'no-repeat';
+                userAvatarEl.classList.add('has-preview-photo');
+                userAvatarEl.style.setProperty('background-image', `url(${JSON.stringify(photoUrl)})`, 'important');
+                userAvatarEl.style.setProperty('background-size', 'cover', 'important');
+                userAvatarEl.style.setProperty('background-position', 'center', 'important');
+                userAvatarEl.style.setProperty('background-repeat', 'no-repeat', 'important');
                 userAvatarEl.textContent = '';
             };
             img.onerror = function() {
-                // If fails to load, fallback to initials and gradient
-                userAvatarEl.style.background = '';
-                userAvatarEl.style.backgroundImage = '';
+                userAvatarEl.classList.remove('has-preview-photo');
+                userAvatarEl.style.removeProperty('background-image');
+                userAvatarEl.style.removeProperty('background-size');
+                userAvatarEl.style.removeProperty('background-position');
+                userAvatarEl.style.removeProperty('background-repeat');
                 userAvatarEl.textContent = initials || fullName.substring(0, 2).toUpperCase();
             };
-            img.src = `${API_BASE_URL}${userData.avatar_path}`;
+            img.src = photoUrl;
         } else {
-            userAvatarEl.style.background = ''; // Restore default gradient from CSS
-            userAvatarEl.style.backgroundImage = '';
+            userAvatarEl.classList.remove('has-preview-photo');
+            userAvatarEl.style.removeProperty('background-image');
+            userAvatarEl.style.removeProperty('background-size');
+            userAvatarEl.style.removeProperty('background-position');
+            userAvatarEl.style.removeProperty('background-repeat');
             userAvatarEl.textContent = initials || fullName.substring(0, 2).toUpperCase();
         }
     }
@@ -642,7 +648,7 @@ function updateDashboardUI(data) {
                 container.appendChild(residentsWrapper);
             }
         }
-        
+
         // Update stats grid cards
         updateStatsGrid(data);
     }
@@ -1663,6 +1669,9 @@ function refreshDashboardNews() {
 // Слушаем смену языка
 window.addEventListener('languageChanged', () => {
     refreshDashboardNews();
+    if (window.dashboardData) {
+        updateDashboardUI(window.dashboardData);
+    }
 });
 
 // Также слушаем изменения в localStorage для языка

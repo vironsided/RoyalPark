@@ -31,7 +31,7 @@
                         <span class="select-text">25</span>
                         <span class="arrow">▾</span>
                     </div>
-                    <div class="select-options" style="background: rgba(36, 40, 49, 0.95) !important">
+                    <div class="select-options">
                         <div class="select-option" data-value="10">10</div>
                         <div class="select-option selected" data-value="25">25</div>
                         <div class="select-option" data-value="50">50</div>
@@ -217,8 +217,8 @@ html[data-theme="dark"] body.user-app .table-pagination {
 }
 
 .btn-pagination.active {
-    background: linear-gradient(135deg, #b1ba88 0%, #9aa972 100%);
-    border-color: #9aa972;
+    background: linear-gradient(135deg, #c5cd9f 0%, #b1ba88 100%);
+    border-color: #b1ba88;
     color: #ffffff;
     font-weight: 600;
     box-shadow: 0 2px 8px rgba(177, 186, 136, 0.35);
@@ -298,7 +298,7 @@ html[data-theme="dark"] body.user-app .table-pagination {
 }
 
 .custom-pag-select .select-option.selected {
-    background: linear-gradient(135deg, #b1ba88 0%, #9aa972 100%);
+    background: linear-gradient(135deg, #c5cd9f 0%, #b1ba88 100%);
     color: #fff;
 }
 
@@ -448,7 +448,7 @@ html[data-theme="dark"] body.user-app .user-news-modal-date {
 
 .user-news-modal-close-btn {
     border: 1px solid rgba(177, 186, 136, 0.4);
-    background: linear-gradient(135deg, #b1ba88 0%, #9aa972 100%);
+    background: linear-gradient(135deg, #c5cd9f 0%, #b1ba88 100%);
     color: #fff;
     padding: 0.7rem 1.6rem;
     border-radius: 12px;
@@ -459,7 +459,7 @@ html[data-theme="dark"] body.user-app .user-news-modal-date {
 }
 
 .user-news-modal-close-btn:hover {
-    background: linear-gradient(135deg, #9aa972 0%, #8a9668 100%);
+    background: linear-gradient(135deg, #b1ba88 0%, #9aa972 100%);
     border-color: rgba(177, 186, 136, 0.55);
     transform: translateY(-1px);
 }
@@ -679,7 +679,7 @@ html[data-theme="dark"] body.user-app .user-news-modal-date {
             const iconColor =
                 typeof window.resolveUserNewsIconColor === 'function'
                     ? window.resolveUserNewsIconColor(news.icon, news.icon_color)
-                    : news.icon_color || '#b1ba88';
+                    : news.icon_color || '#c5cd9f';
             const iconShadow = `0 4px 15px ${iconColor}66`;
             const modClass =
                 typeof window.newsItemModifierClass === 'function'
@@ -820,7 +820,7 @@ html[data-theme="dark"] body.user-app .user-news-modal-date {
                 modalIcon.style.background =
                     typeof window.resolveUserNewsIconColor === 'function'
                         ? window.resolveUserNewsIconColor(news.icon, news.icon_color)
-                        : news.icon_color || '#b1ba88';
+                        : news.icon_color || '#c5cd9f';
                 modalIcon.innerHTML = `<i class="bi ${iconMap[news.icon] || 'bi-info-circle-fill'}"></i>`;
             }
             

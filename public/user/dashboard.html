@@ -16,24 +16,38 @@
     
     <!-- Animate.css -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+
+    <!-- Типографика: Cormorant Garamond (акцент), Montserrat (UI); основной текст — Times в global.css -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/css/global.css">
-    <link rel="stylesheet" href="/css/admin.css">
-    <link rel="stylesheet" href="/css/user.css">
-    <link rel="stylesheet" href="/css/resident-detail.css">
-    <link rel="stylesheet" href="/css/dark-theme.css">
-    <link rel="stylesheet" href="/css/user-theme.css">
+    <!-- Custom CSS (?v= сбрасывает кэш после смены темы) -->
+    <link rel="stylesheet" href="/css/global.css?v=milky-olivia-9">
+    <link rel="stylesheet" href="/css/admin.css?v=milky-olivia-2">
+    <link rel="stylesheet" href="/css/user.css?v=milky-olivia-6">
+    <link rel="stylesheet" href="/css/resident-detail.css?v=milky-olivia-2">
+    <link rel="stylesheet" href="/css/dark-theme.css?v=milky-olivia-2">
+    <link rel="stylesheet" href="/css/user-theme.css?v=milky-olivia-16">
 </head>
 <body class="user-app">
     <div class="admin-container">
         <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
+        <aside class="sidebar sidebar-custom" id="sidebar">
             <div class="sidebar-header">
-                <div class="sidebar-logo">
+                <div class="sidebar-logo sidebar-logo--with-mark">
+                    <img
+                        class="sidebar-brand-mark"
+                        src="/images/branding/royal-park-logo.webp"
+                        alt="Royal Park"
+                        width="168"
+                        height="64"
+                        loading="eager"
+                        fetchpriority="high"
+                        decoding="async"
+                    />
                     <div class="logo-text">
-                        <h2>RoyalPark</h2>
-                        <p data-i18n="user_personal_account">Личный кабинет</p>
+                        <p class="sidebar-tagline" data-i18n="user_personal_account">Личный кабинет</p>
                     </div>
                 </div>
                 <button class="toggle-sidebar" id="toggleSidebar">
@@ -103,7 +117,7 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="main-content">
+        <main class="main-content main-content--stitch">
             <!-- Top Bar -->
             <div class="top-bar">
                 <div class="page-title">
@@ -136,7 +150,7 @@
                 <div class="overview-collab" id="residentsContainer">
                     <!-- Resident cards will be dynamically generated here -->
                     <!-- Template for resident card (hidden) -->
-                    <div class="resident-card resident-card-template" style="display: none;">
+                    <div class="resident-card resident-card-modern resident-card-template" style="display: none;">
                         <div class="resident-card-header">
                             <div>
                                 <p class="resident-greeting"><span data-i18n="user_greeting_prefix">Здравствуйте,</span> <span class="resident-full-name">User</span></p>
@@ -221,9 +235,9 @@
                         </div>
                     </div>
 
-                    <!-- Электричество -->
-                    <div class="stat-card solid-orange">
-                        <div class="stat-icon orange">
+                    <!-- Электричество (жёлтый — ассоциация с электроэнергией, не оранжевый) -->
+                    <div class="stat-card solid-yellow">
+                        <div class="stat-icon yellow">
                             <i class="bi bi-lightning-charge"></i>
                         </div>
                         <div class="stat-details">
@@ -424,7 +438,7 @@
     <script src="/js/i18n-auto.js"></script>
     
     <!-- Custom JS -->
-    <script src="/js/user.js"></script>
+    <script src="/js/user.js?v=milky-olivia-1"></script>
     <script src="/js/user-spa.js"></script>
     
     <!-- Account Settings Modal -->
@@ -488,23 +502,23 @@
                     </div>
                 </div>
 
-                <!-- Password tab -->
+                <!-- Password tab: поля внутри <form> — требование Chromium для паролей и автозаполнения -->
                 <div class="account-tab-panel" id="accountTabPassword">
-                    <div class="account-info-section">
+                    <form id="accountPasswordForm" class="account-info-section" autocomplete="on" novalidate>
                         <div class="account-form-group">
-                            <label data-i18n="account_current_password">Текущий пароль</label>
-                            <input type="password" id="currentPassword" data-i18n-placeholder="account_current_password_placeholder" placeholder="Введите текущий пароль">
+                            <label for="currentPassword" data-i18n="account_current_password">Текущий пароль</label>
+                            <input type="password" id="currentPassword" name="current_password" autocomplete="current-password" data-i18n-placeholder="account_current_password_placeholder" placeholder="Введите текущий пароль">
                         </div>
                         <div class="account-form-group">
-                            <label data-i18n="account_new_password">Новый пароль</label>
-                            <input type="password" id="newPassword" data-i18n-placeholder="account_new_password_placeholder" placeholder="Введите новый пароль">
+                            <label for="newPassword" data-i18n="account_new_password">Новый пароль</label>
+                            <input type="password" id="newPassword" name="new_password" autocomplete="new-password" data-i18n-placeholder="account_new_password_placeholder" placeholder="Введите новый пароль">
                         </div>
                         <div class="account-form-group">
-                            <label data-i18n="account_confirm_password">Подтвердите пароль</label>
-                            <input type="password" id="confirmPassword" data-i18n-placeholder="account_confirm_password_placeholder" placeholder="Подтвердите новый пароль">
+                            <label for="confirmPassword" data-i18n="account_confirm_password">Подтвердите пароль</label>
+                            <input type="password" id="confirmPassword" name="confirm_password" autocomplete="new-password" data-i18n-placeholder="account_confirm_password_placeholder" placeholder="Подтвердите новый пароль">
                         </div>
-                        <button class="account-btn account-btn-primary" type="button" id="changePasswordBtn" data-i18n="account_change_password">Изменить пароль</button>
-                    </div>
+                        <button class="account-btn account-btn-primary" type="submit" id="changePasswordBtn" data-i18n="account_change_password">Изменить пароль</button>
+                    </form>
                 </div>
             </div>
             <div class="account-modal-footer">
@@ -662,26 +676,32 @@
                         if (user.avatar_path) {
                             const img = new Image();
                             img.onload = function() {
-                                avatarPreview.style.background = 'none';
-                                // Add timestamp to avoid caching
                                 const timestamp = new Date().getTime();
-                                avatarPreview.style.backgroundImage = `url('${API_BASE_URL}${user.avatar_path}?t=${timestamp}')`;
-                                avatarPreview.style.backgroundSize = 'cover';
-                                avatarPreview.style.backgroundPosition = 'center';
-                                avatarPreview.style.backgroundRepeat = 'no-repeat';
+                                const photoUrl = `${API_BASE_URL}${user.avatar_path}?t=${timestamp}`;
+                                avatarPreview.classList.add('has-preview-photo');
+                                avatarPreview.style.setProperty('background-image', `url(${JSON.stringify(photoUrl)})`, 'important');
+                                avatarPreview.style.setProperty('background-size', 'cover', 'important');
+                                avatarPreview.style.setProperty('background-position', 'center', 'important');
+                                avatarPreview.style.setProperty('background-repeat', 'no-repeat', 'important');
                                 avatarPreview.textContent = '';
                             };
                             img.onerror = function() {
-                                avatarPreview.style.background = '';
-                                avatarPreview.style.backgroundImage = '';
+                                avatarPreview.classList.remove('has-preview-photo');
+                                avatarPreview.style.removeProperty('background-image');
+                                avatarPreview.style.removeProperty('background-size');
+                                avatarPreview.style.removeProperty('background-position');
+                                avatarPreview.style.removeProperty('background-repeat');
                                 avatarPreview.textContent = initials;
                             };
                             // Add timestamp to avoid caching
                             const timestamp = new Date().getTime();
                             img.src = `${API_BASE_URL}${user.avatar_path}?t=${timestamp}`;
                         } else {
-                            avatarPreview.style.background = ''; // Restore default gradient
-                            avatarPreview.style.backgroundImage = '';
+                            avatarPreview.classList.remove('has-preview-photo');
+                            avatarPreview.style.removeProperty('background-image');
+                            avatarPreview.style.removeProperty('background-size');
+                            avatarPreview.style.removeProperty('background-position');
+                            avatarPreview.style.removeProperty('background-repeat');
                             avatarPreview.textContent = initials;
                         }
                     }
@@ -819,11 +839,12 @@
                         // Update avatar preview
                     const reader = new FileReader();
                     reader.onload = function (e) {
-                        avatarPreview.style.background = 'none'; // Clear gradient
-                        avatarPreview.style.backgroundImage = `url('${e.target.result}')`;
-                        avatarPreview.style.backgroundSize = 'cover';
-                        avatarPreview.style.backgroundPosition = 'center';
-                        avatarPreview.style.backgroundRepeat = 'no-repeat';
+                        const dataUrl = e.target.result;
+                        avatarPreview.classList.add('has-preview-photo');
+                        avatarPreview.style.setProperty('background-image', `url(${JSON.stringify(dataUrl)})`, 'important');
+                        avatarPreview.style.setProperty('background-size', 'cover', 'important');
+                        avatarPreview.style.setProperty('background-position', 'center', 'important');
+                        avatarPreview.style.setProperty('background-repeat', 'no-repeat', 'important');
                         avatarPreview.textContent = '';
                         syncRemoveAvatarButtonState();
                     };
@@ -862,8 +883,11 @@
                         .join('')
                         .toUpperCase()
                         .substring(0, 2);
-                    avatarPreview.style.background = '';
-                    avatarPreview.style.backgroundImage = '';
+                    avatarPreview.classList.remove('has-preview-photo');
+                    avatarPreview.style.removeProperty('background-image');
+                    avatarPreview.style.removeProperty('background-size');
+                    avatarPreview.style.removeProperty('background-position');
+                    avatarPreview.style.removeProperty('background-repeat');
                     avatarPreview.textContent = initials;
                     syncRemoveAvatarButtonState();
                 });
@@ -900,46 +924,55 @@
             }
 
             const changePasswordBtn = document.getElementById('changePasswordBtn');
-            
-            if (changePasswordBtn) {
-                changePasswordBtn.addEventListener('click', async function() {
-                    const currentPassword = document.getElementById('currentPassword')?.value || '';
-                    const newPassword = document.getElementById('newPassword')?.value || '';
-                    const confirmPassword = document.getElementById('confirmPassword')?.value || '';
-                    
-                    if (!currentPassword || !newPassword || !confirmPassword) {
-                        showAlert('Пожалуйста, заполните все поля пароля.', 'Ошибка', 'error');
-                        return;
-                    }
-                    
-                    if (newPassword !== confirmPassword) {
-                        showAlert('Пароли не совпадают!', 'Ошибка', 'error');
-                        return;
-                    }
-                    
-                    if (newPassword.length < 6) {
-                        showAlert('Пароль должен быть не менее 6 символов!', 'Ошибка', 'error');
-                        return;
-                    }
-                    
-                    // Disable button during request
+            const accountPasswordForm = document.getElementById('accountPasswordForm');
+
+            async function handlePasswordFormSubmit() {
+                const currentPassword = document.getElementById('currentPassword')?.value || '';
+                const newPassword = document.getElementById('newPassword')?.value || '';
+                const confirmPassword = document.getElementById('confirmPassword')?.value || '';
+
+                if (!currentPassword || !newPassword || !confirmPassword) {
+                    showAlert('Пожалуйста, заполните все поля пароля.', 'Ошибка', 'error');
+                    return;
+                }
+
+                if (newPassword !== confirmPassword) {
+                    showAlert('Пароли не совпадают!', 'Ошибка', 'error');
+                    return;
+                }
+
+                if (newPassword.length < 6) {
+                    showAlert('Пароль должен быть не менее 6 символов!', 'Ошибка', 'error');
+                    return;
+                }
+
+                if (changePasswordBtn) {
                     changePasswordBtn.disabled = true;
                     changePasswordBtn.textContent = 'Изменение...';
-                    
-                    try {
-                        await changePassword(currentPassword, newPassword, confirmPassword);
-                        
-                        await showAlert('Пароль успешно изменён!', 'Успешно', 'success');
-                        
-                        document.getElementById('currentPassword').value = '';
-                        document.getElementById('newPassword').value = '';
-                        document.getElementById('confirmPassword').value = '';
-                    } catch (error) {
-                        showAlert(error.message || 'Ошибка при изменении пароля', 'Ошибка', 'error');
-                    } finally {
+                }
+
+                try {
+                    await changePassword(currentPassword, newPassword, confirmPassword);
+
+                    await showAlert('Пароль успешно изменён!', 'Успешно', 'success');
+
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                } catch (error) {
+                    showAlert(error.message || 'Ошибка при изменении пароля', 'Ошибка', 'error');
+                } finally {
+                    if (changePasswordBtn) {
                         changePasswordBtn.disabled = false;
                         changePasswordBtn.textContent = 'Изменить пароль';
                     }
+                }
+            }
+
+            if (accountPasswordForm) {
+                accountPasswordForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    handlePasswordFormSubmit();
                 });
             }
             
@@ -1053,26 +1086,31 @@
                         if (user.avatar_path) {
                             const img = new Image();
                             img.onload = function() {
-                                userAvatarEl.style.background = 'none';
-                                // Add timestamp to avoid caching
                                 const timestamp = new Date().getTime();
-                                userAvatarEl.style.backgroundImage = `url('${API_BASE_URL}${user.avatar_path}?t=${timestamp}')`;
-                                userAvatarEl.style.backgroundSize = 'cover';
-                                userAvatarEl.style.backgroundPosition = 'center';
-                                userAvatarEl.style.backgroundRepeat = 'no-repeat';
+                                const photoUrl = `${API_BASE_URL}${user.avatar_path}?t=${timestamp}`;
+                                userAvatarEl.classList.add('has-preview-photo');
+                                userAvatarEl.style.setProperty('background-image', `url(${JSON.stringify(photoUrl)})`, 'important');
+                                userAvatarEl.style.setProperty('background-size', 'cover', 'important');
+                                userAvatarEl.style.setProperty('background-position', 'center', 'important');
+                                userAvatarEl.style.setProperty('background-repeat', 'no-repeat', 'important');
                                 userAvatarEl.textContent = '';
                             };
                             img.onerror = function() {
-                                userAvatarEl.style.background = '';
-                                userAvatarEl.style.backgroundImage = '';
+                                userAvatarEl.classList.remove('has-preview-photo');
+                                userAvatarEl.style.removeProperty('background-image');
+                                userAvatarEl.style.removeProperty('background-size');
+                                userAvatarEl.style.removeProperty('background-position');
+                                userAvatarEl.style.removeProperty('background-repeat');
                                 userAvatarEl.textContent = initials;
                             };
-                            // Add timestamp to avoid caching
                             const timestamp = new Date().getTime();
                             img.src = `${API_BASE_URL}${user.avatar_path}?t=${timestamp}`;
                         } else {
-                            userAvatarEl.style.background = ''; // Restore default gradient
-                            userAvatarEl.style.backgroundImage = '';
+                            userAvatarEl.classList.remove('has-preview-photo');
+                            userAvatarEl.style.removeProperty('background-image');
+                            userAvatarEl.style.removeProperty('background-size');
+                            userAvatarEl.style.removeProperty('background-position');
+                            userAvatarEl.style.removeProperty('background-repeat');
                             userAvatarEl.textContent = initials;
                         }
                     }
