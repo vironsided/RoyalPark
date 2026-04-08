@@ -76,6 +76,22 @@
     padding-top: 0;
 }
 
+/* SPA: flex-колонка должна сжиматься, иначе grid/flex внутри раздувают ширину за экран */
+body.user-app .main-content,
+body.user-app #spa-content,
+body.user-app .dashboard-content,
+body.user-app #userSpaContent {
+    min-width: 0;
+}
+
+/* Кабинет жильца: контент в #userSpaContent, не в #spa-content (как в админке) */
+body.user-app #spa-content,
+body.user-app .dashboard-content,
+body.user-app #userSpaContent {
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
 /* Общий overlay для user-кабинета (фон + blur) */
 .sidebar-overlay {
     position: fixed;
@@ -106,18 +122,29 @@
         width: 260px !important;
         min-width: 260px !important;
         max-width: 260px !important;
+        /* Меню поверх контента — основная колонка не сжимается до «ленты» */
+        position: fixed !important;
+        z-index: 2100 !important;
+        left: 0 !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        box-shadow: 8px 0 28px rgba(0, 0, 0, 0.12) !important;
     }
 
-    /* Контент сдвигается в зависимости от того, свернут сайдбар или нет */
+    /* Контент всегда с отступом под узкий сайдбар (иконки) */
     body.user-app .sidebar ~ .main-content {
         margin-left: 80px !important;
         width: calc(100% - 80px) !important;
+        max-width: calc(100% - 80px) !important;
         max-height: none !important;
     }
 
     body.user-app .sidebar:not(.collapsed) ~ .main-content {
-        margin-left: 260px !important;
-        width: calc(100% - 260px) !important;
+        margin-left: 80px !important;
+        width: calc(100% - 80px) !important;
+        max-width: calc(100% - 80px) !important;
     }
 
 }
@@ -146,30 +173,162 @@
 
 /* Responsive tweaks for top bar in user cabinet */
 @media (max-width: 768px) {
-    .top-bar {
-        /* сначала показываем панель действий, затем заголовок */
-        flex-direction: column-reverse;
-        align-items: stretch;
-        gap: 0.5rem;
+    /* Одна строка: заголовок слева (сжимается), действия справа — без наложений */
+    body.user-app .main-content > .top-bar,
+    body.user-app .top-bar {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: nowrap !important;
+        gap: 0.35rem !important;
+        padding: 0.45rem 0.55rem !important;
     }
 
-    .top-bar-actions {
-        width: 100%;
-        display: flex;
-        justify-content: flex-end;
-        flex-wrap: nowrap;
-        gap: 0.5rem;
-        align-items: center;
+    body.user-app .top-bar .page-title {
+        flex: 1 1 0;
+        min-width: 0;
     }
 
-    /* В мобильном режиме скрываем поиск, переключатель темы и языки —
-       остаются только колокольчик и профиль, остальные настройки есть в модале аккаунта */
-    .top-bar-actions .search-box {
-        display: none;
+    body.user-app .top-bar .page-title h1 {
+        font-size: 1.05rem !important;
+        line-height: 1.25 !important;
+        margin: 0 !important;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
     }
 
-    .top-bar-actions .language-selector {
+    body.user-app .top-bar .page-breadcrumb {
+        font-size: 0.68rem;
+        margin-top: 0.1rem;
+        line-height: 1.2;
+    }
+
+    body.user-app .top-bar-actions {
+        width: auto !important;
+        flex: 0 0 auto !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        gap: 0.2rem !important;
+    }
+
+    body.user-app .top-bar-actions .user-info {
         display: none !important;
+    }
+
+    /* Язык в шапке скрыт (переключатель в user-theme давал display:inline-flex !important) —
+       язык можно сменить в модале профиля */
+    body.user-app .top-bar-actions .search-box {
+        display: none !important;
+    }
+
+    body.user-app .top-bar-actions .language-selector {
+        display: none !important;
+    }
+
+    body.user-app .notification-btn {
+        font-size: 1.1rem !important;
+        padding: 0.28rem 0.35rem !important;
+        line-height: 1 !important;
+    }
+
+    body.user-app .notification-badge {
+        min-width: 16px !important;
+        height: 16px !important;
+        font-size: 0.58rem !important;
+        padding: 0 3px !important;
+        top: 1px !important;
+        right: -1px !important;
+    }
+
+    body.user-app .user-profile {
+        padding: 0.12rem !important;
+    }
+
+    body.user-app .user-avatar {
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        font-size: 0.78rem !important;
+    }
+
+    /* Карточки счетов / новостей: не вылезают за край при узкой колонке + сайдбар */
+    body.user-app .bills-list {
+        min-width: 0;
+    }
+
+    body.user-app .bill-item {
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 0.65rem;
+        padding: 0.85rem 0.95rem;
+        min-width: 0;
+    }
+
+    body.user-app .bill-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 1.2rem;
+    }
+
+    body.user-app .bill-details {
+        flex: 1 1 calc(100% - 3.5rem);
+        min-width: 0;
+    }
+
+    body.user-app .bill-amount {
+        flex: 1 1 100%;
+        max-width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    body.user-app .bill-sum {
+        font-size: 1.05rem;
+        margin-bottom: 0;
+    }
+
+    body.user-app .news-grid {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+    body.user-app .news-item {
+        padding: 1rem;
+    }
+
+    body.user-app .news-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 1.25rem;
+    }
+
+    body.user-app .chart-card,
+    body.user-app .activity-card,
+    body.user-app .card {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    body.user-app .action-button {
+        min-width: 0;
+        padding: 1rem;
+    }
+
+    body.user-app .action-button > div {
+        min-width: 0;
+    }
+
+    body.user-app .action-title {
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
 }
 
@@ -622,8 +781,15 @@
     box-shadow: 0 4px 12px rgba(17, 153, 142, 0.3);
 }
 
+.bill-icon.bill-partial {
+    background: linear-gradient(135deg, #4facfe 0%, #3b82f6 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+}
+
 .bill-details {
     flex: 1;
+    min-width: 0;
 }
 
 .bill-title {
@@ -631,6 +797,8 @@
     color: var(--text-primary);
     font-size: 1rem;
     margin-bottom: 0.25rem;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .bill-date {
@@ -640,6 +808,23 @@
 
 .bill-amount {
     text-align: right;
+    flex-shrink: 0;
+    min-width: 0;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.35rem;
+}
+
+.bill-amount .badge {
+    white-space: normal;
+    max-width: 100%;
+    text-align: center;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
 }
 
 .bill-sum {
@@ -785,9 +970,11 @@
 /* News Grid */
 .news-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
     gap: 1.5rem;
     padding: 1.5rem;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .news-item {
@@ -800,6 +987,9 @@
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
     cursor: pointer;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 [data-theme="dark"] .news-item {
@@ -835,6 +1025,7 @@
 
 .news-content {
     flex: 1;
+    min-width: 0;
 }
 
 .news-content h4 {
@@ -842,6 +1033,8 @@
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 0.5rem;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .news-content p {
@@ -855,6 +1048,8 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .news-date {
@@ -1132,6 +1327,7 @@
     /* Делаем карточку почти на весь экран, чтобы было видно больше заявок */
     max-height: calc(100vh - 260px);
     min-height: 420px;
+    overflow-x: hidden;
     overflow-y: auto;
     /* Скрываем / делаем невидимым скролл, но оставляем прокрутку */
     scrollbar-width: none;          /* Firefox */
@@ -1163,23 +1359,38 @@
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .user-appeal-main {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    gap: 0.75rem;
+    align-items: flex-start;
+    gap: 0.5rem 0.65rem;
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.user-appeal-main > div:first-child {
+    flex: 1 1 0;
+    min-width: 0;
 }
 
 .user-appeal-house {
     font-weight: 600;
     color: var(--text-primary);
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .user-appeal-date {
     font-size: 0.8rem;
     color: var(--text-secondary);
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .user-appeal-wf-line {
@@ -1206,6 +1417,13 @@
     padding: 0.25rem 0.7rem;
     border-radius: 999px;
     font-weight: 600;
+    flex: 0 1 auto;
+    max-width: 100%;
+    align-self: flex-start;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.2;
+    box-sizing: border-box;
 }
 
 .user-appeal-badge-read {
@@ -1245,11 +1463,13 @@
     background: #1f2330;
     color: var(--text-primary);
     border-radius: 1rem;
-    width: min(520px, 90vw);
+    width: min(520px, 92vw);
+    max-width: min(520px, 92vw);
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .user-appeal-modal-header,
@@ -1271,6 +1491,7 @@
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+    min-width: 0;
 }
 
 .user-appeal-modal-row {
@@ -1311,6 +1532,9 @@
     margin: 0;
     line-height: 1.5;
     font-size: 0.95rem;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 100%;
 }
 
 .user-appeal-modal-close {
@@ -1319,6 +1543,43 @@
     color: #fff;
     font-size: 1.4rem;
     cursor: pointer;
+}
+
+/* Уведомления ЛК: превью 3 строки */
+.user-notification-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.45;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.user-notification-text.user-notification-text--expanded {
+    display: block;
+    -webkit-line-clamp: unset;
+    overflow: visible;
+}
+
+.user-notification-toggle-more {
+    margin-top: 6px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--olivia-deep, #9aa972);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.user-notification-toggle-more:hover {
+    opacity: 0.9;
 }
 
 .user-appeal-modal-edit textarea {
@@ -1349,6 +1610,88 @@
 @media (max-width: 992px) {
     .user-appeals-layout {
         grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Заявки: бейдж статуса не выходит за край карточки на узком экране */
+@media (max-width: 768px) {
+    .user-appeals-section {
+        padding-left: 0.65rem;
+        padding-right: 0.65rem;
+    }
+
+    .user-appeals-card {
+        padding: 1.1rem 1rem 1.25rem;
+        min-width: 0;
+    }
+
+    .user-appeal-main {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .user-appeal-main > div:first-child {
+        flex: none;
+        width: 100%;
+    }
+
+    .user-appeal-badge {
+        align-self: flex-end;
+        max-width: min(100%, 11rem);
+    }
+}
+
+/* Страница новостей (#news): компактная пагинация на телефоне (разметка в news.html) */
+@media (max-width: 768px) {
+    body.user-app .user-news-section .table-pagination {
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        padding: 0.6rem 0.65rem;
+        gap: 0.55rem;
+        margin-top: 0.85rem;
+    }
+
+    body.user-app .user-news-section .pagination-controls {
+        width: 100%;
+        justify-content: center;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+
+    body.user-app .user-news-section .pagination-pages {
+        gap: 4px;
+        justify-content: center;
+    }
+
+    body.user-app .user-news-section .btn-pagination {
+        min-width: 28px;
+        height: 28px;
+        padding: 0 5px;
+        font-size: 0.75rem;
+        border-radius: 6px;
+    }
+
+    body.user-app .user-news-section .pagination-info,
+    body.user-app .user-news-section .pagination-per-page {
+        font-size: 0.72rem;
+        white-space: normal;
+        text-align: center;
+        justify-content: center;
+        line-height: 1.35;
+    }
+
+    body.user-app .user-news-section .pagination-per-page {
+        flex-wrap: wrap;
+        gap: 6px;
+        padding-top: 0.35rem;
+        border-top: 1px solid rgba(177, 186, 136, 0.2);
+    }
+
+    body.user-app .user-news-section .custom-pag-select .select-btn {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        min-width: 48px;
     }
 }
 

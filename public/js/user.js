@@ -262,6 +262,18 @@ if (typeof window.API_BASE_URL === 'undefined') {
 }
 const API_BASE_URL = window.API_BASE_URL;
 
+/** Resolves UI language: delegates to i18n's window.getUiLanguage, never name this `getUiLanguage` — that would shadow window.getUiLanguage and recurse infinitely. */
+function resolveUiLanguage() {
+    if (typeof window.getUiLanguage === 'function') {
+        return window.getUiLanguage();
+    }
+    try {
+        const stored = localStorage.getItem('language');
+        if (stored) return stored;
+    } catch (e) { /* ignore */ }
+    return 'az';
+}
+
 // Store dashboard data globally
 window.dashboardData = null;
 
@@ -458,7 +470,7 @@ function updateDashboardUI(data) {
             
             // Re-apply translations to restored content
             if (window.i18n) {
-                const savedLang = localStorage.getItem('language') || 'ru';
+                const savedLang = resolveUiLanguage();
                 window.i18n.applyLanguage(savedLang);
         }
         }
@@ -527,7 +539,7 @@ function updateDashboardUI(data) {
             if (dueDateEl) {
                 if (resident.due_date) {
                     const dueDate = new Date(resident.due_date);
-                    const lang = localStorage.getItem('language') || 'ru';
+                    const lang = resolveUiLanguage();
                     const locale = lang === 'az' ? 'az-AZ' : lang === 'en' ? 'en-US' : 'ru-RU';
                     const formattedDate = dueDate.toLocaleDateString(locale, { 
                         day: '2-digit', 
@@ -700,7 +712,7 @@ function updateStatsGrid(data) {
     const unpaidCount = summary.unpaid_invoices_count || 0;
     const actionUnpaidEl = document.getElementById('actionUnpaidCount');
     if (actionUnpaidEl) {
-        const lang = localStorage.getItem('language') || 'ru';
+        const lang = resolveUiLanguage();
         const unpaidText = window.i18n?.translate?.('user_unpaid_count', lang) || 'неоплаченных';
         actionUnpaidEl.textContent = `${unpaidCount} ${unpaidText}`;
         actionUnpaidEl.dataset.unpaidCount = unpaidCount;
@@ -777,7 +789,7 @@ function updateInvoicesUI(invoices) {
     billsList.innerHTML = '';
 
     if (invoices.length === 0) {
-        const lang = localStorage.getItem('language') || 'ru';
+        const lang = resolveUiLanguage();
         const emptyText = window.i18n?.translate?.('user_bills_empty', lang) || 'Нет счетов';
         billsList.innerHTML = `<div class="text-center p-4 text-muted" data-i18n="user_bills_empty">${emptyText}</div>`;
         return;
@@ -794,19 +806,35 @@ function createBillItem(invoice) {
     const item = document.createElement('div');
     item.className = 'bill-item';
 
-    const status = invoice.status;
-    const isPaid = status === 'paid' || invoice.paid_amount >= invoice.amount_total;
-    const isPending = status === 'issued' || status === 'partial';
+    const statusNorm = String(invoice.status || '').toLowerCase();
+    const amountTotal = Number(invoice.amount_total) || 0;
+    const paidAmount = Number(invoice.paid_amount) || 0;
+    const isPaid =
+        statusNorm === 'paid' ||
+        statusNorm === 'overpaid' ||
+        (amountTotal > 0 && paidAmount >= amountTotal);
+    const isPartial =
+        statusNorm === 'partial' ||
+        (!isPaid && paidAmount > 0 && paidAmount < amountTotal);
 
-    const iconClass = isPaid ? 'bill-paid' : 'bill-pending';
-    const icon = isPaid ? 'bi-check-circle' : 'bi-receipt';
-    const badgeClass = isPaid ? 'badge-success' : 'badge-warning';
-    
-    // Get translations
-    const lang = localStorage.getItem('language') || 'ru';
-    const badgeText = isPaid 
-        ? (window.i18n?.translate?.('status_paid', lang) || 'Оплачено')
-        : (window.i18n?.translate?.('user_to_pay_status', lang) || 'К оплате');
+    let iconClass = 'bill-pending';
+    let icon = 'bi-receipt';
+    let badgeClass = 'badge-warning';
+
+    const lang = resolveUiLanguage();
+    let badgeText = window.i18n?.translate?.('user_to_pay_status', lang) || 'К оплате';
+
+    if (isPaid) {
+        iconClass = 'bill-paid';
+        icon = 'bi-check-circle';
+        badgeClass = 'badge-success';
+        badgeText = window.i18n?.translate?.('status_paid', lang) || 'Оплачено';
+    } else if (isPartial) {
+        iconClass = 'bill-partial';
+        icon = 'bi-hourglass-split';
+        badgeClass = 'badge-info';
+        badgeText = window.i18n?.translate?.('status_partial', lang) || 'Частично оплачен';
+    }
 
     // Get month names from translations
     const monthKeys = [
@@ -849,7 +877,7 @@ function createBillItem(invoice) {
         </div>
         <div class="bill-amount">
             <div class="bill-sum">${formatCurrency(invoice.amount_total)}</div>
-            <span class="badge ${badgeClass}" data-is-paid="${isPaid}">${badgeText}</span>
+            <span class="badge ${badgeClass}" data-bill-status="${isPaid ? 'paid' : isPartial ? 'partial' : 'unpaid'}">${badgeText}</span>
         </div>
     `;
 
@@ -1251,7 +1279,7 @@ window.showSuccess = function showSuccess(message) {
 window._dashboardNewsCache = [];
 
 function getDashboardLang() {
-    return localStorage.getItem('language') || 'ru';
+    return resolveUiLanguage();
 }
 
 function parseNewsLocalizedField(value) {
@@ -1398,7 +1426,7 @@ window.loadDashboardNews = async function loadDashboardNews() {
     if (!newsGrid) return;
     
     try {
-        const lang = localStorage.getItem('language') || 'ru';
+        const lang = resolveUiLanguage();
         const response = await fetch(`${API_BASE_URL}/api/news/admin?per_page=100`, {
             credentials: 'include'
         });
@@ -1682,9 +1710,9 @@ window.addEventListener('storage', (e) => {
 });
 
 // Отслеживаем изменения языка через polling
-let currentLang = localStorage.getItem('language') || 'ru';
+let currentLang = resolveUiLanguage();
 const langCheckInterval = setInterval(() => {
-    const newLang = localStorage.getItem('language') || 'ru';
+    const newLang = resolveUiLanguage();
     if (newLang !== currentLang) {
         currentLang = newLang;
         refreshDashboardNews();
@@ -1707,6 +1735,37 @@ window.addEventListener('beforeunload', () => {
     const notificationsClose = document.getElementById('notificationsClose');
     const notificationsList = document.getElementById('notificationsList');
     const t = (key, fallback = '') => window.i18n?.translate?.(key) || fallback || key;
+
+    function initUserNotificationTextClamp() {
+        if (!notificationsList) return;
+        notificationsList.querySelectorAll('.user-notification-text-wrap').forEach((wrap) => {
+            const textEl = wrap.querySelector('.user-notification-text');
+            const btn = wrap.querySelector('.user-notification-toggle-more');
+            if (!textEl || !btn) return;
+            textEl.classList.remove('user-notification-text--expanded');
+            btn.textContent = t('notifications_show_more', 'Подробнее');
+            requestAnimationFrame(() => {
+                const needs = textEl.scrollHeight > textEl.clientHeight + 2;
+                btn.style.display = needs ? 'inline' : 'none';
+            });
+        });
+    }
+
+    if (notificationsList && !notificationsList._userNotifToggleBound) {
+        notificationsList._userNotifToggleBound = true;
+        notificationsList.addEventListener('click', (e) => {
+            const btn = e.target.closest('.user-notification-toggle-more');
+            if (!btn || btn.style.display === 'none') return;
+            e.stopPropagation();
+            const wrap = btn.closest('.user-notification-text-wrap');
+            const textEl = wrap && wrap.querySelector('.user-notification-text');
+            if (!textEl) return;
+            const expanded = textEl.classList.toggle('user-notification-text--expanded');
+            btn.textContent = expanded
+                ? t('notifications_show_less', 'Свернуть')
+                : t('notifications_show_more', 'Подробнее');
+        });
+    }
     
     let notifications = [];
     
@@ -1755,7 +1814,7 @@ window.addEventListener('beforeunload', () => {
         const minutes = Math.floor(diff / 60000);
         const hours = Math.floor(diff / 3600000);
         const days = Math.floor(diff / 86400000);
-        const lang = (localStorage.getItem('language') || 'az').toLowerCase();
+        const lang = resolveUiLanguage().toLowerCase();
         const locale = lang === 'ru' ? 'ru-RU' : (lang === 'en' ? 'en-US' : 'az-AZ');
         
         if (minutes < 1) return t('time_just_now', 'Только что');
@@ -1939,8 +1998,11 @@ window.addEventListener('beforeunload', () => {
                         ${icon}
                     </div>
                     <div style="flex:1; min-width:0;">
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-                            <strong style="color:var(--text-primary); font-size:0.95rem;">${escapeHtml(messageText)}</strong>
+                        <div style="display:flex; align-items:flex-start; gap:8px; margin-bottom:4px; min-width:0;">
+                            <div class="user-notification-text-wrap" style="flex:1; min-width:0;">
+                                <div class="user-notification-text">${escapeHtml(messageText)}</div>
+                                <button type="button" class="user-notification-toggle-more" style="display:none;">${t('notifications_show_more', 'Подробнее')}</button>
+                            </div>
                             ${isUnread ? `<span class="badge" style="background:linear-gradient(135deg,#b1ba88 0%,#9aa972 100%); height:20px; display:flex; align-items:center; padding:0 6px; font-size:0.7rem; flex-shrink:0; color:#fff;">${t('notifications_badge_new', 'НОВАЯ')}</span>` : ''}
                         </div>
                         <span style="font-size:0.8rem; color:var(--text-secondary);">${formatTime(notif.created_at)}</span>
@@ -1950,6 +2012,8 @@ window.addEventListener('beforeunload', () => {
         }).join('');
         
         notificationsList.innerHTML = items;
+
+        initUserNotificationTextClamp();
         
         // Add click handlers
         notificationsList.querySelectorAll('.notification-item').forEach(item => {
@@ -1977,6 +2041,10 @@ window.addEventListener('beforeunload', () => {
                     try {
                         sessionStorage.setItem('billsFilterInvoiceIds', JSON.stringify([parseInt(relatedId)]));
                         sessionStorage.setItem('billsFilterStatuses', JSON.stringify(['ISSUED', 'PARTIAL', 'DRAFT', 'PAID']));
+                        sessionStorage.setItem('billsSystemFilterMeta', JSON.stringify({
+                            source: 'notification_invoice',
+                            ts: Date.now()
+                        }));
                     } catch (e) {
                         console.warn('Failed to store invoice filter in sessionStorage', e);
                     }

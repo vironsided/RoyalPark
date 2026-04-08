@@ -258,10 +258,22 @@
                             const list = statuses.split(',').map(s => s.trim()).filter(Boolean);
                             if (list.length) {
                                 sessionStorage.setItem('billsFilterStatuses', JSON.stringify(list));
+                                // bills.html applies preset filters only with fresh billsSystemFilterMeta (same as report-payment flow).
+                                sessionStorage.setItem('billsSystemFilterMeta', JSON.stringify({
+                                    source: 'dashboard_nav',
+                                    ts: Date.now()
+                                }));
                             }
                         } catch (e) {
                             console.warn('Failed to store billsFilterStatuses', e);
                         }
+                    } else {
+                        // «Мои счета» без фильтра — не тянуть предыдущий предустановленный набор статусов
+                        try {
+                            sessionStorage.removeItem('billsFilterStatuses');
+                            sessionStorage.removeItem('billsFilterInvoiceIds');
+                            sessionStorage.removeItem('billsSystemFilterMeta');
+                        } catch (_) { /* ignore */ }
                     }
                 }
                 
@@ -447,7 +459,7 @@
             // Применяем переводы если доступны
             setTimeout(() => {
                 if (window.i18n) {
-                    const savedLang = localStorage.getItem('language') || 'ru';
+                    const savedLang = (typeof window.getUiLanguage === 'function' ? window.getUiLanguage() : (localStorage.getItem('language') || 'az'));
                     window.i18n.applyLanguage(savedLang);
                     // Обновляем title страницы после перевода
                     if (h1 && pageInfo.titleKey) {
@@ -538,7 +550,7 @@
                     window.reapplyAutoTranslations();
                 }
                 if (window.i18n) {
-                    const savedLang = localStorage.getItem('language') || 'ru';
+                    const savedLang = (typeof window.getUiLanguage === 'function' ? window.getUiLanguage() : (localStorage.getItem('language') || 'az'));
                     window.i18n.applyLanguage(savedLang);
                 }
             };

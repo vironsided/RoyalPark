@@ -84,6 +84,13 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('userRole', data.role);
             localStorage.setItem('username', data.username);
 
+            try {
+                const lang = (window.i18n && window.i18n.currentLanguage)
+                    || localStorage.getItem('language')
+                    || 'az';
+                localStorage.setItem('language', lang);
+            } catch (e) { /* ignore */ }
+
             showAlert(t('login_success_redirect', 'Вход выполнен успешно! Перенаправление...'), 'success');
             
             // Add success animation

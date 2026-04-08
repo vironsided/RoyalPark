@@ -4,8 +4,13 @@
     "use strict";
 
     function isLoginPage() {
-        var p = window.location.pathname || "";
-        return /\/login\.html$/i.test(p) || /\/login\/?$/i.test(p);
+        var raw = window.location.pathname || "";
+        // Нормализуем: "" и "/" — корень; server.js отдаёт тот же login.html, что и /login.html
+        var p = raw.replace(/\/+$/, "") || "/";
+        if (p === "/") return true;
+        if (/\/login\.html$/i.test(raw)) return true;
+        if (/^\/login$/i.test(p)) return true;
+        return false;
     }
 
     function enforceDarkTheme() {

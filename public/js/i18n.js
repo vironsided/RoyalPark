@@ -905,6 +905,8 @@ const translations = {
         notifications_filter_unread: "Непрочитанные",
         notifications_filter_system: "Системные",
         notifications_mark_all_read: "Отметить все прочитанными",
+        notifications_show_more: "Подробнее",
+        notifications_show_less: "Свернуть",
         notifications_resident_appeal_title: "Обращение жителя",
         notifications_system_title: "Системное уведомление",
         notifications_tariff_expired_template: "Срок тарифа \"{name}\" ({purpose}) истёк {date}. Проверьте и обновите период действия.",
@@ -2130,6 +2132,8 @@ const translations = {
         notifications_filter_unread: "Oxunmamış",
         notifications_filter_system: "Sistem",
         notifications_mark_all_read: "Hamısını oxunmuş kimi işarələ",
+        notifications_show_more: "Ətraflı",
+        notifications_show_less: "Daralt",
         notifications_resident_appeal_title: "Sakin müraciəti",
         notifications_system_title: "Sistem bildirişi",
         notifications_tariff_expired_template: "\"{name}\" tarifinin ({purpose}) müddəti {date} tarixində bitib. Müddəti yoxlayın və yeniləyin.",
@@ -3356,6 +3360,8 @@ const translations = {
         notifications_filter_unread: "Unread",
         notifications_filter_system: "System",
         notifications_mark_all_read: "Mark all as read",
+        notifications_show_more: "Show more",
+        notifications_show_less: "Show less",
         notifications_resident_appeal_title: "Resident appeal",
         notifications_system_title: "System notification",
         notifications_tariff_expired_template: "Tariff \"{name}\" ({purpose}) expired on {date}. Please review and update its period.",
@@ -3701,6 +3707,12 @@ class LanguageManager {
         const localLang = this.useLocalScope ? sessionStorage.getItem(this.localScopeStorageKey) : null;
         const globalLang = localStorage.getItem('language');
         this.currentLanguage = localLang || globalLang || 'az';
+        // Persist resolved language so scripts that only read localStorage (e.g. user panel) match the UI default (az).
+        if (!this.useLocalScope && !localLang && !globalLang) {
+            try {
+                localStorage.setItem('language', this.currentLanguage);
+            } catch (e) { /* ignore */ }
+        }
         this.init();
     }
     
@@ -3945,10 +3957,18 @@ class LanguageManager {
                 billTitle.textContent = `${invoicePrefix}${billTitle.dataset.invoiceNumber}`;
             }
             
-            if (badge && badge.dataset.isPaid !== undefined) {
-                // Update badge text
+            if (badge && badge.dataset.billStatus) {
+                const st = badge.dataset.billStatus;
+                if (st === 'paid') {
+                    badge.textContent = this.translate('status_paid', lang);
+                } else if (st === 'partial') {
+                    badge.textContent = this.translate('status_partial', lang);
+                } else {
+                    badge.textContent = this.translate('user_to_pay_status', lang);
+                }
+            } else if (badge && badge.dataset.isPaid !== undefined) {
                 const isPaid = badge.dataset.isPaid === 'true';
-                badge.textContent = isPaid 
+                badge.textContent = isPaid
                     ? this.translate('status_paid', lang)
                     : this.translate('user_to_pay_status', lang);
             }
@@ -4363,8 +4383,21 @@ class LanguageManager {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         window.i18n = new LanguageManager();
+        initUiLanguageHelper();
     });
 } else {
     window.i18n = new LanguageManager();
+    initUiLanguageHelper();
+}
+
+function initUiLanguageHelper() {
+    window.getUiLanguage = function getUiLanguage() {
+        try {
+            const stored = localStorage.getItem('language');
+            if (stored) return stored;
+        } catch (e) { /* ignore */ }
+        if (window.i18n && window.i18n.currentLanguage) return window.i18n.currentLanguage;
+        return 'az';
+    };
 }
 

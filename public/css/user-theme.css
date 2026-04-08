@@ -1724,9 +1724,11 @@ body.user-app .toast-info .toast-icon {
     color: var(--user-olive) !important;
 }
 
-/* resident-detail.css: индикаторы «электричество» и т.п. */
+/* resident-detail.css: электричество — жёлтый/янтарь (как stat-card.solid-yellow), не оливковый бренд */
 body.user-app .meter-electric {
-    background: linear-gradient(135deg, var(--user-olive) 0%, var(--user-olive-mid) 100%) !important;
+    background: linear-gradient(135deg, #fff3b0 0%, #ffd54a 42%, #e8ac00 100%) !important;
+    color: #2e2906 !important;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 /* ========== Страница резидента (#resident) в SPA: светлые карточки и фильтры ========== */
@@ -1886,4 +1888,76 @@ html[data-theme="dark"] body.user-app .admin-container::before {
     display: none !important;
     content: none !important;
     background: none !important;
+}
+
+/* ========== Мобильный режим: шапка и сайдбар (после правил Stitch / !important) ========== */
+@media (max-width: 768px) {
+    /* Скрываем трёхкнопочный переключатель: иначе перекрывает колокольчик (inline-flex в блоке выше) */
+    body.user-app .top-bar-actions .language-selector {
+        display: none !important;
+    }
+
+    body.user-app .top-bar .page-title h1,
+    [data-theme="dark"] body.user-app .top-bar .page-title h1 {
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.01em !important;
+        line-height: 1.25 !important;
+    }
+
+    body.user-app .sidebar .sidebar-brand-mark {
+        max-height: 40px !important;
+        max-width: 132px !important;
+    }
+
+    body.user-app .sidebar.collapsed .sidebar-brand-mark {
+        max-height: 34px !important;
+        max-width: 44px !important;
+    }
+
+    body.user-app .sidebar .nav-text {
+        font-size: 0.88rem !important;
+    }
+
+    body.user-app .sidebar .nav-icon,
+    body.user-app .sidebar .nav-icon i {
+        font-size: 1.05rem !important;
+    }
+
+    body.user-app .sidebar .nav-item {
+        padding: 0.42rem 0.45rem !important;
+        gap: 0.4rem !important;
+    }
+
+    body.user-app .toggle-sidebar {
+        padding: 0.3rem !important;
+    }
+
+    body.user-app .toggle-sidebar svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    body.user-app .nav-badge {
+        font-size: 0.62rem !important;
+        min-width: 1.1rem !important;
+        padding: 0 4px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    body.user-app .top-bar .page-title h1,
+    [data-theme="dark"] body.user-app .top-bar .page-title h1 {
+        font-size: 0.95rem !important;
+    }
+
+    body.user-app .notification-btn {
+        font-size: 1rem !important;
+    }
+
+    body.user-app .user-avatar {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+    }
 }

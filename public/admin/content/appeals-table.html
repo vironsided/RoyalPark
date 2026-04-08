@@ -102,6 +102,22 @@
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
         background: rgba(255, 255, 255, 0.08);
     }
+
+    /* Длинные строки без пробелов — не выходят за модалку */
+    #modalDescription {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        max-width: 100%;
+        white-space: pre-wrap;
+    }
+
+    .appeal-modal {
+        max-width: min(520px, 92vw);
+    }
+
+    .appeal-modal-body {
+        min-width: 0;
+    }
 </style>
 
 <div class="dashboard-content">
@@ -286,7 +302,7 @@
 
         async function viewNotification(id) {
             try {
-                const url = `${API_BASE}/api/notifications/${id}`;
+                const url = `${API_BASE}/api/notifications/${id}?mark_read=false`;
                 const response = await fetch(url, { credentials: 'include' });
 
                 if (!response.ok) {

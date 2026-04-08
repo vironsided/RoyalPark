@@ -7,7 +7,8 @@
                     <label data-i18n="user_bills_status_label">Статус</label>
                     <div class="user-bills-status-multiselect" id="userBillsStatusMultiselect">
                         <button type="button" class="status-multiselect-toggle" id="userBillsStatusToggle">
-                            <span id="userBillsStatusLabel" data-i18n="user_bills_status_all">Все</span>
+                            <!-- Без data-i18n: иначе applyLanguage/reapplyAutoTranslations затирают подпись обратно в «Все» -->
+                            <span id="userBillsStatusLabel">Все</span>
                             <i class="bi bi-chevron-down"></i>
                         </button>
                         <div class="status-multiselect-dropdown" id="userBillsStatusGroup">
@@ -138,6 +139,22 @@
                 return;
             }
             
+            function billsPageLang() {
+                if (typeof window.getUiLanguage === 'function') return window.getUiLanguage();
+                try {
+                    return localStorage.getItem('language') || 'az';
+                } catch (e) {
+                    return 'az';
+                }
+            }
+
+            function translateStatusKey(i18nKey) {
+                const lang = billsPageLang();
+                return (window.i18n && typeof window.i18n.translate === 'function')
+                    ? window.i18n.translate(i18nKey, lang)
+                    : i18nKey;
+            }
+
             function getSelectedStatuses() {
                 const checked = Array.from(
                     statusGroup.querySelectorAll('.user-status-checkbox:checked')
@@ -153,17 +170,30 @@
                     statusGroup.querySelectorAll('.user-status-checkbox:checked')
                 );
                 if (!checkedBoxes.length || checkedBoxes.some(cb => cb.value === 'all')) {
-                    statusLabel.textContent = statusLabel.getAttribute('data-i18n')
-                        ? (window.i18n ? window.i18n.translate('user_bills_status_all') : 'Все')
-                        : 'Все';
+                    statusLabel.textContent = translateStatusKey('user_bills_status_all');
                     return;
                 }
-                const names = checkedBoxes.map(cb => cb.nextElementSibling?.textContent?.trim() || cb.value);
+                const names = checkedBoxes.map(cb => {
+                    const span = cb.nextElementSibling;
+                    const key = span && span.getAttribute('data-i18n');
+                    if (key) return translateStatusKey(key);
+                    return (span && span.textContent ? span.textContent.trim() : '') || cb.value;
+                });
                 if (names.length <= 3) {
                     statusLabel.textContent = names.join(', ');
                 } else {
                     statusLabel.textContent = `${names.slice(0, 2).join(', ')} +${names.length - 2}`;
                 }
+            }
+
+            window._updateBillsStatusFilterLabel = updateStatusLabel;
+            if (!window.__billsStatusLabelLangListener) {
+                window.__billsStatusLabelLangListener = true;
+                window.addEventListener('languageChanged', () => {
+                    if (typeof window._updateBillsStatusFilterLabel === 'function') {
+                        window._updateBillsStatusFilterLabel();
+                    }
+                });
             }
 
             // Load invoices from backend

@@ -25,7 +25,7 @@
     <!-- Custom CSS (?v= сбрасывает кэш после смены темы) -->
     <link rel="stylesheet" href="/css/global.css?v=milky-olivia-9">
     <link rel="stylesheet" href="/css/admin.css?v=milky-olivia-2">
-    <link rel="stylesheet" href="/css/user.css?v=milky-olivia-6">
+    <link rel="stylesheet" href="/css/user.css?v=milky-olivia-8">
     <link rel="stylesheet" href="/css/resident-detail.css?v=milky-olivia-2">
     <link rel="stylesheet" href="/css/dark-theme.css?v=milky-olivia-2">
     <link rel="stylesheet" href="/css/user-theme.css?v=milky-olivia-16">
@@ -505,6 +505,9 @@
                 <!-- Password tab: поля внутри <form> — требование Chromium для паролей и автозаполнения -->
                 <div class="account-tab-panel" id="accountTabPassword">
                     <form id="accountPasswordForm" class="account-info-section" autocomplete="on" novalidate>
+                        <!-- Chromium: password forms should include a username field (may be hidden) for autofill/accessibility -->
+                        <label for="accountPasswordFormUsername" class="visually-hidden">Username</label>
+                        <input type="text" id="accountPasswordFormUsername" name="username" autocomplete="username" class="visually-hidden" tabindex="-1" aria-hidden="true" value="">
                         <div class="account-form-group">
                             <label for="currentPassword" data-i18n="account_current_password">Текущий пароль</label>
                             <input type="password" id="currentPassword" name="current_password" autocomplete="current-password" data-i18n-placeholder="account_current_password_placeholder" placeholder="Введите текущий пароль">
@@ -659,7 +662,7 @@
                     if (emailInput) emailInput.value = user.email || '';
                     const fileStatusEl = document.getElementById('accountFileStatus');
                     if (fileStatusEl) {
-                        const noFileText = window.i18n?.translate?.('account_file_no_selected', window.i18n?.currentLanguage || 'ru') || 'Не выбран ни один файл';
+                        const noFileText = window.i18n?.translate?.('account_file_no_selected', window.i18n?.currentLanguage || 'az') || 'Не выбран ни один файл';
                         fileStatusEl.textContent = noFileText;
                         fileStatusEl.classList.remove('has-file');
                     }
@@ -725,9 +728,11 @@
                     accountModal.style.display = 'flex';
                     accountModal.classList.add('show');
                     document.body.style.overflow = 'hidden';
-                    const savedLang = localStorage.getItem('language') || 'ru';
+                    const savedLang = (window.getUiLanguage && window.getUiLanguage()) || localStorage.getItem('language') || 'az';
                     const langSelect = document.getElementById('accountLanguage');
                     if (langSelect) langSelect.value = savedLang;
+                    const pwdUserEl = document.getElementById('accountPasswordFormUsername');
+                    if (pwdUserEl) pwdUserEl.value = localStorage.getItem('username') || '';
                     
                     // Load user profile from backend
                     loadUserProfile();
@@ -735,7 +740,7 @@
                     // Apply translations when modal opens
                     setTimeout(() => {
                         if (window.i18n && typeof window.i18n.applyLanguage === 'function') {
-                            const savedLang = localStorage.getItem('language') || 'ru';
+                            const savedLang = (window.getUiLanguage && window.getUiLanguage()) || localStorage.getItem('language') || 'az';
                             window.i18n.applyLanguage(savedLang);
                         }
                     }, 100);
@@ -756,7 +761,7 @@
                     removeAccountAvatarRequested = false;
                     const fileStatusEl = document.getElementById('accountFileStatus');
                     if (fileStatusEl) {
-                        const noFileText = window.i18n?.translate?.('account_file_no_selected', window.i18n?.currentLanguage || 'ru') || 'Не выбран ни один файл';
+                        const noFileText = window.i18n?.translate?.('account_file_no_selected', window.i18n?.currentLanguage || 'az') || 'Не выбран ни один файл';
                         fileStatusEl.textContent = noFileText;
                         fileStatusEl.classList.remove('has-file');
                     }
@@ -852,7 +857,7 @@
                     } else {
                         // Reset file status
                         if (fileStatus) {
-                            const noFileText = window.i18n?.translate?.('account_file_no_selected', window.i18n?.currentLanguage || 'ru') || 'Не выбран ни один файл';
+                            const noFileText = window.i18n?.translate?.('account_file_no_selected', window.i18n?.currentLanguage || 'az') || 'Не выбран ни один файл';
                             fileStatus.textContent = noFileText;
                             fileStatus.classList.remove('has-file');
                         }
@@ -871,7 +876,7 @@
                     if (avatarInput) avatarInput.value = '';
 
                     if (fileStatus) {
-                        const pending = window.i18n?.translate?.('account_avatar_remove_pending', window.i18n?.currentLanguage || 'ru')
+                        const pending = window.i18n?.translate?.('account_avatar_remove_pending', window.i18n?.currentLanguage || 'az')
                             || 'Фото будет удалено после сохранения';
                         fileStatus.textContent = pending;
                         fileStatus.classList.remove('has-file');
@@ -1124,7 +1129,7 @@
                     // Disable button during request
                     accountModalSave.disabled = true;
                     const originalText = accountModalSave.textContent;
-                    const savingText = window.i18n?.translate?.('account_saving', window.i18n?.currentLanguage || 'ru') || 'Сохранение...';
+                    const savingText = window.i18n?.translate?.('account_saving', window.i18n?.currentLanguage || 'az') || 'Сохранение...';
                     accountModalSave.textContent = savingText;
                     
                     try {
@@ -1176,7 +1181,7 @@
                         // Reset file status
                         const fileStatus = document.getElementById('accountFileStatus');
                         if (fileStatus) {
-                            const noFileText = window.i18n?.translate?.('account_file_no_selected', window.i18n?.currentLanguage || 'ru') || 'Не выбран ни один файл';
+                            const noFileText = window.i18n?.translate?.('account_file_no_selected', window.i18n?.currentLanguage || 'az') || 'Не выбран ни один файл';
                             fileStatus.textContent = noFileText;
                             fileStatus.classList.remove('has-file');
                         }
@@ -1197,13 +1202,13 @@
                         
                         // Show success message after modal is closed
                         if (typeof showAlert === 'function') {
-                            const lang = window.i18n?.currentLanguage || localStorage.getItem('language') || 'ru';
+                            const lang = window.i18n?.currentLanguage || (window.getUiLanguage && window.getUiLanguage()) || localStorage.getItem('language') || 'az';
                             const successTitle = window.i18n?.translate?.('success', lang) || 'Успешно';
                             const successText = window.i18n?.translate?.('account_profile_saved_success', lang) || 'Настройки сохранены!';
                             await showAlert(successText, successTitle, 'success');
                         } else {
                             console.warn('showAlert function not found');
-                            const lang = window.i18n?.currentLanguage || localStorage.getItem('language') || 'ru';
+                            const lang = window.i18n?.currentLanguage || (window.getUiLanguage && window.getUiLanguage()) || localStorage.getItem('language') || 'az';
                             const successText = window.i18n?.translate?.('account_profile_saved_success', lang) || 'Настройки сохранены!';
                             alert(successText);
                         }
