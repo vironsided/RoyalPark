@@ -209,7 +209,43 @@ def run_bootstrap_schema():
         "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS staff_message TEXT;",
         "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS workflow_updated_at TIMESTAMP WITHOUT TIME ZONE;",
         "ALTER TABLE news ADD COLUMN IF NOT EXISTS target_blocks TEXT;",
-
+        # Multi-terminal support for AzeriCard
+        "ALTER TABLE online_transactions ADD COLUMN IF NOT EXISTS terminal_category VARCHAR(32);",
+        # Saved cards for card-on-file / tokenization
+        """CREATE TABLE IF NOT EXISTS saved_cards (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            token_id VARCHAR(256) NOT NULL,
+            masked_pan VARCHAR(32) NOT NULL DEFAULT '****',
+            card_brand VARCHAR(32),
+            expiry_month INTEGER,
+            expiry_year INTEGER,
+            is_default BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            CONSTRAINT uq_saved_cards_user_token UNIQUE (user_id, token_id)
+        );""",
+        """CREATE TABLE IF NOT EXISTS payment_application_lines (
+            id SERIAL PRIMARY KEY,
+            application_id INTEGER NOT NULL REFERENCES payment_applications(id) ON DELETE CASCADE,
+            invoice_line_id INTEGER NOT NULL REFERENCES invoice_lines(id) ON DELETE CASCADE,
+            amount NUMERIC(12, 2) NOT NULL
+        );""",
+        # Backfill: for existing PaymentApplications without line distributions,
+        # compute proportional splits and insert them.
+        """
+        INSERT INTO payment_application_lines (application_id, invoice_line_id, amount)
+        SELECT
+            pa.id,
+            il.id,
+            ROUND(pa.amount_applied * il.amount_total / NULLIF(inv.amount_total, 0), 2)
+        FROM payment_applications pa
+        JOIN invoices inv ON inv.id = pa.invoice_id
+        JOIN invoice_lines il ON il.invoice_id = inv.id
+        WHERE NOT EXISTS (
+            SELECT 1 FROM payment_application_lines pal WHERE pal.application_id = pa.id
+        )
+        AND inv.amount_total > 0;
+        """,
     ]
     from .database import engine
     with engine.begin() as conn:

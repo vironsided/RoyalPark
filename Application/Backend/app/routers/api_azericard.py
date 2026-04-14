@@ -8,20 +8,26 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import get_db
-from ..models import Invoice, OnlineTransaction, Payment, PaymentLog, PaymentMethod, Resident
+from ..models import Invoice, OnlineTransaction, Payment, PaymentApplication, PaymentLog, PaymentMethod, Resident
 from ..utils import now_baku
 from ..services.azericard import (
     CALLBACK_SIGN_FIELDS,
     CREATE_SIGN_FIELDS,
+    TERMINAL_CATEGORY_ADVANCE,
+    TERMINAL_CATEGORY_MAINTENANCE,
+    TERMINAL_CATEGORY_UTILITY,
     _private_key,
+    _terminal_id_for,
     amount_to_gateway,
     build_nonce,
     build_order_id,
     build_timestamp,
+    classify_invoice_amounts,
     generate_p_sign,
     verify_callback_signature,
 )
@@ -35,6 +41,8 @@ class InitiateRequest(BaseModel):
     amount: Decimal
     invoice_id: Optional[int] = None
     description: Optional[str] = None
+    saved_card_id: Optional[int] = None
+    terminal_category: Optional[str] = None
 
 
 class CompleteRequest(BaseModel):
@@ -45,29 +53,28 @@ class CompleteRequest(BaseModel):
     int_ref: str
 
 
-def _ensure_gateway_config() -> None:
-    if not settings.AZERICARD_TERMINAL_ID:
-        raise HTTPException(status_code=500, detail="AZERICARD_TERMINAL_ID is not configured")
-    if not settings.AZERICARD_PRIVATE_KEY:
-        raise HTTPException(status_code=500, detail="AZERICARD_PRIVATE_KEY is not configured")
-    if not settings.AZERICARD_PUBLIC_KEY:
-        raise HTTPException(status_code=500, detail="AZERICARD_PUBLIC_KEY is not configured")
+def _ensure_gateway_config(category: Optional[str] = None) -> None:
+    tid = _terminal_id_for(category)
+    if not tid:
+        raise HTTPException(status_code=500, detail=f"AZERICARD_TERMINAL ({category or 'default'}) is not configured")
     if not settings.AZERICARD_CALLBACK_URL:
         raise HTTPException(status_code=500, detail="AZERICARD_CALLBACK_URL is not configured")
 
 
-def _ensure_signing_config() -> None:
-    if not settings.AZERICARD_TERMINAL_ID:
-        raise HTTPException(status_code=500, detail="AZERICARD_TERMINAL_ID is not configured")
-    if not settings.AZERICARD_PRIVATE_KEY:
-        raise HTTPException(status_code=500, detail="AZERICARD_PRIVATE_KEY is not configured")
-    if "DUMMY_PRIVATE_KEY" in str(settings.AZERICARD_PRIVATE_KEY).upper():
-        raise HTTPException(status_code=500, detail="AZERICARD_PRIVATE_KEY is still a dummy placeholder")
+def _ensure_signing_config(category: Optional[str] = None) -> None:
+    tid = _terminal_id_for(category)
+    if not tid:
+        raise HTTPException(status_code=500, detail=f"AZERICARD_TERMINAL ({category or 'default'}) is not configured")
+    from ..services.azericard import _private_key_raw
+    raw = _private_key_raw(category)
+    if not raw:
+        raise HTTPException(status_code=500, detail=f"AZERICARD_PRIVATE_KEY ({category or 'default'}) is not configured")
+    if "DUMMY_PRIVATE_KEY" in raw.upper():
+        raise HTTPException(status_code=500, detail=f"AZERICARD_PRIVATE_KEY ({category or 'default'}) is still a dummy placeholder")
     try:
-        # Fail fast with clear message if key format is invalid.
-        _private_key()
+        _private_key(category)
     except Exception:
-        raise HTTPException(status_code=500, detail="AZERICARD_PRIVATE_KEY has invalid PEM format")
+        raise HTTPException(status_code=500, detail=f"AZERICARD_PRIVATE_KEY ({category or 'default'}) has invalid PEM format")
 
 
 def _pick(data: dict[str, Any], *keys: str) -> str:
@@ -83,24 +90,16 @@ def _wants_html(request: Request) -> bool:
     return "text/html" in accept or "*/*" in accept
 
 
-@router.post("/initiate")
-def initiate_payment(
+def _build_gateway_params(
+    amount: Decimal,
+    category: str,
+    description: str,
     request: Request,
-    payload: InitiateRequest,
-    db: Session = Depends(get_db),
-):
-    _ensure_signing_config()
-
-    resident = db.get(Resident, payload.resident_id)
-    if not resident:
-        raise HTTPException(status_code=404, detail="Resident not found")
-    if payload.invoice_id:
-        invoice = db.get(Invoice, payload.invoice_id)
-        if not invoice or invoice.resident_id != payload.resident_id:
-            raise HTTPException(status_code=400, detail="Invoice does not belong to resident")
-
-    amount_str = amount_to_gateway(payload.amount)
-    order_id = build_order_id(settings.AZERICARD_TERMINAL_ID)
+) -> tuple[str, dict]:
+    """Build signed gateway params for one terminal category. Returns (order_id, params)."""
+    terminal_id = _terminal_id_for(category)
+    order_id = build_order_id(terminal_id)
+    amount_str = amount_to_gateway(amount)
     base_url = str(request.base_url).rstrip("/")
     success_url = settings.AZERICARD_SUCCESS_URL or f"{base_url}/api/azericard/success"
     fail_url = settings.AZERICARD_FAIL_URL or f"{base_url}/api/azericard/fail"
@@ -109,10 +108,10 @@ def initiate_payment(
         "AMOUNT": amount_str,
         "CURRENCY": settings.AZERICARD_CURRENCY,
         "ORDER": order_id,
-        "DESC": (payload.description or f"Resident #{payload.resident_id}")[:250],
+        "DESC": description[:250],
         "MERCH_NAME": settings.AZERICARD_MERCH_NAME,
         "MERCH_URL": settings.AZERICARD_MERCH_URL or settings.AZERICARD_CALLBACK_URL,
-        "TERMINAL": settings.AZERICARD_TERMINAL_ID,
+        "TERMINAL": terminal_id,
         "TRTYPE": "0",
         "TIMESTAMP": build_timestamp(),
         "NONCE": build_nonce(),
@@ -123,17 +122,68 @@ def initiate_payment(
     if settings.AZERICARD_LANG:
         req["LANG"] = settings.AZERICARD_LANG
 
-    req["P_SIGN"] = generate_p_sign(req, CREATE_SIGN_FIELDS)
+    req["P_SIGN"] = generate_p_sign(req, CREATE_SIGN_FIELDS, category)
+    return order_id, req
+
+
+@router.post("/initiate")
+def initiate_payment(
+    request: Request,
+    payload: InitiateRequest,
+    db: Session = Depends(get_db),
+):
+    resident = db.get(Resident, payload.resident_id)
+    if not resident:
+        raise HTTPException(status_code=404, detail="Resident not found")
+
+    invoice = None
+    if payload.invoice_id:
+        invoice = db.get(Invoice, payload.invoice_id)
+        if not invoice or invoice.resident_id != payload.resident_id:
+            raise HTTPException(status_code=400, detail="Invoice does not belong to resident")
+        paid_total = db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))\
+                       .filter(PaymentApplication.invoice_id == invoice.id).scalar() or 0
+        remaining = Decimal(str(invoice.amount_total or 0)) - Decimal(str(paid_total))
+        if payload.amount > remaining and remaining > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Amount {payload.amount} exceeds invoice remaining {remaining}",
+            )
+
+    description = payload.description or f"Resident #{payload.resident_id}"
+
+    # Determine terminal category:
+    #   - Frontend sends terminal_category explicitly (enforced by UI category lock)
+    #   - No invoice → advance
+    #   - Fallback → auto-classify from invoice lines
+    VALID_CATEGORIES = {TERMINAL_CATEGORY_UTILITY, TERMINAL_CATEGORY_MAINTENANCE, TERMINAL_CATEGORY_ADVANCE}
+
+    if not payload.invoice_id:
+        category = TERMINAL_CATEGORY_ADVANCE
+    elif payload.terminal_category and payload.terminal_category in VALID_CATEGORIES:
+        category = payload.terminal_category
+    else:
+        # Fallback: auto-detect from invoice lines (pick the dominant category)
+        classified = classify_invoice_amounts(db, payload.invoice_id)
+        if classified:
+            category = max(classified, key=classified.get)
+        else:
+            category = TERMINAL_CATEGORY_UTILITY
+
+    _ensure_signing_config(category)
+
+    order_id, params = _build_gateway_params(payload.amount, category, description, request)
 
     tx = OnlineTransaction(
         resident_id=payload.resident_id,
         invoice_id=payload.invoice_id,
         order_id=order_id,
-        amount_total=Decimal(amount_str),
-        currency=req["CURRENCY"],
+        amount_total=payload.amount,
+        currency=params["CURRENCY"],
         trtype="0",
+        terminal_category=category,
         gateway_status="INITIATED",
-        request_payload=json.dumps(req, ensure_ascii=False),
+        request_payload=json.dumps(params, ensure_ascii=False),
     )
     db.add(tx)
     db.commit()
@@ -143,7 +193,8 @@ def initiate_payment(
         "order_id": order_id,
         "gateway_url": settings.AZERICARD_GATEWAY_URL,
         "method": "POST",
-        "params": req,
+        "params": params,
+        "terminal_category": category,
     }
 
 
@@ -152,8 +203,6 @@ async def azericard_callback(
     request: Request,
     db: Session = Depends(get_db),
 ):
-    _ensure_gateway_config()
-
     data: dict[str, str] = {}
     try:
         form = await request.form()
@@ -185,7 +234,10 @@ async def azericard_callback(
     tx.rc = _pick(data, "RC", "rc")
     tx.trtype = _pick(data, "TRTYPE", "trtype") or tx.trtype
 
-    signature_ok = verify_callback_signature(data)
+    category = tx.terminal_category
+    _ensure_gateway_config(category)
+
+    signature_ok = verify_callback_signature(data, category=category)
     action = _pick(data, "ACTION", "action")
     status_ok = action == "0"
     if not signature_ok:
@@ -208,7 +260,7 @@ async def azericard_callback(
         amount_total=tx.amount_total,
         method=PaymentMethod.ONLINE,
         reference=order_id,
-        comment="AzeriCard online payment",
+        comment=f"AzeriCard online payment ({category or 'default'})",
         created_by_id=None,
     )
     db.add(payment)
@@ -232,6 +284,9 @@ async def azericard_callback(
         scope="all",
     )
 
+    # Extract and save card token if present in callback data
+    _try_save_card_token(db, tx, data)
+
     db.add(
         PaymentLog(
             payment_id=payment.id,
@@ -239,7 +294,7 @@ async def azericard_callback(
             user_id=None,
             action="GATEWAY_CALLBACK",
             amount=float(tx.amount_total or 0),
-            details=f"AzeriCard confirmed ORDER={order_id}; invoice_applied={float(applied_amount)}",
+            details=f"AzeriCard confirmed ORDER={order_id} [{category}]; invoice_applied={float(applied_amount)}",
         )
     )
     db.commit()
@@ -248,21 +303,67 @@ async def azericard_callback(
     return {"ok": True, "order_id": order_id, "payment_id": payment.id}
 
 
+def _try_save_card_token(db: Session, tx: OnlineTransaction, callback_data: dict) -> None:
+    """If AzeriCard returns a card token in the callback, persist it as SavedCard."""
+    from ..models import SavedCard, user_residents
+
+    token = _pick(callback_data, "CARD_TOKEN", "card_token", "TOKEN", "token")
+    if not token:
+        return
+
+    masked = _pick(callback_data, "CARD_MASK", "card_mask", "MASKED_PAN", "masked_pan", "PAN")
+    if masked and len(masked) > 4:
+        masked = "****" + masked[-4:]
+    elif not masked:
+        masked = "****"
+
+    brand = _pick(callback_data, "CARD_BRAND", "card_brand", "CARD_TYPE", "card_type")
+
+    if not tx.resident_id:
+        return
+    user_link = db.query(user_residents.c.user_id).filter(
+        user_residents.c.resident_id == tx.resident_id
+    ).first()
+    if not user_link:
+        return
+
+    user_id = user_link[0]
+    existing = db.query(SavedCard).filter(SavedCard.user_id == user_id, SavedCard.token_id == token).first()
+    if existing:
+        return
+
+    card_count = db.query(SavedCard).filter(SavedCard.user_id == user_id).count()
+    if card_count >= 5:
+        return
+
+    db.add(SavedCard(
+        user_id=user_id,
+        token_id=token,
+        masked_pan=masked,
+        card_brand=brand or None,
+        is_default=(card_count == 0),
+    ))
+    db.flush()
+
+
 @router.get("/status/{order_id}")
 async def get_status(order_id: str, db: Session = Depends(get_db)):
     tx = db.query(OnlineTransaction).filter(OnlineTransaction.order_id == order_id).first()
     if not tx:
         raise HTTPException(status_code=404, detail="Order not found")
-    _ensure_gateway_config()
 
+    category = tx.terminal_category
+    _ensure_gateway_config(category)
+
+    terminal_id = _terminal_id_for(category)
     payload = {
         "ORDER": tx.order_id,
-        "TERMINAL": settings.AZERICARD_TERMINAL_ID,
+        "TERMINAL": terminal_id,
         "TRTYPE": "90",
         "TIMESTAMP": build_timestamp(),
         "NONCE": build_nonce(),
     }
-    payload["P_SIGN"] = generate_p_sign(payload, ["ORDER", "TERMINAL", "TRTYPE", "TIMESTAMP", "NONCE"])
+    payload["P_SIGN"] = generate_p_sign(payload, ["ORDER", "TERMINAL", "TRTYPE", "TIMESTAMP", "NONCE"], category)
 
     async with httpx.AsyncClient(timeout=20.0) as client:
         response = await client.post(settings.AZERICARD_API_URL, data=payload)
@@ -275,24 +376,116 @@ async def get_status(order_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/complete")
-async def complete_payment(payload: CompleteRequest):
-    _ensure_gateway_config()
+async def complete_payment(payload: CompleteRequest, db: Session = Depends(get_db)):
+    tx = db.query(OnlineTransaction).filter(OnlineTransaction.order_id == payload.order_id).first()
+    category = tx.terminal_category if tx else None
+    _ensure_gateway_config(category)
+
+    terminal_id = _terminal_id_for(category)
     req = {
         "ORDER": payload.order_id,
         "AMOUNT": amount_to_gateway(payload.amount),
         "CURRENCY": payload.currency,
         "RRN": payload.rrn,
         "INT_REF": payload.int_ref,
-        "TERMINAL": settings.AZERICARD_TERMINAL_ID,
+        "TERMINAL": terminal_id,
         "TRTYPE": "21",
         "TIMESTAMP": build_timestamp(),
         "NONCE": build_nonce(),
     }
-    req["P_SIGN"] = generate_p_sign(req, CALLBACK_SIGN_FIELDS)
+    req["P_SIGN"] = generate_p_sign(req, CALLBACK_SIGN_FIELDS, category)
 
     async with httpx.AsyncClient(timeout=20.0) as client:
         response = await client.post(settings.AZERICARD_API_URL, data=req)
     return {"ok": response.status_code == 200, "http_status": response.status_code, "gateway_response": response.text}
+
+
+# ---------------------------------------------------------------------------
+# Saved Cards CRUD
+# ---------------------------------------------------------------------------
+
+@router.get("/saved-cards")
+def list_saved_cards(request: Request, db: Session = Depends(get_db)):
+    """List saved cards for the currently authenticated user."""
+    from ..models import SavedCard
+    user_id = _get_session_user_id(request)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    cards = (
+        db.query(SavedCard)
+        .filter(SavedCard.user_id == user_id)
+        .order_by(SavedCard.is_default.desc(), SavedCard.created_at.desc())
+        .all()
+    )
+    return [
+        {
+            "id": c.id,
+            "masked_pan": c.masked_pan,
+            "card_brand": c.card_brand,
+            "expiry_month": c.expiry_month,
+            "expiry_year": c.expiry_year,
+            "is_default": c.is_default,
+            "created_at": c.created_at.isoformat() if c.created_at else None,
+        }
+        for c in cards
+    ]
+
+
+@router.delete("/saved-cards/{card_id}")
+def delete_saved_card(card_id: int, request: Request, db: Session = Depends(get_db)):
+    """Delete a saved card belonging to the current user."""
+    from ..models import SavedCard
+    user_id = _get_session_user_id(request)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    card = db.query(SavedCard).filter(SavedCard.id == card_id, SavedCard.user_id == user_id).first()
+    if not card:
+        raise HTTPException(status_code=404, detail="Card not found")
+
+    was_default = card.is_default
+    db.delete(card)
+    db.flush()
+
+    if was_default:
+        next_card = db.query(SavedCard).filter(SavedCard.user_id == user_id).order_by(SavedCard.created_at.desc()).first()
+        if next_card:
+            next_card.is_default = True
+
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/saved-cards/{card_id}/set-default")
+def set_default_card(card_id: int, request: Request, db: Session = Depends(get_db)):
+    """Set a saved card as the default for the current user."""
+    from ..models import SavedCard
+    user_id = _get_session_user_id(request)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    card = db.query(SavedCard).filter(SavedCard.id == card_id, SavedCard.user_id == user_id).first()
+    if not card:
+        raise HTTPException(status_code=404, detail="Card not found")
+
+    db.query(SavedCard).filter(SavedCard.user_id == user_id).update({"is_default": False})
+    card.is_default = True
+    db.commit()
+    return {"ok": True}
+
+
+def _get_session_user_id(request: Request) -> Optional[int]:
+    """Extract user_id from session (works with SessionMiddleware)."""
+    session = getattr(request, "session", None)
+    if session:
+        uid = session.get("user_id")
+        if uid is not None:
+            try:
+                return int(uid)
+            except (ValueError, TypeError):
+                pass
+    return None
 
 
 @router.get("/success", response_class=HTMLResponse)

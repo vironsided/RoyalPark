@@ -41,6 +41,11 @@
                     bodyClass: '',
                     parentNav: 'bills'
                 },
+                'advance-history': {
+                    type: 'remote',
+                    path: '/user/pages/advance-history.html',
+                    bodyClass: ''
+                },
                 news: {
                     type: 'remote',
                     path: '/user/pages/news.html',
@@ -109,6 +114,14 @@
                         { text: 'Главная', icon: 'bi-house-door', key: 'home', route: 'dashboard' },
                         { text: 'Мои счета', key: 'user_nav_user_bills', route: 'bills' },
                         { text: 'Просмотр счёта', key: 'user_invoice_view' }
+                    ]
+                },
+                'advance-history': {
+                    title: 'Списания аванса',
+                    titleKey: 'user_nav_advance_history',
+                    breadcrumb: [
+                        { text: 'Главная', icon: 'bi-house-door', key: 'home', route: 'dashboard' },
+                        { text: 'Списания аванса', key: 'user_nav_advance_history' }
                     ]
                 },
                 news: {

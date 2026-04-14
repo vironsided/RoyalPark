@@ -21,6 +21,7 @@ from ..models import (
     InvoiceStatus,
     Payment,
     PaymentApplication,
+    PaymentApplicationLine,
     PaymentLog,
     user_residents,
 )
@@ -56,6 +57,34 @@ def _recompute_invoice_status(db: Session, inv: Invoice) -> None:
         inv.status = InvoiceStatus.PAID
     else:
         inv.status = InvoiceStatus.OVERPAID
+
+
+def _record_line_distribution(
+    db: Session,
+    application_id: int,
+    invoice_id: int,
+    amount_applied: Decimal,
+) -> None:
+    """Persist per-invoice-line breakdown for a PaymentApplication."""
+    lines = db.query(InvoiceLine).filter(InvoiceLine.invoice_id == invoice_id).all()
+    if not lines:
+        return
+    inv_total = sum(Decimal(str(ln.amount_total or 0)) for ln in lines)
+    if inv_total <= 0:
+        return
+    rows: list[tuple[int, Decimal]] = []
+    for ln in lines:
+        share = round(amount_applied * Decimal(str(ln.amount_total or 0)) / inv_total, 2)
+        rows.append((ln.id, share))
+    total_shares = sum(r[1] for r in rows)
+    diff = round(amount_applied - total_shares, 2)
+    if diff != 0 and rows:
+        largest_idx = max(range(len(rows)), key=lambda i: rows[i][1])
+        rows[largest_idx] = (rows[largest_idx][0], rows[largest_idx][1] + diff)
+    for line_id, amt in rows:
+        db.add(PaymentApplicationLine(
+            application_id=application_id, invoice_line_id=line_id, amount=amt,
+        ))
 
 
 def auto_apply_advance(
@@ -151,17 +180,18 @@ def auto_apply_advance(
                 continue
 
             if reference_tag:
-                db.add(
-                    PaymentApplication(
-                        payment_id=p.id,
-                        invoice_id=inv.id,
-                        amount_applied=apply_amt,
-                        reference=reference_tag,
-                        created_at=now_baku(),
-                    )
+                new_app = PaymentApplication(
+                    payment_id=p.id,
+                    invoice_id=inv.id,
+                    amount_applied=apply_amt,
+                    reference=reference_tag,
+                    created_at=now_baku(),
                 )
+                db.add(new_app)
+                db.flush()
+                _record_line_distribution(db, new_app.id, inv.id, apply_amt)
             else:
-                app = (
+                existing_app = (
                     db.query(PaymentApplication)
                     .filter(
                         PaymentApplication.payment_id == p.id,
@@ -169,21 +199,22 @@ def auto_apply_advance(
                     )
                     .first()
                 )
-                if app:
-                    app.amount_applied = Decimal(app.amount_applied or 0) + apply_amt
-                    app.reference = "ADVANCE"
+                if existing_app:
+                    existing_app.amount_applied = Decimal(existing_app.amount_applied or 0) + apply_amt
+                    existing_app.reference = "ADVANCE"
+                    db.flush()
+                    _record_line_distribution(db, existing_app.id, inv.id, apply_amt)
                 else:
-                    db.add(
-                        PaymentApplication(
-                            payment_id=p.id,
-                            invoice_id=inv.id,
-                            amount_applied=apply_amt,
-                            reference="ADVANCE",
-                            created_at=now_baku(),
-                        )
+                    new_app = PaymentApplication(
+                        payment_id=p.id,
+                        invoice_id=inv.id,
+                        amount_applied=apply_amt,
+                        reference="ADVANCE",
+                        created_at=now_baku(),
                     )
-
-            db.flush()
+                    db.add(new_app)
+                    db.flush()
+                    _record_line_distribution(db, new_app.id, inv.id, apply_amt)
 
             pay_leftover[p.id] = left - apply_amt
             inv_left -= apply_amt
@@ -442,16 +473,16 @@ def apply_advance_to_invoice(
         if apply_amt <= 0:
             continue
 
-        db.add(
-            PaymentApplication(
-                payment_id=p.id,
-                invoice_id=inv.id,
-                amount_applied=apply_amt,
-                reference=reference_tag or "ADVANCE",
-                created_at=now_baku(),
-            )
+        new_app = PaymentApplication(
+            payment_id=p.id,
+            invoice_id=inv.id,
+            amount_applied=apply_amt,
+            reference=reference_tag or "ADVANCE",
+            created_at=now_baku(),
         )
+        db.add(new_app)
         db.flush()
+        _record_line_distribution(db, new_app.id, inv.id, apply_amt)
         pay_leftover[p.id] = left - apply_amt
         remaining_to_apply -= apply_amt
 
@@ -560,16 +591,16 @@ def apply_advance_with_limit(
             if apply_amt <= 0:
                 continue
 
-            db.add(
-                PaymentApplication(
-                    payment_id=p.id,
-                    invoice_id=inv.id,
-                    amount_applied=apply_amt,
-                    reference=reference_tag or "ADVANCE",
-                    created_at=now_baku(),
-                )
+            new_app = PaymentApplication(
+                payment_id=p.id,
+                invoice_id=inv.id,
+                amount_applied=apply_amt,
+                reference=reference_tag or "ADVANCE",
+                created_at=now_baku(),
             )
+            db.add(new_app)
             db.flush()
+            _record_line_distribution(db, new_app.id, inv.id, apply_amt)
             pay_leftover[p.id] = left - apply_amt
             inv_need -= apply_amt
             remaining_to_apply -= apply_amt

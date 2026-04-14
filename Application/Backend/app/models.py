@@ -119,7 +119,23 @@ class PaymentApplication(Base):
 
     payment = relationship("Payment", back_populates="applications")
     invoice = relationship("Invoice", lazy="joined")
+    line_distributions = relationship(
+        "PaymentApplicationLine",
+        back_populates="application",
+        cascade="all, delete-orphan",
+    )
 
+
+class PaymentApplicationLine(Base):
+    __tablename__ = "payment_application_lines"
+
+    id = Column(Integer, primary_key=True)
+    application_id = Column(ForeignKey("payment_applications.id", ondelete="CASCADE"), nullable=False)
+    invoice_line_id = Column(ForeignKey("invoice_lines.id", ondelete="CASCADE"), nullable=False)
+    amount = Column(Numeric(12, 2), nullable=False)
+
+    application = relationship("PaymentApplication", back_populates="line_distributions")
+    invoice_line = relationship("InvoiceLine")
 
 
 class OnlineTransaction(Base):
@@ -145,6 +161,8 @@ class OnlineTransaction(Base):
     rc = Column(String(16), nullable=True)
     gateway_status = Column(String(32), nullable=False, default="INITIATED")
 
+    terminal_category = Column(String(32), nullable=True)
+
     request_payload = Column(Text, nullable=True)
     callback_payload = Column(Text, nullable=True)
     created_at = Column(DateTime, nullable=False, server_default=text("NOW()"))
@@ -153,6 +171,25 @@ class OnlineTransaction(Base):
     payment = relationship("Payment", lazy="joined")
     resident = relationship("Resident", lazy="joined")
     invoice = relationship("Invoice", lazy="joined")
+
+
+class SavedCard(Base):
+    __tablename__ = "saved_cards"
+    __table_args__ = (
+        UniqueConstraint("user_id", "token_id", name="uq_saved_cards_user_token"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    token_id = Column(String(256), nullable=False)
+    masked_pan = Column(String(32), nullable=False, default="****")
+    card_brand = Column(String(32), nullable=True)
+    expiry_month = Column(Integer, nullable=True)
+    expiry_year = Column(Integer, nullable=True)
+    is_default = Column(Boolean, default=False)
+    created_at = Column(DateTime, nullable=False, server_default=text("NOW()"))
+
+    user = relationship("User", lazy="joined")
 
 
 class User(Base):

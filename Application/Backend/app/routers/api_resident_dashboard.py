@@ -15,7 +15,7 @@ from ..database import get_db
 from ..models import (
     User, RoleEnum, Resident, ResidentMeter,
     Invoice, InvoiceStatus, InvoiceLine,
-    Payment, PaymentApplication, PaymentMethod,
+    Payment, PaymentApplication, PaymentApplicationLine, PaymentMethod,
     Notification, NotificationStatus, MeterReading,
     user_residents, PaymentLog,
     Tariff, MeterType, CustomerType
@@ -2170,3 +2170,176 @@ def get_resident_dashboard(
         ),
     )
 
+
+# ---------------------------------------------------------------------------
+# Advance deduction history — shows the user where their advance went
+# ---------------------------------------------------------------------------
+
+@router.get("/advance-history")
+def get_advance_history(
+    request: Request,
+    page: int = 1,
+    per_page: int = 15,
+    db: Session = Depends(get_db),
+):
+    user_id = get_user_id_from_session(request)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    resident_ids = [
+        r[0] for r in db.query(user_residents.c.resident_id)
+        .filter(user_residents.c.user_id == user.id).all()
+    ]
+    if not resident_ids:
+        return {"items": [], "total": 0, "page": page, "per_page": per_page, "pages": 0, "total_applied": 0}
+
+    try:
+        base_q = (
+            db.query(PaymentApplication)
+            .join(Payment, Payment.id == PaymentApplication.payment_id)
+            .filter(
+                Payment.resident_id.in_(resident_ids),
+                or_(
+                    PaymentApplication.reference.like("ADVANCE%"),
+                    PaymentApplication.reference.like("AUTOADV%"),
+                ),
+            )
+        )
+
+        total_count = base_q.count()
+
+        total_applied_raw = (
+            db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
+            .join(Payment, Payment.id == PaymentApplication.payment_id)
+            .filter(
+                Payment.resident_id.in_(resident_ids),
+                or_(
+                    PaymentApplication.reference.like("ADVANCE%"),
+                    PaymentApplication.reference.like("AUTOADV%"),
+                ),
+            )
+            .scalar()
+        )
+
+        total_pages = max(1, (total_count + per_page - 1) // per_page)
+        if page < 1:
+            page = 1
+        if page > total_pages:
+            page = total_pages
+
+        apps = (
+            base_q
+            .order_by(PaymentApplication.created_at.desc())
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+            .all()
+        )
+
+        items = []
+        for app in apps:
+            inv = db.get(Invoice, app.invoice_id) if app.invoice_id else None
+            ref = app.reference or ""
+            is_auto = ref.startswith("AUTOADV")
+            dt = None
+            if app.created_at:
+                try:
+                    dt = app.created_at.isoformat()
+                except Exception:
+                    dt = str(app.created_at)
+            items.append({
+                "id": app.id,
+                "date": dt,
+                "amount": float(app.amount_applied or 0),
+                "invoice_number": inv.number if inv else None,
+                "invoice_id": inv.id if inv else None,
+                "period": f"{inv.period_month:02d}/{inv.period_year}" if inv else None,
+                "type": "auto" if is_auto else "manual",
+            })
+
+        return {
+            "items": items,
+            "total": total_count,
+            "page": page,
+            "per_page": per_page,
+            "pages": total_pages,
+            "total_applied": float(total_applied_raw),
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/advance-history/{application_id}")
+def get_advance_history_detail(
+    application_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Return invoice line breakdown for a specific PaymentApplication."""
+    user_id = get_user_id_from_session(request)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    resident_ids = [
+        r[0] for r in db.query(user_residents.c.resident_id)
+        .filter(user_residents.c.user_id == user.id).all()
+    ]
+
+    app_row = db.get(PaymentApplication, application_id)
+    if not app_row:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    payment = db.get(Payment, app_row.payment_id)
+    if not payment or payment.resident_id not in resident_ids:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    invoice = db.get(Invoice, app_row.invoice_id) if app_row.invoice_id else None
+    amount_applied = float(app_row.amount_applied or 0)
+    lines_out = []
+
+    # Try real per-line data first
+    real_lines = (
+        db.query(PaymentApplicationLine, InvoiceLine)
+        .join(InvoiceLine, InvoiceLine.id == PaymentApplicationLine.invoice_line_id)
+        .filter(PaymentApplicationLine.application_id == app_row.id)
+        .all()
+    )
+
+    if real_lines:
+        for pal, il in real_lines:
+            lines_out.append({
+                "description": il.description,
+                "amount_total": float(il.amount_total or 0),
+                "applied_share": float(pal.amount or 0),
+            })
+    elif invoice and invoice.lines:
+        # Fallback: proportional estimate for old records
+        inv_total = float(invoice.amount_total or 0)
+        for ln in invoice.lines:
+            line_total = float(ln.amount_total or 0)
+            share = round(amount_applied * line_total / inv_total, 2) if inv_total else 0
+            lines_out.append({
+                "description": ln.description,
+                "amount_total": line_total,
+                "applied_share": share,
+            })
+        total_shares = sum(l["applied_share"] for l in lines_out)
+        diff = round(amount_applied - total_shares, 2)
+        if diff != 0 and lines_out:
+            largest = max(lines_out, key=lambda l: l["amount_total"])
+            largest["applied_share"] = round(largest["applied_share"] + diff, 2)
+
+    return {
+        "id": app_row.id,
+        "amount_applied": amount_applied,
+        "invoice_number": invoice.number if invoice else None,
+        "invoice_total": float(invoice.amount_total or 0) if invoice else 0,
+        "lines": lines_out,
+    }

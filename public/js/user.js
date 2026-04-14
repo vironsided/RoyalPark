@@ -495,6 +495,7 @@ function updateDashboardUI(data) {
     updateStatValue('.resident-summary-card:first-child .summary-value', summary.total_debt);
     updateStatValue('.resident-summary-card.accent .summary-value', summary.total_advance);
 
+
     // Create card for each resident
     if (data.residents && data.residents.length > 0) {
         const hasMultipleResidents = data.residents.length > 1;
@@ -2156,4 +2157,6 @@ window.addEventListener('beforeunload', () => {
     window.updateUserNotificationCount = updateNotificationCount;
 })();
 
-console.log('📱 User dashboard loaded!');
+console.log('User dashboard loaded!');
+
+// ---------------------------------------------------------------------------

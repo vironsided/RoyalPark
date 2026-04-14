@@ -66,102 +66,8 @@
                     </div>
                 </div>
 
-                <!-- Stylized static saved cards -->
-                <div class="bank-card animated-bg-1"
-                     data-card-id="saved-mc-1"
-                     data-card-last4="7899"
-                     data-card-holder="ИВАН ИВАНОВ">
-                    <div class="glass-overlay"></div>
-                    <div class="card-inner">
-                        <div class="card-top">
-                            <div class="chip chip-with-svg">
-                                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                                    <defs>
-                                        <linearGradient id="saved-chip-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" style="stop-color:#ffd700;stop-opacity:1" />
-                                            <stop offset="100%" style="stop-color:#b8860b;stop-opacity:1" />
-                                        </linearGradient>
-                                    </defs>
-                                    <rect x="10" y="20" width="80" height="60" rx="10" fill="url(#saved-chip-grad)" />
-                                    <path d="M10 40 H90 M10 60 H90 M40 20 V80 M60 20 V80" stroke="rgba(0,0,0,0.2)" stroke-width="1" fill="none"/>
-                                </svg>
-                            </div>
-                            <div class="contactless">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                                    <path d="M5 8a10 10 0 0 1 0 8" />
-                                    <path d="M8 6a14 14 0 0 1 0 12" />
-                                    <path d="M11 4a18 18 0 0 1 0 16" />
-                                </svg>
-                            </div>
-                        </div>
-                        
-                        <div class="brand-row">
-                            <div class="brand-logo">
-                                <div class="mc-circles">
-                                    <div class="circle red"></div>
-                                    <div class="circle orange"></div>
-                                </div>
-                                <span class="brand-name">MasterCard</span>
-                            </div>
-                        </div>
-
-                        <div class="card-number">4985 3212 3456 7899</div>
-
-                        <div class="card-bottom">
-                            <div class="info-group">
-                                <label data-i18n="payment_card_holder_name">CARD HOLDER NAME</label>
-                                <div class="value">ИВАН ИВАНОВ</div>
-                            </div>
-                            <div class="info-group align-right">
-                                <label data-i18n="payment_expiry_date">EXPIRY DATE</label>
-                                <div class="value">12/28</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bank-card animated-bg-2"
-                     data-card-id="saved-visa-1"
-                     data-card-last4="1289"
-                     data-card-holder="ПЕТР ПЕТРОВ">
-                    <div class="glass-overlay"></div>
-                    <div class="card-inner">
-                        <div class="card-top">
-                            <div class="chip chip-with-svg">
-                                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                                    <rect x="10" y="20" width="80" height="60" rx="10" fill="#ffd700" />
-                                    <path d="M10 40 H90 M10 60 H90 M40 20 V80 M60 20 V80" stroke="rgba(0,0,0,0.2)" stroke-width="1" fill="none"/>
-                                </svg>
-                            </div>
-                            <div class="contactless">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                                    <path d="M5 8a10 10 0 0 1 0 8" />
-                                    <path d="M8 6a14 14 0 0 1 0 12" />
-                                    <path d="M11 4a18 18 0 0 1 0 16" />
-                                </svg>
-                            </div>
-                        </div>
-                        
-                        <div class="brand-row">
-                            <div class="brand-logo">
-                                <div class="visa-badge">VISA</div>
-                            </div>
-                        </div>
-
-                        <div class="card-number">5282 3456 7890 1289</div>
-
-                        <div class="card-bottom">
-                            <div class="info-group">
-                                <label data-i18n="payment_card_holder_name">CARD HOLDER NAME</label>
-                                <div class="value">ПЕТР ПЕТРОВ</div>
-                            </div>
-                            <div class="info-group align-right">
-                                <label data-i18n="payment_expiry_date">EXPIRY DATE</label>
-                                <div class="value">09/25</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Saved bank cards loaded from API -->
+                <div id="savedBankCards"></div>
 
                 <button class="add-card-btn">
                     <i class="bi bi-plus-lg"></i>
@@ -398,6 +304,111 @@ var ADVANCE_TOPUP_SCOPE = 'advance_topup';
 
 function isAdvanceTopupScope(scope) {
     return scope === ADVANCE_TOPUP_SCOPE;
+}
+
+// ---------------------------------------------------------------------------
+// Saved cards — load from API and render
+// ---------------------------------------------------------------------------
+
+var _savedCardsLoaded = false;
+var _bgClasses = ['animated-bg-1', 'animated-bg-2', 'animated-bg-3', 'animated-bg-4', 'animated-bg-5'];
+
+function _brandHtml(brand) {
+    const b = (brand || '').toUpperCase();
+    if (b === 'MC' || b === 'MASTERCARD') {
+        return '<div class="mc-circles"><div class="circle red"></div><div class="circle orange"></div></div><span class="brand-name">MasterCard</span>';
+    }
+    if (b === 'VISA') return '<div class="visa-badge">VISA</div>';
+    return '<span class="brand-name">' + (brand || 'Card') + '</span>';
+}
+
+function _renderSavedCardEl(card, idx) {
+    const last4 = (card.masked_pan || '').replace(/[^0-9]/g, '').slice(-4) || '????';
+    const bgClass = _bgClasses[idx % _bgClasses.length];
+    const expiry = card.expiry_month && card.expiry_year
+        ? String(card.expiry_month).padStart(2, '0') + '/' + String(card.expiry_year).slice(-2)
+        : '';
+
+    const div = document.createElement('div');
+    div.className = 'bank-card ' + bgClass;
+    div.setAttribute('data-card-id', 'saved-api-' + card.id);
+    div.setAttribute('data-card-last4', last4);
+    div.setAttribute('data-card-holder', '');
+    div.setAttribute('data-saved-card-db-id', card.id);
+    div.innerHTML = `
+        <div class="glass-overlay"></div>
+        <div class="card-inner">
+            <div class="card-top">
+                <div class="chip chip-with-svg">
+                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                        <rect x="10" y="20" width="80" height="60" rx="10" fill="#ffd700" />
+                        <path d="M10 40 H90 M10 60 H90 M40 20 V80 M60 20 V80" stroke="rgba(0,0,0,0.2)" stroke-width="1" fill="none"/>
+                    </svg>
+                </div>
+                <button type="button" class="btn-delete-saved-card" data-card-db-id="${card.id}" title="Delete card" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:16px;padding:4px;">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+            <div class="brand-row">
+                <div class="brand-logo">${_brandHtml(card.card_brand)}</div>
+            </div>
+            <div class="card-number">**** **** **** ${last4}</div>
+            <div class="card-bottom">
+                <div class="info-group">
+                    <label data-i18n="payment_card_holder_name">SAVED CARD</label>
+                    <div class="value">${card.is_default ? '★ Default' : ''}</div>
+                </div>
+                <div class="info-group align-right">
+                    <label data-i18n="payment_expiry_date">EXPIRY DATE</label>
+                    <div class="value">${expiry}</div>
+                </div>
+            </div>
+        </div>
+    `;
+    return div;
+}
+
+async function loadSavedCards() {
+    const container = document.getElementById('savedBankCards');
+    if (!container) return;
+
+    try {
+        const resp = await fetch(`${API_BASE}/api/azericard/saved-cards`, { credentials: 'include' });
+        if (!resp.ok) {
+            container.innerHTML = '';
+            return;
+        }
+        const cards = await resp.json();
+        container.innerHTML = '';
+
+        if (!Array.isArray(cards) || cards.length === 0) return;
+
+        cards.forEach((card, idx) => {
+            const el = _renderSavedCardEl(card, idx);
+            container.appendChild(el);
+        });
+
+        container.querySelectorAll('.btn-delete-saved-card').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const dbId = btn.dataset.cardDbId;
+                if (!dbId) return;
+                if (!confirm('Delete this saved card?')) return;
+                try {
+                    await fetch(`${API_BASE}/api/azericard/saved-cards/${dbId}`, { method: 'DELETE', credentials: 'include' });
+                    await loadSavedCards();
+                    setupSavedCardSelection();
+                } catch (err) {
+                    console.error('Failed to delete saved card:', err);
+                }
+            });
+        });
+
+        _savedCardsLoaded = true;
+    } catch (err) {
+        console.warn('Could not load saved cards:', err);
+        container.innerHTML = '';
+    }
 }
 
 // TTL for payment session data (10 minutes)
@@ -1649,6 +1660,11 @@ function initCustomAmountField(defaultAmount, forceCustomModeForTopup = false) {
         invoiceTotal = parseFloat(cleanAmount) || 0;
     }
 
+    // Set max on input to prevent overpayment when paying an invoice
+    if (invoiceTotal > 0 && !forceCustomModeForTopup) {
+        amountInput.setAttribute('max', invoiceTotal.toFixed(2));
+    }
+
     // Checkbox change handler
     checkbox.addEventListener('change', function() {
         if (this.checked) {
@@ -1713,15 +1729,10 @@ function initCustomAmountField(defaultAmount, forceCustomModeForTopup = false) {
         const activeCard = window.selectedSavedCard || selectedSavedCard;
         const isAdvancePayment = activeCard && activeCard.type === 'ADVANCE';
 
-        if (customAmount > invoiceTotal) {
-            if (isAdvancePayment && invoiceTotal > 0) {
-                hintEl.textContent = 'При оплате из аванса сумма не может превышать сумму счёта';
-                hintEl.className = 'custom-amount-hint hint-error';
-                return;
-            }
-            const advance = customAmount - invoiceTotal;
-            hintEl.textContent = `Излишек ${advance.toFixed(2)} ₼ будет зачислен в аванс`;
-            hintEl.className = 'custom-amount-hint hint-advance';
+        if (customAmount > invoiceTotal && invoiceTotal > 0) {
+            hintEl.textContent = 'Сумма не может превышать сумму счёта';
+            hintEl.className = 'custom-amount-hint hint-error';
+            return;
         } else if (customAmount < invoiceTotal) {
             const remaining = invoiceTotal - customAmount;
             hintEl.textContent = `Останется к оплате: ${remaining.toFixed(2)} ₼ (счёт будет частично оплачен)`;
@@ -1875,8 +1886,11 @@ async function submitPayment(event) {
         if (isAdvanceTopupMode || !hasInvoice || invoiceTotal === 0) {
             scope = null;
         }
-        // Если есть invoice, но пользователь указал кастомную сумму, применяем к invoice
-        // (излишек автоматически уйдет в аванс)
+        // Нельзя платить больше суммы счёта (излишек пойдёт на чужой счёт терминала)
+        if (hasInvoice && invoiceTotal > 0 && customAmount > invoiceTotal) {
+            showPaymentError('Сумма не может превышать сумму счёта (' + invoiceTotal.toFixed(2) + ' ₼)');
+            return false;
+        }
     } else {
         // Use default amount from session storage or total element
         if (!amount || amount <= 0) {
@@ -2082,11 +2096,13 @@ async function submitPayment(event) {
                 ? 'Пополнение аванса'
                 : (paymentScope === 'all' ? 'Оплата всех счетов' : 'Оплата счета'));
 
+            const terminalCategory = sessionStorage.getItem('paymentTerminalCategory') || null;
             const initiatePayload = {
                 resident_id: residentId,
                 amount: amount,
                 invoice_id: invoiceIdForRequest || null,
-                description
+                description,
+                terminal_category: terminalCategory
             };
 
             const response = await fetch(`${API_BASE}/api/azericard/initiate`, {
@@ -2543,6 +2559,7 @@ async function setupAdvanceTopupButton() {
                 window.paymentRedirectTimeout = null;
             }
             await initPaymentPage();
+            await loadSavedCards();
             setupSavedCardSelection();
             syncAdvanceTopupButtonState();
             return;
@@ -2588,6 +2605,7 @@ async function setupAdvanceTopupButton() {
         // Сразу очищаем invoice-детали в UI, чтобы не ждать перезагрузки страницы.
         clearInvoiceUIForTopup();
         await initPaymentPage();
+        await loadSavedCards();
         setupSavedCardSelection();
         syncAdvanceTopupButtonState();
     });
@@ -2658,6 +2676,7 @@ function setupPaymentDataCleanup() {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', async () => {
         await initPaymentPage();
+        await loadSavedCards();
         bindPayButton();
         setupSavedCardSelection();
         setupPaymentLayout();
@@ -2667,6 +2686,7 @@ if (document.readyState === 'loading') {
 } else {
     (async () => {
         await initPaymentPage();
+        await loadSavedCards();
         bindPayButton();
         setupSavedCardSelection();
         setupPaymentLayout();

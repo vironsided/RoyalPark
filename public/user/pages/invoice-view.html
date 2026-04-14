@@ -3,10 +3,10 @@
     .invoice-selection-summary {
         margin-top: 12px;
         padding: 12px 14px;
-        border: 1px solid rgba(99, 102, 241, 0.35);
+        border: 1px solid rgba(177, 186, 136, 0.4);
         border-radius: 10px;
-        background: rgba(37, 99, 235, 0.12);
-        color: rgba(255, 255, 255, 0.95);
+        background: rgba(177, 186, 136, 0.12);
+        color: var(--text-primary, #56565c);
         font-size: 1rem;
         line-height: 1.45;
         min-height: 48px;
@@ -16,15 +16,22 @@
         word-break: break-word;
     }
     .invoice-selection-summary.is-empty {
-        border-color: rgba(148, 163, 184, 0.35);
-        background: rgba(148, 163, 184, 0.10);
-        color: rgba(226, 232, 240, 0.92);
+        border-color: rgba(148, 163, 184, 0.25);
+        background: rgba(148, 163, 184, 0.06);
+        color: var(--text-secondary, #7a7a82);
     }
     @media (max-width: 900px) {
         .invoice-selection-summary {
             font-size: 0.94rem;
             padding: 10px 12px;
         }
+    }
+    tr.category-locked {
+        opacity: 0.4;
+        pointer-events: none;
+    }
+    tr.category-locked td {
+        background: rgba(100, 116, 139, 0.08);
     }
 </style>
 
@@ -287,6 +294,11 @@
                                 remaining_amount: Number(line.remaining_amount ?? line.amount_total ?? 0),
                             }));
                         sessionStorage.setItem('paymentSelectedLinesSummary', JSON.stringify(selectedSummary));
+                        if (activeTerminalCategory) {
+                            sessionStorage.setItem('paymentTerminalCategory', activeTerminalCategory);
+                        } else {
+                            sessionStorage.removeItem('paymentTerminalCategory');
+                        }
                     } catch (e) {
                         console.warn('Failed to store payment session data', e);
                     }
@@ -729,6 +741,68 @@
             return Array.from(selectedPayableLineIds).map(Number).filter(x => Number.isFinite(x) && x > 0);
         }
 
+        // ---------------------------------------------------------------------------
+        // Terminal-category logic: utility vs maintenance
+        // ---------------------------------------------------------------------------
+        var UTILITY_KEYS = new Set([
+            'meter_electricity', 'meter_cold_water', 'meter_hot_water',
+            'meter_gas', 'meter_sewerage'
+        ]);
+        var MAINTENANCE_KEYS = new Set([
+            'tariffs_purpose_rent', 'tariffs_purpose_service', 'tariffs_purpose_construction'
+        ]);
+
+        function getTerminalCategory(serviceKey, description) {
+            if (UTILITY_KEYS.has(serviceKey)) return 'utility';
+            if (MAINTENANCE_KEYS.has(serviceKey)) return 'maintenance';
+            var low = String(description || '').toLowerCase();
+            if (/(электр|electr|газ|qaz|gas|вода|su|water|канализ|kanaliz|sewerage|стабильн|sabit|stable)/i.test(low)) return 'utility';
+            if (/(аренд|icar|rent|серв|xidm|service|строител|tikinti|construction)/i.test(low)) return 'maintenance';
+            return 'utility';
+        }
+
+        var activeTerminalCategory = null;
+
+        function enforceCategoryLock() {
+            var checkboxes = document.querySelectorAll('.invoice-line-pay-checkbox');
+            var selectedCats = new Set();
+            checkboxes.forEach(function(cb) {
+                if (cb.checked) {
+                    var cat = cb.closest('tr')?.dataset.terminalCategory;
+                    if (cat) selectedCats.add(cat);
+                }
+            });
+
+            if (selectedCats.size === 0) {
+                activeTerminalCategory = null;
+                checkboxes.forEach(function(cb) {
+                    var lineId = Number(cb.dataset.lineId || 0);
+                    var remaining = Number(cb.dataset.remaining || 0);
+                    cb.disabled = !(lineId > 0 && remaining > 0);
+                    cb.closest('tr')?.classList.remove('category-locked');
+                });
+            } else {
+                activeTerminalCategory = selectedCats.values().next().value;
+                checkboxes.forEach(function(cb) {
+                    var tr = cb.closest('tr');
+                    var cat = tr?.dataset.terminalCategory;
+                    var lineId = Number(cb.dataset.lineId || 0);
+                    var remaining = Number(cb.dataset.remaining || 0);
+                    if (cat && cat !== activeTerminalCategory) {
+                        cb.disabled = true;
+                        cb.checked = false;
+                        var lid = Number(cb.dataset.lineId || 0);
+                        if (lid) selectedPayableLineIds.delete(lid);
+                        tr?.classList.add('category-locked');
+                    } else {
+                        cb.disabled = !(lineId > 0 && remaining > 0);
+                        tr?.classList.remove('category-locked');
+                    }
+                });
+            }
+            updateMasterCheckboxState();
+        }
+
         function isWaterDescription(description) {
             const low = String(description || '').toLowerCase();
             return low.includes('вода') || low.includes('water') || low.includes('meter_cold_water');
@@ -931,13 +1005,16 @@
                 const paidMeta = paidMetaTemplate
                     .replace('{paid}', formatCurrency(paidAmount))
                     .replace('{total}', formatCurrency(totalAmount));
+                const terminalCategory = getTerminalCategory(parsed.serviceKey, line.description);
+
                 return `
-                <tr>
+                <tr data-terminal-category="${terminalCategory}" data-line-id="${lineId}">
                     <td class="pay-select-cell">
                         ${showCheckbox ? `
                             <input type="checkbox"
                                    class="invoice-line-pay-checkbox"
                                    data-line-id="${checkboxLineId || ''}"
+                                   data-remaining="${remainingAmount}"
                                    ${checked ? 'checked' : ''}
                                    ${selectable ? '' : 'disabled'}>
                         ` : ''}
@@ -970,17 +1047,33 @@
                     if (!lineId) return;
                     if (cb.checked) selectedPayableLineIds.add(lineId);
                     else selectedPayableLineIds.delete(lineId);
+                    enforceCategoryLock();
                     refreshSelectionControls(currentInvoicePayload);
                 });
             });
 
-            // Master checkbox handler
+            // Master checkbox handler (respects category lock)
             const masterCheckbox = document.getElementById('masterCheckbox');
             if (masterCheckbox) {
                 masterCheckbox.addEventListener('change', () => {
-                    const allCheckboxes = Array.from(document.querySelectorAll('.invoice-line-pay-checkbox:not([disabled])'));
                     const isChecked = masterCheckbox.checked;
-                    allCheckboxes.forEach(cb => {
+                    if (isChecked && !activeTerminalCategory) {
+                        // When checking "all" and no category locked yet, pick the first available
+                        const firstAvailable = document.querySelector('.invoice-line-pay-checkbox:not([disabled])');
+                        if (firstAvailable) {
+                            const cat = firstAvailable.closest('tr')?.dataset.terminalCategory;
+                            if (cat) activeTerminalCategory = cat;
+                        }
+                    }
+                    const allowedCheckboxes = Array.from(document.querySelectorAll('.invoice-line-pay-checkbox')).filter(cb => {
+                        if (cb.disabled && !cb.checked) return false;
+                        if (activeTerminalCategory) {
+                            const cat = cb.closest('tr')?.dataset.terminalCategory;
+                            return cat === activeTerminalCategory;
+                        }
+                        return Number(cb.dataset.remaining || 0) > 0;
+                    });
+                    allowedCheckboxes.forEach(cb => {
                         if (cb.checked !== isChecked) {
                             cb.checked = isChecked;
                             const lineId = Number(cb.dataset.lineId || 0);
@@ -990,9 +1083,11 @@
                             }
                         }
                     });
+                    enforceCategoryLock();
                     refreshSelectionControls(currentInvoicePayload);
                 });
             }
+            enforceCategoryLock();
             updateMasterCheckboxState();
         }
 
