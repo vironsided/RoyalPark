@@ -1345,9 +1345,10 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
 
     async function loadNews() {
         try {
-            const url = `${API_BASE}/api/news/admin?page=${paginationState.currentPage}&per_page=${paginationState.itemsPerPage}`;
+            const url = `${API_BASE}/api/news/admin?page=${paginationState.currentPage}&per_page=${paginationState.itemsPerPage}&_=${Date.now()}`;
             const response = await fetch(url, {
-                credentials: 'include'
+                credentials: 'include',
+                cache: 'no-store',
             });
             
             if (!response.ok) {
@@ -1402,11 +1403,12 @@ html[data-theme="dark"] #newsTableContainer .table-pagination .custom-pag-select
                 title = { ru: t('error_loading_data', 'Ошибка загрузки'), az: t('error_loading_data', 'Yükləmə xətası'), en: t('error_loading_data', 'Loading error') };
             }
             
-            // Выбираем язык с правильным fallback
-            const titleText = (title[lang] && title[lang].trim()) || 
-                             (title.ru && title.ru.trim()) || 
-                             (title.az && title.az.trim()) || 
-                             (title.en && title.en.trim()) || 
+            // Заголовок в списке: фиксированный порядок ru → az → en (первый непустой).
+            // Иначе при интерфейсе AZ в колонке всегда показывался title.az, а правки только
+            // во вкладке «Русский» визуально не отражались (данные в БД уже были верные).
+            const titleText = (title.ru && String(title.ru).trim()) ||
+                             (title.az && String(title.az).trim()) ||
+                             (title.en && String(title.en).trim()) ||
                              '—';
             
             const publishedDate = new Date(news.published_at).toLocaleDateString(locale);
