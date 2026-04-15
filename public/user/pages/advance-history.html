@@ -213,6 +213,23 @@ html[data-theme="dark"] body.user-app .table-pagination {
         return (L[key] && L[key][l]) || (L[key] && L[key].ru) || key;
     }
 
+    function escapeHtml(str) {
+        if (str == null || str === '') return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function localizeLineDescription(raw) {
+        const l = lang();
+        if (window.invoiceLineI18n && typeof window.invoiceLineI18n.formatInvoiceLineDescription === 'function') {
+            return window.invoiceLineI18n.formatInvoiceLineDescription(raw, l);
+        }
+        return raw || '—';
+    }
+
     function formatDate(iso) {
         if (!iso) return '—';
         try {
@@ -326,14 +343,15 @@ html[data-theme="dark"] body.user-app .table-pagination {
                 return;
             }
 
-            let html = data.lines.map(ln =>
-                `<div class="ah-detail-line">
-                    <span class="ah-dl-desc">${ln.description}
+            let html = data.lines.map((ln) => {
+                const lineLabel = escapeHtml(localizeLineDescription(ln.description));
+                return `<div class="ah-detail-line">
+                    <span class="ah-dl-desc">${lineLabel}
                         <span style="color:var(--text-secondary); font-weight:400; font-size:0.78rem; margin-left:6px;">(${Number(ln.amount_total).toFixed(2)} ₼)</span>
                     </span>
                     <span class="ah-dl-amount" style="color:var(--danger-color, #c85a5a);">−${Number(ln.applied_share).toFixed(2)} ₼</span>
-                </div>`
-            ).join('');
+                </div>`;
+            }).join('');
 
             html += `<div class="ah-detail-line" style="margin-top:6px; border-top: 2px solid rgba(177,186,136,0.25); padding-top: 8px;">
                 <span class="ah-dl-desc" style="font-weight:700;">${t('invoice_total')}: ${Number(data.invoice_total).toFixed(2)} ₼</span>
