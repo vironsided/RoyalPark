@@ -33,5 +33,5 @@ def can_manage_user(target: User, actor: User) -> bool:
     if actor.role == RoleEnum.ROOT:
         return True
     if actor.role == RoleEnum.ADMIN:
-        return target.role in (RoleEnum.OPERATOR, RoleEnum.RESIDENT)
+        return target.role in (RoleEnum.OPERATOR, RoleEnum.RESIDENT, RoleEnum.SALES)
     return False

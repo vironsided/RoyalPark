@@ -132,6 +132,11 @@
         color: white;
     }
 
+    .role-badge.role-sales {
+        background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+        color: #3a2a00;
+    }
+
     /* Password Status Badge */
     .password-badge {
         display: inline-block;

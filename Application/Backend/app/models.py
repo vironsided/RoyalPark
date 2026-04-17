@@ -36,6 +36,7 @@ class RoleEnum(str, enum.Enum):
     ADMIN = "ADMIN"
     OPERATOR = "OPERATOR"
     RESIDENT = "RESIDENT"
+    SALES = "SALES"  # менеджер по продаже вилл/домов (как Satish)
 
 #Енумы типов счётчиков
 class MeterType(str, enum.Enum):
@@ -633,3 +634,115 @@ class PaymentLog(Base):
     payment: Mapped["Payment"] = relationship("Payment", foreign_keys=[payment_id], lazy="joined")
     resident: Mapped["Resident"] = relationship("Resident", foreign_keys=[resident_id], lazy="joined")
     user: Mapped["User"] = relationship("User", foreign_keys=[user_id], lazy="joined")
+
+
+# =====================================================
+#  SALES (Satish): договора купли-продажи вилл/домов
+# =====================================================
+
+class SalesContractType(str, enum.Enum):
+    FULL = "FULL"              # Tam ödənişli
+    INSTALLMENT = "INSTALLMENT"  # Hissəli ödənişli
+
+
+class SalesContractStatus(str, enum.Enum):
+    DRAFT = "DRAFT"                           # черновик (редактируется продажником)
+    PENDING_APPROVAL = "PENDING_APPROVAL"     # отправлен root-у, ещё не просмотрен
+    VIEWED = "VIEWED"                         # root открыл/увидел, но не решил
+    APPROVED = "APPROVED"                     # root одобрил — можно печатать
+    REJECTED = "REJECTED"                     # root отклонил — вернуть на доработку
+    PRINTED = "PRINTED"                       # договор распечатан (финальная стадия)
+
+
+class SalesContract(Base):
+    """
+    Договор купли-продажи жилой площади (вилла/дом) в комплексе.
+    Заполняется пользователем с ролью SALES, утверждается ROOT.
+    """
+    __tablename__ = "sales_contracts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    contract_type: Mapped[SalesContractType] = mapped_column(
+        SAEnum(SalesContractType, name="sales_contract_type"),
+        nullable=False,
+        default=SalesContractType.FULL,
+    )
+    status: Mapped[SalesContractStatus] = mapped_column(
+        SAEnum(SalesContractStatus, name="sales_contract_status"),
+        nullable=False,
+        default=SalesContractStatus.DRAFT,
+    )
+
+    # Шапка договора
+    contract_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    contract_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    contract_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    city: Mapped[str | None] = mapped_column(String(100), nullable=True, default="Bakı şəhəri")
+
+    # Покупатель
+    buyer_full_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    buyer_id_series: Mapped[str | None] = mapped_column(String(20), nullable=True)   # Ş/V seriyası
+    buyer_id_number: Mapped[str | None] = mapped_column(String(50), nullable=True)   # Ş/V № (номер документа)
+    buyer_fin: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    buyer_phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    buyer_email: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    buyer_address: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Объект недвижимости
+    house_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    area_m2: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    price_per_m2_usd: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    total_price_usd: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
+
+    # Только для INSTALLMENT
+    initial_payment_usd: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
+    remaining_usd: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
+    months_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    monthly_payment_usd: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
+
+    # Workflow / аудит
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    approval_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+    viewed_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    viewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+    reviewed_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+    review_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    printed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+    printed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    created_by: Mapped["User"] = relationship("User", foreign_keys=[created_by_id], lazy="joined")
+    viewed_by: Mapped["User"] = relationship("User", foreign_keys=[viewed_by_id], lazy="joined")
+    reviewed_by: Mapped["User"] = relationship("User", foreign_keys=[reviewed_by_id], lazy="joined")
+
+    installments: Mapped[list["SalesContractInstallment"]] = relationship(
+        "SalesContractInstallment",
+        back_populates="contract",
+        cascade="all, delete-orphan",
+        order_by="SalesContractInstallment.month_no",
+        lazy="selectin",
+    )
+
+
+class SalesContractInstallment(Base):
+    """
+    Строка графика платежей (Əlavə №2) для договора в рассрочку.
+    """
+    __tablename__ = "sales_contract_installments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    contract_id: Mapped[int] = mapped_column(
+        ForeignKey("sales_contracts.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    month_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    payment_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    amount_usd: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), default=datetime.utcnow)
+
+    contract: Mapped["SalesContract"] = relationship("SalesContract", back_populates="installments")

@@ -209,6 +209,12 @@
                             </span>
                             <span class="nav-text" data-i18n="nav_users">Пользователи</span>
                         </a>
+                        <a href="/sales" class="nav-item" data-route="/sales">
+                            <span class="nav-icon">
+                                <i class="bi bi-house-heart"></i>
+                            </span>
+                            <span class="nav-text" data-i18n="nav_sales">Продажи</span>
+                        </a>
                     </div>
 
                     <div class="nav-section">
@@ -1064,17 +1070,29 @@
                             .replace('{date}', date || '—');
                     };
 
-                    notifications = (data.notifications || []).map(n => ({
-                        id: n.id,
-                        type: String(n.notification_type || '').toUpperCase(),
-                        title: String(n.notification_type || '').toUpperCase() === 'TARIFF_EXPIRED'
-                            ? t('notifications_system_title', 'Системное уведомление')
-                            : t('notifications_resident_appeal_title', 'Обращение жителя'),
-                        text: localizeNotificationText(n),
-                        time: formatTime(n.created_at),
-                        unread: n.status === 'UNREAD',
-                        status: n.status
-                    }));
+                    notifications = (data.notifications || []).map(n => {
+                        const typeUp = String(n.notification_type || '').toUpperCase();
+                        let title;
+                        if (typeUp === 'TARIFF_EXPIRED') {
+                            title = t('notifications_system_title', 'Системное уведомление');
+                        } else if (typeUp === 'CONTRACT_APPROVAL') {
+                            title = t('notifications_contract_approval_title', 'Договор на одобрение');
+                        } else if (typeUp === 'CONTRACT_DECISION') {
+                            title = t('notifications_contract_decision_title', 'Решение по договору');
+                        } else {
+                            title = t('notifications_resident_appeal_title', 'Обращение жителя');
+                        }
+                        return {
+                            id: n.id,
+                            type: typeUp,
+                            related_id: n.related_id,
+                            title: title,
+                            text: localizeNotificationText(n),
+                            time: formatTime(n.created_at),
+                            unread: n.status === 'UNREAD',
+                            status: n.status
+                        };
+                    });
 
                     renderNotifications();
                     const unread = await fetchUnreadCount();
@@ -1164,7 +1182,7 @@
                             // Только системные (например, истёкший тариф) помечаем прочитанными по клику.
                             // Обращения жителя (APPEAL / без типа): прочитано только после выбора стадии и сохранения в appeals2.
                             const t = notif ? String(notif.type || '').toUpperCase() : '';
-                            if (t === 'TARIFF_EXPIRED') {
+                            if (t === 'TARIFF_EXPIRED' || t === 'CONTRACT_APPROVAL' || t === 'CONTRACT_DECISION') {
                                 await markNotificationRead(notificationId);
                             }
                             closeNotifications();
@@ -1173,6 +1191,14 @@
                                     window.spaRouter.navigate('/tariffs');
                                 } else {
                                     window.location.hash = '#/tariffs';
+                                }
+                            } else if (notif && (t === 'CONTRACT_APPROVAL' || t === 'CONTRACT_DECISION')) {
+                                const contractId = notif.related_id || '';
+                                const target = contractId ? `/sales?contract_id=${contractId}` : '/sales';
+                                if (window.spaRouter) {
+                                    window.spaRouter.navigate(target);
+                                } else {
+                                    window.location.hash = '#' + target;
                                 }
                             } else {
                                 if (window.spaRouter) {

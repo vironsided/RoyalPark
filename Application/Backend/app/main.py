@@ -8,7 +8,7 @@ from .config import settings
 from .database import Base, engine, SessionLocal
 from .models import User, RoleEnum
 from .security import hash_password
-from .routers import auth_routes, dashboard, api_users, api_blocks, api_tariffs, api_residents, api_readings, api_tenants, api_invoices, api_payments, api_notifications, api_dashboard, api_logs, api_qr, api_payment, api_resident_dashboard, api_news, api_azericard
+from .routers import auth_routes, dashboard, api_users, api_blocks, api_tariffs, api_residents, api_readings, api_tenants, api_invoices, api_payments, api_notifications, api_dashboard, api_logs, api_qr, api_payment, api_resident_dashboard, api_news, api_azericard, api_sales
 from fastapi.responses import RedirectResponse
 
 
@@ -29,6 +29,23 @@ def init_db():
                 temp_password_plain=None,
             )
             db.add(root)
+            db.commit()
+
+        # Seed первичного продажника (Satish) — продажа вилл/домов в комплексе.
+        # Создаётся один раз; дальше новых "продажников" можно заводить из админки.
+        satish = db.query(User).filter(User.username == "satish").first()
+        if not satish:
+            satish_temp_password = "Satish123!"
+            satish = User(
+                username="satish",
+                password_hash=hash_password(satish_temp_password),
+                role=RoleEnum.SALES,
+                full_name="Satish",
+                require_password_change=True,
+                temp_password_plain=satish_temp_password,
+                created_by_id=root.id if root else None,
+            )
+            db.add(satish)
             db.commit()
     finally:
         db.close()
@@ -51,6 +68,16 @@ def run_bootstrap_schema():
             ALTER TABLE payments
               ALTER COLUMN received_at TYPE TIMESTAMPTZ
               USING (received_at::timestamp AT TIME ZONE 'Asia/Baku');
+          END IF;
+        END $$;
+        """,
+        # Регистрация новой роли SALES в существующем enum-типе roleenum.
+        # ALTER TYPE ... ADD VALUE IF NOT EXISTS поддерживается начиная с PostgreSQL 9.6.
+        """
+        DO $$
+        BEGIN
+          IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'roleenum') THEN
+            ALTER TYPE roleenum ADD VALUE IF NOT EXISTS 'SALES';
           END IF;
         END $$;
         """,
@@ -230,6 +257,80 @@ def run_bootstrap_schema():
             invoice_line_id INTEGER NOT NULL REFERENCES invoice_lines(id) ON DELETE CASCADE,
             amount NUMERIC(12, 2) NOT NULL
         );""",
+        # ==========================================================
+        #  Модуль продаж (SALES): договора купли-продажи вилл/домов
+        # ==========================================================
+        """
+        DO $$ BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sales_contract_type') THEN
+            CREATE TYPE sales_contract_type AS ENUM ('FULL', 'INSTALLMENT');
+          END IF;
+        END $$;
+        """,
+        """
+        DO $$ BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sales_contract_status') THEN
+            CREATE TYPE sales_contract_status AS ENUM (
+              'DRAFT', 'PENDING_APPROVAL', 'VIEWED', 'APPROVED', 'REJECTED', 'PRINTED'
+            );
+          END IF;
+        END $$;
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS sales_contracts (
+          id SERIAL PRIMARY KEY,
+          contract_type sales_contract_type NOT NULL DEFAULT 'FULL',
+          status sales_contract_status NOT NULL DEFAULT 'DRAFT',
+
+          contract_number VARCHAR(100),
+          contract_year INTEGER,
+          contract_date DATE,
+          city VARCHAR(100) DEFAULT 'Bakı şəhəri',
+
+          buyer_full_name VARCHAR(200),
+          buyer_id_series VARCHAR(20),
+          buyer_id_number VARCHAR(50),
+          buyer_fin VARCHAR(30),
+          buyer_phone VARCHAR(50),
+          buyer_email VARCHAR(120),
+          buyer_address TEXT,
+
+          house_number VARCHAR(50),
+          area_m2 NUMERIC(10,2),
+          price_per_m2_usd NUMERIC(12,2),
+          total_price_usd NUMERIC(14,2),
+
+          initial_payment_usd NUMERIC(14,2),
+          remaining_usd NUMERIC(14,2),
+          months_count INTEGER,
+          monthly_payment_usd NUMERIC(14,2),
+
+          created_by_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          approval_requested_at TIMESTAMP WITHOUT TIME ZONE,
+          viewed_by_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          viewed_at TIMESTAMP WITHOUT TIME ZONE,
+          reviewed_by_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          reviewed_at TIMESTAMP WITHOUT TIME ZONE,
+          review_comment TEXT,
+          printed_at TIMESTAMP WITHOUT TIME ZONE,
+          printed_count INTEGER NOT NULL DEFAULT 0,
+
+          created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+          updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
+        );
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS sales_contract_installments (
+          id SERIAL PRIMARY KEY,
+          contract_id INTEGER NOT NULL REFERENCES sales_contracts(id) ON DELETE CASCADE,
+          month_no INTEGER NOT NULL,
+          payment_date DATE,
+          amount_usd NUMERIC(14,2),
+          created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS idx_sales_contracts_status ON sales_contracts(status);",
+        "CREATE INDEX IF NOT EXISTS idx_sales_contracts_created_by ON sales_contracts(created_by_id);",
         # Backfill: for existing PaymentApplications without line distributions,
         # compute proportional splits and insert them.
         """
@@ -298,6 +399,7 @@ def create_app() -> FastAPI:
     app.include_router(api_resident_dashboard.router)
     app.include_router(api_news.router)
     app.include_router(api_azericard.router)
+    app.include_router(api_sales.router)
     @app.get("/healthz")
     def healthz():
         return {"ok": True}

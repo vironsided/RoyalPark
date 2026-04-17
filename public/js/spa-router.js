@@ -16,6 +16,7 @@ class SPARouter {
             '/residents': '/admin/content/residents.html',
             '/tenants': '/admin/content/tenants.html',
             '/readings': '/admin/content/readings.html',
+            '/sales': '/admin/content/sales.html',
             
             // Финансы
             '/payments': '/admin/content/payments.html',
@@ -92,6 +93,11 @@ class SPARouter {
             '/users': {
                 title: 'Пользователи',
                 breadcrumb: ['Управление', 'Пользователи'],
+                section: 'Управление'
+            },
+            '/sales': {
+                title: 'Продажи',
+                breadcrumb: ['Управление', 'Продажи'],
                 section: 'Управление'
             },
             

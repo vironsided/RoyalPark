@@ -11,6 +11,7 @@
             <option value="ADMIN">ADMIN</option>
             <option value="OPERATOR">OPERATOR</option>
             <option value="RESIDENT">RESIDENT</option>
+            <option value="SALES">SALES</option>
             <option value="ROOT">ROOT</option>
         </select>
         <button class="btn-create-user" onclick="createUser()">
@@ -237,7 +238,8 @@
                     ROOT: t('system_admin', 'Системный администратор'),
                     ADMIN: t('role_admin', 'Администратор'),
                     OPERATOR: t('role_operator', 'Оператор'),
-                    RESIDENT: t('role_user', 'Жилец')
+                    RESIDENT: t('role_user', 'Жилец'),
+                    SALES: t('role_sales', 'Продажник')
                 };
 
                 // Password badge
