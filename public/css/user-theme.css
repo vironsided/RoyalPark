@@ -1,19 +1,32 @@
 /**
- * Тема личного кабинета резидента (royalpark.az: milky + olive).
+ * Тема личного кабинета резидента (Royal Park: milky + olive).
  * Подключается ТОЛЬКО на страницах с body.user-app — admin/index.html этот файл не загружает.
  * Здесь — токены и перекрытия цветов из admin.css/global; разметка остаётся общей, внешний вид — отдельный.
+ *
+ *  ── Брендбук Royal Park ────────────────────────────────────────────────
+ *  Палитра (PDF «Royal Park colors»):
+ *    Cover      #b1ba88   — olive, основной акцент (кнопки/активные элементы)
+ *    Background #efefe6   — milky, основной фон
+ *    Emblem     #ebede7   — warm light grey, панели/карточки/сайдбар
+ *    Text       #56565c   — charcoal, основной цвет текста
+ *
+ *  Шрифты (DOCX «Fonts»):
+ *    Логотип / заголовки — Spectral (serif, через Google Fonts)
+ *    Основной текст      — Times New Roman (локальный)
+ *    UI-контролы         — Montserrat (навигация, кнопки, переключатель языка)
+ *  ───────────────────────────────────────────────────────────────────────
  */
 
 body.user-app {
-    /* Только ЛК резидента: те же семейства, что и на login (админка этот файл не подключает) */
+    /* Брендбук: основной текст Times, акценты Spectral, UI Montserrat */
     --font-sans: "Times New Roman", Times, serif;
     --font-serif: "Times New Roman", Times, serif;
-    --font-display: "Cormorant Garamond", "Times New Roman", Times, serif;
+    --font-display: "Spectral", "Times New Roman", Times, serif;
     --font-ui: "Montserrat", system-ui, -apple-system, sans-serif;
 
     /* Базовые токены бренда (синхрон с :root Milky & Olivia) */
     --user-milky: var(--milky-canvas, #efefe6);
-    --user-milky-dark: var(--milky-dark, #edebe1);
+    --user-milky-dark: var(--milky-dark, #ebede7);
     --user-charcoal: var(--charcoal-deep, #56565c);
     --user-charcoal-muted: var(--charcoal-muted, #6b6b73);
     --user-olive: var(--olivia-soft, #c5cd9f);
@@ -79,7 +92,7 @@ body.user-app .user-role {
     font-family: var(--font-ui) !important;
 }
 
-/* Cormorant: заголовки в кабинете */
+/* Spectral: заголовки в кабинете (брендовый шрифт Royal Park) */
 body.user-app h1,
 body.user-app h2,
 body.user-app h3,
@@ -424,7 +437,7 @@ body.user-app .sidebar .sidebar-brand-mark {
     object-fit: contain;
     object-position: center bottom;
     flex-shrink: 0;
-    /* Тёмно-оливковый силуэт вместо жёсткого чёрного — лучше на #edebe1 */
+    /* Тёмно-оливковый силуэт вместо жёсткого чёрного — лучше на Emblem (#ebede7) */
     filter: brightness(0) saturate(100%) invert(28%) sepia(8%) saturate(1200%) hue-rotate(38deg) brightness(0.92)
         contrast(1.05);
     opacity: 0.92;

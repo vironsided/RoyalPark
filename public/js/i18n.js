@@ -315,6 +315,12 @@ const translations = {
         role_maintenance: "Служба",
         role_accountant: "Бухгалтер",
         system_admin: "Системный администратор",
+
+        // Sidebar panel labels (по ролям)
+        panel_admin: "Админ-панель",
+        panel_user: "Панель пользователя",
+        panel_sales: "Панель продаж",
+        panel_accountant: "Панель бухгалтерии",
         
         // Navigation Sections
         nav_main: "ГЛАВНОЕ",
@@ -1632,6 +1638,12 @@ const translations = {
         role_maintenance: "Xidmət",
         role_accountant: "Mühasib",
         system_admin: "Sistem admini",
+
+        // Sidebar panel labels (rollara görə)
+        panel_admin: "Admin paneli",
+        panel_user: "İstifadəçi paneli",
+        panel_sales: "Satış paneli",
+        panel_accountant: "Mühasibat paneli",
         
         // Navigation Sections
         nav_main: "ƏSAS",
@@ -2950,6 +2962,12 @@ const translations = {
         role_maintenance: "Maintenance",
         role_accountant: "Accountant",
         system_admin: "System Admin",
+
+        // Sidebar panel labels (by role)
+        panel_admin: "Admin Panel",
+        panel_user: "User Panel",
+        panel_sales: "Sales Panel",
+        panel_accountant: "Accounting Panel",
         
         // Navigation Sections
         nav_main: "MAIN",

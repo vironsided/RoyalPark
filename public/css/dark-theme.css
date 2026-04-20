@@ -451,6 +451,40 @@ body[data-theme="dark"] .form-select::-webkit-scrollbar-thumb:hover {
     background: rgba(102, 126, 234, 0.75);
 }
 
+/*
+ * Native <option> dark styling.
+ *
+ * ВАЖНО: никакого !important. На Windows Chromium !important на color/background
+ * у <option> заставляет браузер считать, что автор полностью управляет popup'ом,
+ * и отключает нативную тёмную раскраску — в итоге popup рисуется системным
+ * СВЕТЛЫМ фоном, а форсированный белый текст становится невидимым.
+ * Обычные author-правила вместе с color-scheme: dark (см. блок выше) дают
+ * корректный тёмный popup — так же, как у селекта ролей в users.html.
+ */
+[data-theme="dark"] select option,
+[data-theme="dark"] .form-select option,
+body[data-theme="dark"] select option,
+body[data-theme="dark"] .form-select option {
+    background-color: #1e2128;
+    color: #ffffff;
+}
+
+[data-theme="dark"] select option:checked,
+[data-theme="dark"] .form-select option:checked,
+body[data-theme="dark"] select option:checked,
+body[data-theme="dark"] .form-select option:checked {
+    background-color: #2f3442;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+[data-theme="dark"] select option:disabled,
+[data-theme="dark"] .form-select option:disabled,
+body[data-theme="dark"] select option:disabled,
+body[data-theme="dark"] .form-select option:disabled {
+    color: #6b7180;
+}
+
 /* Notifications */
 [data-theme="dark"] .notification-badge {
     background: #dc3545 !important;

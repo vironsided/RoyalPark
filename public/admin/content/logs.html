@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="/admin/content_css/logs.css">
+<link rel="stylesheet" href="/admin/content_css/logs.css?v=dark-select-1">
 <div class="content-wrapper">
     <div style="position: relative;">
         <div class="card">
@@ -145,6 +145,7 @@
                         option.textContent = `${r.block_name || ''}/${r.unit_number || ''}`;
                         residentSelect.appendChild(option);
                     });
+                    if (residentSelect._lcd) residentSelect._lcd.refresh();
                 }
             }
             
@@ -167,11 +168,151 @@
                         option.textContent = u.username || u.full_name || `User ${u.id}`;
                         userSelect.appendChild(option);
                     });
+                    if (userSelect._lcd) userSelect._lcd.refresh();
                 }
             }
         } catch (error) {
             console.error('Error loading filter data:', error);
         }
+    }
+
+    /*
+     * Фабрика custom-dropdown'а для filter-селектов.
+     * Нативный <select> остаётся как value-хранилище (для applyFilters/clearFilters);
+     * <select>.dispatchEvent('change') тоже продолжает работать. Сам popup рисуется
+     * div'ом, который переносится в document.body → обходит любые stacking/transform
+     * конфликты админского layout'а, чем страдает native <select> в Windows Chromium.
+     */
+    function createLogsCustomDropdown(nativeSelect) {
+        if (!nativeSelect || nativeSelect._lcd) return nativeSelect?._lcd;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'lcd';
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'lcd-trigger';
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-expanded', 'false');
+
+        const label = document.createElement('span');
+        label.className = 'lcd-value';
+
+        const caret = document.createElement('i');
+        caret.className = 'bi bi-chevron-down lcd-caret';
+
+        trigger.appendChild(label);
+        trigger.appendChild(caret);
+
+        const menu = document.createElement('ul');
+        menu.className = 'lcd-menu';
+        menu.setAttribute('role', 'listbox');
+        menu.hidden = true;
+
+        nativeSelect.parentNode.insertBefore(wrap, nativeSelect);
+        wrap.appendChild(trigger);
+        document.body.appendChild(menu);
+
+        function syncFromNative() {
+            menu.innerHTML = '';
+            const current = nativeSelect.value;
+            let selectedOpt = null;
+            Array.from(nativeSelect.options).forEach(opt => {
+                const li = document.createElement('li');
+                li.className = 'lcd-option';
+                li.dataset.value = opt.value;
+                li.textContent = opt.textContent;
+                li.setAttribute('role', 'option');
+                if (opt.value === current) {
+                    li.classList.add('is-selected');
+                    selectedOpt = opt;
+                }
+                li.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    choose(opt.value);
+                    close();
+                });
+                menu.appendChild(li);
+            });
+            label.textContent = selectedOpt ? selectedOpt.textContent
+                : (nativeSelect.options[0] ? nativeSelect.options[0].textContent : '');
+        }
+        function positionMenu() {
+            const r = trigger.getBoundingClientRect();
+            menu.style.top = `${r.bottom + 4}px`;
+            menu.style.left = `${r.left}px`;
+            menu.style.width = `${r.width}px`;
+        }
+        function open() {
+            // закрываем другие открытые lcd
+            document.querySelectorAll('.lcd.is-open').forEach(d => {
+                if (d !== wrap) d.classList.remove('is-open');
+            });
+            document.querySelectorAll('body > .lcd-menu:not([hidden])').forEach(m => {
+                if (m !== menu) m.setAttribute('hidden', '');
+            });
+            wrap.classList.add('is-open');
+            menu.removeAttribute('hidden');
+            trigger.setAttribute('aria-expanded', 'true');
+            positionMenu();
+            window.addEventListener('scroll', positionMenu, true);
+            window.addEventListener('resize', positionMenu);
+        }
+        function close() {
+            wrap.classList.remove('is-open');
+            menu.setAttribute('hidden', '');
+            trigger.setAttribute('aria-expanded', 'false');
+            window.removeEventListener('scroll', positionMenu, true);
+            window.removeEventListener('resize', positionMenu);
+        }
+        function choose(val) {
+            if (nativeSelect.value !== val) {
+                nativeSelect.value = val;
+                nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            syncFromNative();
+        }
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            wrap.classList.contains('is-open') ? close() : open();
+        });
+        document.addEventListener('click', (e) => {
+            if (wrap.contains(e.target)) return;
+            if (menu.contains(e.target)) return;
+            close();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') close();
+        });
+
+        syncFromNative();
+
+        const api = {
+            refresh: syncFromNative,
+            destroy: () => {
+                close();
+                menu.remove();
+                if (wrap.parentNode) wrap.parentNode.insertBefore(nativeSelect, wrap);
+                wrap.remove();
+                delete nativeSelect._lcd;
+            }
+        };
+        nativeSelect._lcd = api;
+        return api;
+    }
+
+    function initLogsCustomDropdowns() {
+        // Чистим осиротевшие меню от предыдущих загрузок страницы (SPA навигация).
+        document.querySelectorAll('body > .lcd-menu').forEach(el => el.remove());
+
+        ['filterAction', 'filterResident', 'filterUser'].forEach(id => {
+            const sel = document.getElementById(id);
+            if (!sel) return;
+            // Если dropdown уже инициализирован (SPA повторный init) — уничтожаем и пересоздаём.
+            if (sel._lcd) sel._lcd.destroy();
+            createLogsCustomDropdown(sel);
+        });
     }
     
     // Загрузка логов
@@ -555,9 +696,12 @@
     };
     
     window.clearFilters = function() {
-        document.getElementById('filterAction').value = '';
-        document.getElementById('filterResident').value = '';
-        document.getElementById('filterUser').value = '';
+        ['filterAction', 'filterResident', 'filterUser'].forEach(id => {
+            const sel = document.getElementById(id);
+            if (!sel) return;
+            sel.value = '';
+            if (sel._lcd) sel._lcd.refresh();
+        });
         paginationState.currentPage = 1;
         paginationState.itemsPerPage = 25;
         const select = document.getElementById('logItemsPerPage');
@@ -571,6 +715,7 @@
     // Инициализация
     async function initLogsPage() {
         initCustomLogPaginationDropdown();
+        initLogsCustomDropdowns();
         await loadFilterData();
         await loadLogs();
     }
@@ -607,6 +752,11 @@
         if (route === '/logs' || route.startsWith('/logs')) {
             loadFilterData();
             loadLogs();
+            // i18n заменит textContent у <option> → рефрешим видимые label/пункты.
+            ['filterAction', 'filterResident', 'filterUser'].forEach(id => {
+                const sel = document.getElementById(id);
+                if (sel && sel._lcd) sel._lcd.refresh();
+            });
         }
     };
     window.addEventListener('languageChanged', window._logsLanguageChangedHandler);

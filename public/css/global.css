@@ -50,10 +50,17 @@
     --transition-base: 0.3s ease;
     --transition-slow: 0.5s ease;
 
-    /* Milky & Olivia Premium Suite (Stitch / DESIGN) */
+    /*
+     * Royal Park — брендбук (PDF «Royal Park colors»):
+     *   Cover      #b1ba88  (olivia-brand)   — R177 G186 B136 / C36 M17 Y54 K2
+     *   Background #efefe6  (milky-canvas)   — R239 G239 B230 / C8  M5  Y11 K0
+     *   Emblem     #ebede7  (milky-dark)     — R235 G237 B231 / C7  M3  Y8  K0
+     *   Text       #56565c  (charcoal-deep)  — R86  G86  B92  / C5  M5  Y0  K78
+     * Эти токены используются в ЛК резидента (body.user-app) и на login.
+     */
     --milky-canvas: #efefe6;
     --milky-surface: #fafaf6;
-    --milky-dark: #edebe1;
+    --milky-dark: #ebede7;
     /* Акцент / навигация / кнопки — olive; светлый акцент — olive-light; подвал — как olive */
     --olivia-brand: #b1ba88;
     --olivia-soft: #c5cd9f;

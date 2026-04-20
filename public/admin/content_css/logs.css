@@ -67,25 +67,136 @@
     margin-bottom: 8px;
 }
 
+/*
+ * Нативные <select> скрыты (Chromium на Windows рисует popup белым, обойти
+ * это CSS невозможно). Всё визуальное рисует .lcd-* custom dropdown ниже,
+ * а native <select> остаётся как value-хранилище для существующего JS.
+ */
 .logs-filters .form-select {
-    background-color: #1f2432 !important;
-    border: 1px solid #3a3f4a !important;
-    color: #e4e6eb !important;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+/* ===== Custom dark dropdown (logs filters) ===== */
+.lcd {
+    position: relative;
+    width: 100%;
+}
+
+.lcd-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background-color: #1f2432;
+    border: 1px solid #3a3f4a;
+    color: #e4e6eb;
     border-radius: 8px;
     padding: 8px 12px;
-    color-scheme: dark;
+    font-size: 0.95rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s, border 0.2s, box-shadow 0.2s;
+    text-align: left;
 }
 
-.logs-filters .form-select:focus {
-    border-color: #667eea !important;
-    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+.lcd-trigger:hover {
+    background-color: #252a39;
 }
 
-/* Стили для опций в выпадающих списках */
-.logs-filters .form-select option,
-.logs-filters .form-select optgroup {
-    background-color: #1f2432 !important;
-    color: #e4e6eb !important;
+.lcd-trigger:focus-visible,
+.lcd.is-open .lcd-trigger {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.25);
+}
+
+.lcd-value {
+    flex: 1;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lcd-caret {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    transition: transform 0.2s;
+}
+
+.lcd.is-open .lcd-caret {
+    transform: rotate(180deg);
+}
+
+/*
+ * Меню выносится в document.body → глобальный класс .lcd-menu (не .logs-filters .lcd-menu),
+ * чтобы стили применялись вне родительского контейнера.
+ */
+.lcd-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    background-color: #1a1d24;
+    border: 1px solid #3a3f4a;
+    border-radius: 10px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+    z-index: 99999;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.lcd-menu[hidden] {
+    display: none;
+}
+
+.lcd-option {
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    color: #e4e6eb;
+    cursor: pointer;
+    font-size: 0.95rem;
+    line-height: 1.35;
+    transition: background 0.12s, color 0.12s;
+    user-select: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lcd-option:hover {
+    background-color: rgba(102, 126, 234, 0.2);
+    color: #ffffff;
+}
+
+.lcd-option.is-selected {
+    background-color: rgba(102, 126, 234, 0.35);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.lcd-menu::-webkit-scrollbar {
+    width: 8px;
+}
+
+.lcd-menu::-webkit-scrollbar-track {
+    background: #1f2432;
+    border-radius: 6px;
+}
+
+.lcd-menu::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.55);
+    border-radius: 6px;
 }
 
 /* Pagination styles */

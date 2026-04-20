@@ -1,14 +1,14 @@
-/* Login — палитра royalpark.az (Royal-Park- / index.css: milky + olive) */
+/* Login — палитра Royal Park (брендбук: Cover/Background/Emblem/Text, шрифты Spectral + Times) */
 
 :root {
-    /* Только страница входа: Times + Cormorant + Montserrat (админка global.css не трогаем) */
+    /* Только страница входа: основной текст — Times, заголовки/лого — Spectral (по брендбуку), UI — Montserrat */
     --font-sans: "Times New Roman", Times, serif;
     --font-serif: "Times New Roman", Times, serif;
-    --font-display: "Cormorant Garamond", "Times New Roman", Times, serif;
+    --font-display: "Spectral", "Times New Roman", Times, serif;
     --font-ui: "Montserrat", system-ui, -apple-system, sans-serif;
 
     --rp-milky: #efefe6;
-    --rp-milky-dark: #edebe1;
+    --rp-milky-dark: #ebede7;
     --rp-olive: var(--olivia-soft, #c5cd9f);
     --rp-olive-mid: var(--olivia-brand, #b1ba88);
     --rp-olive-light: var(--olivia-highlight, #c5cd9f);
@@ -53,7 +53,7 @@ body {
     position: absolute;
     width: 100%;
     height: 100%;
-    background: linear-gradient(160deg, #efefe6 0%, #edebe1 45%, #e8eadf 100%);
+    background: linear-gradient(160deg, #efefe6 0%, #ebede7 45%, #e3e7dc 100%);
     background-size: 100% 100%;
 }
 

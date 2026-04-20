@@ -107,6 +107,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.role === 'RESIDENT') {
                     // Redirect to user panel for residents
                     window.location.href = '/user/dashboard.html';
+                } else if (data.role === 'SALES') {
+                    // SALES видит только раздел «Продажи» — сразу туда
+                    window.location.href = '/admin/#/sales';
                 } else {
                     // Redirect to admin panel for all other roles (ADMIN, OPERATOR, ROOT)
                     window.location.href = '/admin/#/dashboard';

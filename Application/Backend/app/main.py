@@ -9,8 +9,6 @@ from .database import Base, engine, SessionLocal
 from .models import User, RoleEnum
 from .security import hash_password
 from .routers import auth_routes, dashboard, api_users, api_blocks, api_tariffs, api_residents, api_readings, api_tenants, api_invoices, api_payments, api_notifications, api_dashboard, api_logs, api_qr, api_payment, api_resident_dashboard, api_news, api_azericard, api_sales
-from fastapi.responses import RedirectResponse
-
 
 
 def init_db():
@@ -404,9 +402,8 @@ def create_app() -> FastAPI:
     def healthz():
         return {"ok": True}
 
-    @app.get("/favicon.ico")
-    def favicon():
-        return RedirectResponse(url="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/favicon.ico")
+    # /favicon.ico обслуживает Express (public/favicon.ico — брендовое дерево Royal Park).
+    # Бэкенд-редирект на Bootstrap CDN удалён: он перебивал наш логотип.
 
     @app.on_event("startup")
     def _start_auto_advance_scheduler():

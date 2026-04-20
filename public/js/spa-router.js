@@ -555,6 +555,7 @@ class SPARouter {
             'Жители': 'nav_tenants',
             'Показатели': 'nav_readings',
             'Пользователи': 'nav_users',
+            'Продажи': 'nav_sales',
             'Финансы': 'nav_finance',
             'Платежи': 'nav_payments',
             'Счета': 'nav_accounts',

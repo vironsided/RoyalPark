@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="/admin/content_css/sales.css">
+<link rel="stylesheet" href="/admin/content_css/sales.css?v=dark-select-7">
 
 <div class="dashboard-content sales-page">
 
@@ -15,7 +15,30 @@
             <div class="sales-toolbar">
                 <div class="sales-filters">
                     <input type="text" id="salesSearch" data-i18n-placeholder="sales_search_placeholder" placeholder="Поиск: ФИО, № дома, № договора">
-                    <select id="salesStatusFilter">
+
+                    <!--
+                        Custom dropdown (Chromium/Windows native <select> popup не подчиняется CSS
+                        и рисуется белым даже с color-scheme: dark → переключились на div-виджет).
+                        Native <select> ниже скрыт и хранит значение для существующего JS
+                        (statusFilter.value / 'change' event).
+                    -->
+                    <div class="sales-select" id="salesStatusDropdown">
+                        <button type="button" class="sales-select-trigger" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="sales-select-value" data-i18n="sales_status_all">Все статусы</span>
+                            <i class="bi bi-chevron-down sales-select-caret"></i>
+                        </button>
+                        <ul class="sales-select-menu" role="listbox" hidden>
+                            <li class="sales-select-option is-selected" role="option" data-value="" data-i18n="sales_status_all">Все статусы</li>
+                            <li class="sales-select-option" role="option" data-value="DRAFT" data-i18n="sales_status_DRAFT">Черновик</li>
+                            <li class="sales-select-option" role="option" data-value="PENDING_APPROVAL" data-i18n="sales_status_PENDING_APPROVAL">Ожидает одобрения</li>
+                            <li class="sales-select-option" role="option" data-value="VIEWED" data-i18n="sales_status_VIEWED">Просмотрено</li>
+                            <li class="sales-select-option" role="option" data-value="APPROVED" data-i18n="sales_status_APPROVED">Одобрено</li>
+                            <li class="sales-select-option" role="option" data-value="REJECTED" data-i18n="sales_status_REJECTED">Отклонено</li>
+                            <li class="sales-select-option" role="option" data-value="PRINTED" data-i18n="sales_status_PRINTED">Распечатано</li>
+                        </ul>
+                    </div>
+
+                    <select id="salesStatusFilter" class="sales-status-native" aria-hidden="true" tabindex="-1">
                         <option value="" data-i18n="sales_status_all">Все статусы</option>
                         <option value="DRAFT" data-i18n="sales_status_DRAFT">Черновик</option>
                         <option value="PENDING_APPROVAL" data-i18n="sales_status_PENDING_APPROVAL">Ожидает одобрения</option>
@@ -801,6 +824,83 @@
         searchDebounce = setTimeout(loadContracts, 300);
     });
     statusFilter.addEventListener('change', loadContracts);
+
+    // ================= Custom status dropdown =================
+    // Native <select> popup в Windows Chromium игнорирует CSS и рисуется белым.
+    // Строим полностью управляемый div-виджет и синхронизируем его с скрытым <select>.
+    // Меню переезжает в document.body, чтобы обойти stacking context родителей
+    // (admin-layout использует transform/contain, из-за чего position:fixed
+    // позиционируется не от viewport, а от контейнера).
+    (function initStatusDropdown() {
+        const wrap = document.getElementById('salesStatusDropdown');
+        if (!wrap) return;
+        const trigger = wrap.querySelector('.sales-select-trigger');
+        const label = wrap.querySelector('.sales-select-value');
+        const menu = wrap.querySelector('.sales-select-menu');
+        const options = Array.from(menu.querySelectorAll('.sales-select-option'));
+
+        // Чистим осиротевшие menu от предыдущих загрузок страницы (SPA навигация).
+        document.querySelectorAll('body > .sales-select-menu').forEach(el => el.remove());
+        // Переносим menu в body — гарантирует отсутствие stacking/transform/contain
+        // конфликтов с админским layout'ом.
+        document.body.appendChild(menu);
+
+        function positionMenu() {
+            const r = trigger.getBoundingClientRect();
+            menu.style.top = `${r.bottom + 4}px`;
+            menu.style.left = `${r.left}px`;
+            menu.style.width = `${r.width}px`;
+        }
+        function close() {
+            wrap.classList.remove('is-open');
+            menu.setAttribute('hidden', '');
+            trigger.setAttribute('aria-expanded', 'false');
+            window.removeEventListener('scroll', positionMenu, true);
+            window.removeEventListener('resize', positionMenu);
+        }
+        function open() {
+            wrap.classList.add('is-open');
+            menu.removeAttribute('hidden');
+            trigger.setAttribute('aria-expanded', 'true');
+            positionMenu();
+            window.addEventListener('scroll', positionMenu, true);
+            window.addEventListener('resize', positionMenu);
+        }
+        function choose(val) {
+            options.forEach(o => o.classList.toggle('is-selected', o.dataset.value === val));
+            const sel = options.find(o => o.dataset.value === val) || options[0];
+            label.textContent = sel.textContent;
+            if (statusFilter.value !== val) {
+                statusFilter.value = val;
+                statusFilter.dispatchEvent(new Event('change'));
+            }
+        }
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            wrap.classList.contains('is-open') ? close() : open();
+        });
+        options.forEach(opt => {
+            opt.addEventListener('click', (e) => {
+                e.stopPropagation();
+                choose(opt.dataset.value);
+                close();
+            });
+        });
+        // Клик вне trigger и вне menu (menu теперь в body, поэтому проверяем отдельно).
+        document.addEventListener('click', (e) => {
+            if (wrap.contains(e.target)) return;
+            if (menu.contains(e.target)) return;
+            close();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') close();
+        });
+        window.addEventListener('languageChanged', () => {
+            const sel = options.find(o => o.classList.contains('is-selected')) || options[0];
+            if (sel) label.textContent = sel.textContent;
+        });
+    })();
 
     // ================= Bootstrap =================
     (async function init() {

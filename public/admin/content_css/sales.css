@@ -27,13 +27,140 @@
     transition: border 0.2s, box-shadow 0.2s;
 }
 
-.sales-filters input:focus,
-.sales-filters select:focus {
+/*
+ * Native <select id="salesStatusFilter"> полностью скрыт — он используется
+ * только как value-хранилище для существующего JS (statusFilter.value / 'change').
+ * Визуально всё рисует кастомный .sales-select ниже — это обход бага Chromium
+ * на Windows, где native popup игнорирует CSS и отображается белым.
+ */
+.sales-filters select.sales-status-native {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.sales-filters input:focus {
     border-color: rgba(102, 126, 234, 0.55);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
 }
 
 .sales-filters input { flex: 1; }
+
+/* ===== Custom dark dropdown ===== */
+.sales-select {
+    position: relative;
+    min-width: 180px;
+}
+
+.sales-select-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: rgba(36, 40, 49, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #e6e8ee;
+    border-radius: 10px;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.9rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s, border 0.2s, box-shadow 0.2s;
+}
+
+.sales-select-trigger:hover {
+    background: rgba(36, 40, 49, 0.9);
+}
+
+.sales-select-trigger:focus-visible,
+.sales-select.is-open .sales-select-trigger {
+    outline: none;
+    border-color: rgba(102, 126, 234, 0.55);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.sales-select-value {
+    flex: 1;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sales-select-caret {
+    font-size: 0.85rem;
+    opacity: 0.65;
+    transition: transform 0.2s;
+}
+
+.sales-select.is-open .sales-select-caret {
+    transform: rotate(180deg);
+}
+
+.sales-select-menu {
+    /* position:fixed + JS-координаты → popup в root stacking context,
+       никакие контейнеры таблицы и их stacking не могут всплыть поверх. */
+    position: fixed;
+    top: 0;
+    left: 0;
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    background-color: #1a1d24;
+    background-image: none;
+    border: 1px solid #3a3f4a;
+    border-radius: 10px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+    z-index: 99999;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.sales-select-menu[hidden] {
+    display: none;
+}
+
+.sales-select-option {
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    color: #e6e8ee;
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1.35;
+    transition: background 0.12s, color 0.12s;
+    user-select: none;
+}
+
+.sales-select-option:hover {
+    background: rgba(102, 126, 234, 0.2);
+    color: #ffffff;
+}
+
+.sales-select-option.is-selected {
+    background: rgba(102, 126, 234, 0.35);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.sales-select-menu::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sales-select-menu::-webkit-scrollbar-track {
+    background: #1f2432;
+    border-radius: 6px;
+}
+
+.sales-select-menu::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.55);
+    border-radius: 6px;
+}
 
 .btn-sales-new {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
