@@ -1708,6 +1708,7 @@ function initCustomAmountField(defaultAmount, forceCustomModeForTopup = false) {
     // Update hint based on amounts
     function updateAmountHint(invoiceTotal, customAmount) {
         if (!hintEl) return;
+        const lang = localStorage.getItem('language') || 'ru';
         
         if (forceCustomModeForTopup) {
             if (customAmount <= 0) {
@@ -1730,7 +1731,7 @@ function initCustomAmountField(defaultAmount, forceCustomModeForTopup = false) {
         const isAdvancePayment = activeCard && activeCard.type === 'ADVANCE';
 
         if (customAmount > invoiceTotal && invoiceTotal > 0) {
-            hintEl.textContent = 'Сумма не может превышать сумму счёта';
+            hintEl.textContent = window.i18n?.translate?.('payment_error_amount_exceeds_invoice', lang) || 'Сумма не может превышать сумму счёта';
             hintEl.className = 'custom-amount-hint hint-error';
             return;
         } else if (customAmount < invoiceTotal) {
@@ -1752,6 +1753,7 @@ async function submitPayment(event) {
     if (event) {
         event.preventDefault();
     }
+    const lang = localStorage.getItem('language') || 'ru';
     
     // Determine which pay button was actually clicked (default in sidebar or form button)
     let payButton = null;
@@ -1888,7 +1890,8 @@ async function submitPayment(event) {
         }
         // Нельзя платить больше суммы счёта (излишек пойдёт на чужой счёт терминала)
         if (hasInvoice && invoiceTotal > 0 && customAmount > invoiceTotal) {
-            showPaymentError('Сумма не может превышать сумму счёта (' + invoiceTotal.toFixed(2) + ' ₼)');
+            const exceedMsg = (window.i18n?.translate?.('payment_error_amount_exceeds_invoice_detail', lang) || 'Сумма не может превышать сумму счёта ({amount} ₼)').replace('{amount}', invoiceTotal.toFixed(2));
+            showPaymentError(exceedMsg);
             return false;
         }
     } else {
@@ -1972,7 +1975,6 @@ async function submitPayment(event) {
     let paymentComment = '';
     let paymentReference = '';
     let paymentMethod = 'CARD'; // Default method
-    const lang = localStorage.getItem('language') || 'ru';
 
     if (isUsingNewCardForm) {
         const last4 = cardNumber.slice(-4);
@@ -1989,7 +1991,8 @@ async function submitPayment(event) {
             }
             if (activeCard.type === 'ADVANCE') {
                 if (hasInvoice && invoiceTotal > 0 && amount > invoiceTotal) {
-                    showPaymentError(`Сумма оплаты из аванса не может превышать сумму счёта (${invoiceTotal.toFixed(2)} ₼)`);
+                    const advExceedMsg = (window.i18n?.translate?.('payment_error_advance_exceeds_invoice', lang) || 'Сумма оплаты из аванса не может превышать сумму счёта ({amount} ₼)').replace('{amount}', invoiceTotal.toFixed(2));
+                    showPaymentError(advExceedMsg);
                     if (useCustomAmount && customAmountInput) {
                         customAmountInput.value = invoiceTotal.toFixed(2);
                         customAmountInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -2178,7 +2181,8 @@ async function submitPayment(event) {
         
         if (result.ok) {
             // Success!
-            showPaymentSuccess(result.message || 'Платёж успешно проведён!');
+            const successMessage = localizeResidentPaymentMessage(result.message, paymentScope);
+            showPaymentSuccess(successMessage);
             
             // Сохраняем residentCode перед очисткой sessionStorage
             const residentCode = sessionStorage.getItem('paymentResidentCode');
@@ -2269,6 +2273,67 @@ function showPaymentSuccess(message) {
         toast.style.animation = 'slideOut 0.3s ease-in';
         setTimeout(() => toast.remove(), 300);
     }, 3000);
+}
+
+function localizeResidentPaymentMessage(rawMessage, paymentScope) {
+    const lang = (typeof window.getUiLanguage === 'function'
+        ? window.getUiLanguage()
+        : (localStorage.getItem('language') || 'az'));
+    const t = (key, fallback) => window.i18n?.translate?.(key, lang) || fallback;
+    const raw = String(rawMessage || '').trim();
+
+    if (!raw) {
+        return t('payment_success_default', 'Payment completed successfully!');
+    }
+
+    // Keep backend RU message as-is for Russian UI.
+    if (lang === 'ru') return raw;
+
+    const countMatch = raw.match(/(\d+)\s*сч[её]т/i);
+    const affectedCount = countMatch ? Number(countMatch[1]) : 0;
+
+    if (raw.includes('пополнение аванса')) {
+        return t('payment_success_topup', 'Advance top-up completed successfully.');
+    }
+
+    if (raw.includes('Аванс применён к выбранным строкам')) {
+        return t('payment_success_advance_selected_lines', 'Advance was applied to selected service lines.');
+    }
+    if (raw.includes('Аванс успешно применён к выбранному счёту')) {
+        return t('payment_success_advance_selected_invoice', 'Advance was applied to the selected invoice.');
+    }
+    if (raw.includes('Аванс не применён')) {
+        return t('payment_success_advance_not_applied', 'Payment created, but no suitable open invoices for advance application.');
+    }
+    if (raw.includes('Аванс успешно применён к')) {
+        const template = t('payment_success_advance_applied_count', 'Advance was applied to {count} invoice(s).');
+        return template.replace('{count}', String(affectedCount || 0));
+    }
+
+    if (raw.includes('Платёж применён к выбранным строкам')) {
+        return t('payment_success_selected_lines', 'Payment was applied to selected service lines. Excess amount moved to advance.');
+    }
+    if (raw.includes('Платёж успешно создан и применён к выбранному счёту')) {
+        return t('payment_success_selected_invoice', 'Payment was successfully applied to the selected invoice.');
+    }
+    if (raw.includes('Платёж успешно создан (не применён к выбранному счёту)')) {
+        return t('payment_success_not_applied_selected_invoice', 'Payment created, but not applied to the selected invoice.');
+    }
+    if (raw.includes('Платёж успешно создан (не применён к счетам - нет подходящих счетов)')) {
+        return t('payment_success_not_applied_any', 'Payment created, but not applied to invoices (no suitable open invoices).');
+    }
+    if (raw.includes('Платёж успешно создан и применён к')) {
+        const template = t('payment_success_applied_count', 'Payment was successfully applied to {count} invoice(s).');
+        return template.replace('{count}', String(affectedCount || 0));
+    }
+    if (raw.includes('Платёж успешно создан, но не применён к счетам')) {
+        return t('payment_success_created_not_applied', 'Payment created, but not applied to invoices.');
+    }
+
+    if (paymentScope === 'advance_topup' || paymentScope === null) {
+        return t('payment_success_topup', 'Advance top-up completed successfully.');
+    }
+    return t('payment_success_default', 'Payment completed successfully!');
 }
 
 // Show error message

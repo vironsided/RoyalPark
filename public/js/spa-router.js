@@ -181,6 +181,7 @@ class SPARouter {
         this.contentContainer = null;
         this.currentRoute = null;
         this.isLoading = false;
+        this.loadedStyleUrls = new Set();
     }
     
     normalizeRoute(route) {
@@ -420,7 +421,9 @@ class SPARouter {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            const html = await response.text();
+            const rawHtml = await response.text();
+            const { html, styleHrefs } = this.extractContentAndStyles(rawHtml);
+            await this.ensureStylesLoaded(styleHrefs);
             
             // Сохраняем существующий SVG overlay в глобальный кеш перед заменой контента
             if (baseRoute === '/blocks') {
@@ -503,6 +506,75 @@ class SPARouter {
         } finally {
             this.isLoading = false;
         }
+    }
+
+    extractContentAndStyles(rawHtml) {
+        try {
+            const parser = new DOMParser();
+            const parsed = parser.parseFromString(rawHtml, 'text/html');
+            const styleHrefs = [];
+
+            parsed.querySelectorAll('link[rel="stylesheet"][href]').forEach((link) => {
+                const href = link.getAttribute('href');
+                if (href) {
+                    styleHrefs.push(href);
+                }
+                link.remove();
+            });
+
+            return {
+                html: parsed.body ? parsed.body.innerHTML : rawHtml,
+                styleHrefs
+            };
+        } catch (error) {
+            console.warn('Failed to parse content styles, fallback to raw HTML:', error);
+            return { html: rawHtml, styleHrefs: [] };
+        }
+    }
+
+    async ensureStylesLoaded(styleHrefs = []) {
+        if (!Array.isArray(styleHrefs) || styleHrefs.length === 0) return;
+        await Promise.all(styleHrefs.map((href) => this.ensureSingleStyleLoaded(href)));
+    }
+
+    ensureSingleStyleLoaded(href) {
+        if (!href) return Promise.resolve();
+
+        const absoluteHref = new URL(href, window.location.origin).href;
+        if (this.loadedStyleUrls.has(absoluteHref)) {
+            return Promise.resolve();
+        }
+
+        const existing = document.head.querySelector(`link[data-spa-style="1"][href="${absoluteHref}"]`);
+        if (existing) {
+            if (existing.dataset.loaded === 'true') {
+                this.loadedStyleUrls.add(absoluteHref);
+                return Promise.resolve();
+            }
+            return new Promise((resolve) => {
+                const markLoaded = () => {
+                    existing.dataset.loaded = 'true';
+                    this.loadedStyleUrls.add(absoluteHref);
+                    resolve();
+                };
+                existing.addEventListener('load', markLoaded, { once: true });
+                existing.addEventListener('error', resolve, { once: true });
+            });
+        }
+
+        return new Promise((resolve) => {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = absoluteHref;
+            link.dataset.spaStyle = '1';
+            link.onload = () => {
+                link.dataset.loaded = 'true';
+                this.loadedStyleUrls.add(absoluteHref);
+                resolve();
+            };
+            link.onerror = () => resolve();
+            document.head.appendChild(link);
+        });
     }
     
     showLoadingState() {

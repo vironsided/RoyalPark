@@ -28,7 +28,7 @@ class LoginResponse(BaseModel):
 
 @router.get("/login")
 def login_form():
-    return redirect_frontend("/login.html")
+    return redirect_frontend("/")
 
 
 @router.post("/login")
@@ -36,7 +36,7 @@ def login(request: Request, db: Session = Depends(get_db),
           username: str = Form(...), password: str = Form(...)):
     user = db.query(User).filter(User.username == username).first()
     if not user or not verify_password(password, user.password_hash) or not user.is_active:
-        return redirect_frontend("/login.html", {"error": "invalid_credentials"})
+        return redirect_frontend("/", {"error": "invalid_credentials"})
 
     user.last_login_at = datetime.utcnow()
     db.commit()
@@ -132,7 +132,7 @@ async def api_force_change_password(
 
 @router.get("/logout")
 def logout():
-    resp = redirect_frontend("/login.html", status_code=status.HTTP_302_FOUND)
+    resp = redirect_frontend("/", status_code=status.HTTP_302_FOUND)
     clear_session(resp)
     return resp
 

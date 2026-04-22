@@ -83,6 +83,52 @@
 
 </div>
 
+<!-- ================ CONFIRM MODAL (delete, etc.) ================ -->
+<div class="sales-modal-overlay" id="salesConfirmModal">
+    <div class="sales-modal-content sales-prompt-modal sales-confirm-modal">
+        <div class="sales-modal-header">
+            <h2 id="salesConfirmTitle">—</h2>
+            <button type="button" class="sales-modal-close" id="salesConfirmCloseBtn" aria-label="close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="sales-modal-body">
+            <div class="sales-confirm-message" id="salesConfirmMessage">—</div>
+        </div>
+        <div class="sales-modal-footer">
+            <div></div>
+            <div class="sales-action-group">
+                <button type="button" class="sales-btn secondary" id="salesConfirmCancelBtn" data-i18n="common_cancel">Отмена</button>
+                <button type="button" class="sales-btn reject" id="salesConfirmOkBtn" data-i18n="common_ok">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================ PROMPT MODAL (approve/reject comments) ================ -->
+<div class="sales-modal-overlay" id="salesPromptModal">
+    <div class="sales-modal-content sales-prompt-modal">
+        <div class="sales-modal-header">
+            <h2 id="salesPromptTitle">—</h2>
+            <button type="button" class="sales-modal-close" id="salesPromptCloseBtn" aria-label="close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="sales-modal-body">
+            <label class="sales-prompt-label" id="salesPromptLabel" for="salesPromptInput">—</label>
+            <textarea id="salesPromptInput" class="sales-prompt-input" rows="4"></textarea>
+            <div id="salesPromptError" class="sales-prompt-error" style="display:none;"></div>
+        </div>
+        <div class="sales-modal-footer">
+            <div></div>
+            <div class="sales-action-group">
+                <button type="button" class="sales-btn secondary" id="salesPromptCancelBtn" data-i18n="common_cancel">Отмена</button>
+                <button type="button" class="sales-btn primary" id="salesPromptOkBtn" data-i18n="common_ok">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ================ MODAL ================ -->
 <div class="sales-modal-overlay" id="salesModal">
     <div class="sales-modal-content">
@@ -391,7 +437,7 @@
             return;
         }
         tableBody.innerHTML = contractsList.map(c => {
-            const typeLabel = c.contract_type === 'FULL' ? 'TAM' : 'HİSSƏLİ';
+            const typeLabel = t('sales_type_short_' + c.contract_type, c.contract_type === 'FULL' ? 'TAM' : 'HİSSƏLİ');
             const statusLabel = t('sales_status_' + c.status, c.status);
             return `
                 <tr data-id="${c.id}">
@@ -418,7 +464,14 @@
             const d = tr.querySelector('[data-act="del"]');
             if (d) d.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                if (!confirm(t('sales_confirm_delete', 'Удалить договор?'))) return;
+                const ok = await openConfirmModal({
+                    title: t('sales_confirm_delete_title', 'Удаление договора'),
+                    message: t('sales_confirm_delete', 'Удалить договор?'),
+                    okText: t('delete', 'Удалить'),
+                    cancelText: t('common_cancel', 'Отмена'),
+                    okVariant: 'reject',
+                });
+                if (!ok) return;
                 try {
                     await api(`/api/sales/contracts/${id}`, { method: 'DELETE' });
                     toast(t('deleted', 'Удалено'), 'success');
@@ -737,8 +790,117 @@
         } catch (e) { toast(e.message, 'error'); }
     }
 
+    // ================= Custom prompt modal (approve/reject) =================
+    const promptModal = document.getElementById('salesPromptModal');
+    const promptTitle = document.getElementById('salesPromptTitle');
+    const promptLabel = document.getElementById('salesPromptLabel');
+    const promptInput = document.getElementById('salesPromptInput');
+    const promptError = document.getElementById('salesPromptError');
+    const promptOkBtn = document.getElementById('salesPromptOkBtn');
+    const promptCancelBtn = document.getElementById('salesPromptCancelBtn');
+    const promptCloseBtn = document.getElementById('salesPromptCloseBtn');
+
+    function openPromptModal({ title, label, placeholder = '', required = false, okVariant = 'primary' }) {
+        return new Promise((resolve) => {
+            promptTitle.textContent = title;
+            promptLabel.textContent = label;
+            promptInput.value = '';
+            promptInput.placeholder = placeholder || '';
+            promptError.style.display = 'none';
+            promptError.textContent = '';
+            promptOkBtn.classList.remove('primary', 'approve', 'reject');
+            promptOkBtn.classList.add(okVariant);
+
+            const cleanup = (value) => {
+                promptModal.classList.remove('active');
+                promptOkBtn.removeEventListener('click', onOk);
+                promptCancelBtn.removeEventListener('click', onCancel);
+                promptCloseBtn.removeEventListener('click', onCancel);
+                promptModal.removeEventListener('click', onOverlay);
+                document.removeEventListener('keydown', onKey);
+                resolve(value);
+            };
+            const onOk = () => {
+                const val = promptInput.value.trim();
+                if (required && !val) {
+                    promptError.textContent = t('sales_reject_comment_required', 'Укажите причину отказа');
+                    promptError.style.display = 'block';
+                    promptInput.focus();
+                    return;
+                }
+                cleanup(val);
+            };
+            const onCancel = () => cleanup(null);
+            const onOverlay = (e) => { if (e.target === promptModal) onCancel(); };
+            const onKey = (e) => {
+                if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
+                else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); onOk(); }
+            };
+
+            promptOkBtn.addEventListener('click', onOk);
+            promptCancelBtn.addEventListener('click', onCancel);
+            promptCloseBtn.addEventListener('click', onCancel);
+            promptModal.addEventListener('click', onOverlay);
+            document.addEventListener('keydown', onKey);
+
+            promptModal.classList.add('active');
+            setTimeout(() => promptInput.focus(), 50);
+        });
+    }
+
+    // ================= Custom confirm modal =================
+    const confirmModal = document.getElementById('salesConfirmModal');
+    const confirmTitle = document.getElementById('salesConfirmTitle');
+    const confirmMessage = document.getElementById('salesConfirmMessage');
+    const confirmOkBtn = document.getElementById('salesConfirmOkBtn');
+    const confirmCancelBtn = document.getElementById('salesConfirmCancelBtn');
+    const confirmCloseBtn = document.getElementById('salesConfirmCloseBtn');
+
+    function openConfirmModal({ title, message, okText, cancelText, okVariant = 'reject' }) {
+        return new Promise((resolve) => {
+            confirmTitle.textContent = title || t('common_confirm', 'Подтвердите действие');
+            confirmMessage.textContent = message || '';
+            confirmOkBtn.textContent = okText || t('common_ok', 'OK');
+            confirmCancelBtn.textContent = cancelText || t('common_cancel', 'Отмена');
+            confirmOkBtn.classList.remove('primary', 'approve', 'reject', 'secondary', 'print');
+            confirmOkBtn.classList.add(okVariant);
+
+            const cleanup = (value) => {
+                confirmModal.classList.remove('active');
+                confirmOkBtn.removeEventListener('click', onOk);
+                confirmCancelBtn.removeEventListener('click', onCancel);
+                confirmCloseBtn.removeEventListener('click', onCancel);
+                confirmModal.removeEventListener('click', onOverlay);
+                document.removeEventListener('keydown', onKey);
+                resolve(value);
+            };
+            const onOk = () => cleanup(true);
+            const onCancel = () => cleanup(false);
+            const onOverlay = (e) => { if (e.target === confirmModal) onCancel(); };
+            const onKey = (e) => {
+                if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
+                else if (e.key === 'Enter') { e.preventDefault(); onOk(); }
+            };
+
+            confirmOkBtn.addEventListener('click', onOk);
+            confirmCancelBtn.addEventListener('click', onCancel);
+            confirmCloseBtn.addEventListener('click', onCancel);
+            confirmModal.addEventListener('click', onOverlay);
+            document.addEventListener('keydown', onKey);
+
+            confirmModal.classList.add('active');
+            setTimeout(() => confirmOkBtn.focus(), 50);
+        });
+    }
+
     async function approve() {
-        const comment = prompt(t('sales_approve_comment', 'Комментарий (не обязательно):'), '') || '';
+        const comment = await openPromptModal({
+            title: t('sales_approve', 'Одобрить'),
+            label: t('sales_approve_comment', 'Комментарий (не обязательно):'),
+            required: false,
+            okVariant: 'approve',
+        });
+        if (comment === null) return;
         try {
             const r = await api(`/api/sales/contracts/${currentContract.id}/approve`, {
                 method: 'POST', body: JSON.stringify({ comment: comment || null }),
@@ -751,7 +913,12 @@
     }
 
     async function reject() {
-        const comment = prompt(t('sales_reject_comment', 'Причина отказа:'), '');
+        const comment = await openPromptModal({
+            title: t('sales_reject', 'Отклонить'),
+            label: t('sales_reject_comment', 'Причина отказа:'),
+            required: true,
+            okVariant: 'reject',
+        });
         if (comment === null) return;
         try {
             const r = await api(`/api/sales/contracts/${currentContract.id}/reject`, {
@@ -901,6 +1068,17 @@
             if (sel) label.textContent = sel.textContent;
         });
     })();
+
+    // Перерисовываем таблицу и баннер статуса при смене языка,
+    // чтобы статус/тип договора обновлялись без F5.
+    window.addEventListener('languageChanged', () => {
+        try {
+            if (Array.isArray(contractsList) && contractsList.length) renderList();
+        } catch (_e) { /* noop */ }
+        try {
+            if (currentContract) updateStatusBanner(currentContract);
+        } catch (_e) { /* noop */ }
+    });
 
     // ================= Bootstrap =================
     (async function init() {

@@ -50,7 +50,7 @@ async function checkAuth() {
         if (!response.ok) {
             if (response.status === 401) {
                 // Not authenticated - redirect to login
-                window.location.href = '/login.html';
+                window.location.href = '/';
                 return;
             }
             // For other errors, continue (might be temporary network issue)
@@ -219,7 +219,7 @@ async function logout() {
         localStorage.removeItem('userRole');
         localStorage.removeItem('username');
         // Redirect to login
-        window.location.href = '/login.html';
+        window.location.href = '/';
     }
 }
 
@@ -401,7 +401,7 @@ window.loadDashboardData = async function loadDashboardData() {
         if (!response.ok) {
             if (response.status === 401) {
                 // Unauthorized - redirect to login
-                window.location.href = '/login.html';
+                window.location.href = '/';
                 return;
             }
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -495,6 +495,9 @@ function updateDashboardUI(data) {
     updateStatValue('.resident-summary-card:first-child .summary-value', summary.total_debt);
     updateStatValue('.resident-summary-card.accent .summary-value', summary.total_advance);
 
+
+    // Keep stats/badges consistent even if no resident is linked.
+    updateStatsGrid(data);
 
     // Create card for each resident
     if (data.residents && data.residents.length > 0) {
@@ -662,8 +665,6 @@ function updateDashboardUI(data) {
             }
         }
 
-        // Update stats grid cards
-        updateStatsGrid(data);
     }
 }
 
@@ -725,7 +726,8 @@ function updateBillsNavBadge(summary) {
     const badge = document.querySelector('.nav-item[data-user-route="bills"] .nav-badge');
     if (!badge) return;
 
-    const count = summary?.unpaid_invoices_count || 0;
+    const rawCount = Number(summary?.unpaid_invoices_count ?? 0);
+    const count = Number.isFinite(rawCount) && rawCount > 0 ? Math.floor(rawCount) : 0;
     if (count > 0) {
         badge.textContent = count;
         badge.style.display = 'inline-flex';
@@ -940,39 +942,64 @@ function setupActionButtons() {
             return;
         }
 
-        // "Оплатить за месяц" — оплачиваем только текущий месяц для конкретного резидента
+        // "Оплатить за месяц" — открыть счёт за текущий календарный месяц (как на дашборде)
         const payMonthBtn = e.target.closest('[data-action="pay-month"]');
         if (payMonthBtn && window.dashboardData) {
             e.preventDefault();
             const residentIdAttr = payMonthBtn.getAttribute('data-resident-id');
-            let amount = summary.total_month || 0;
-            let residentCode = '';
-            
-            // Если есть resident_id, используем данные конкретного резидента
+            const lang = localStorage.getItem('language') || 'ru';
+            let invoiceId = null;
             if (residentIdAttr) {
-                const residentId = parseInt(residentIdAttr, 10);
-                const resident = residents.find(r => r.id === residentId);
-                if (resident) {
-                    amount = resident.month_due || 0;
-                    residentCode = resident.code || '';
+                const resident = residents.find(r => r.id === parseInt(residentIdAttr, 10));
+                if (resident && resident.current_month_invoice_id) {
+                    invoiceId = resident.current_month_invoice_id;
                 }
             }
-            
-            startPaymentFlow('month', amount, summary, residentIdAttr ? parseInt(residentIdAttr, 10) : null, residentCode);
+            if (invoiceId) {
+                try {
+                    sessionStorage.setItem('currentInvoiceId', String(invoiceId));
+                } catch (err) {
+                    console.warn('Failed to store currentInvoiceId', err);
+                }
+                if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
+                    window.userSpaRouter.navigate('invoice', true);
+                } else {
+                    window.location.href = '/user/dashboard.html#invoice';
+                }
+            } else {
+                const msg = window.i18n?.translate?.('user_no_current_month_invoice', lang) ||
+                    'Счёт за текущий месяц не найден. Откройте раздел «Мои счета».';
+                if (typeof window.showAlert === 'function') {
+                    const title = window.i18n?.translate?.('user_notice_title', lang) || 'Уведомление';
+                    window.showAlert(msg, title, 'info');
+                } else {
+                    alert(msg);
+                }
+            }
             return;
         }
 
-        // "Оплатить всё" — полное погашение долга по всем счетам (агрегированная сумма)
+        // "Оплатить всё" — «Мои счета» с фильтром по непогашенным (выставлен / частично / черновик)
         const payAllBtn = e.target.closest('[data-action="pay-all"]');
         if (payAllBtn && window.dashboardData) {
             e.preventDefault();
-            const amount = summary.total_debt || 0;
-            // Для "Оплатить всё" используем ID первого резидента как технический, 
-            // так как backend требует resident_id для создания платежа.
-            // При scope="all" backend сам найдет все остальные дома этого владельца.
-            const firstResident = residents[0];
-            const residentId = firstResident ? firstResident.id : null;
-            startPaymentFlow('all', amount, summary, residentId, 'Все объекты');
+            const unpaidStatuses = ['ISSUED', 'PARTIAL', 'DRAFT'];
+            try {
+                sessionStorage.removeItem('currentResidentId');
+                sessionStorage.removeItem('billsFilterInvoiceIds');
+                sessionStorage.setItem('billsFilterStatuses', JSON.stringify(unpaidStatuses));
+                sessionStorage.setItem('billsSystemFilterMeta', JSON.stringify({
+                    source: 'pay_all',
+                    ts: Date.now()
+                }));
+            } catch (err) {
+                console.warn('Failed to store bills filter for pay-all', err);
+            }
+            if (window.userSpaRouter && typeof window.userSpaRouter.navigate === 'function') {
+                window.userSpaRouter.navigate('bills', true);
+            } else {
+                window.location.href = '/user/dashboard.html#bills';
+            }
             return;
         }
 

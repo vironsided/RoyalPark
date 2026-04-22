@@ -20,7 +20,7 @@ app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
 
 // Routes
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Admin Panel - SPA Routing

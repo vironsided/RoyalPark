@@ -111,9 +111,10 @@ def create_user_api(
 ):
     """
     Создание пользователя из SPA.
-    root может создавать любых, admin — только operator/resident.
+    root может создавать любых, admin — только operator/resident
+    (роли root/admin/sales admin создавать не имеет права).
     """
-    if actor.role == RoleEnum.ADMIN and payload.role in (RoleEnum.ROOT, RoleEnum.ADMIN):
+    if actor.role == RoleEnum.ADMIN and payload.role in (RoleEnum.ROOT, RoleEnum.ADMIN, RoleEnum.SALES):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
 
     # Генерируем уникальный сложный временный пароль

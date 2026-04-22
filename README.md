@@ -125,7 +125,7 @@ RoyalParkJS/
 │   ├── css/                # Stylesheets
 │   ├── js/                 # JavaScript files
 │   ├── images/             # Images and icons
-│   └── login.html          # Login page
+│   └── index.html          # Login page
 ├── server.js               # Express server
 ├── package.json            # Project dependencies
 └── README.md               # This file

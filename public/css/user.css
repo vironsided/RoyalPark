@@ -732,6 +732,116 @@ body.user-app #userSpaContent {
     color: white;
 }
 
+/* Карточка «Аванс» с подсказкой top-up */
+.resident-advance-topup-card {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.resident-advance-topup-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        120deg,
+        transparent 0%,
+        transparent 35%,
+        rgba(255, 255, 255, 0.18) 50%,
+        transparent 65%,
+        transparent 100%
+    );
+    background-size: 220% 100%;
+    background-position: 200% 0;
+    pointer-events: none;
+    animation: advance-topup-shimmer 4s ease-in-out infinite;
+}
+
+.resident-advance-topup-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 32px rgba(90, 107, 77, 0.25);
+}
+
+.advance-topup-chip {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.6rem 0.3rem 0.5rem;
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+    pointer-events: none;
+}
+
+.advance-topup-chip .bi {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--olivia-deep, #5a6b4d);
+    font-size: 0.72rem;
+    font-weight: 700;
+    animation: advance-topup-pulse 2s ease-in-out infinite;
+}
+
+.advance-topup-chip-text {
+    white-space: nowrap;
+}
+
+@keyframes advance-topup-pulse {
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55);
+    }
+    50% {
+        transform: scale(1.08);
+        box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
+    }
+}
+
+@keyframes advance-topup-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    60% {
+        background-position: -120% 0;
+    }
+    100% {
+        background-position: -120% 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .advance-topup-chip-text {
+        display: none;
+    }
+    .advance-topup-chip {
+        padding: 0.3rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .resident-advance-topup-card::before,
+    .advance-topup-chip .bi {
+        animation: none;
+    }
+}
+
 /* ── Advance History Page ── */
 .advance-history-page .user-bills-header {
     display: flex;

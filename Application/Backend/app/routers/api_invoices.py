@@ -300,6 +300,9 @@ def _bulk_issue_internal(
     due_date: Optional[str] = None,
 ):
     """Внутренняя функция для массового выставления счетов (без авторизации)."""
+    if not due_date or not due_date.strip():
+        raise HTTPException(status_code=400, detail="Due date is required")
+
     if action == "by_block" and not block_id:
         raise HTTPException(status_code=400, detail="Block ID is required for 'by_block' action")
     
@@ -330,8 +333,10 @@ def _bulk_issue_internal(
     if due_date:
         try:
             due = datetime.strptime(due_date, "%Y-%m-%d").date()
-        except Exception as e:
+        except Exception:
             due = None
+    if due is None:
+        raise HTTPException(status_code=400, detail="Invalid due_date format, expected YYYY-MM-DD")
     
     cnt = 0
     invoices_to_process = query.all()
@@ -341,8 +346,7 @@ def _bulk_issue_internal(
         inv.number = build_invoice_number(db, inv.resident_id, inv.period_year, inv.period_month)
         
         inv.status = InvoiceStatus.ISSUED
-        if due:
-            inv.due_date = due
+        inv.due_date = due
         cnt += 1
     
     try:

@@ -337,7 +337,12 @@
                 const text = String(timeRaw || '').trim();
                 if (!text) return '';
 
-                let m = text.match(/^(\d+)\s*(минут[аы]?|мин|dəqiqə|minutes?)\s*(назад|əvvəl|ago)?$/i);
+                // «Только что» / «Elə indi» / «Just now»
+                if (/^(только\s+что|elə\s+indi|just\s+now)$/i.test(text)) {
+                    return t('time_just_now', 'Только что');
+                }
+
+                let m = text.match(/^(\d+)\s*(минут[аы]?|мин|dəqiqə|dəq|minutes?|min)\s*(назад|əvvəl|ago)?$/i);
                 if (m) return `${m[1]} ${t('time_minutes_ago', 'мин назад')}`;
 
                 m = text.match(/^(\d+)\s*(час|часа|часов|h|saat|hours?|hour)\s*(назад|əvvəl|ago)?$/i);
@@ -373,6 +378,12 @@
             const localizeActivityDescription = (descriptionRaw) => {
                 const text = String(descriptionRaw || '').trim();
                 if (!text) return '';
+
+                // Fallback-значения с бэкенда («Новое обращение» / «Yeni müraciət» / «New appeal»):
+                // backend ставит их в description, когда не удалось определить блок/квартиру.
+                if (/^(новое\s+обращение|yeni\s+müraciət|new\s+appeal)$/i.test(text)) {
+                    return t('activity_new_appeal', 'Новое обращение');
+                }
 
                 const blockLabel = t('residents_filter_block', 'Блок');
                 const apartmentLabel = t('apartment', 'Квартира');

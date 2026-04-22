@@ -471,6 +471,16 @@
                 return;
             }
 
+            const currentRole = String((localStorage.getItem('userRole') || '')).trim().toUpperCase();
+            if (currentRole === 'ADMIN' && ['ROOT', 'ADMIN', 'SALES'].includes(String(role).toUpperCase())) {
+                if (window.showWarning) {
+                    showWarning(t('users_role_forbidden', 'Недостаточно прав для создания этой роли'));
+                } else {
+                    alert(t('users_role_forbidden', 'Недостаточно прав для создания этой роли'));
+                }
+                return;
+            }
+
             try {
                 // Сначала пробуем с авторизацией
                 let resp = await fetch(`${API_BASE}/api/users`, {
@@ -496,7 +506,11 @@
                 await loadUsers();
 
                 loginInput.value = '';
-                roleSelect.value = 'ADMIN';
+                if (roleSelect.options.length > 0) {
+                    roleSelect.value = roleSelect.querySelector('option[value="ADMIN"]')
+                        ? 'ADMIN'
+                        : roleSelect.options[0].value;
+                }
 
                 const tempPassword = created.temp_password_plain || t('tenants_password_set', 'установлен');
                 if (window.showSuccess) {
@@ -815,9 +829,36 @@
             }
         }
 
+        // Для роли ADMIN: запрещённые для создания роли убираем из селекта.
+        // ROOT может создавать любые роли. Функция идемпотентна (повторный вызов безопасен).
+        function applyRoleRestrictionsForCreateUser() {
+            try {
+                const roleSelect = document.getElementById('newUserRole');
+                if (!roleSelect) return;
+
+                const currentRole = String(
+                    (localStorage.getItem('userRole') || '')
+                ).trim().toUpperCase();
+
+                if (currentRole !== 'ADMIN') return;
+
+                const forbidden = new Set(['ROOT', 'ADMIN', 'SALES']);
+                Array.from(roleSelect.options).forEach(opt => {
+                    if (forbidden.has(String(opt.value).toUpperCase())) {
+                        opt.remove();
+                    }
+                });
+
+                if (forbidden.has(String(roleSelect.value).toUpperCase()) && roleSelect.options.length > 0) {
+                    roleSelect.value = roleSelect.options[0].value;
+                }
+            } catch (_e) { /* ignore */ }
+        }
+
         // Initialize on page load
         function initUsersPage() {
             initCustomUserPaginationDropdown();
+            applyRoleRestrictionsForCreateUser();
             loadUsers();
         }
 

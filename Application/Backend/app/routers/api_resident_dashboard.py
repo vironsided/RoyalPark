@@ -1173,6 +1173,8 @@ class ResidentDashboardData(BaseModel):
     pay_now: float
     due_date: Optional[date] = None
     due_state: str  # "ok" | "soon" | "over" | "none"
+    # Invoice for server "current" calendar month (same period as month_due), if issued
+    current_month_invoice_id: Optional[int] = None
 
 
 class DashboardSummary(BaseModel):
@@ -1945,6 +1947,8 @@ def get_resident_dashboard(
     shared_advance = total_advance_calc
     if shared_advance < 0: shared_advance = Decimal("0")
 
+    current_month_invoice_id_by_resident: dict[int, Optional[int]] = {}
+
     for r in residents:
         # Current month invoice
         inv_month = (
@@ -1957,7 +1961,8 @@ def get_resident_dashboard(
             )
             .first()
         )
-        
+        current_month_invoice_id_by_resident[r.id] = inv_month.id if inv_month else None
+
         if inv_month:
             paid_m = (
                 db.query(func.coalesce(func.sum(PaymentApplication.amount_applied), 0))
@@ -2146,6 +2151,7 @@ def get_resident_dashboard(
             pay_now=float(res_pay_now),
             due_date=due_info.get(r.id, {}).get("due_date"),
             due_state=due_info.get(r.id, {}).get("state", "none"),
+            current_month_invoice_id=current_month_invoice_id_by_resident.get(r.id),
         ))
 
     return ResidentDashboardResponse(

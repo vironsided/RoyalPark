@@ -48,6 +48,14 @@
                         window.location.hash = '#/sales';
                     }
                 }
+                if (storedRole === 'OPERATOR') {
+                    var opHash = (window.location.hash || '').slice(1);
+                    var opPath = opHash.split('?')[0];
+                    var opAllowed = ['/tariffs', '/residents', '/readings', '/payments', '/payment-view', '/invoices', '/invoice-view', '/account'];
+                    if (opPath && opAllowed.indexOf(opPath) === -1) {
+                        window.location.hash = '#/tariffs';
+                    }
+                }
             } catch (_e) { /* ignore */ }
         })();
     </script>
@@ -65,6 +73,37 @@
 
         body {
             min-height: 100vh !important;
+        }
+
+        .app-bootstrap-loader {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #1a1d2e;
+            z-index: 99999;
+            transition: opacity 0.25s ease;
+        }
+
+        .app-bootstrap-loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .app-bootstrap-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #8f7bff;
+            border-radius: 50%;
+            animation: app-bootstrap-spin 0.9s linear infinite;
+        }
+
+        @keyframes app-bootstrap-spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .admin-container {
@@ -156,10 +195,128 @@
         html[data-user-role="SALES"] .nav-section {
             padding-top: 6px !important;
         }
+
+        /* Для SALES «Выход» прижимается к нижней части сайдбара,
+           а не располагается сразу под единственным пунктом «Продажи». */
+        html[data-user-role="SALES"] .sidebar-scroll {
+            display: flex !important;
+            flex-direction: column !important;
+            min-height: 96% !important;
+        }
+        html[data-user-role="SALES"] .nav-menu {
+            display: flex !important;
+            flex-direction: column !important;
+            flex: 1 1 auto !important;
+            min-height: 100% !important;
+        }
+        html[data-user-role="SALES"] .nav-section:has(#logoutBtn) {
+            margin-top: auto !important;
+        }
+
+        /* ----------------------------------------------------------- */
+        /*  OPERATOR: ограниченный набор разделов, без экспорта/CRUD   */
+        /* ----------------------------------------------------------- */
+
+        /* Скрываем пункты меню, недоступные оператору. */
+        html[data-user-role="OPERATOR"] a.nav-item[data-route="/dashboard"],
+        html[data-user-role="OPERATOR"] a.nav-item[data-route="/blocks"],
+        html[data-user-role="OPERATOR"] a.nav-item[data-route="/tenants"],
+        html[data-user-role="OPERATOR"] a.nav-item[data-route="/users"],
+        html[data-user-role="OPERATOR"] a.nav-item[data-route="/sales"],
+        html[data-user-role="OPERATOR"] a.nav-item[data-route="/appeals2"],
+        html[data-user-role="OPERATOR"] a.nav-item[data-route="/news"],
+        html[data-user-role="OPERATOR"] a.nav-item[data-route="/logs"] {
+            display: none !important;
+        }
+
+        /* Скрываем заголовки «ƏSAS» / «SİSTEM» — у оператора под ними нет смысловой группировки. */
+        html[data-user-role="OPERATOR"] .nav-section-title[data-i18n="nav_main"],
+        html[data-user-role="OPERATOR"] .nav-section-title[data-i18n="nav_system"] {
+            display: none !important;
+        }
+
+        /* Глобальные элементы шапки, недоступные оператору. */
+        html[data-user-role="OPERATOR"] #monthlyIssueBlock,
+        html[data-user-role="OPERATOR"] #openNotifications {
+            display: none !important;
+        }
+
+        /* Tariflər: скрываем статистику, экспорт, создание и столбец действий. */
+        html[data-user-role="OPERATOR"] #spa-content .stats-grid,
+        html[data-user-role="OPERATOR"] #spa-content button[onclick="exportTariffs()"],
+        html[data-user-role="OPERATOR"] #spa-content #tariffExportFormat,
+        html[data-user-role="OPERATOR"] #spa-content button[onclick="openCreateModal()"] {
+            display: none !important;
+        }
+        html[data-user-role="OPERATOR"] #tariffsTableBody .table-actions,
+        html[data-user-role="OPERATOR"] .tariffs-table th[data-i18n="tariffs_col_actions"] {
+            visibility: hidden !important;
+        }
+
+        /* Rezidentlər: скрываем экспорт, создание и действия в таблице/модалке. */
+        html[data-user-role="OPERATOR"] #spa-content button[onclick="exportResidents()"],
+        html[data-user-role="OPERATOR"] #spa-content #residentExportFormat,
+        html[data-user-role="OPERATOR"] #spa-content #exportCustomerType,
+        html[data-user-role="OPERATOR"] #spa-content #exportContactsFilter,
+        html[data-user-role="OPERATOR"] #spa-content button[onclick="openCreateModal()"] {
+            display: none !important;
+        }
+        html[data-user-role="OPERATOR"] #residentsTableBody td.actions-column {
+            visibility: hidden !important;
+        }
+        /* На случай, если где-то рендерится отдельная карточка/модалка резидента
+           с кнопками редактирования/удаления — скрываем такие кнопки глобально. */
+        html[data-user-role="OPERATOR"] button[onclick^="openEditResident"],
+        html[data-user-role="OPERATOR"] button[onclick^="openDeleteModal"] {
+            display: none !important;
+        }
+
+        /* Göstəricilər: скрываем блок экспорта. */
+        html[data-user-role="OPERATOR"] #readingsExportToggleBtn,
+        html[data-user-role="OPERATOR"] #readingsExportPanel,
+        html[data-user-role="OPERATOR"] .readings-export-toolbar {
+            display: none !important;
+        }
+
+        /* Ödənişlər: скрываем экспорт и приём платежа. */
+        html[data-user-role="OPERATOR"] #spa-content button[onclick="exportPayments()"],
+        html[data-user-role="OPERATOR"] #spa-content #paymentExportFormat,
+        html[data-user-role="OPERATOR"] #spa-content button.btn-accept-payment {
+            display: none !important;
+        }
+
+        /* Hesablar: скрываем верхний блок действий и экспорт. */
+        html[data-user-role="OPERATOR"] #spa-content .invoices-actions,
+        html[data-user-role="OPERATOR"] #invoicesExportToggleBtn,
+        html[data-user-role="OPERATOR"] #invoicesExportPanel {
+            display: none !important;
+        }
+
+        /* Invoice view: скрываем блок действий над счётом. */
+        html[data-user-role="OPERATOR"] .invoice-actions-section {
+            display: none !important;
+        }
+
+        /* ----------------------------------------------------------- */
+        /*  ADMIN: скрываем разделы, доступные только ROOT             */
+        /* ----------------------------------------------------------- */
+
+        html[data-user-role="ADMIN"] a.nav-item[data-route="/logs"],
+        html[data-user-role="ADMIN"] a.nav-item[data-route="/sales"] {
+            display: none !important;
+        }
+
+        /* В платежах админ не должен видеть кнопку «Принять платёж». */
+        html[data-user-role="ADMIN"] #spa-content button.btn-accept-payment {
+            display: none !important;
+        }
     </style>
 </head>
 
 <body>
+    <div id="appBootstrapLoader" class="app-bootstrap-loader" aria-live="polite" aria-label="Loading">
+        <div class="app-bootstrap-spinner"></div>
+    </div>
     <div class="admin-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
@@ -363,7 +520,7 @@
                         </span>
                         <span class="nav-text">Резервное копирование</span>
                     </a> -->
-                        <a href="/login.html" class="nav-item logout-btn" id="logoutBtn">
+                        <a href="/" class="nav-item logout-btn" id="logoutBtn">
                             <span class="nav-icon">
                                 <svg width="20" height="20" fill="currentColor">
                                     <use href="/images/icons.svg#icon-logout"></use>
@@ -620,7 +777,7 @@
                 });
                 if (!response.ok) {
                     // Not authenticated, redirect to login
-                    window.location.replace('/login.html');
+                    window.location.replace('/');
                     return;
                 }
                 // Session valid, show the page
@@ -628,7 +785,7 @@
             } catch (error) {
                 console.error('Session check failed:', error);
                 // On error, redirect to login for safety
-                window.location.replace('/login.html');
+                window.location.replace('/');
             }
         })();
 
@@ -704,12 +861,15 @@
 
             // Профиль пользователя загружается в блоке Account Settings Modal
 
-            // Ранний guard для роли SALES на основе сохранённой роли,
+            // Ранний guard для ролей SALES/OPERATOR на основе сохранённой роли,
             // чтобы заблокировать переходы ещё до ответа API /users/me.
             try {
                 const storedRole = (localStorage.getItem('userRole') || '').trim().toUpperCase();
                 if (storedRole === 'SALES' && typeof applySalesRouteGuard === 'function') {
                     applySalesRouteGuard('SALES');
+                }
+                if (storedRole === 'OPERATOR' && typeof applyOperatorRouteGuard === 'function') {
+                    applyOperatorRouteGuard('OPERATOR');
                 }
             } catch (_e) { /* ignore */ }
 
@@ -974,7 +1134,7 @@
 
                     // Redirect to login page after a short delay
                     setTimeout(() => {
-                        window.location.href = '/login.html';
+                        window.location.href = '/';
                     }, 500);
                 });
             }
@@ -1117,7 +1277,7 @@
             // Получить точное число непрочитанных с сервера
             async function fetchUnreadCount() {
                 try {
-                    const resp = await fetch(`${API_BASE}/api/notifications/unread-count`);
+                    const resp = await fetch(`${API_BASE}/api/notifications/unread-count`, { credentials: 'include' });
                     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
                     const data = await resp.json();
                     return data.count || 0;
@@ -1132,16 +1292,58 @@
             async function loadNotifications() {
                 try {
                     const url = `${API_BASE}/api/notifications/public?page=1&per_page=200`;
-                    const response = await fetch(url);
+                    const response = await fetch(url, { credentials: 'include' });
 
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
 
                     const data = await response.json();
+                    const tryParseJson = (text) => {
+                        if (!text || typeof text !== 'string') return null;
+                        const s = text.trim();
+                        if (!s.startsWith('{')) return null;
+                        try { return JSON.parse(s); } catch (_e) { return null; }
+                    };
+
                     const localizeNotificationText = (item) => {
                         const text = String(item?.message || '—');
                         const type = String(item?.notification_type || '').toUpperCase();
+
+                        if (type === 'CONTRACT_APPROVAL') {
+                            const data = tryParseJson(text) || {};
+                            const template = t(
+                                'notifications_contract_approval_template',
+                                'Договор №{number} (дом «{house}», покупатель «{buyer}») отправлен на одобрение менеджером {actor}.'
+                            );
+                            return template
+                                .replace('{number}', data.contract_number || (item?.related_id ? `#${item.related_id}` : '—'))
+                                .replace('{house}', data.house || '—')
+                                .replace('{buyer}', data.buyer || '—')
+                                .replace('{actor}', data.actor || '—');
+                        }
+
+                        if (type === 'CONTRACT_DECISION') {
+                            const data = tryParseJson(text) || {};
+                            const decision = String(data.decision || '').toUpperCase();
+                            const key = decision === 'APPROVED'
+                                ? 'notifications_contract_approved_template'
+                                : 'notifications_contract_rejected_template';
+                            const fallback = decision === 'APPROVED'
+                                ? 'Договор №{number} ({buyer}) одобрен пользователем {actor}.'
+                                : 'Договор №{number} ({buyer}) отклонён пользователем {actor}.';
+                            let out = t(key, fallback)
+                                .replace('{number}', data.contract_number || (item?.related_id ? `#${item.related_id}` : '—'))
+                                .replace('{buyer}', data.buyer || '—')
+                                .replace('{actor}', data.actor || '—');
+                            if (data.comment) {
+                                const tail = t('notifications_comment_tail', ' Комментарий: {comment}')
+                                    .replace('{comment}', data.comment);
+                                out += tail;
+                            }
+                            return out;
+                        }
+
                         if (type !== 'TARIFF_EXPIRED') return text;
 
                         const m = text.match(/["“](.+?)["”].*?(\d{2}\.\d{2}\.\d{4})/);
@@ -1223,7 +1425,7 @@
                 }
                 // Дёргаем сервер, чтобы статус сохранился
                 try {
-                    await fetch(`${API_BASE}/api/notifications/${id}/public`, { method: 'GET' });
+                    await fetch(`${API_BASE}/api/notifications/${id}/public`, { method: 'GET', credentials: 'include' });
                     // После ответа уточняем реальное количество
                     const unread = await fetchUnreadCount();
                     updateNotificationCount(unread);
@@ -1383,7 +1585,7 @@
                     setAppealsBadge(0);
 
                     // Параллельно дергаем сервер (не блокируем UI)
-                    Promise.all(unreadIds.map(id => fetch(`${API_BASE}/api/notifications/${id}/public`, { method: 'GET' }).catch(() => null)))
+                    Promise.all(unreadIds.map(id => fetch(`${API_BASE}/api/notifications/${id}/public`, { method: 'GET', credentials: 'include' }).catch(() => null)))
                         .finally(async () => {
                             const unread = await fetchUnreadCount();
                             updateNotificationCount(unread);
@@ -1432,7 +1634,7 @@
                         if (response.status === 401) {
                             // Неавторизован - перенаправляем на страницу входа
                             console.warn('Unauthorized access, redirecting to login');
-                            window.location.href = '/login.html';
+                            window.location.href = '/';
                             return;
                         }
                         throw new Error(`HTTP error! status: ${response.status}`);
@@ -1578,9 +1780,9 @@
                 const sidebarPanelLabelEl = document.getElementById('sidebarPanelLabel');
                 if (sidebarPanelLabelEl) {
                     const panelKeyByRole = {
-                        'ROOT': 'panel_admin',
+                        'ROOT': 'panel_root',
                         'ADMIN': 'panel_admin',
-                        'OPERATOR': 'panel_admin',
+                        'OPERATOR': 'panel_operator',
                         'SALES': 'panel_sales',
                         'ACCOUNTANT': 'panel_accountant',
                         'RESIDENT': 'panel_user'
@@ -1600,6 +1802,7 @@
                     document.documentElement.setAttribute('data-user-role', upper);
                     try { localStorage.setItem('userRole', upper); } catch (_e) { /* ignore */ }
                     applySalesRouteGuard(upper);
+                    applyOperatorRouteGuard(upper);
                 }
             }
 
@@ -1634,6 +1837,49 @@
                         return originalNavigate(route);
                     };
                     window.spaRouter._salesGuardInstalled = true;
+                }
+            }
+
+            // Ограничение навигации для роли OPERATOR: разрешены только указанные роуты.
+            // Любая попытка уйти на другой роут — редирект на /tariffs.
+            function applyOperatorRouteGuard(role) {
+                const isOperator = String(role || '').toUpperCase() === 'OPERATOR';
+                if (!isOperator) return;
+
+                const OP_ALLOWED = new Set([
+                    '/tariffs',
+                    '/residents',
+                    '/readings',
+                    '/payments',
+                    '/payment-view',
+                    '/invoices',
+                    '/invoice-view',
+                    '/account'
+                ]);
+
+                try {
+                    const rawHash = (window.location.hash || '').slice(1);
+                    const path = rawHash.split('?')[0];
+                    if (path && !OP_ALLOWED.has(path)) {
+                        if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+                            window.spaRouter.navigate('/tariffs');
+                        } else {
+                            window.location.hash = '#/tariffs';
+                        }
+                    }
+                } catch (_e) { /* ignore */ }
+
+                if (window.spaRouter && typeof window.spaRouter.navigate === 'function' && !window.spaRouter._operatorGuardInstalled) {
+                    const originalNavigate = window.spaRouter.navigate.bind(window.spaRouter);
+                    window.spaRouter.navigate = function (route) {
+                        const r = String(route || '');
+                        const pathOnly = r.split('?')[0];
+                        if (!OP_ALLOWED.has(pathOnly)) {
+                            return originalNavigate('/tariffs');
+                        }
+                        return originalNavigate(route);
+                    };
+                    window.spaRouter._operatorGuardInstalled = true;
                 }
             }
 
@@ -2128,6 +2374,19 @@
                 loadUserProfile();
             }, 200);
         });
+    </script>
+    <script>
+        (function setupBootstrapLoader() {
+            const hideLoader = () => {
+                const loader = document.getElementById('appBootstrapLoader');
+                if (!loader) return;
+                loader.classList.add('hidden');
+                setTimeout(() => loader.remove(), 300);
+            };
+
+            window.addEventListener('load', hideLoader, { once: true });
+            setTimeout(hideLoader, 5000);
+        })();
     </script>
 </body>
 

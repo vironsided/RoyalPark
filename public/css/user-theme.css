@@ -193,7 +193,8 @@ body.user-app .admin-container {
 
 /* Акцентные карточки / кнопки — белый текст на цветном фоне */
 [data-theme="dark"] body.user-app .resident-summary-card.accent .summary-label,
-[data-theme="dark"] body.user-app .resident-summary-card.accent .summary-value {
+[data-theme="dark"] body.user-app .resident-summary-card.accent .summary-value,
+[data-theme="dark"] body.user-app .resident-summary-card.accent .advance-topup-chip {
     color: #fff !important;
     -webkit-text-fill-color: #fff !important;
 }

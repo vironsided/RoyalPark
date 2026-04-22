@@ -8,6 +8,7 @@ API для модуля продаж (SALES).
   - ADMIN — видит все договора (read-only + может одобрять/отклонять как root? — НЕТ: одобряет только ROOT).
 """
 
+import json
 from datetime import datetime, date
 from decimal import Decimal
 from typing import List, Optional
@@ -204,15 +205,21 @@ def _contract_to_out(c: SalesContract) -> SalesContractOut:
 
 
 def _notify_roots_on_request(db: Session, contract: SalesContract, actor: User) -> None:
-    """Создаёт push-уведомления для всех активных ROOT-пользователей."""
+    """Создаёт push-уведомления для всех активных ROOT-пользователей.
+
+    Текст сохраняется как JSON с параметрами, чтобы фронт смог отрендерить
+    сообщение на выбранном языке. Для совместимости при неудачном парсинге
+    фронт покажет сырой JSON — поэтому ключи должны быть стабильными.
+    """
     roots = db.query(User).filter(User.role == RoleEnum.ROOT, User.is_active.is_(True)).all()
-    buyer = contract.buyer_full_name or "—"
-    house = contract.house_number or "—"
-    actor_name = actor.full_name or actor.username
-    message = (
-        f"Договор №{contract.contract_number or contract.id} "
-        f"(дом «{house}», покупатель «{buyer}») отправлен на одобрение менеджером {actor_name}."
-    )
+    payload = {
+        "kind": "contract_approval_request",
+        "contract_number": contract.contract_number or str(contract.id),
+        "house": contract.house_number or "—",
+        "buyer": contract.buyer_full_name or "—",
+        "actor": actor.full_name or actor.username,
+    }
+    message = json.dumps(payload, ensure_ascii=False)
     now = datetime.utcnow()
     for r in roots:
         db.add(
@@ -228,19 +235,25 @@ def _notify_roots_on_request(db: Session, contract: SalesContract, actor: User) 
 
 
 def _notify_author_on_decision(db: Session, contract: SalesContract, decision: str, actor: User) -> None:
-    """Отправляет уведомление автору договора о решении root."""
+    """Отправляет уведомление автору договора о решении root.
+
+    Как и для запроса на одобрение, текст сохраняется как JSON — локализацию
+    выполняет фронт на основе текущего языка пользователя.
+    """
     if not contract.created_by_id:
         return
-    label = "одобрен" if decision == "APPROVED" else "отклонён"
-    comment_tail = f" Комментарий: {contract.review_comment}" if contract.review_comment else ""
-    message = (
-        f"Договор №{contract.contract_number or contract.id} "
-        f"({contract.buyer_full_name or '—'}) {label} пользователем {actor.username}.{comment_tail}"
-    )
+    payload = {
+        "kind": "contract_decision",
+        "decision": "APPROVED" if decision == "APPROVED" else "REJECTED",
+        "contract_number": contract.contract_number or str(contract.id),
+        "buyer": contract.buyer_full_name or "—",
+        "actor": actor.full_name or actor.username,
+        "comment": contract.review_comment or "",
+    }
     db.add(
         Notification(
             user_id=contract.created_by_id,
-            message=message,
+            message=json.dumps(payload, ensure_ascii=False),
             status=NotificationStatus.UNREAD,
             notification_type="CONTRACT_DECISION",
             related_id=contract.id,

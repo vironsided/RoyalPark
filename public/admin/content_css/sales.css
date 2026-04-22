@@ -448,6 +448,55 @@
 .sales-btn.print     { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: #fff; }
 .sales-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(0,0,0,0.3); }
 
+/* ------- Prompt modal (approve/reject comment) ------- */
+/* Должна быть выше основного .sales-modal-overlay (z-index: 9999),
+   чтобы ввод причины отказа / комментария перекрывал форму договора. */
+#salesPromptModal,
+#salesConfirmModal { z-index: 10000; }
+
+.sales-confirm-modal { width: min(440px, 95vw); }
+.sales-confirm-message {
+    font-size: 0.96rem;
+    color: #e6e8ee;
+    line-height: 1.5;
+    padding: 0.4rem 0;
+}
+.sales-prompt-modal { width: min(520px, 95vw); }
+.sales-prompt-label {
+    display: block;
+    font-size: 0.88rem;
+    color: #c7cad1;
+    margin-bottom: 0.5rem;
+}
+.sales-prompt-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #e6e8ee;
+    padding: 0.65rem 0.85rem;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-family: inherit;
+    line-height: 1.45;
+    resize: vertical;
+    min-height: 96px;
+    outline: none;
+    transition: border 0.2s, box-shadow 0.2s;
+}
+.sales-prompt-input:focus {
+    border-color: rgba(102, 126, 234, 0.55);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+.sales-prompt-error {
+    margin-top: 0.55rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: 8px;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+    font-size: 0.82rem;
+}
+
 /* "Viewed yet?" badge near approval button */
 .sales-view-indicator {
     display: inline-flex;

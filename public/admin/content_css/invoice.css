@@ -118,6 +118,11 @@
         font-size: 0.9rem;
     }
 
+    .invoices-actions-group label .required-mark {
+        color: #ff6b6b;
+        margin-left: 4px;
+    }
+
     .invoices-actions-group input,
     .invoices-actions-group select {
         padding: 10px 15px;

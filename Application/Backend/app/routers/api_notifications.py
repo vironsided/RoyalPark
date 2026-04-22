@@ -15,10 +15,29 @@ from ..models import (
     Resident, Block,
 )
 from ..deps import get_current_user
+from fastapi import Request
+from ..security import get_user_id_from_session
+
+
+def get_current_user_optional(request: Request, db: Session = Depends(get_db)) -> Optional[User]:
+    """Возвращает текущего пользователя, если он авторизован; иначе None."""
+    try:
+        user_id = get_user_id_from_session(request)
+    except Exception:
+        return None
+    if not user_id:
+        return None
+    user = db.get(User, user_id)
+    if not user or not user.is_active:
+        return None
+    return user
 
 
 router = APIRouter(prefix="/api/notifications", tags=["notifications-api"])
 ADMIN_NOTIFICATION_TYPES = {"APPEAL", "TARIFF_EXPIRED"}
+# Персональные админ-уведомления: доставляются конкретному user_id
+# (видны только адресату, независимо от его роли).
+ADMIN_PERSONAL_NOTIFICATION_TYPES = {"CONTRACT_APPROVAL", "CONTRACT_DECISION"}
 
 
 # Pydantic models
@@ -109,16 +128,43 @@ def _list_notifications_internal(
     q: Optional[str] = None,
     page: int = 1,
     per_page: int = 25,
+    current_user: Optional[User] = None,
+    scope: Optional[str] = None,
 ):
-    """Внутренняя функция для получения списка уведомлений."""
-    from sqlalchemy import or_
-    # В админ-панели показываем только обращения (APPEAL), 
-    # исключая счета (INVOICE) и новости (NEWS).
-    query = db.query(Notification).join(User, User.id == Notification.user_id).filter(
-        or_(
+    """Внутренняя функция для получения списка уведомлений.
+
+    ``scope``:
+      * ``"appeals"`` — для раздела «Обращения жителей»: показываем только
+        APPEAL (и исторические записи без типа). Контрактные и системные
+        уведомления сюда попадать не должны.
+      * по умолчанию (``None`` / ``"admin"``) — общий админ-список:
+        * общие админ-уведомления (APPEAL, TARIFF_EXPIRED, исторические NULL),
+        * персональные админ-уведомления (CONTRACT_APPROVAL, CONTRACT_DECISION) —
+          только те, которые адресованы текущему пользователю.
+    """
+    from sqlalchemy import or_, and_
+    scope_value = (scope or "").strip().lower()
+
+    if scope_value == "appeals":
+        type_clauses = [
+            Notification.notification_type == "APPEAL",
+            Notification.notification_type == None,
+        ]
+    else:
+        type_clauses = [
             Notification.notification_type.in_(list(ADMIN_NOTIFICATION_TYPES)),
-            Notification.notification_type == None
-        )
+            Notification.notification_type == None,
+        ]
+        if current_user is not None:
+            type_clauses.append(
+                and_(
+                    Notification.notification_type.in_(list(ADMIN_PERSONAL_NOTIFICATION_TYPES)),
+                    Notification.user_id == current_user.id,
+                )
+            )
+
+    query = db.query(Notification).join(User, User.id == Notification.user_id).filter(
+        or_(*type_clauses)
     )
     
     # Join с Resident для фильтрации
@@ -198,6 +244,7 @@ def list_notifications(
     q: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     per_page: int = Query(25, ge=1, le=200),
+    scope: Optional[str] = Query(None, description='"appeals" — только обращения жителей; по умолчанию — общий админ-список.'),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -211,6 +258,8 @@ def list_notifications(
             q=q,
             page=page,
             per_page=per_page,
+            current_user=current_user,
+            scope=scope,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -224,9 +273,13 @@ def list_notifications_public(
     q: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     per_page: int = Query(25, ge=1, le=200),
+    scope: Optional[str] = Query(None, description='"appeals" — только обращения жителей.'),
     db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
 ):
-    """Получить список уведомлений (публичный endpoint без авторизации)."""
+    """Получить список уведомлений. Endpoint не требует специальных прав,
+    но использует текущую сессию, чтобы отфильтровать персональные уведомления
+    (например, решения по договору) только для адресата."""
     try:
         return _list_notifications_internal(
             db=db,
@@ -236,22 +289,34 @@ def list_notifications_public(
             q=q,
             page=page,
             per_page=per_page,
+            current_user=current_user,
+            scope=scope,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/unread-count")
-def get_unread_count_public(db: Session = Depends(get_db)):
-    """Получить количество непрочитанных уведомлений (публичный endpoint)."""
-    from sqlalchemy import func, or_
-    # Считаем административные уведомления: обращения + системные (например, истекшие тарифы).
+def get_unread_count_public(
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
+    """Получить количество непрочитанных уведомлений для админ-панели."""
+    from sqlalchemy import func, or_, and_
+    type_clauses = [
+        Notification.notification_type.in_(list(ADMIN_NOTIFICATION_TYPES)),
+        Notification.notification_type == None,
+    ]
+    if current_user is not None:
+        type_clauses.append(
+            and_(
+                Notification.notification_type.in_(list(ADMIN_PERSONAL_NOTIFICATION_TYPES)),
+                Notification.user_id == current_user.id,
+            )
+        )
     count = db.query(func.count(Notification.id)).filter(
         Notification.status == NotificationStatus.UNREAD,
-        or_(
-            Notification.notification_type.in_(list(ADMIN_NOTIFICATION_TYPES)),
-            Notification.notification_type == None
-        )
+        or_(*type_clauses)
     ).scalar()
     return {"count": count or 0}
 

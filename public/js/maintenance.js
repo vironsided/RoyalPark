@@ -14,7 +14,7 @@ function checkAuth() {
     const userRole = localStorage.getItem('userRole');
 
     if (!authToken || userRole !== 'maintenance') {
-        window.location.href = '/login.html';
+        window.location.href = '/';
         return;
     }
 
@@ -139,7 +139,7 @@ function addRippleEffect() {
 document.addEventListener('click', (e) => {
     if (e.target.closest('.logout-btn')) {
         localStorage.clear();
-        window.location.href = '/login.html';
+        window.location.href = '/';
     }
 });
 

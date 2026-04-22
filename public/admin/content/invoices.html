@@ -16,9 +16,9 @@
             </div>
             
             <div class="invoices-actions-group">
-                <label data-i18n="invoices_due_date_label">Срок оплаты (due date)</label>
+                <label data-i18n="invoices_due_date_label">Срок оплаты (due date) <span class="required-mark" aria-hidden="true">*</span></label>
                 <div class="date-input-wrapper">
-                    <input type="date" id="invoiceDueDate" class="date-picker-input">
+                    <input type="date" id="invoiceDueDate" class="date-picker-input" required>
                     <button type="button" class="btn-calendar" onclick="openDatePicker('invoiceDueDate')" title="Открыть календарь" data-i18n-title="open_calendar">
                         <i class="bi bi-calendar"></i>
                     </button>
@@ -2354,12 +2354,32 @@
         window.addEventListener('languageChanged', window._invoicesLanguageChangedHandler);
     }
 
+    function validateInvoiceDueDate() {
+        const dueDateInput = document.getElementById('invoiceDueDate');
+        const dueDate = dueDateInput?.value?.trim();
+
+        if (!dueDate) {
+            const message = t('invoices_due_date_required', 'Пожалуйста, выберите срок оплаты.');
+            if (typeof showError === 'function') {
+                showError(message);
+            } else {
+                alert(message);
+            }
+            if (dueDateInput) {
+                dueDateInput.focus();
+            }
+            return null;
+        }
+
+        return dueDate;
+    }
+
     // Invoice Actions Functions
     window.issueInvoiceByBlock = async function() {
         const blockSelect = document.getElementById('invoiceBlock');
         const blockValue = blockSelect?.value;
-        const dueDateInput = document.getElementById('invoiceDueDate');
-        const dueDate = dueDateInput?.value;
+        const dueDate = validateInvoiceDueDate();
+        if (!dueDate) return;
         
         if (!blockValue || blockValue === '') {
             if (typeof showWarning === 'function') {
@@ -2474,18 +2494,19 @@
     };
 
     window.issueAllInvoices = async function() {
-        const dueDateInput = document.getElementById('invoiceDueDate');
-        const dueDate = dueDateInput?.value;
+        const dueDate = validateInvoiceDueDate();
+        if (!dueDate) return;
+        const confirmMessage = t('invoices_issue_all_confirm', 'Вы уверены, что хотите выставить все счета?');
         
         console.log('Issue all invoices:', { dueDate });
         
         if (typeof showConfirm === 'function') {
-            showConfirm('Вы уверены, что хотите выставить все счета?', async (confirmed) => {
+            showConfirm(confirmMessage, async (confirmed) => {
                 if (!confirmed) return;
                 await performIssueAll(dueDate);
             });
         } else {
-            if (confirm('Вы уверены, что хотите выставить все счета?')) {
+            if (confirm(confirmMessage)) {
                 await performIssueAll(dueDate);
             }
         }

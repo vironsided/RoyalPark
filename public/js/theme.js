@@ -5,9 +5,10 @@
 
     function isLoginPage() {
         var raw = window.location.pathname || "";
-        // Нормализуем: "" и "/" — корень; server.js отдаёт тот же login.html, что и /login.html
+        // Нормализуем: "" и "/" — корень; login entry now lives at /index.html.
         var p = raw.replace(/\/+$/, "") || "/";
         if (p === "/") return true;
+        if (/\/index\.html$/i.test(raw)) return true;
         if (/\/login\.html$/i.test(raw)) return true;
         if (/^\/login$/i.test(p)) return true;
         return false;
