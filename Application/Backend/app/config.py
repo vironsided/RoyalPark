@@ -1,39 +1,45 @@
 import os
+from pathlib import Path
 from pydantic import BaseModel
+from dotenv import load_dotenv
+
+
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(BACKEND_ROOT / ".env")
 
 
 class Settings(BaseModel):
-    # Подключение к БД (из задачи):
-    PG_HOST: str = os.getenv("PG_HOST", "127.0.0.1")
+    # Подключение к БД
+    PG_HOST: str = os.getenv("PG_HOST", "")
     PG_PORT: int = int(os.getenv("PG_PORT", "5432"))
-    PG_USER: str = os.getenv("PG_USER", "postgres")
-    PG_PASSWORD: str = os.getenv("PG_PASSWORD", "admin")
-    PG_DB: str = os.getenv("PG_DB", "fast2")
+    PG_USER: str = os.getenv("PG_USER", "")
+    PG_PASSWORD: str = os.getenv("PG_PASSWORD", "")
+    PG_DB: str = os.getenv("PG_DB", "")
 
-    # Секреты/куки:
-    SESSION_SECRET_KEY: str = os.getenv("SESSION_SECRET_KEY", "change-this-in-production")
+    # Секреты/куки
+    SESSION_SECRET_KEY: str = os.getenv("SESSION_SECRET_KEY", "")
     COOKIE_NAME: str = os.getenv("COOKIE_NAME", "session_id")
 
-    # Root-учётка из ТЗ:
-    ROOT_USERNAME: str = os.getenv("ROOT_USERNAME", "root")
-    ROOT_PASSWORD: str = os.getenv("ROOT_PASSWORD", "admin Ayaz")
-    FRONTEND_BASE_URL: str = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000")
+    # ROOT-учётка
+    ROOT_USERNAME: str = os.getenv("ROOT_USERNAME", "")
+    ROOT_PASSWORD: str = os.getenv("ROOT_PASSWORD", "")
+    FRONTEND_BASE_URL: str = os.getenv("FRONTEND_BASE_URL", "")
 
     # AzeriCard — general
-    AZERICARD_GATEWAY_URL: str = os.getenv("AZERICARD_GATEWAY_URL", "https://testmpi.3dsecure.az/cgi-bin/cgi_link")
-    AZERICARD_API_URL: str = os.getenv("AZERICARD_API_URL", "https://testmpi.3dsecure.az/cgi-bin/cgi_link")
-    AZERICARD_MERCH_NAME: str = os.getenv("AZERICARD_MERCH_NAME", "Royal Park")
-    AZERICARD_MERCH_URL: str = os.getenv("AZERICARD_MERCH_URL", "http://localhost:3000")
-    AZERICARD_CALLBACK_URL: str = os.getenv("AZERICARD_CALLBACK_URL", "http://localhost:8000/api/azericard/callback")
-    AZERICARD_SUCCESS_URL: str = os.getenv("AZERICARD_SUCCESS_URL", "http://localhost:8000/api/azericard/success")
-    AZERICARD_FAIL_URL: str = os.getenv("AZERICARD_FAIL_URL", "http://localhost:8000/api/azericard/fail")
+    AZERICARD_GATEWAY_URL: str = os.getenv("AZERICARD_GATEWAY_URL", "")
+    AZERICARD_API_URL: str = os.getenv("AZERICARD_API_URL", "")
+    AZERICARD_MERCH_NAME: str = os.getenv("AZERICARD_MERCH_NAME", "")
+    AZERICARD_MERCH_URL: str = os.getenv("AZERICARD_MERCH_URL", "")
+    AZERICARD_CALLBACK_URL: str = os.getenv("AZERICARD_CALLBACK_URL", "")
+    AZERICARD_SUCCESS_URL: str = os.getenv("AZERICARD_SUCCESS_URL", "")
+    AZERICARD_FAIL_URL: str = os.getenv("AZERICARD_FAIL_URL", "")
     AZERICARD_CURRENCY: str = os.getenv("AZERICARD_CURRENCY", "AZN")
     AZERICARD_LANG: str = os.getenv("AZERICARD_LANG", "en")
 
     # AzeriCard — legacy single-terminal (fallback)
-    AZERICARD_TERMINAL_ID: str = os.getenv("AZERICARD_TERMINAL_ID", "TEST_TERMINAL_ID")
-    AZERICARD_PRIVATE_KEY: str = os.getenv("AZERICARD_PRIVATE_KEY", "DUMMY_PRIVATE_KEY")
-    AZERICARD_PUBLIC_KEY: str = os.getenv("AZERICARD_PUBLIC_KEY", "DUMMY_PUBLIC_KEY")
+    AZERICARD_TERMINAL_ID: str = os.getenv("AZERICARD_TERMINAL_ID", "")
+    AZERICARD_PRIVATE_KEY: str = os.getenv("AZERICARD_PRIVATE_KEY", "")
+    AZERICARD_PUBLIC_KEY: str = os.getenv("AZERICARD_PUBLIC_KEY", "")
 
     # AzeriCard — per-category terminals (utility / maintenance / advance)
     AZERICARD_TERMINAL_UTILITY: str = os.getenv("AZERICARD_TERMINAL_UTILITY", "")
@@ -50,8 +56,8 @@ class Settings(BaseModel):
 
     # Firebase Cloud Messaging (backend)
     FIREBASE_CREDENTIALS_PATH: str = os.getenv("FIREBASE_CREDENTIALS_PATH", "")
-    #Add Firebase Project JSON
-    FIREBASE_PROJECT_ID: str = os.getenv("FIREBASE_PROJECT_ID", "royal-c0981")
+    FIREBASE_CREDENTIALS_JSON: str = os.getenv("FIREBASE_CREDENTIALS_JSON", "")
+    FIREBASE_PROJECT_ID: str = os.getenv("FIREBASE_PROJECT_ID", "")
 
 
 settings = Settings()

@@ -4,7 +4,7 @@
         <h3 class="payment-section-title payment-howto-title" id="payment-howto-heading" data-i18n="payment_howto_title">Описание: как оплатить по счёту</h3>
         <ol class="payment-howto-list">
             <li data-i18n="payment_howto_step1">В разделе «Мои счета» откройте счёт и нажмите «Оплатить», либо перейдите на эту страницу из списка неоплаченных счетов.</li>
-            <li data-i18n="payment_howto_step2">Выберите способ: баланс Resident Pass (аванс), сохранённую карту или введите реквизиты новой карты.</li>
+            <li data-i18n="payment_howto_step2">Выберите способ: баланс Resident Pass (аванс) или банковскую карту Visa/Mastercard через AzeriCard.</li>
             <li data-i18n="payment_howto_step3">Проверьте сумму в блоке «Детали оплаты» и нажмите «Оплатить». После успешной оплаты статус обновится автоматически.</li>
         </ol>
     </aside>
@@ -66,125 +66,45 @@
                     </div>
                 </div>
 
-                <!-- Saved bank cards loaded from API -->
-                <div id="savedBankCards"></div>
-
-                <button class="add-card-btn">
-                    <i class="bi bi-plus-lg"></i>
-                    <span data-i18n="payment_add_new_card">Добавить новую</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Middle Column: Credit Card Form (hidden by default until user chooses to add a card) -->
-        <div class="payment-middle-column is-hidden" id="paymentMiddleColumn">
-            <h3 class="payment-section-title" data-i18n="payment_card_payment">Оплата банковской картой</h3>
-            <p class="payment-amount-label"><span data-i18n="payment_amount_label">Сумма к оплате</span>: <span id="paymentAmountLabel">0,00 ₼</span></p>
-            
-            <!-- Card Preview with 3D Flip -->
-            <div class="card-preview-container" id="cardPreviewContainer" onclick="flipPreviewCard()">
-                <div class="card-preview-wrapper">
-                    <div class="card-preview modern-card" id="cardPreview">
-                        <div class="glass-overlay card-preview-overlay"></div>
-                        <header class="card-preview-header">
-                            <div class="card-header-left">
-                                <div class="chip modern-chip"></div>
-                                <span class="logo">
-                                    <div class="mastercard-logo" id="mastercardLogo">
-                                        <span class="mastercard-circle circle-red"></span>
-                                        <span class="mastercard-circle circle-orange"></span>
-                                    </div>
-                                    <h5 id="cardPreviewLogoText">Master Card</h5>
-                                </span>
+                <div class="bank-card animated-bg-1 gateway-card"
+                     data-card-id="azericard-gateway"
+                     data-card-type="CARD"
+                     data-card-holder="AzeriCard">
+                    <div class="glass-overlay"></div>
+                    <div class="card-inner">
+                        <div class="card-top">
+                            <div class="chip chip-with-svg">
+                                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                                    <rect x="10" y="20" width="80" height="60" rx="10" fill="#ffd700" />
+                                    <path d="M10 40 H90 M10 60 H90 M40 20 V80 M60 20 V80" stroke="rgba(0,0,0,0.2)" stroke-width="1" fill="none"/>
+                                </svg>
                             </div>
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="contactless-icon">
-                                    <i class="bi bi-wifi" style="transform: rotate(-90deg); font-size: 24px;"></i>
+                            <i class="bi bi-box-arrow-up-right"></i>
+                        </div>
+                        <div class="brand-row">
+                            <div class="brand-logo">
+                                <div class="visa-badge">VISA</div>
+                                <div class="mc-circles" aria-hidden="true">
+                                    <div class="circle red"></div>
+                                    <div class="circle orange"></div>
                                 </div>
-                                <div class="card-network-logo" id="cardPreviewNetwork">
-                                    <div class="visa-logo-small">VISA</div>
-                                </div>
-                            </div>
-                        </header>
-                        <div class="card-details">
-                            <div class="name-number">
-                                <h6 data-i18n="payment_card_number">Card Number</h6>
-                                <h5 class="number" id="cardPreviewNumber">**** **** **** ****</h5>
-                                <div class="card-holder-section">
-                                    <h6 data-i18n="payment_card_holder_name">Card Holder name</h6>
-                                    <h5 class="name" id="cardPreviewName">ИМЯ ФАМИЛИЯ</h5>
-                                </div>
-                            </div>
-                            <div class="valid-date">
-                                <h6 data-i18n="payment_expiry_date">Expiry Date</h6>
-                                <h5 id="cardPreviewExpiry">MM/YY</h5>
+                                <span class="brand-name">Mastercard</span>
                             </div>
                         </div>
-                    </div>
-                    <div class="card-preview-back" id="cardPreviewBack">
-                        <div class="magnetic-strip"></div>
-                        <div class="text-end pe-3 mb-2">
-                            <small style="color: rgba(255,255,255,0.7); font-size: 0.7rem;" data-i18n="payment_authorized_signature">Authorized Signature</small>
-                        </div>
-                        <div class="signature-area">
-                            <span class="cvv-display" id="cardPreviewCVV">***</span>
-                        </div>
-                        <div class="d-flex justify-content-between px-3 align-items-center mt-auto">
-                            <small style="color: rgba(255,255,255,0.6); font-size: 0.6rem; line-height: 1.2; max-width: 200px;">
-                                <span data-i18n="payment_card_property">This card is property of the issuer.</span>
-                            </small>
-                            <div class="mastercard-logo" id="cardPreviewBackLogo">
-                                <span class="mastercard-circle circle-red"></span>
-                                <span class="mastercard-circle circle-orange"></span>
+                        <div class="card-number" data-i18n="payment_gateway_card_number">AzeriCard</div>
+                        <div class="card-bottom">
+                            <div class="info-group">
+                                <label data-i18n="payment_gateway_card_label">BANK CARD</label>
+                                <div class="value" data-i18n="payment_gateway_redirect">Redirect to bank page</div>
+                            </div>
+                            <div class="info-group align-right">
+                                <label>3DS</label>
+                                <div class="value">Visa / MC</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Card Type Logos -->
-            <div class="card-type-logos">
-                <div class="card-type-logo-text">Visa</div>
-                <div class="card-type-logo-text">Mastercard</div>
-                <div class="card-type-logo-text">Мир</div>
-            </div>
-
-            <form class="payment-card-form">
-                <div class="form-group">
-                    <label data-i18n="payment_card_number">Номер карты</label>
-                    <div class="card-input-wrapper">
-                        <input type="text" data-i18n-placeholder="payment_card_number_placeholder" placeholder="2324 5566 6677 7898" maxlength="19" class="card-number-input" id="cardNumberInput">
-                        <div class="card-input-icon" id="cardInputIcon">MC</div>
-                    </div>
-                    <div class="card-bank-info" id="cardBankInfo"></div>
-                </div>
-
-                <div class="form-group">
-                    <label data-i18n="payment_card_name">Имя на карте</label>
-                    <input type="text" data-i18n-placeholder="payment_card_name_placeholder" placeholder="Имя Фамилия" class="card-name-input" id="cardNameInput">
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label data-i18n="payment_card_expiry">Срок действия</label>
-                        <input type="text" data-i18n-placeholder="payment_card_expiry_placeholder" placeholder="11/25" class="card-exp-input" id="cardExpInput">
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="payment_card_cvv">CVV</label>
-                        <input type="text" data-i18n-placeholder="payment_card_cvv_placeholder" placeholder="123" maxlength="3" class="card-cvv-input" id="cardCvvInput">
-                    </div>
-                </div>
-
-                <div class="form-group checkbox-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" class="save-card-checkbox">
-                        <span data-i18n="payment_save_card">Сохранить карту</span>
-                    </label>
-                </div>
-
-                <button type="submit" class="pay-button" data-i18n="payment_pay_button">Оплатить</button>
-            </form>
         </div>
 
         <!-- Right Column: Payment Details -->
@@ -675,6 +595,10 @@ function updateCardPreview(cardNumber, cardName, cardExp, cardData) {
     const cardPreviewNetwork = document.getElementById('cardPreviewNetwork');
     const cardInputIcon = document.getElementById('cardInputIcon');
     const cardBankInfo = document.getElementById('cardBankInfo');
+
+    if (!preview || !previewNumber || !previewName || !previewExpiry) {
+        return;
+    }
     
     // Update card number
     if (cardNumber) {
@@ -1760,7 +1684,7 @@ async function submitPayment(event) {
     if (event && event.target && event.target.classList && event.target.classList.contains('pay-button')) {
         payButton = event.target;
     } else {
-        payButton = document.querySelector('.pay-button');
+        payButton = document.querySelector('.default-pay-button');
     }
     const originalText = payButton ? payButton.textContent : 'Оплатить';
 
@@ -2131,24 +2055,12 @@ async function submitPayment(event) {
             return false;
         } catch (error) {
             console.error('AzeriCard initiate error:', error);
-            const msg = String(error?.message || '');
-            const canFallbackToDirectPayment =
-                msg.includes('AZERICARD_') ||
-                msg.includes('dummy placeholder') ||
-                msg.includes('invalid PEM format') ||
-                msg.includes('Ошибка инициализации платежа: 500');
-
-            if (!canFallbackToDirectPayment) {
-                showPaymentError(error.message || 'Не удалось открыть страницу оплаты банка');
-                if (payButton) {
-                    payButton.disabled = false;
-                    payButton.textContent = originalText;
-                }
-                return false;
+            showPaymentError(error.message || 'Не удалось открыть страницу оплаты банка');
+            if (payButton) {
+                payButton.disabled = false;
+                payButton.textContent = originalText;
             }
-
-            // Local/dev fallback: if gateway is not configured, keep old direct payment flow.
-            console.warn('AzeriCard is not configured, fallback to direct payment API');
+            return false;
         }
     }
 
@@ -2409,7 +2321,7 @@ if (!document.getElementById('payment-toast-styles')) {
 // Bind pay button
 function bindPayButton() {
     const payForm = document.querySelector('.payment-card-form');
-    const payButton = document.querySelector('.pay-button');
+    const payButton = document.querySelector('.default-pay-button');
     
     if (payForm) {
         payForm.addEventListener('submit', submitPayment);

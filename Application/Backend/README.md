@@ -6,12 +6,14 @@
 CREATE DATABASE fastapi_admin;
 ```
 
-## Настройки подключения
-`app/config.py` уже содержит:
-- Host: 127.0.0.1
-- Port: 5432
-- Login: postgres
-- Pass: "admin Ayaz"
+## Переменные окружения (.env)
+Все конфигурации и секреты вынесены в `Backend/.env`.
+
+1. Скопируй шаблон:
+```bash
+cp .env.example .env
+```
+2. Заполни `.env` своими значениями (БД, ROOT, AzeriCard, Firebase).
 
 ## Запуск (Windows / Linux)
 ```bash
@@ -26,9 +28,9 @@ uvicorn app.main:app --reload
 
 Открой http://127.0.0.1:8000/login
 
-Вход ROOT:
-- Логин: `root`
-- Пароль: `admin Ayaz`
+Вход ROOT берётся из `.env`:
+- `ROOT_USERNAME`
+- `ROOT_PASSWORD`
 
 ## Политика ролей
 - ROOT: полный доступ, может создавать/редактировать/удалять всех, видеть/сбрасывать временные пароли.

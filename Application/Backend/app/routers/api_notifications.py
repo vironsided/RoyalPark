@@ -15,11 +15,8 @@ from ..models import (
     Resident, Block,
 )
 from ..deps import get_current_user
-<<<<<<< HEAD
-=======
 from ..services.push_service import send_push_to_users
 from ..utils import get_user_locale_code, tr_locale
->>>>>>> a58c570 (Remove hardcoded Firebase credentials)
 from fastapi import Request
 from ..security import get_user_id_from_session
 

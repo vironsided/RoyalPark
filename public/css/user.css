@@ -2243,7 +2243,7 @@ body[data-theme="dark"] .user-bills-section select option {
     position: relative;
     z-index: 1;
     display: grid;
-    grid-template-columns: 1fr 1.2fr 0.9fr;
+    grid-template-columns: minmax(280px, 1fr) minmax(320px, 0.9fr);
     gap: 2rem;
     align-items: start;
     width: 100%;
@@ -2306,6 +2306,9 @@ body[data-theme="dark"] .user-bills-section select option {
     border-radius: 1rem;
     padding: 1.5rem;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 /* Payment tabs removed - only credit card is available */
@@ -2315,15 +2318,16 @@ body[data-theme="dark"] .user-bills-section select option {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    width: min(100%, 420px);
 }
 
 /* Modern static saved cards (except Royal Park pass) */
 .payment-left-column .bank-card {
     position: relative;
-    width: 100%;
+    width: min(100%, 420px);
     aspect-ratio: 1.58 / 1;
     border-radius: 24px;
-    padding: 1.75rem;
+    padding: clamp(1rem, 1.2vw, 1.35rem);
     box-sizing: border-box;
     overflow: hidden;
     cursor: pointer;
@@ -2515,6 +2519,17 @@ body[data-theme="dark"] .user-bills-section select option {
     border-color: rgba(255, 255, 255, 0.4);
 }
 
+.payment-left-column .gateway-card .brand-logo {
+    flex-wrap: wrap;
+}
+
+.payment-left-column .gateway-card .card-number {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 1.35rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
 /* Hidden state for middle payment column until user chooses to add a card */
 .payment-middle-column.is-hidden {
     display: none;
@@ -2522,7 +2537,8 @@ body[data-theme="dark"] .user-bills-section select option {
 
 /* Royal Park resident pass (default card) */
 .resident-pass-wrapper {
-    height: 260px;
+    width: min(100%, 420px);
+    height: clamp(185px, 23vw, 250px);
 }
 
 .resident-pass-card {

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from decimal import Decimal
 from typing import Any, Optional
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -57,8 +58,21 @@ def _ensure_gateway_config(category: Optional[str] = None) -> None:
     tid = _terminal_id_for(category)
     if not tid:
         raise HTTPException(status_code=500, detail=f"AZERICARD_TERMINAL ({category or 'default'}) is not configured")
-    if not settings.AZERICARD_CALLBACK_URL:
-        raise HTTPException(status_code=500, detail="AZERICARD_CALLBACK_URL is not configured")
+    _validate_public_url(settings.AZERICARD_CALLBACK_URL, "AZERICARD_CALLBACK_URL")
+    _validate_public_url(settings.AZERICARD_SUCCESS_URL, "AZERICARD_SUCCESS_URL")
+    _validate_public_url(settings.AZERICARD_FAIL_URL, "AZERICARD_FAIL_URL")
+
+
+def _validate_public_url(value: str, env_name: str) -> None:
+    raw = (value or "").strip()
+    if not raw:
+        raise HTTPException(status_code=500, detail=f"{env_name} is not configured")
+    parsed = urlparse(raw)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"{env_name} must be a full http/https URL (include host and port if non-standard)",
+        )
 
 
 def _ensure_signing_config(category: Optional[str] = None) -> None:
@@ -94,15 +108,13 @@ def _build_gateway_params(
     amount: Decimal,
     category: str,
     description: str,
-    request: Request,
 ) -> tuple[str, dict]:
     """Build signed gateway params for one terminal category. Returns (order_id, params)."""
     terminal_id = _terminal_id_for(category)
     order_id = build_order_id(terminal_id)
     amount_str = amount_to_gateway(amount)
-    base_url = str(request.base_url).rstrip("/")
-    success_url = settings.AZERICARD_SUCCESS_URL or f"{base_url}/api/azericard/success"
-    fail_url = settings.AZERICARD_FAIL_URL or f"{base_url}/api/azericard/fail"
+    success_url = settings.AZERICARD_SUCCESS_URL
+    fail_url = settings.AZERICARD_FAIL_URL
 
     req = {
         "AMOUNT": amount_str,
@@ -172,7 +184,7 @@ def initiate_payment(
 
     _ensure_signing_config(category)
 
-    order_id, params = _build_gateway_params(payload.amount, category, description, request)
+    order_id, params = _build_gateway_params(payload.amount, category, description)
 
     tx = OnlineTransaction(
         resident_id=payload.resident_id,
