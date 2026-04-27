@@ -118,6 +118,38 @@ def to_baku_datetime(value: Any) -> datetime:
     return now_baku()
 
 
+def normalize_locale_code(code: str | None) -> str:
+    normalized = (code or "").strip().lower()
+    if normalized in {"az", "en", "ru"}:
+        return normalized
+    return "az"
+
+
+def get_user_locale_code(db, user_id: int) -> str:
+    from .models import PushDeviceToken
+    row = (
+        db.query(PushDeviceToken)
+        .filter(
+            PushDeviceToken.user_id == user_id,
+            PushDeviceToken.is_active == True,
+        )
+        .order_by(PushDeviceToken.last_seen_at.desc(), PushDeviceToken.updated_at.desc())
+        .first()
+    )
+    if not row:
+        return "az"
+    return normalize_locale_code(getattr(row, "locale", None))
+
+
+def tr_locale(code: str, *, az: str, en: str, ru: str) -> str:
+    locale = normalize_locale_code(code)
+    if locale == "en":
+        return en
+    if locale == "ru":
+        return ru
+    return az
+
+
 def create_invoice_notification(db, invoice, created_by_user_id=None):
     """
     Создает уведомления для всех пользователей, связанных с резидентом,
@@ -146,7 +178,8 @@ def create_invoice_notification(db, invoice, created_by_user_id=None):
     # Получаем информацию о резиденте и блоке
     resident = invoice.resident
     block = resident.block if resident else None
-    house_info = f"Блок {block.name if block else ''}, №{resident.unit_number}" if block else f"№{resident.unit_number}"
+    block_name = block.name if block else ""
+    unit_number = resident.unit_number if resident else ""
     
     # Получаем сумму счета
     amount_total = float(invoice.amount_total or 0)
@@ -181,18 +214,42 @@ def create_invoice_notification(db, invoice, created_by_user_id=None):
     
     # Форматируем дату для сообщения
     today_str = now_baku().strftime("%d.%m.%Y")
-    due_date_str = invoice.due_date.strftime("%d.%m.%Y") if invoice.due_date else "не указан"
-    
-    # Текст сообщения
-    message = f"Выставлен счет для {house_info}. Сумма: {amount_str}. Период: {period_str}. Оплатить с {today_str} по {due_date_str}"
-    
-    # Создаем уведомления для каждого пользователя
+    due_date_str = invoice.due_date.strftime("%d.%m.%Y") if invoice.due_date else None
+
+    # Создаем уведомления для каждого пользователя с персональной локалью
+    localized_push_payloads: list[tuple[int, str, str, str]] = []
     for user in users:
         # ЖЕСТКАЯ ПРОВЕРКА: Только если роль пользователя — RESIDENT
         # Мы проверяем и через строку, и через enum на всякий случай
         user_role = str(user.role.value) if hasattr(user.role, 'value') else str(user.role)
         if user_role != "RESIDENT":
             continue
+
+        locale = get_user_locale_code(db, user.id)
+        house_info = tr_locale(
+            locale,
+            az=f"Blok {block_name}, №{unit_number}" if block_name else f"№{unit_number}",
+            en=f"Block {block_name}, #{unit_number}" if block_name else f"#{unit_number}",
+            ru=f"Блок {block_name}, №{unit_number}" if block_name else f"№{unit_number}",
+        )
+        due_to = due_date_str or tr_locale(
+            locale,
+            az="gosterilmeyib",
+            en="not specified",
+            ru="не указан",
+        )
+        message = tr_locale(
+            locale,
+            az=f"{house_info} ucun hesab kesildi. Mebleg: {amount_str}. Period: {period_str}. Odenis muddeti: {today_str} - {due_to}",
+            en=f"An invoice has been issued for {house_info}. Amount: {amount_str}. Period: {period_str}. Payment window: {today_str} - {due_to}",
+            ru=f"Выставлен счет для {house_info}. Сумма: {amount_str}. Период: {period_str}. Оплатить с {today_str} по {due_to}",
+        )
+        push_title = tr_locale(
+            locale,
+            az="Yeni hesab",
+            en="New invoice",
+            ru="Новый счет",
+        )
 
         notification = Notification(
             user_id=user.id,
@@ -204,9 +261,20 @@ def create_invoice_notification(db, invoice, created_by_user_id=None):
             created_at=datetime.utcnow()
         )
         db.add(notification)
+        localized_push_payloads.append((user.id, push_title, message, locale))
     
     try:
         db.commit()
+        if localized_push_payloads:
+            from .services.push_service import send_push_to_users
+            for user_id, title, body, locale in localized_push_payloads:
+                send_push_to_users(
+                    db,
+                    user_ids=[user_id],
+                    title=title,
+                    body=body,
+                    data={"type": "INVOICE", "invoice_id": str(invoice.id), "locale": locale},
+                )
     except Exception as e:
         db.rollback()
         print(f"Error creating invoice notifications: {e}")
@@ -271,18 +339,37 @@ def create_news_notification(db, news):
         print(f"No active resident users found for news {news.id}")
         return
     
-    # Парсим заголовок для сообщения (используем русский по умолчанию)
+    # Парсим заголовок новости по локали пользователя
     try:
-        title_data = json.loads(news.title) if isinstance(news.title, str) else news.title
-        title_ru = title_data.get('ru', 'Новая новость') if isinstance(title_data, dict) else str(title_data)
+        title_data = json.loads(news.title) if isinstance(news.title, str) else (news.title or {})
     except:
-        title_ru = 'Новая новость'
-    
-    message = f"Опубликована новость: {title_ru}"
+        title_data = {}
     
     # Создаем уведомления для каждого пользователя
     notifications_created = 0
+    localized_push_payloads: list[tuple[int, str, str, str]] = []
     for user in users:
+        locale = get_user_locale_code(db, user.id)
+        title_locale = (
+            title_data.get(locale)
+            or title_data.get("az")
+            or title_data.get("en")
+            or title_data.get("ru")
+            or tr_locale(locale, az="Yeni xeber", en="New update", ru="Новая новость")
+        )
+        message = tr_locale(
+            locale,
+            az=f"Yeni xeber paylasildi: {title_locale}",
+            en=f"New update published: {title_locale}",
+            ru=f"Опубликована новость: {title_locale}",
+        )
+        push_title = tr_locale(
+            locale,
+            az="Yeni xeber",
+            en="New update",
+            ru="Новая новость",
+        )
+
         # Проверяем, нет ли уже такого уведомления
         existing = db.query(Notification).filter(
             Notification.user_id == user.id,
@@ -303,9 +390,20 @@ def create_news_notification(db, news):
             )
             db.add(notification)
             notifications_created += 1
+            localized_push_payloads.append((user.id, push_title, message, locale))
     
     try:
         db.commit()
+        if localized_push_payloads:
+            from .services.push_service import send_push_to_users
+            for user_id, title, body, locale in localized_push_payloads:
+                send_push_to_users(
+                    db,
+                    user_ids=[user_id],
+                    title=title,
+                    body=body,
+                    data={"type": "NEWS", "news_id": str(news.id), "locale": locale},
+                )
         print(f"Created {notifications_created} notifications for news {news.id} ({len(users)} total users)")
     except Exception as e:
         db.rollback()

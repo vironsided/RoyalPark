@@ -7,8 +7,8 @@ class Settings(BaseModel):
     PG_HOST: str = os.getenv("PG_HOST", "127.0.0.1")
     PG_PORT: int = int(os.getenv("PG_PORT", "5432"))
     PG_USER: str = os.getenv("PG_USER", "postgres")
-    PG_PASSWORD: str = os.getenv("PG_PASSWORD", "admin Ayaz")
-    PG_DB: str = os.getenv("PG_DB", "fastApiAyaz")
+    PG_PASSWORD: str = os.getenv("PG_PASSWORD", "admin")
+    PG_DB: str = os.getenv("PG_DB", "fast2")
 
     # Секреты/куки:
     SESSION_SECRET_KEY: str = os.getenv("SESSION_SECRET_KEY", "change-this-in-production")
@@ -47,6 +47,11 @@ class Settings(BaseModel):
     AZERICARD_TERMINAL_ADVANCE: str = os.getenv("AZERICARD_TERMINAL_ADVANCE", "")
     AZERICARD_PRIVATE_KEY_ADVANCE: str = os.getenv("AZERICARD_PRIVATE_KEY_ADVANCE", "")
     AZERICARD_PUBLIC_KEY_ADVANCE: str = os.getenv("AZERICARD_PUBLIC_KEY_ADVANCE", "")
+
+    # Firebase Cloud Messaging (backend)
+    FIREBASE_CREDENTIALS_PATH: str = os.getenv("FIREBASE_CREDENTIALS_PATH", "")
+    #Add Firebase Project JSON
+    FIREBASE_PROJECT_ID: str = os.getenv("FIREBASE_PROJECT_ID", "royal-c0981")
 
 
 settings = Settings()

@@ -233,6 +233,35 @@ class User(Base):
         lazy="selectin",
     )
 
+
+class PushDeviceToken(Base):
+    __tablename__ = "push_device_tokens"
+    __table_args__ = (
+        UniqueConstraint("token_hash", name="uq_push_device_tokens_token_hash"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    token: Mapped[str] = mapped_column(Text, nullable=False)
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    platform: Mapped[str] = mapped_column(String(16), nullable=False)  # android | ios | web
+    device_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    device_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    app_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    os_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    locale: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    invalidated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    invalidation_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("NOW()"))
+    last_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_error_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("NOW()"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("NOW()"))
+
+    user: Mapped["User"] = relationship("User", lazy="joined")
+
 class Block(Base):
     __tablename__ = "blocks"
     __table_args__ = (UniqueConstraint("name", name="uq_blocks_name"),)

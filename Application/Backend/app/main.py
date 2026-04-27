@@ -8,7 +8,7 @@ from .config import settings
 from .database import Base, engine, SessionLocal
 from .models import User, RoleEnum
 from .security import hash_password
-from .routers import auth_routes, dashboard, api_users, api_blocks, api_tariffs, api_residents, api_readings, api_tenants, api_invoices, api_payments, api_notifications, api_dashboard, api_logs, api_qr, api_payment, api_resident_dashboard, api_news, api_azericard, api_sales
+from .routers import auth_routes, dashboard, api_users, api_blocks, api_tariffs, api_residents, api_readings, api_tenants, api_invoices, api_payments, api_notifications, api_dashboard, api_logs, api_qr, api_payment, api_resident_dashboard, api_news, api_azericard, api_sales, push_routes
 
 
 def init_db():
@@ -255,6 +255,32 @@ def run_bootstrap_schema():
             invoice_line_id INTEGER NOT NULL REFERENCES invoice_lines(id) ON DELETE CASCADE,
             amount NUMERIC(12, 2) NOT NULL
         );""",
+        """
+        CREATE TABLE IF NOT EXISTS push_device_tokens (
+            id BIGSERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            token TEXT NOT NULL,
+            token_hash CHAR(64) NOT NULL,
+            platform VARCHAR(16) NOT NULL,
+            device_id VARCHAR(128) NULL,
+            device_name VARCHAR(128) NULL,
+            app_version VARCHAR(32) NULL,
+            os_version VARCHAR(32) NULL,
+            locale VARCHAR(16) NULL,
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            invalidated_at TIMESTAMPTZ NULL,
+            invalidation_reason VARCHAR(64) NULL,
+            last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            last_sent_at TIMESTAMPTZ NULL,
+            last_error_at TIMESTAMPTZ NULL,
+            last_error_code VARCHAR(64) NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_push_device_tokens_token_hash ON push_device_tokens(token_hash);",
+        "CREATE INDEX IF NOT EXISTS idx_push_device_tokens_user_active ON push_device_tokens(user_id, is_active);",
+        "CREATE INDEX IF NOT EXISTS idx_push_device_tokens_invalidated_at ON push_device_tokens(invalidated_at);",
         # ==========================================================
         #  Модуль продаж (SALES): договора купли-продажи вилл/домов
         # ==========================================================
@@ -398,6 +424,7 @@ def create_app() -> FastAPI:
     app.include_router(api_news.router)
     app.include_router(api_azericard.router)
     app.include_router(api_sales.router)
+    app.include_router(push_routes.router)
     @app.get("/healthz")
     def healthz():
         return {"ok": True}

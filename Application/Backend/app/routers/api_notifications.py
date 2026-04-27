@@ -15,6 +15,11 @@ from ..models import (
     Resident, Block,
 )
 from ..deps import get_current_user
+<<<<<<< HEAD
+=======
+from ..services.push_service import send_push_to_users
+from ..utils import get_user_locale_code, tr_locale
+>>>>>>> a58c570 (Remove hardcoded Firebase credentials)
 from fastapi import Request
 from ..security import get_user_id_from_session
 
@@ -513,6 +518,8 @@ def patch_notification(
     msg_changed = data.staff_message is not None and _norm_optional_str(snap_msg) != _norm_optional_str(notif.staff_message)
     has_wf = bool(_norm_optional_str(notif.appeal_workflow))
     has_staff = bool(_norm_optional_str(notif.staff_message))
+    should_send_push = False
+    push_body = ""
     if is_appeal and (wf_changed or msg_changed) and (has_wf or has_staff):
         payload = json.dumps(
             {
@@ -551,8 +558,32 @@ def patch_notification(
                     created_at=datetime.utcnow(),
                 )
             )
+        if notif.staff_message:
+            push_body = notif.staff_message[:180]
+        should_send_push = True
 
     db.commit()
+    if should_send_push:
+        locale = get_user_locale_code(db, notif.user_id)
+        push_title = tr_locale(
+            locale,
+            az="Muraciet yenilendi",
+            en="Request updated",
+            ru="Обращение обновлено",
+        )
+        fallback_body = tr_locale(
+            locale,
+            az="Muracietinizin statusu yenilendi",
+            en="Your request status has been updated",
+            ru="Статус вашего обращения обновлен",
+        )
+        send_push_to_users(
+            db,
+            user_ids=[notif.user_id],
+            title=push_title,
+            body=push_body if push_body.strip() else fallback_body,
+            data={"type": "APPEAL_UPDATE", "notification_id": str(notif.id), "locale": locale},
+        )
     db.refresh(notif)
     return _build_notification_out(notif)
 
