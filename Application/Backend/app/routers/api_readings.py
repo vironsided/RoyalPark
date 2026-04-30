@@ -1,12 +1,13 @@
 from typing import List, Optional
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
+from io import BytesIO
 import json
 import os
-import shutil
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, UploadFile, File, Form
+from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, or_, exists
@@ -608,6 +609,49 @@ class ReadingCreate(BaseModel):
 
 
 PHOTO_TTL_DAYS = 90
+PHOTO_COMPRESS_THRESHOLD_BYTES = int(os.getenv("METER_PHOTO_COMPRESS_THRESHOLD_BYTES", str(3 * 1024 * 1024)))
+PHOTO_TARGET_MAX_BYTES = int(os.getenv("METER_PHOTO_TARGET_MAX_BYTES", str(1 * 1024 * 1024)))
+PHOTO_JPEG_QUALITY_START = int(os.getenv("METER_PHOTO_JPEG_QUALITY_START", "85"))
+PHOTO_JPEG_QUALITY_MIN = int(os.getenv("METER_PHOTO_JPEG_QUALITY_MIN", "45"))
+PHOTO_JPEG_QUALITY_STEP = int(os.getenv("METER_PHOTO_JPEG_QUALITY_STEP", "10"))
+
+
+def _compress_meter_photo_if_needed(raw_bytes: bytes, original_ext: str) -> tuple[bytes, str]:
+    """
+    Сжимает тяжёлые фото счётчиков.
+    Если файл маленький или сжать не удалось — возвращаем исходный файл как есть.
+    """
+    if len(raw_bytes) <= PHOTO_COMPRESS_THRESHOLD_BYTES:
+        return raw_bytes, original_ext
+
+    try:
+        with Image.open(BytesIO(raw_bytes)) as img:
+            normalized = ImageOps.exif_transpose(img)
+            if normalized.mode not in {"RGB", "L"}:
+                normalized = normalized.convert("RGB")
+            elif normalized.mode == "L":
+                normalized = normalized.convert("RGB")
+
+            best_bytes = raw_bytes
+            quality = max(PHOTO_JPEG_QUALITY_MIN, PHOTO_JPEG_QUALITY_START)
+
+            while quality >= PHOTO_JPEG_QUALITY_MIN:
+                out = BytesIO()
+                normalized.save(out, format="JPEG", quality=quality, optimize=True)
+                candidate = out.getvalue()
+
+                if len(candidate) < len(best_bytes):
+                    best_bytes = candidate
+                if len(candidate) <= PHOTO_TARGET_MAX_BYTES:
+                    return candidate, ".jpg"
+
+                quality -= max(1, PHOTO_JPEG_QUALITY_STEP)
+
+            if len(best_bytes) < len(raw_bytes):
+                return best_bytes, ".jpg"
+            return raw_bytes, original_ext
+    except (UnidentifiedImageError, OSError, ValueError):
+        return raw_bytes, original_ext
 
 
 def _photo_disk_path(photo: MeterReadingPhoto) -> str:
@@ -1163,7 +1207,8 @@ def get_resident_meters(
         if existing:
             photo = db.query(MeterReadingPhoto).filter(MeterReadingPhoto.meter_reading_id == existing.id).first()
             if photo:
-                existing_photo_url = f"/uploads/{str(photo.file_path).replace('\\', '/')}"
+                normalized_photo_path = str(photo.file_path).replace("\\", "/")
+                existing_photo_url = f"/uploads/{normalized_photo_path}"
 
         payment_meta = None
         if existing:
@@ -1306,13 +1351,19 @@ def upload_meter_photo(
     ext = os.path.splitext(file.filename or "")[1].lower()
     if ext not in {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"}:
         ext = ".jpg"
-    filename = f"{meter_id}_{reading.id}_{uuid4().hex}{ext}"
+
+    raw_bytes = file.file.read()
+    if not raw_bytes:
+        raise HTTPException(status_code=400, detail="Empty image file")
+
+    processed_bytes, processed_ext = _compress_meter_photo_if_needed(raw_bytes, ext)
+    filename = f"{meter_id}_{reading.id}_{uuid4().hex}{processed_ext}"
     relative_path = os.path.join("meter_readings", filename)
     os.makedirs(os.path.join("uploads", "meter_readings"), exist_ok=True)
     full_path = os.path.join("uploads", relative_path)
 
     with open(full_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        buffer.write(processed_bytes)
 
     expires_at = datetime.utcnow() + timedelta(days=PHOTO_TTL_DAYS)
     existing = db.query(MeterReadingPhoto).filter(MeterReadingPhoto.meter_reading_id == reading.id).first()
@@ -1337,7 +1388,8 @@ def upload_meter_photo(
         ))
 
     db.commit()
-    return {"ok": True, "photo_url": f"/uploads/{relative_path.replace('\\', '/')}"}
+    normalized_relative_path = relative_path.replace("\\", "/")
+    return {"ok": True, "photo_url": f"/uploads/{normalized_relative_path}"}
 
 
 @router.delete("/meter/{meter_id}/photo")
@@ -1798,7 +1850,10 @@ def get_reading_history(
         reading_ids = [rd.id for rd in readings]
         if reading_ids:
             photos = db.query(MeterReadingPhoto).filter(MeterReadingPhoto.meter_reading_id.in_(reading_ids)).all()
-            photo_map = {p.meter_reading_id: f"/uploads/{str(p.file_path).replace('\\', '/')}" for p in photos}
+            photo_map = {
+                p.meter_reading_id: "/uploads/" + str(p.file_path).replace("\\", "/")
+                for p in photos
+            }
         
         meter_entries.append((m, readings, photo_map))
 

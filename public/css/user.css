@@ -2313,6 +2313,93 @@ body[data-theme="dark"] .user-bills-section select option {
 
 /* Payment tabs removed - only credit card is available */
 
+/* Payment method selector (Advance or Card) */
+.payment-method-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin: 0 0 1rem;
+    width: min(100%, 420px);
+}
+
+.payment-methods-inline {
+    margin-top: 0.85rem;
+    margin-bottom: 0.35rem;
+}
+
+.payment-section-subtitle {
+    margin: 0 0 0.6rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary, #2f3724);
+}
+
+.payment-method-option {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+    color: #2f3724;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.payment-method-option:hover {
+    border-color: rgba(177, 186, 136, 0.55);
+    background: linear-gradient(145deg, rgba(177, 186, 136, 0.2), rgba(177, 186, 136, 0.08));
+    transform: translateY(-1px);
+}
+
+.payment-method-option input[type="radio"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(198, 206, 161, 0.85);
+    background: rgba(15, 18, 30, 0.65);
+    box-shadow: inset 0 0 0 0 rgba(177, 186, 136, 1), 0 0 0 2px rgba(10, 12, 18, 0.35);
+    transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.payment-method-option input[type="radio"]:checked {
+    border-color: #b1ba88;
+    box-shadow: inset 0 0 0 4px rgba(177, 186, 136, 1), 0 0 0 2px rgba(10, 12, 18, 0.35);
+}
+
+.payment-method-option input[type="radio"]:focus-visible {
+    outline: 2px solid rgba(177, 186, 136, 0.7);
+    outline-offset: 2px;
+}
+
+.payment-method-option span {
+    line-height: 1.35;
+    color: #2f3724;
+    transition: color 0.2s ease;
+}
+
+.payment-method-option:has(input[type="radio"]:checked) {
+    border-color: rgba(177, 186, 136, 0.8);
+    background: linear-gradient(145deg, rgba(177, 186, 136, 0.3), rgba(177, 186, 136, 0.12));
+    box-shadow: 0 10px 24px rgba(20, 25, 45, 0.35), inset 0 0 0 1px rgba(177, 186, 136, 0.3);
+}
+
+.payment-method-option:has(input[type="radio"]:checked) span {
+    color: #24301a;
+}
+
 /* Saved Cards */
 .saved-cards-container {
     display: flex;

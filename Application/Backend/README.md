@@ -28,6 +28,21 @@ uvicorn app.main:app --reload
 
 Открой http://127.0.0.1:8000/login
 
+## Запуск через Docker
+Из корня проекта `RoyalPark`:
+
+```bash
+docker compose up --build
+```
+
+После старта:
+- Backend: http://127.0.0.1:8000/login
+- Healthcheck: http://127.0.0.1:8000/healthz
+
+Важно для Docker:
+- Бэкенд подключается к БД по `PG_HOST=db` (имя сервиса в `docker-compose.yml`).
+- Для локального запуска без Docker можно оставить `PG_HOST=127.0.0.1`.
+
 Вход ROOT берётся из `.env`:
 - `ROOT_USERNAME`
 - `ROOT_PASSWORD`

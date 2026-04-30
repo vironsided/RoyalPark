@@ -12,3 +12,4 @@ pydantic[email]
 argon2-cffi
 cryptography
 firebase-admin==6.7.0
+Pillow

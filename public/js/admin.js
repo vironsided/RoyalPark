@@ -1069,6 +1069,16 @@ function checkMonthlyActivation() {
 setInterval(checkMonthlyActivation, 1000);
 
 window.issueMonthlyInvoices = async function() {
+    const t = (key, fallback) => {
+        if (window.i18n && typeof window.i18n.translate === 'function') {
+            return window.i18n.translate(key);
+        }
+        return fallback;
+    };
+    const lang = localStorage.getItem('language') || window.i18n?.currentLanguage || 'az';
+    const localeByLang = { az: 'az-AZ', ru: 'ru-RU', en: 'en-GB' };
+    const dateLocale = localeByLang[lang] || 'az-AZ';
+
     const daysRadio = document.querySelector('input[name="paymentDaysTop"]:checked');
     const daysToPay = parseInt(daysRadio ? daysRadio.value : "3");
     
@@ -1077,11 +1087,21 @@ window.issueMonthlyInvoices = async function() {
     dueDate.setDate(now.getDate() + daysToPay);
     
     const formattedDueDate = dueDate.toISOString().split('T')[0]; // YYYY-MM-DD
-    
-    const confirmMessage = `Отправить уведомления пользователям по всем выставленным счетам? \nСрок оплаты в уведомлении будет: ${dueDate.toLocaleDateString('ru-RU')} (+${daysToPay} дн.)`;
+    const confirmLine1 = t(
+        'monthly_issue_confirm_message',
+        'Bütün tərtib edilmiş hesablar üzrə istifadəçilərə bildiriş göndərilsin?'
+    );
+    const confirmLine2 = t(
+        'monthly_issue_confirm_due_date',
+        'Bildirişdə ödəniş son tarixi: {date} (+{days} gün)'
+    )
+        .replace('{date}', dueDate.toLocaleDateString(dateLocale))
+        .replace('{days}', String(daysToPay));
+    const confirmMessage = `${confirmLine1}\n${confirmLine2}`;
     
     if (window.showConfirm) {
-        window.showConfirm(confirmMessage, 'Рассылка уведомлений').then(async (confirmed) => {
+        const confirmTitle = t('monthly_issue_confirm_title', 'Bildiriş göndərişi');
+        window.showConfirm(confirmMessage, confirmTitle).then(async (confirmed) => {
             if (confirmed) await performMonthlyNotifyAll(formattedDueDate);
         });
     } else {
@@ -1118,18 +1138,22 @@ async function performMonthlyNotifyAll(dueDate) {
         localStorage.setItem('lastMonthlyNotifyMonthYear', `${now.getMonth()}-${now.getFullYear()}`);
         checkMonthlyActivation(); // Сразу скрываем кнопку и включаем таймер
 
+        const successMessage = (window.i18n?.translate?.('monthly_issue_success') || 'Bildirişlər uğurla göndərildi! Say: {count}')
+            .replace('{count}', String(data.count));
         if (window.showSuccess) {
-            showSuccess(`Уведомления успешно отправлены! Количество: ${data.count}`);
+            showSuccess(successMessage);
         } else {
-            alert(`Уведомления успешно отправлены! Количество: ${data.count}`);
+            alert(successMessage);
         }
         
     } catch (error) {
         console.error('Error sending bulk notifications:', error);
+        const errorMessage = (window.i18n?.translate?.('monthly_issue_error_prefix') || 'Xəta: {message}')
+            .replace('{message}', error.message);
         if (window.showError) {
-            showError(`Ошибка: ${error.message}`);
+            showError(errorMessage);
         } else {
-            alert(`Ошибка: ${error.message}`);
+            alert(errorMessage);
         }
     }
 }

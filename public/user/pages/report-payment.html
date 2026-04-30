@@ -11,8 +11,6 @@
     <div class="payment-container">
         <!-- Left Column: Saved Cards -->
         <div class="payment-left-column">
-            <h3 class="payment-section-title" data-i18n="payment_select_method">Выберите способ оплаты</h3>
-            
             <!-- Saved Cards -->
             <div class="saved-cards-container">
                 <!-- Default Royal Park resident card (advance balance) -->
@@ -63,45 +61,6 @@
 
                         <div class="pass-pattern"></div>
                         <div class="pass-gloss"></div>
-                    </div>
-                </div>
-
-                <div class="bank-card animated-bg-1 gateway-card"
-                     data-card-id="azericard-gateway"
-                     data-card-type="CARD"
-                     data-card-holder="AzeriCard">
-                    <div class="glass-overlay"></div>
-                    <div class="card-inner">
-                        <div class="card-top">
-                            <div class="chip chip-with-svg">
-                                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                                    <rect x="10" y="20" width="80" height="60" rx="10" fill="#ffd700" />
-                                    <path d="M10 40 H90 M10 60 H90 M40 20 V80 M60 20 V80" stroke="rgba(0,0,0,0.2)" stroke-width="1" fill="none"/>
-                                </svg>
-                            </div>
-                            <i class="bi bi-box-arrow-up-right"></i>
-                        </div>
-                        <div class="brand-row">
-                            <div class="brand-logo">
-                                <div class="visa-badge">VISA</div>
-                                <div class="mc-circles" aria-hidden="true">
-                                    <div class="circle red"></div>
-                                    <div class="circle orange"></div>
-                                </div>
-                                <span class="brand-name">Mastercard</span>
-                            </div>
-                        </div>
-                        <div class="card-number" data-i18n="payment_gateway_card_number">AzeriCard</div>
-                        <div class="card-bottom">
-                            <div class="info-group">
-                                <label data-i18n="payment_gateway_card_label">BANK CARD</label>
-                                <div class="value" data-i18n="payment_gateway_redirect">Redirect to bank page</div>
-                            </div>
-                            <div class="info-group align-right">
-                                <label>3DS</label>
-                                <div class="value">Visa / MC</div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -158,6 +117,20 @@
                     <div class="order-total-item final">
                         <span class="total-label" data-i18n="payment_total_label">Итого</span>
                         <span class="total-value" id="total"></span>
+                    </div>
+                </div>
+
+                <div class="payment-methods-inline">
+                    <h4 class="payment-section-subtitle" data-i18n="payment_select_method">Ödəniş üsulunu seçin</h4>
+                    <div class="payment-method-selector" role="radiogroup" aria-label="Payment Method">
+                        <label class="payment-method-option" for="paymentMethodCard">
+                            <input type="radio" id="paymentMethodCard" name="paymentMethod" value="CARD" checked>
+                            <span data-i18n="payment_method_card_portal">Bank Card</span>
+                        </label>
+                        <label class="payment-method-option" for="paymentMethodAdvance">
+                            <input type="radio" id="paymentMethodAdvance" name="paymentMethod" value="ADVANCE">
+                            <span data-i18n="payment_method_advance">Royal Park Advance</span>
+                        </label>
                     </div>
                 </div>
 
@@ -1316,10 +1289,11 @@ async function initPaymentPage() {
                 // Если эта карта была выбрана, снимаем выбор
                 if (advanceCard.classList.contains('selected')) {
                     advanceCard.classList.remove('selected');
-                    // Выбираем первую доступную карту (не Royal Park)
-                    const availableCards = document.querySelectorAll('.saved-cards-container .bank-card:not(.disabled), .saved-cards-container .resident-pass-card:not(.disabled)');
-                    if (availableCards.length > 0 && availableCards[0] !== advanceCard) {
-                        availableCards[0].click();
+                    // Переключаемся на банковский метод оплаты
+                    const cardMethodInput = document.getElementById('paymentMethodCard');
+                    if (cardMethodInput) {
+                        cardMethodInput.checked = true;
+                        cardMethodInput.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                 }
             } else {
@@ -2340,7 +2314,11 @@ function bindPayButton() {
 // Saved cards selection (user can choose which card, including Royal Park advance pass)
 function setupSavedCardSelection() {
     const savedCards = document.querySelectorAll('.saved-cards-container .bank-card, .saved-cards-container .resident-pass-card');
-    if (!savedCards.length) return;
+    const advanceCard = document.querySelector('.resident-pass-card[data-card-type="ADVANCE"]');
+    const advanceMethodInput = document.getElementById('paymentMethodAdvance');
+    const cardMethodInput = document.getElementById('paymentMethodCard');
+    const methodSelector = document.querySelector('.payment-method-selector');
+    if (!savedCards.length && !cardMethodInput) return;
 
     function applySelection(cardElement) {
         savedCards.forEach(c => c.classList.remove('selected'));
@@ -2363,6 +2341,29 @@ function setupSavedCardSelection() {
         };
         // Update local variable for submitPayment
         window.selectedSavedCard = selectedSavedCard;
+        if (advanceMethodInput && cardMethodInput) {
+            advanceMethodInput.checked = type === 'ADVANCE';
+            cardMethodInput.checked = type !== 'ADVANCE';
+        }
+        if (methodSelector) {
+            methodSelector.classList.toggle('card-selected', type !== 'ADVANCE');
+        }
+    }
+
+    function applyCardGatewaySelection() {
+        savedCards.forEach(c => c.classList.remove('selected'));
+        selectedSavedCard = {
+            id: 'azericard-gateway',
+            last4: '',
+            holder: 'AzeriCard',
+            type: 'CARD',
+            advanceBalance: null,
+            brand: 'Bank Card'
+        };
+        window.selectedSavedCard = selectedSavedCard;
+        if (cardMethodInput) cardMethodInput.checked = true;
+        if (advanceMethodInput) advanceMethodInput.checked = false;
+        if (methodSelector) methodSelector.classList.add('card-selected');
     }
 
     savedCards.forEach(card => {
@@ -2388,12 +2389,35 @@ function setupSavedCardSelection() {
         });
     });
 
+    if (advanceMethodInput) {
+        advanceMethodInput.addEventListener('change', () => {
+            if (!advanceMethodInput.checked) return;
+            if (advanceCard && !advanceCard.classList.contains('disabled') && advanceCard.getAttribute('aria-disabled') !== 'true') {
+                applySelection(advanceCard);
+            } else {
+                applyCardGatewaySelection();
+            }
+        });
+    }
+
+    if (cardMethodInput) {
+        cardMethodInput.addEventListener('change', () => {
+            if (cardMethodInput.checked) {
+                applyCardGatewaySelection();
+            }
+        });
+    }
+
     // Select the first available (not disabled) saved card by default
     const availableCards = Array.from(savedCards).filter(card => 
         !card.classList.contains('disabled') && card.getAttribute('aria-disabled') !== 'true'
     );
-    if (availableCards.length > 0) {
+    if (cardMethodInput && cardMethodInput.checked) {
+        applyCardGatewaySelection();
+    } else if (availableCards.length > 0) {
         applySelection(availableCards[0]);
+    } else if (cardMethodInput) {
+        applyCardGatewaySelection();
     }
 }
 

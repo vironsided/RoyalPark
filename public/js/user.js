@@ -414,6 +414,8 @@ window.loadDashboardData = async function loadDashboardData() {
         // Load invoices for user's residents
         if (data.residents && data.residents.length > 0) {
             loadInvoices(data.residents.map(r => r.id));
+        } else {
+            updateInvoicesUI([], { hideWhenEmpty: true });
         }
         
         // Load latest news
@@ -741,6 +743,7 @@ function updateBillsNavBadge(summary) {
 // Load invoices from backend for specific residents
 async function loadInvoices(residentIds) {
     if (!residentIds || residentIds.length === 0) {
+        updateInvoicesUI([], { hideWhenEmpty: true });
         return;
     }
 
@@ -784,18 +787,30 @@ async function loadInvoices(residentIds) {
 }
 
 // Update invoices UI
-function updateInvoicesUI(invoices) {
+function updateInvoicesUI(invoices, options = {}) {
     const billsList = document.querySelector('.bills-list');
     if (!billsList) return;
+    const billsCard = billsList.closest('.chart-card');
+    const hideWhenEmpty = Boolean(options.hideWhenEmpty);
 
     // Clear existing bills (keep first few as template if needed)
     billsList.innerHTML = '';
 
     if (invoices.length === 0) {
+        if (hideWhenEmpty && billsCard) {
+            billsCard.style.display = 'none';
+            return;
+        }
+        if (billsCard) {
+            billsCard.style.display = '';
+        }
         const lang = resolveUiLanguage();
         const emptyText = window.i18n?.translate?.('user_bills_empty', lang) || 'Нет счетов';
         billsList.innerHTML = `<div class="text-center p-4 text-muted" data-i18n="user_bills_empty">${emptyText}</div>`;
         return;
+    }
+    if (billsCard) {
+        billsCard.style.display = '';
     }
 
     invoices.forEach(invoice => {
