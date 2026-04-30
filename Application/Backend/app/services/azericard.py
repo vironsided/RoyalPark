@@ -24,6 +24,8 @@ MAINTENANCE_METER_TYPES = {"SERVICE", "RENT", "CONSTRUCTION"}
 TERMINAL_CATEGORY_UTILITY = "utility"
 TERMINAL_CATEGORY_MAINTENANCE = "maintenance"
 TERMINAL_CATEGORY_ADVANCE = "advance"
+TERMINAL_GROUP_STANDARD = "standard"
+TERMINAL_GROUP_WALLET = "wallet"
 
 
 # ---------------------------------------------------------------------------
@@ -54,7 +56,13 @@ def _as_pem(raw: str, key_kind: str) -> str:
 # Per-category terminal credentials with fallback to legacy single terminal
 # ---------------------------------------------------------------------------
 
-def _terminal_id_for(category: Optional[str] = None) -> str:
+def _normalize_terminal_id(value: str) -> str:
+    return "".join(ch for ch in str(value or "") if ch.isdigit())
+
+
+def _terminal_id_for(category: Optional[str] = None, terminal_group: Optional[str] = None) -> str:
+    if terminal_group == TERMINAL_GROUP_WALLET and settings.AZERICARD_TERMINAL_WALLET:
+        return settings.AZERICARD_TERMINAL_WALLET
     if category == TERMINAL_CATEGORY_UTILITY and settings.AZERICARD_TERMINAL_UTILITY:
         return settings.AZERICARD_TERMINAL_UTILITY
     if category == TERMINAL_CATEGORY_MAINTENANCE and settings.AZERICARD_TERMINAL_MAINTENANCE:
@@ -64,7 +72,9 @@ def _terminal_id_for(category: Optional[str] = None) -> str:
     return settings.AZERICARD_TERMINAL_ID
 
 
-def _private_key_raw(category: Optional[str] = None) -> str:
+def _private_key_raw(category: Optional[str] = None, terminal_group: Optional[str] = None) -> str:
+    if terminal_group == TERMINAL_GROUP_WALLET and settings.AZERICARD_PRIVATE_KEY_WALLET:
+        return settings.AZERICARD_PRIVATE_KEY_WALLET
     if category == TERMINAL_CATEGORY_UTILITY and settings.AZERICARD_PRIVATE_KEY_UTILITY:
         return settings.AZERICARD_PRIVATE_KEY_UTILITY
     if category == TERMINAL_CATEGORY_MAINTENANCE and settings.AZERICARD_PRIVATE_KEY_MAINTENANCE:
@@ -74,7 +84,9 @@ def _private_key_raw(category: Optional[str] = None) -> str:
     return settings.AZERICARD_PRIVATE_KEY
 
 
-def _public_key_raw(category: Optional[str] = None) -> str:
+def _public_key_raw(category: Optional[str] = None, terminal_group: Optional[str] = None) -> str:
+    if terminal_group == TERMINAL_GROUP_WALLET and settings.AZERICARD_PUBLIC_KEY_WALLET:
+        return settings.AZERICARD_PUBLIC_KEY_WALLET
     if category == TERMINAL_CATEGORY_UTILITY and settings.AZERICARD_PUBLIC_KEY_UTILITY:
         return settings.AZERICARD_PUBLIC_KEY_UTILITY
     if category == TERMINAL_CATEGORY_MAINTENANCE and settings.AZERICARD_PUBLIC_KEY_MAINTENANCE:
@@ -84,13 +96,13 @@ def _public_key_raw(category: Optional[str] = None) -> str:
     return settings.AZERICARD_PUBLIC_KEY
 
 
-def _private_key(category: Optional[str] = None) -> RSAPrivateKey:
-    key_pem = _as_pem(_private_key_raw(category), "private").encode("utf-8")
+def _private_key(category: Optional[str] = None, terminal_group: Optional[str] = None) -> RSAPrivateKey:
+    key_pem = _as_pem(_private_key_raw(category, terminal_group), "private").encode("utf-8")
     return load_pem_private_key(key_pem, password=None)
 
 
-def _public_key(category: Optional[str] = None) -> RSAPublicKey:
-    key_pem = _as_pem(_public_key_raw(category), "public").encode("utf-8")
+def _public_key(category: Optional[str] = None, terminal_group: Optional[str] = None) -> RSAPublicKey:
+    key_pem = _as_pem(_public_key_raw(category, terminal_group), "public").encode("utf-8")
     return load_pem_public_key(key_pem)
 
 
@@ -102,20 +114,41 @@ def build_signature_content(data: dict, fields: Iterable[str]) -> str:
     return ";".join(str(data.get(name, "") or "") for name in fields)
 
 
-def generate_p_sign(data: dict, fields: Iterable[str], category: Optional[str] = None) -> str:
+def generate_p_sign(
+    data: dict,
+    fields: Iterable[str],
+    category: Optional[str] = None,
+    terminal_group: Optional[str] = None,
+) -> str:
     content = build_signature_content(data, fields).encode("utf-8")
-    signature = _private_key(category).sign(content, padding.PKCS1v15(), hashes.SHA256())
+    signature = _private_key(category, terminal_group).sign(content, padding.PKCS1v15(), hashes.SHA256())
     return base64.b64encode(signature).decode("ascii")
 
 
-def verify_callback_signature(data: dict, signature_field: str = "P_SIGN", category: Optional[str] = None) -> bool:
+def _terminal_group_from_data(data: dict) -> str:
+    callback_tid = _normalize_terminal_id(str(data.get("TERMINAL", "") or ""))
+    if not callback_tid:
+        return TERMINAL_GROUP_STANDARD
+    wallet_tid = _normalize_terminal_id(settings.AZERICARD_TERMINAL_WALLET)
+    if wallet_tid and callback_tid == wallet_tid:
+        return TERMINAL_GROUP_WALLET
+    return TERMINAL_GROUP_STANDARD
+
+
+def verify_callback_signature(
+    data: dict,
+    signature_field: str = "P_SIGN",
+    category: Optional[str] = None,
+    terminal_group: Optional[str] = None,
+) -> bool:
     signature_b64 = str(data.get(signature_field, "") or "").strip()
     if not signature_b64:
         return False
     try:
         signature = base64.b64decode(signature_b64)
         content = build_signature_content(data, CALLBACK_SIGN_FIELDS).encode("utf-8")
-        _public_key(category).verify(signature, content, padding.PKCS1v15(), hashes.SHA256())
+        resolved_group = terminal_group or _terminal_group_from_data(data)
+        _public_key(category, resolved_group).verify(signature, content, padding.PKCS1v15(), hashes.SHA256())
         return True
     except Exception:
         return False

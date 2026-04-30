@@ -22,6 +22,8 @@ from ..services.azericard import (
     TERMINAL_CATEGORY_ADVANCE,
     TERMINAL_CATEGORY_MAINTENANCE,
     TERMINAL_CATEGORY_UTILITY,
+    TERMINAL_GROUP_STANDARD,
+    TERMINAL_GROUP_WALLET,
     _private_key,
     _terminal_id_for,
     amount_to_gateway,
@@ -44,6 +46,10 @@ class InitiateRequest(BaseModel):
     description: Optional[str] = None
     saved_card_id: Optional[int] = None
     terminal_category: Optional[str] = None
+    wallet_provider: Optional[str] = None
+    wallet_token: Optional[str] = None
+    wallet_eci: Optional[str] = None
+    wallet_tavv: Optional[str] = None
 
 
 class CompleteRequest(BaseModel):
@@ -54,8 +60,26 @@ class CompleteRequest(BaseModel):
     int_ref: str
 
 
-def _ensure_gateway_config(category: Optional[str] = None) -> None:
-    tid = _terminal_id_for(category)
+@router.get("/wallet-config")
+def wallet_config():
+    merchant_name = (settings.AZERICARD_GPAY_MERCHANT_NAME or settings.AZERICARD_MERCH_NAME or "").strip()
+    return {
+        "ok": True,
+        "google_pay": {
+            "environment": (settings.AZERICARD_GPAY_ENVIRONMENT or "TEST").strip().upper(),
+            "gateway": (settings.AZERICARD_GPAY_GATEWAY or "azericardgpay").strip(),
+            "gatewayMerchantId": (settings.AZERICARD_GPAY_GATEWAY_MERCHANT_ID or "").strip(),
+            "merchantId": (settings.AZERICARD_GPAY_MERCHANT_ID or "").strip(),
+            "merchantName": merchant_name,
+            "merchantOrigin": (settings.AZERICARD_MERCH_URL or "").strip(),
+            "currencyCode": (settings.AZERICARD_CURRENCY or "AZN").strip().upper(),
+            "supported": bool((settings.AZERICARD_GPAY_GATEWAY_MERCHANT_ID or "").strip()),
+        },
+    }
+
+
+def _ensure_gateway_config(category: Optional[str] = None, terminal_group: Optional[str] = None) -> None:
+    tid = _terminal_id_for(category, terminal_group=terminal_group)
     if not tid:
         raise HTTPException(status_code=500, detail=f"AZERICARD_TERMINAL ({category or 'default'}) is not configured")
     _validate_public_url(settings.AZERICARD_CALLBACK_URL, "AZERICARD_CALLBACK_URL")
@@ -75,18 +99,18 @@ def _validate_public_url(value: str, env_name: str) -> None:
         )
 
 
-def _ensure_signing_config(category: Optional[str] = None) -> None:
-    tid = _terminal_id_for(category)
+def _ensure_signing_config(category: Optional[str] = None, terminal_group: Optional[str] = None) -> None:
+    tid = _terminal_id_for(category, terminal_group=terminal_group)
     if not tid:
         raise HTTPException(status_code=500, detail=f"AZERICARD_TERMINAL ({category or 'default'}) is not configured")
     from ..services.azericard import _private_key_raw
-    raw = _private_key_raw(category)
+    raw = _private_key_raw(category, terminal_group=terminal_group)
     if not raw:
         raise HTTPException(status_code=500, detail=f"AZERICARD_PRIVATE_KEY ({category or 'default'}) is not configured")
     if "DUMMY_PRIVATE_KEY" in raw.upper():
         raise HTTPException(status_code=500, detail=f"AZERICARD_PRIVATE_KEY ({category or 'default'}) is still a dummy placeholder")
     try:
-        _private_key(category)
+        _private_key(category, terminal_group=terminal_group)
     except Exception:
         raise HTTPException(status_code=500, detail=f"AZERICARD_PRIVATE_KEY ({category or 'default'}) has invalid PEM format")
 
@@ -104,13 +128,30 @@ def _wants_html(request: Request) -> bool:
     return "text/html" in accept or "*/*" in accept
 
 
+def _normalize_terminal(value: str) -> str:
+    return "".join(ch for ch in str(value or "") if ch.isdigit())
+
+
+def _resolve_group_from_callback_data(data: dict[str, str]) -> str:
+    callback_terminal = _normalize_terminal(_pick(data, "TERMINAL", "terminal"))
+    wallet_terminal = _normalize_terminal(_terminal_id_for(terminal_group=TERMINAL_GROUP_WALLET))
+    if wallet_terminal and callback_terminal and wallet_terminal == callback_terminal:
+        return TERMINAL_GROUP_WALLET
+    return TERMINAL_GROUP_STANDARD
+
+
 def _build_gateway_params(
     amount: Decimal,
     category: str,
     description: str,
+    terminal_group: str = TERMINAL_GROUP_STANDARD,
+    wallet_provider: Optional[str] = None,
+    wallet_token: Optional[str] = None,
+    wallet_eci: Optional[str] = None,
+    wallet_tavv: Optional[str] = None,
 ) -> tuple[str, dict]:
     """Build signed gateway params for one terminal category. Returns (order_id, params)."""
-    terminal_id = _terminal_id_for(category)
+    terminal_id = _terminal_id_for(category, terminal_group=terminal_group)
     order_id = build_order_id(terminal_id)
     amount_str = amount_to_gateway(amount)
     success_url = settings.AZERICARD_SUCCESS_URL
@@ -124,7 +165,7 @@ def _build_gateway_params(
         "MERCH_NAME": settings.AZERICARD_MERCH_NAME,
         "MERCH_URL": settings.AZERICARD_MERCH_URL or settings.AZERICARD_CALLBACK_URL,
         "TERMINAL": terminal_id,
-        "TRTYPE": "0",
+        "TRTYPE": "1" if terminal_group == TERMINAL_GROUP_WALLET else "0",
         "TIMESTAMP": build_timestamp(),
         "NONCE": build_nonce(),
         "BACKREF": settings.AZERICARD_CALLBACK_URL,
@@ -134,7 +175,17 @@ def _build_gateway_params(
     if settings.AZERICARD_LANG:
         req["LANG"] = settings.AZERICARD_LANG
 
-    req["P_SIGN"] = generate_p_sign(req, CREATE_SIGN_FIELDS, category)
+    if terminal_group == TERMINAL_GROUP_WALLET and wallet_provider and wallet_token:
+        provider = wallet_provider.strip().lower()
+        if provider == "google_pay":
+            req["GPAYTOKEN"] = wallet_token
+        if provider == "apple_pay":
+            if wallet_eci:
+                req["EXT_MPI_ECI"] = wallet_eci
+            if wallet_tavv:
+                req["TAVV"] = wallet_tavv
+
+    req["P_SIGN"] = generate_p_sign(req, CREATE_SIGN_FIELDS, category, terminal_group=terminal_group)
     return order_id, req
 
 
@@ -182,9 +233,22 @@ def initiate_payment(
         else:
             category = TERMINAL_CATEGORY_UTILITY
 
-    _ensure_signing_config(category)
+    wallet_provider = (payload.wallet_provider or "").strip().lower()
+    is_wallet = wallet_provider in {"google_pay", "apple_pay"}
+    terminal_group = TERMINAL_GROUP_WALLET if is_wallet else TERMINAL_GROUP_STANDARD
 
-    order_id, params = _build_gateway_params(payload.amount, category, description)
+    _ensure_signing_config(category, terminal_group=terminal_group)
+
+    order_id, params = _build_gateway_params(
+        payload.amount,
+        category,
+        description,
+        terminal_group=terminal_group,
+        wallet_provider=wallet_provider,
+        wallet_token=payload.wallet_token,
+        wallet_eci=payload.wallet_eci,
+        wallet_tavv=payload.wallet_tavv,
+    )
 
     tx = OnlineTransaction(
         resident_id=payload.resident_id,
@@ -192,7 +256,7 @@ def initiate_payment(
         order_id=order_id,
         amount_total=payload.amount,
         currency=params["CURRENCY"],
-        trtype="0",
+        trtype=params.get("TRTYPE", "0"),
         terminal_category=category,
         gateway_status="INITIATED",
         request_payload=json.dumps(params, ensure_ascii=False),
@@ -247,9 +311,10 @@ async def azericard_callback(
     tx.trtype = _pick(data, "TRTYPE", "trtype") or tx.trtype
 
     category = tx.terminal_category
-    _ensure_gateway_config(category)
+    callback_group = _resolve_group_from_callback_data(data)
+    _ensure_gateway_config(category, terminal_group=callback_group)
 
-    signature_ok = verify_callback_signature(data, category=category)
+    signature_ok = verify_callback_signature(data, category=category, terminal_group=callback_group)
     action = _pick(data, "ACTION", "action")
     status_ok = action == "0"
     if not signature_ok:

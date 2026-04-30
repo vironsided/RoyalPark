@@ -25,6 +25,7 @@ arr = np.array(img)
 
 mask = (arr[:, :, 0] < 240) | (arr[:, :, 1] < 240) | (arr[:, :, 2] < 240)
 
+
 # Tree emblem = first vertical run of ink (rows 2232..7303 at scale=4)
 tree_top, tree_bot = 2232, 7303
 tree_mask = mask[tree_top : tree_bot + 1]
