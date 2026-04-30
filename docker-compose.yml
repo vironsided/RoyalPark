@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: ${PG_DB:-fastApiAyaz}
       POSTGRES_USER: ${PG_USER:-postgres}
-      POSTGRES_PASSWORD: ${PG_PASSWORD:-change_me}
+      POSTGRES_PASSWORD: "${PG_PASSWORD:-admin Ayaz}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -32,7 +32,7 @@ services:
       PG_PORT: 5432
       PG_DB: ${PG_DB:-fastApiAyaz}
       PG_USER: ${PG_USER:-postgres}
-      PG_PASSWORD: ${PG_PASSWORD:-change_me}
+      PG_PASSWORD: "${PG_PASSWORD:-admin Ayaz}"
     ports:
       - "8000:8000"
     volumes:
